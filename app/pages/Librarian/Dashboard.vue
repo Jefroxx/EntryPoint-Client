@@ -1,0 +1,68 @@
+<template>
+    <div class="min-h-screen bg-amber-50">
+        <!-- Header Component -->
+        <LibrarianHeader :avatar-url="userAvatar" @toggle-sidebar="isSidebarVisible = !isSidebarVisible" />
+
+        <div class="flex">
+            <LibrarianSideBar v-if="isSidebarVisible" />
+
+            <!-- Main Dashboard Content Goes Here -->
+            <main class="flex-1 p-6">
+
+                <div class="flex items-center justify-between ">
+                    <div>
+                        <h1 class="dashboard-heading text-3xl font-bold text-amber-900">Dashboard</h1>
+                        <p class="dashboard-heading mt-1 text-amber-900">Welcome back, Librarian!</p>
+                    </div>
+
+                    <Date />
+                </div>
+
+                <div class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    <StatCard v-for="stat in stats" :key="stat.title" :title="stat.title" :value="stat.value"
+                        :icon="stat.icon" :color="stat.color" />
+
+                    <!-- Spans the same two columns as the first two stat cards above
+                         (Total Books + Total Members), so it always lines up with them
+                         at any sidebar/viewport width instead of using a fixed size. -->
+                    <div class="sm:col-span-2 lg:col-span-2">
+                        <BorrowingOverviewCard :labels="overview?.labels ?? []" :borrowed="overview?.borrowed ?? []"
+                            :returned="overview?.returned ?? []" />
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+</template>
+<script setup lang="ts">
+
+import { ref } from 'vue'
+import { librarianService } from '~/services/librarianService'
+
+definePageMeta({
+    middleware: 'librarian',
+})
+
+// Example user avatar state/ref (replace with your actual data/auth store)
+const userAvatar = ref('https://via.placeholder.com/150')
+const isSidebarVisible = ref(true)
+
+const [{ data: summary }, { data: overview }] = await Promise.all([
+    useAsyncData('dashboard-summary', () => librarianService.fetchDashboardSummary()),
+    useAsyncData('borrowing-overview', () => librarianService.fetchBorrowingOverview()),
+])
+
+const stats = computed(() => [
+    { title: 'Total Books', value: summary.value?.totalBooks ?? '—', icon: 'i-lucide-book', color: 'brown' as const },
+    { title: 'Total Members', value: summary.value?.totalMembers ?? '—', icon: 'i-lucide-users', color: 'brown' as const },
+    { title: 'Active Loans', value: summary.value?.activeLoans ?? '—', icon: 'i-lucide-book-open', color: 'gold' as const },
+    { title: 'Pending Fines', value: summary.value?.pendingFines ?? '—', icon: 'i-lucide-circle-dollar-sign', color: 'red' as const },
+])
+</script>
+
+<style scoped>
+.dashboard-heading {
+    font-family: 'Raleway', sans-serif;
+}
+</style>
