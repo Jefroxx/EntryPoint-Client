@@ -1,10 +1,11 @@
 <template>
     <div class="min-h-screen bg-amber-50">
         <!-- Header Component -->
-        <LibrarianHeader :avatar-url="userAvatar" @toggle-sidebar="isSidebarVisible = !isSidebarVisible" />
+        <LibrarianHeader :avatar-url="userAvatar" :is-sidebar-open="isSidebarVisible"
+            @toggle-sidebar="isSidebarVisible = !isSidebarVisible" />
 
         <div class="flex">
-            <LibrarianSideBar v-if="isSidebarVisible" />
+            <LibrarianSideBar :open="isSidebarVisible" />
 
             <!-- Main Dashboard Content Goes Here -->
             <main class="flex-1 p-6">
@@ -15,7 +16,7 @@
                         <p class="dashboard-heading mt-1 text-amber-900">Manage and Organize all library books.</p>
                     </div>
 
-                    <Date />
+                    <LibrarianDate />
                 </div>
             </main>
         </div>
@@ -27,5 +28,5 @@ definePageMeta({
 })
 
 const userAvatar = ref('https://via.placeholder.com/150')
-const isSidebarVisible = ref(true)
+const isSidebarVisible = useState('librarian-sidebar-open', () => false)
 </script>

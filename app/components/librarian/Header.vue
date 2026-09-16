@@ -4,8 +4,18 @@
         <div class="flex items-center gap-4">
             <button type="button"
                 class="flex h-9 w-9 items-center justify-center rounded-md text-amber-900 transition hover:bg-amber-50"
-                aria-label="Toggle sidebar" @click="$emit('toggle-sidebar')">
-                <Icon name="i-lucide-menu" class="h-6 w-6" />
+                aria-label="Toggle sidebar" :aria-expanded="isSidebarOpen" @click="$emit('toggle-sidebar')">
+                <span class="relative block h-4 w-5">
+                    <span
+                        class="absolute left-0 block h-0.5 w-5 rounded-full bg-current transition-all duration-300 ease-in-out"
+                        :class="isSidebarOpen ? 'top-1/2 -translate-y-1/2 rotate-45' : 'top-0 rotate-0'" />
+                    <span
+                        class="absolute left-0 top-1/2 block h-0.5 w-5 -translate-y-1/2 rounded-full bg-current transition-all duration-300 ease-in-out"
+                        :class="isSidebarOpen ? 'scale-x-0 opacity-0' : 'scale-x-100 opacity-100'" />
+                    <span
+                        class="absolute left-0 block h-0.5 w-5 rounded-full bg-current transition-all duration-300 ease-in-out"
+                        :class="isSidebarOpen ? 'bottom-1/2 translate-y-1/2 -rotate-45' : 'bottom-0 rotate-0'" />
+                </span>
             </button>
 
             <a href="/dashboard" class="flex items-center leading-none">
@@ -32,6 +42,7 @@
 <script setup lang="ts">
 defineProps<{
     avatarUrl: string
+    isSidebarOpen: boolean
 }>()
 
 defineEmits<{
