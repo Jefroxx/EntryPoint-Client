@@ -1,18 +1,21 @@
 <template>
-    <aside class="flex min-h-screen flex-col self-stretch overflow-hidden border-amber-100 bg-white transition-all duration-300 ease-in-out"
+    <aside class="flex min-h-screen flex-col self-stretch overflow-hidden border-stone-200 bg-white transition-all duration-300 ease-[cubic-bezier(.22,1,.36,1)]"
         :class="open ? 'w-56 border-r px-3 py-4 opacity-100' : 'w-0 border-r-0 px-0 py-4 opacity-0'">
-        <nav class="w-56 space-y-1">
-            <NuxtLink v-for="link in navLinks" :key="link.to" :to="link.to"
-                class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-amber-900 transition hover:bg-amber-50"
-                active-class="bg-amber-950 text-white hover:bg-amber-950">
+        <nav class="relative w-56 space-y-0.5">
+            <div class="absolute left-0 z-0 h-[42px] w-full rounded-lg bg-accent-500 shadow-sm transition-transform duration-250 ease-[cubic-bezier(.22,1,.36,1)]"
+                :style="{ transform: `translateY(${highlightOffset}px)`, opacity: activeIndex === -1 ? 0 : 1 }" />
+
+            <NuxtLink v-for="(link, index) in navLinks" :key="link.to" :ref="(el) => setLinkRef(el, index)" :to="link.to"
+                class="relative z-10 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors duration-150"
+                :class="index === activeIndex ? 'text-white' : 'text-stone-500 hover:bg-stone-100 hover:text-stone-800'">
                 <Icon :name="link.icon" class="h-5 w-5 shrink-0" />
                 {{ link.label }}
             </NuxtLink>
         </nav>
 
-        <div class="mt-3 w-56 border-t border-amber-100 pt-3">
+        <div class="mt-3 w-56 border-t border-stone-200 pt-3">
             <button type="button"
-                class="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-amber-900 transition hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-50"
+                class="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-stone-500 transition-colors duration-150 hover:bg-stone-100 hover:text-stone-800 disabled:cursor-not-allowed disabled:opacity-50"
                 :disabled="isSigningOut" @click="handleLogout">
                 <Icon name="i-lucide-log-out" class="h-5 w-5 shrink-0" />
                 {{ isSigningOut ? 'Signing out...' : 'Logout' }}
@@ -27,6 +30,7 @@ import { authService } from '~/services/auth/AuthService'
 withDefaults(defineProps<{ open?: boolean }>(), { open: true })
 
 const isSigningOut = ref(false)
+const route = useRoute()
 
 const navLinks = [
     { label: 'Dashboard', to: '/librarian/dashboard', icon: 'i-lucide-home' },
@@ -41,6 +45,23 @@ const navLinks = [
     { label: 'Settings', to: '/librarian/settings', icon: 'i-lucide-settings' },
 ]
 
+const linkRefs = ref<any[]>([])
+function setLinkRef(el: any, index: number) {
+    linkRefs.value[index] = el
+}
+
+const activeIndex = computed(() => navLinks.findIndex((link) => route.path.startsWith(link.to)))
+const highlightOffset = ref(0)
+
+function measureHighlight() {
+    const index = activeIndex.value
+    const el = linkRefs.value[index]?.$el as HTMLElement | undefined
+    if (el) highlightOffset.value = el.offsetTop
+}
+
+onMounted(() => nextTick(measureHighlight))
+watch(activeIndex, () => nextTick(measureHighlight))
+
 async function handleLogout() {
     isSigningOut.value = true
     try {
@@ -49,6 +70,9 @@ async function handleLogout() {
         useCookie('_token').value = null
         useCookie('_uuid').value = null
         useCookie('_role').value = null
+        useCookie('_firstName').value = null
+        useCookie('_lastName').value = null
+        useState('librarian-sidebar-open', () => false).value = false
         await navigateTo('/')
     }
 }

@@ -1,8 +1,8 @@
 <template>
-	<div class="rounded-xl bg-white p-5 shadow-sm">
+	<div class="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
 		<p class="mb-3 font-bold text-amber-900">Borrowing &amp; Return Overview</p>
 
-		<div class="mb-3 flex gap-4 text-xs text-gray-500">
+		<div class="mb-3 flex gap-4 text-xs text-stone-500">
 			<span class="flex items-center gap-1">
 				<span class="h-2 w-2 rounded-full bg-[#5c3317]" /> Borrowed
 			</span>

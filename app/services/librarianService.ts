@@ -37,6 +37,127 @@ export interface OverdueLoan {
   daysOverdue: number;
 }
 
+export interface LibraryStats {
+  totalBooks: number;
+  availableBooks: number;
+  borrowedBooks: number;
+  overdueBooks: number;
+}
+
+export interface StudentRecord {
+  studentID: number;
+  studentIDNumber: string;
+  academicProgram: string | null;
+  registrationStatus: "pending" | "approved" | "rejected";
+  knowledgeScore: number;
+  visitStreak: number;
+  user: { firstName: string; lastName: string; email: string } | null;
+}
+
+export interface PaginatedStudents {
+  data: StudentRecord[];
+  current_page: number;
+  last_page: number;
+  total: number;
+  per_page: number;
+}
+
+export interface StudentStats {
+  total: number;
+  pending: number;
+  approved: number;
+  rejected: number;
+}
+
+export interface BookSuggestion {
+  suggestionID: number;
+  uuid: string;
+  title: string;
+  author: string | null;
+  reason: string | null;
+  status: "Pending" | "Approved" | "Rejected";
+  progressStep: string | null;
+  submittedAt: string;
+  student: {
+    studentID: number;
+    academicProgram: string | null;
+    user: { firstName: string; lastName: string } | null;
+  } | null;
+}
+
+export interface BookAuthor {
+  authorID: number;
+  name: string;
+}
+
+export interface BookCopySummary {
+  copyID: number;
+  accessionNumber: string;
+  status: string;
+}
+
+export interface CatalogBook {
+  bookID: number;
+  title: string;
+  isbn: string | null;
+  callNumber: string;
+  coverImageURL: string | null;
+  subject: { subjectID: number; name: string } | null;
+  authors: BookAuthor[];
+  copies: BookCopySummary[];
+}
+
+export interface PaginatedBooks {
+  data: CatalogBook[];
+  current_page: number;
+  last_page: number;
+  total: number;
+  per_page: number;
+}
+
+export interface AttendanceLog {
+  logID: number;
+  entryTime: string;
+  exitTime: string | null;
+  student: {
+    studentID: number;
+    studentIDNumber: string;
+    academicProgram: string | null;
+    user: { firstName: string; lastName: string } | null;
+  } | null;
+}
+
+export interface PaginatedAttendanceLogs {
+  data: AttendanceLog[];
+  current_page: number;
+  last_page: number;
+  total: number;
+  per_page: number;
+}
+
+export interface AttendanceStats {
+  currentlyInLibrary: number;
+  totalVisitsToday: number;
+  averageMinutesToday: number;
+}
+
+export interface NewBookAuthor {
+  name: string;
+  role?: string | null;
+}
+
+export interface NewBookPayload {
+  title: string;
+  authors: NewBookAuthor[];
+  subjectName: string;
+  isbn?: string | null;
+  publicationYear?: number | null;
+  callNumber?: string | null;
+  shelfLocation?: string | null;
+  coverImageURL?: string | null;
+  quantity: number;
+}
+
 class LibrarianServiceClass extends BaseService {
   fetchDashboardSummary() {
     const runtimeConfig = useRuntimeConfig();
@@ -97,6 +218,172 @@ class LibrarianServiceClass extends BaseService {
     return $fetch<OverdueLoan[]>("/librarian/dashboard/overdue-loans", {
       baseURL: runtimeConfig.public.apiBaseURL,
       method: "GET",
+      headers: {
+        Accept: "application/json",
+        ...this.authHeaders(),
+      },
+    });
+  }
+
+  fetchLibraryStats() {
+    const runtimeConfig = useRuntimeConfig();
+
+    return $fetch<LibraryStats>("/librarian/library/stats", {
+      baseURL: runtimeConfig.public.apiBaseURL,
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        ...this.authHeaders(),
+      },
+    });
+  }
+
+  fetchBooks(params: { search?: string; page?: number; perPage?: number } = {}) {
+    const runtimeConfig = useRuntimeConfig();
+
+    return $fetch<PaginatedBooks>("/books", {
+      baseURL: runtimeConfig.public.apiBaseURL,
+      method: "GET",
+      query: params,
+      headers: {
+        Accept: "application/json",
+        ...this.authHeaders(),
+      },
+    });
+  }
+
+  fetchAttendanceLogs(params: { search?: string; date?: string; active?: boolean; page?: number; perPage?: number } = {}) {
+    const runtimeConfig = useRuntimeConfig();
+
+    return $fetch<PaginatedAttendanceLogs>("/librarian/attendance-logs", {
+      baseURL: runtimeConfig.public.apiBaseURL,
+      method: "GET",
+      query: params,
+      headers: {
+        Accept: "application/json",
+        ...this.authHeaders(),
+      },
+    });
+  }
+
+  fetchAttendanceStats() {
+    const runtimeConfig = useRuntimeConfig();
+
+    return $fetch<AttendanceStats>("/librarian/attendance-logs/stats", {
+      baseURL: runtimeConfig.public.apiBaseURL,
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        ...this.authHeaders(),
+      },
+    });
+  }
+
+  createBook(payload: NewBookPayload) {
+    const runtimeConfig = useRuntimeConfig();
+
+    return $fetch<{ message: string; book: CatalogBook }>("/librarian/books", {
+      baseURL: runtimeConfig.public.apiBaseURL,
+      method: "POST",
+      body: payload,
+      headers: {
+        Accept: "application/json",
+        ...this.authHeaders(),
+      },
+    });
+  }
+
+  fetchBookSuggestions() {
+    const runtimeConfig = useRuntimeConfig();
+
+    return $fetch<{ suggestions: BookSuggestion[] }>("/librarian/book-suggestions", {
+      baseURL: runtimeConfig.public.apiBaseURL,
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        ...this.authHeaders(),
+      },
+    });
+  }
+
+  approveBookSuggestion(suggestionID: number) {
+    const runtimeConfig = useRuntimeConfig();
+
+    return $fetch<{ message: string; suggestion: BookSuggestion }>(
+      `/librarian/book-suggestions/${suggestionID}/approve`,
+      {
+        baseURL: runtimeConfig.public.apiBaseURL,
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          ...this.authHeaders(),
+        },
+      },
+    );
+  }
+
+  rejectBookSuggestion(suggestionID: number) {
+    const runtimeConfig = useRuntimeConfig();
+
+    return $fetch<{ message: string; suggestion: BookSuggestion }>(
+      `/librarian/book-suggestions/${suggestionID}/reject`,
+      {
+        baseURL: runtimeConfig.public.apiBaseURL,
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          ...this.authHeaders(),
+        },
+      },
+    );
+  }
+
+  fetchStudents(params: { search?: string; program?: string; status?: string; page?: number; perPage?: number } = {}) {
+    const runtimeConfig = useRuntimeConfig();
+
+    return $fetch<PaginatedStudents>("/librarian/students", {
+      baseURL: runtimeConfig.public.apiBaseURL,
+      method: "GET",
+      query: params,
+      headers: {
+        Accept: "application/json",
+        ...this.authHeaders(),
+      },
+    });
+  }
+
+  fetchStudentStats() {
+    const runtimeConfig = useRuntimeConfig();
+
+    return $fetch<StudentStats>("/librarian/students/stats", {
+      baseURL: runtimeConfig.public.apiBaseURL,
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        ...this.authHeaders(),
+      },
+    });
+  }
+
+  approveStudent(studentID: number) {
+    const runtimeConfig = useRuntimeConfig();
+
+    return $fetch<{ message: string; student: StudentRecord }>(`/librarian/students/${studentID}/approve`, {
+      baseURL: runtimeConfig.public.apiBaseURL,
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        ...this.authHeaders(),
+      },
+    });
+  }
+
+  rejectStudent(studentID: number) {
+    const runtimeConfig = useRuntimeConfig();
+
+    return $fetch<{ message: string; student: StudentRecord }>(`/librarian/students/${studentID}/reject`, {
+      baseURL: runtimeConfig.public.apiBaseURL,
+      method: "POST",
       headers: {
         Accept: "application/json",
         ...this.authHeaders(),

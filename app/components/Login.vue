@@ -52,6 +52,8 @@ async function handleLogin() {
         useCookie('_token').value = token
         useCookie('_uuid').value = user.uuid
         useCookie('_role').value = user.userType
+        useCookie('_firstName').value = user.firstName
+        useCookie('_lastName').value = user.lastName
 
         if (user.userType === 'librarian') {
             await navigateTo('/librarian/dashboard')

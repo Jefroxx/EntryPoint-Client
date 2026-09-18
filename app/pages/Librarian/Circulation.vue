@@ -1,8 +1,7 @@
 <template>
     <div class="min-h-screen bg-amber-50">
         <!-- Header Component -->
-        <LibrarianHeader :avatar-url="userAvatar" :is-sidebar-open="isSidebarVisible"
-            @toggle-sidebar="isSidebarVisible = !isSidebarVisible" />
+        <LibrarianHeader :is-sidebar-open="isSidebarVisible" @toggle-sidebar="isSidebarVisible = !isSidebarVisible" />
 
         <div class="flex">
             <LibrarianSideBar :open="isSidebarVisible" />
@@ -16,8 +15,6 @@
                         <p class="dashboard-heading mt-1 text-amber-900">Manage reservations, borrowing, returns and
                             penalties.</p>
                     </div>
-
-                    <LibrarianDate />
                 </div>
             </main>
         </div>
@@ -28,6 +25,5 @@ definePageMeta({
     middleware: 'librarian',
 })
 
-const userAvatar = ref('https://via.placeholder.com/150')
 const isSidebarVisible = useState('librarian-sidebar-open', () => false)
 </script>
