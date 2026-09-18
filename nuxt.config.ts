@@ -1,6 +1,10 @@
 export default defineNuxtConfig({
 	compatibilityDate: '2025-07-15',
 	devtools: { enabled: true },
+	app: {
+		// Short and quiet: navigation is high-frequency, so the fade shouldn't make it feel slower.
+		pageTransition: { name: 'page', mode: 'out-in' },
+	},
 	css: ['~/assets/css/tailwind.css'],
 	modules: ['@nuxt/ui', '@nuxt/icon', '@nuxt/fonts'],
 	runtimeConfig: {

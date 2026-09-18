@@ -1,69 +1,78 @@
 <template>
-    <div class="flex min-h-screen items-center justify-center bg-gray-50 px-4">
-        <UCard class="w-full max-w-sm">
-            <template #header>
-                <h1 class="text-center text-2xl font-semibold text-gray-800">
-                    Sign in
-                </h1>
-            </template>
+	<AuthShell :subtitle="isLibrarianPortal ? 'Librarian portal' : 'Library management system'">
+		<h1 class="dashboard-heading text-[22px] font-bold text-amber-900">
+			{{ isLibrarianPortal ? 'Librarian sign in' : 'Welcome back' }}
+		</h1>
+		<p class="mb-5 mt-1 text-[13px] text-stone-500">
+			{{ isLibrarianPortal ? 'Staff accounts only.' : 'Sign in with your school email.' }}
+		</p>
 
-            <form @submit.prevent="handleLogin" class="space-y-4">
-                <div>
-                    <label for="email" class="mb-1 block text-sm font-medium text-gray-700">
-                        Email
-                    </label>
-                    <UInput id="email" v-model="email" type="email" required autocomplete="email"
-                        placeholder="you@example.com" class="w-full" />
-                </div>
+		<form class="grid gap-3" novalidate @submit.prevent="handleLogin">
+			<LibrarianTextField id="email" v-model="email" label="Email" type="email" autocomplete="email"
+				placeholder="you@school.edu.ph" @update:model-value="errorMessage = ''" />
+			<AuthPasswordField id="password" v-model="password" label="Password" autocomplete="current-password"
+				placeholder="••••••••" @update:model-value="errorMessage = ''" />
 
-                <div>
-                    <label for="password" class="mb-1 block text-sm font-medium text-gray-700">
-                        Password
-                    </label>
-                    <UInput id="password" v-model="password" type="password" required autocomplete="current-password"
-                        placeholder="••••••••" class="w-full" />
-                </div>
+			<Transition enter-active-class="transition duration-200 ease-out" enter-from-class="-translate-y-1 opacity-0"
+				leave-active-class="transition duration-150 ease-out" leave-to-class="opacity-0">
+				<div v-if="errorMessage" role="alert"
+					class="flex items-start gap-2 rounded-xl border border-red-100 bg-red-50 px-3 py-2.5 text-[12.5px] leading-snug text-red-600">
+					<Icon name="i-lucide-circle-alert" class="mt-px h-4 w-4 shrink-0" />
+					<span>{{ errorMessage }}</span>
+				</div>
+			</Transition>
 
-                <UAlert v-if="errorMessage" color="error" variant="subtle" :title="errorMessage" />
+			<ButtonsButton type="submit" class="mt-1 !h-[46px] w-full !text-[14.5px]" :disabled="isLoading">
+				<span v-if="isLoading" class="h-[15px] w-[15px] animate-spin rounded-full border-2 border-white/40 border-t-white" />
+				{{ isLoading ? 'Signing in…' : 'Sign in' }}
+			</ButtonsButton>
+		</form>
 
-                <UButton type="submit" block :loading="isLoading" :disabled="isLoading">
-                    {{ isLoading ? 'Signing in...' : 'Sign in' }}
-                </UButton>
-            </form>
-        </UCard>
-    </div>
+		<p v-if="!isLibrarianPortal" class="mt-4 text-center text-[13px] text-stone-500">
+			New student?
+			<NuxtLink to="/register" class="font-semibold text-accent-500 hover:underline">Create an account</NuxtLink>
+		</p>
+	</AuthShell>
 </template>
 
 <script setup lang="ts">
 import { authService } from '~/services/auth/AuthService'
 
+const props = withDefaults(defineProps<{ portal?: 'student' | 'librarian' }>(), { portal: 'student' })
+const isLibrarianPortal = props.portal === 'librarian'
+
 const email = ref('')
 const password = ref('')
 const isLoading = ref(false)
 const errorMessage = ref('')
+const { signIn } = useAuthSession()
 
 async function handleLogin() {
-    isLoading.value = true
-    errorMessage.value = ''
+	if (!email.value.trim() || !password.value) {
+		errorMessage.value = 'Enter your email and password.'
+		return
+	}
 
-    try {
-        const { token, user } = await authService.login(email.value, password.value)
+	isLoading.value = true
+	errorMessage.value = ''
 
-        useCookie('_token').value = token
-        useCookie('_uuid').value = user.uuid
-        useCookie('_role').value = user.userType
-        useCookie('_firstName').value = user.firstName
-        useCookie('_lastName').value = user.lastName
+	try {
+		if (!isLibrarianPortal) {
+			await authService.login(email.value.trim(), password.value)
 
-        if (user.userType === 'librarian') {
-            await navigateTo('/librarian/dashboard')
-        } else {
-            errorMessage.value = 'Student portal is not available yet.'
-        }
-    } catch (error: any) {
-        errorMessage.value = error?.message || 'Invalid email or password.'
-    } finally {
-        isLoading.value = false
-    }
+			// The student portal isn't built yet; don't leave a student session behind.
+			errorMessage.value = 'Your account is approved, but the student portal is not available yet.'
+			return
+		}
+
+		const { token, user } = await authService.librarianLogin(email.value.trim(), password.value)
+
+		signIn({ token, uuid: user.uuid, role: user.userType, firstName: user.firstName, lastName: user.lastName })
+		await navigateTo('/librarian/dashboard')
+	} catch (error: any) {
+		errorMessage.value = error?.message || 'Invalid email or password.'
+	} finally {
+		isLoading.value = false
+	}
 }
 </script>

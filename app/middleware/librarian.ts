@@ -3,6 +3,6 @@ export default defineNuxtRouteMiddleware(() => {
   const role = useCookie('_role')
 
   if (!token.value || role.value !== 'librarian') {
-    return navigateTo('/')
+    return navigateTo('/librarian/login')
   }
 })

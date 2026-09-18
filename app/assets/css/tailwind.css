@@ -23,3 +23,53 @@
 .dashboard-heading {
 	font-family: 'Raleway', sans-serif;
 }
+
+/* Staggered table-row entrance. Global (not scoped) so the animation name
+   always matches its keyframes; set the stagger with an inline animation-delay. */
+.row-fade-in {
+	opacity: 0;
+	animation: rowFadeIn .4s cubic-bezier(.22, 1, .36, 1) forwards;
+}
+
+@keyframes rowFadeIn {
+	to {
+		opacity: 1;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.row-fade-in {
+		animation: none;
+		opacity: 1;
+	}
+}
+
+/* Page transition (see app.pageTransition in nuxt.config.ts): quick fade out, then the
+   next page eases in from a few pixels below. */
+.page-leave-active {
+	transition: opacity 90ms ease-out;
+}
+
+.page-enter-active {
+	transition: opacity 200ms cubic-bezier(.23, 1, .32, 1), transform 200ms cubic-bezier(.23, 1, .32, 1);
+}
+
+.page-leave-to {
+	opacity: 0;
+}
+
+.page-enter-from {
+	opacity: 0;
+	transform: translateY(6px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.page-enter-active,
+	.page-leave-active {
+		transition: opacity 120ms ease;
+	}
+
+	.page-enter-from {
+		transform: none;
+	}
+}

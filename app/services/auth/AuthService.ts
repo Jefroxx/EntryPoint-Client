@@ -15,6 +15,20 @@ export interface LoginResponse {
   user: LoginUser;
 }
 
+export interface RegisterPayload {
+  firstName: string;
+  middleInitial?: string;
+  lastName: string;
+  email: string;
+  password: string;
+  password_confirmation: string;
+  phoneNumber?: string;
+  birthDate?: string;
+  address?: string;
+  studentIDNumber: string;
+  academicProgram?: string;
+}
+
 interface RawLoginResponse {
   access_token: string;
   token_type: string;
@@ -22,11 +36,21 @@ interface RawLoginResponse {
 }
 
 export class AuthService extends BaseService {
-  async login(email: string, password: string): Promise<LoginResponse> {
+  /** Student portal sign-in — the server rejects librarian accounts here. */
+  login(email: string, password: string): Promise<LoginResponse> {
+    return this.requestLogin("/login", email, password);
+  }
+
+  /** Librarian portal sign-in — the server rejects student accounts here. */
+  librarianLogin(email: string, password: string): Promise<LoginResponse> {
+    return this.requestLogin("/librarian/login", email, password);
+  }
+
+  private async requestLogin(path: string, email: string, password: string): Promise<LoginResponse> {
     const runtimeConfig = useRuntimeConfig();
 
     try {
-      const response = await $fetch<RawLoginResponse>("/login", {
+      const response = await $fetch<RawLoginResponse>(path, {
         baseURL: runtimeConfig.public.apiBaseURL,
         method: "POST",
         headers: {
@@ -38,7 +62,7 @@ export class AuthService extends BaseService {
         },
       });
 
-      // AuthController::login returns { user, access_token, token_type } —
+      // AuthController returns { user, access_token, token_type } —
       // normalized here to the { token, tokenType, user } shape this app uses.
       return {
         token: response.access_token,
@@ -77,6 +101,24 @@ export class AuthService extends BaseService {
           throw new Error(message || "Something went wrong. Please try again.");
       }
     }
+  }
+
+  /**
+   * Public student self-registration. The account is created as `pending` and
+   * cannot sign in until a librarian approves it. Errors are rethrown untouched
+   * so callers can read the 422 field errors (see utils/errors.ts).
+   */
+  async register(payload: RegisterPayload): Promise<{ message: string }> {
+    const runtimeConfig = useRuntimeConfig();
+
+    return await $fetch<{ message: string }>("/register", {
+      baseURL: runtimeConfig.public.apiBaseURL,
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+      },
+      body: payload,
+    });
   }
 
   async logout(): Promise<void> {

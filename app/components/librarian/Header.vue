@@ -1,5 +1,7 @@
 <template>
-    <header class="flex h-[68px] w-full items-center justify-between border-b border-stone-200 bg-white/90 px-6 backdrop-blur-sm">
+    <!-- backdrop-blur makes the header its own stacking layer; without an explicit z-index the
+         dropdowns inside it get painted over by page content (sticky table heads, cards, sidebar). -->
+    <header class="relative z-40 flex h-[68px] w-full items-center justify-between border-b border-stone-200 bg-white/90 px-6 backdrop-blur-sm">
         <!-- Left: hamburger + logo -->
         <div class="flex items-center gap-4">
             <button type="button"
@@ -18,21 +20,55 @@
                 </span>
             </button>
 
-            <a href="/dashboard" class="flex items-center leading-none">
+            <NuxtLink to="/librarian/dashboard" class="flex items-center leading-none">
                 <img src="~/assets/css/logo/EntryPointLogo.png" alt="EntryPoint" class="h-8 w-auto" />
-            </a>
+            </NuxtLink>
         </div>
 
         <!-- Right: notifications + profile -->
         <div class="flex items-center gap-4">
-            <ButtonsButton variant="icon" class="!rounded-full" aria-label="Notifications">
-                <Icon name="i-lucide-bell" class="h-[18px] w-[18px]" />
-            </ButtonsButton>
+            <div class="relative" ref="bellRootRef">
+                <ButtonsButton variant="icon" class="!rounded-full" aria-label="Notifications" :aria-expanded="isBellOpen"
+                    @click.stop="toggleBell">
+                    <Icon name="i-lucide-bell" class="h-[18px] w-[18px]" />
+                </ButtonsButton>
+                <span v-if="unreadCount > 0"
+                    class="pointer-events-none absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold leading-none text-white ring-2 ring-white">
+                    {{ unreadCount > 9 ? '9+' : unreadCount }}
+                </span>
+
+                <div
+                    class="absolute right-0 top-[calc(100%+10px)] z-50 w-[380px] max-w-[calc(100vw-2rem)] origin-top-right overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-lg transition-all duration-150"
+                    :class="isBellOpen ? 'scale-100 opacity-100' : 'pointer-events-none scale-95 opacity-0'">
+                    <div class="flex items-center justify-between border-b border-stone-100 px-4 py-3">
+                        <p class="text-[13.5px] font-bold text-stone-900">Notifications</p>
+                        <button type="button" :disabled="unreadCount === 0"
+                            class="text-[12px] font-semibold text-accent-500 hover:underline disabled:cursor-not-allowed disabled:opacity-40 disabled:no-underline"
+                            @click="markEverythingRead">
+                            Mark all as read
+                        </button>
+                    </div>
+
+                    <div class="max-h-[420px] overflow-y-auto [scrollbar-width:thin]">
+                        <LibrarianNotificationRow v-for="(notification, index) in recent" :key="notification.notificationID"
+                            :notification="notification" :index="index" @open="markOneRead" @go="openNotification" />
+                        <p v-if="recent.length === 0" class="px-4 py-10 text-center text-[13px] text-stone-400">
+                            {{ loaded ? 'No notifications yet.' : 'Loading notifications…' }}
+                        </p>
+                    </div>
+
+                    <NuxtLink to="/librarian/notifications"
+                        class="block border-t border-stone-100 px-4 py-2.5 text-center text-[12.5px] font-semibold text-accent-500 transition-colors hover:bg-stone-50"
+                        @click="isBellOpen = false">
+                        View all notifications
+                    </NuxtLink>
+                </div>
+            </div>
 
             <div class="relative" ref="menuRootRef">
                 <button type="button"
                     class="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full ring-1 ring-stone-200 transition-transform duration-150 active:scale-90"
-                    aria-label="User menu" :aria-expanded="isMenuOpen" @click.stop="isMenuOpen = !isMenuOpen">
+                    aria-label="User menu" :aria-expanded="isMenuOpen" @click.stop="toggleUserMenu">
                     <span class="flex h-full w-full items-center justify-center bg-gradient-to-br from-accent-500 to-accent-700 text-[13px] font-bold text-white">
                         {{ initials }}
                     </span>
@@ -70,6 +106,7 @@
 
 <script setup lang="ts">
 import { authService } from '~/services/auth/AuthService'
+import type { NotificationRecord } from '~/services/notificationService'
 
 defineProps<{
     isSidebarOpen: boolean
@@ -79,9 +116,7 @@ defineEmits<{
     (e: 'toggle-sidebar'): void
 }>()
 
-const firstName = useCookie<string | null>('_firstName')
-const lastName = useCookie<string | null>('_lastName')
-const role = useCookie<string | null>('_role')
+const { firstName, lastName, role, signOut } = useAuthSession()
 
 const initials = computed(() => {
     const a = (firstName.value ?? '').trim().charAt(0)
@@ -99,27 +134,78 @@ const roleLabel = computed(() => {
     return value.charAt(0).toUpperCase() + value.slice(1)
 })
 
+const { items, loaded, unreadCount, refresh, markRead, markAllRead } = useNotifications()
+
+const recent = computed(() => items.value.slice(0, 6))
+
 const isMenuOpen = ref(false)
+const isBellOpen = ref(false)
 const isSigningOut = ref(false)
 const menuRootRef = ref<HTMLElement | null>(null)
+const bellRootRef = ref<HTMLElement | null>(null)
 
-function closeMenu(event: MouseEvent) {
-    if (menuRootRef.value && !menuRootRef.value.contains(event.target as Node)) {
-        isMenuOpen.value = false
-    }
+function toggleUserMenu() {
+    isMenuOpen.value = !isMenuOpen.value
+    isBellOpen.value = false
+}
+
+function toggleBell() {
+    isBellOpen.value = !isBellOpen.value
+    isMenuOpen.value = false
+}
+
+// A failed request already rolls the row back to unread, and the next poll
+// restores the real state, so there's nothing more to do with the error here.
+function markOneRead(notification: NotificationRecord) {
+    markRead(notification).catch(() => {})
+}
+
+function markEverythingRead() {
+    markAllRead().catch(() => {})
+}
+
+async function openNotification(notification: NotificationRecord) {
+    isBellOpen.value = false
+    markOneRead(notification)
+
+    const target = notificationMeta(notification.type).to
+    if (target) await navigateTo(target)
+}
+
+function closeMenus(event: MouseEvent) {
+    const target = event.target as Node
+    if (menuRootRef.value && !menuRootRef.value.contains(target)) isMenuOpen.value = false
+    if (bellRootRef.value && !bellRootRef.value.contains(target)) isBellOpen.value = false
 }
 
 function closeOnEscape(event: KeyboardEvent) {
-    if (event.key === 'Escape') isMenuOpen.value = false
+    if (event.key === 'Escape') {
+        isMenuOpen.value = false
+        isBellOpen.value = false
+    }
+}
+
+// The API has no push channel, so poll — but only while the tab is in view.
+const POLL_MS = 30_000
+let pollTimer: ReturnType<typeof setInterval> | undefined
+
+function refreshIfVisible() {
+    if (!document.hidden) refresh()
 }
 
 onMounted(() => {
-    document.addEventListener('click', closeMenu)
+    document.addEventListener('click', closeMenus)
     document.addEventListener('keydown', closeOnEscape)
+    document.addEventListener('visibilitychange', refreshIfVisible)
+
+    refresh()
+    pollTimer = setInterval(refreshIfVisible, POLL_MS)
 })
 onUnmounted(() => {
-    document.removeEventListener('click', closeMenu)
+    document.removeEventListener('click', closeMenus)
     document.removeEventListener('keydown', closeOnEscape)
+    document.removeEventListener('visibilitychange', refreshIfVisible)
+    clearInterval(pollTimer)
 })
 
 async function handleLogout() {
@@ -127,13 +213,8 @@ async function handleLogout() {
     try {
         await authService.logout()
     } finally {
-        useCookie('_token').value = null
-        useCookie('_uuid').value = null
-        useCookie('_role').value = null
-        useCookie('_firstName').value = null
-        useCookie('_lastName').value = null
-        useState('librarian-sidebar-open', () => false).value = false
-        await navigateTo('/')
+        signOut()
+        await navigateTo('/librarian/login')
     }
 }
 </script>

@@ -30,7 +30,10 @@
 						</td>
 						<td class="px-4 py-3 text-[13px] text-stone-600">{{ authorNames(book) }}</td>
 						<td class="px-4 py-3">
-							<span v-if="book.subject" class="rounded-full bg-stone-100 px-2.5 py-1 text-[11.5px] font-semibold text-stone-600">
+							<span v-if="book.subject"
+								class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11.5px] font-semibold text-stone-700"
+								:style="{ backgroundColor: `${subjectSwatch(book.subject.name)}1f` }">
+								<span class="h-2 w-2 shrink-0 rounded-[3px]" :style="{ backgroundColor: subjectSwatch(book.subject.name) }" />
 								{{ book.subject.name }}
 							</span>
 							<span v-else class="text-stone-300">—</span>
