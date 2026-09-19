@@ -23,6 +23,11 @@
                         @saved="refetch" />
                     <LibrarianAccountSettings v-else :account="settings.account" @saved="refetch" />
                 </template>
+                <div v-else-if="error" role="alert" class="rounded-2xl border border-red-100 bg-red-50 p-5 text-[13.5px] text-red-600">
+                    <p class="font-semibold">Couldn't load your settings.</p>
+                    <p class="mt-1 leading-snug">{{ apiErrorMessage(error, 'The server did not respond.') }}</p>
+                    <ButtonsButton variant="ghost" class="mt-3" @click="refetch()">Try again</ButtonsButton>
+                </div>
                 <LibrarianLoadingOverlay :loading="pending && !settings" />
             </div>
         </div>
@@ -50,6 +55,6 @@ const sections = [
 ]
 const active = ref('loans')
 
-const { data: settings, pending, execute: refetch } =
+const { data: settings, pending, error, execute: refetch } =
     useAsyncData('librarian-settings', () => settingsService.fetchSettings(), { lazy: true })
 </script>

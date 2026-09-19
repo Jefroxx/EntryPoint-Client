@@ -160,9 +160,9 @@ const loanStatus = ref<'active' | 'overdue' | 'returned'>('active')
 const loanPage = ref(1)
 
 const { data: loanStats, execute: refetchLoanStats } =
-    useAsyncData('circ-loan-stats', () => circulationService.fetchLoanStats(), { lazy: true })
+    useLiveAsyncData('circ-loan-stats', () => circulationService.fetchLoanStats(), { lazy: true })
 
-const { data: loans, pending: loansPending, execute: refetchLoans } = useAsyncData(
+const { data: loans, pending: loansPending, execute: refetchLoans } = useLiveAsyncData(
     'circ-loans',
     () => circulationService.fetchLoans({
         search: loanSearch.value || undefined,
@@ -189,7 +189,7 @@ function goToLoanPage(next: number) {
 
 // ---- Reservations (fetched once, filtered + paged in the browser) ----
 const { data: reservationsResponse, pending: reservationsPending, execute: refetchReservations } =
-    useAsyncData('circ-reservations', () => circulationService.fetchReservations(), { lazy: true })
+    useLiveAsyncData('circ-reservations', () => circulationService.fetchReservations(), { lazy: true })
 
 const reservations = computed(() => reservationsResponse.value?.reservations ?? [])
 const reservationSearch = ref('')
@@ -242,7 +242,7 @@ watch([reservationSearch, reservationStatus], () => {
 
 // ---- Self-return reports (always the pending queue) ----
 const { data: selfReturnResponse, pending: selfReturnsPending, execute: refetchSelfReturns } =
-    useAsyncData('circ-self-returns', () => circulationService.fetchSelfReturnReports(), { lazy: true })
+    useLiveAsyncData('circ-self-returns', () => circulationService.fetchSelfReturnReports(), { lazy: true })
 
 const selfReturns = computed(() => selfReturnResponse.value?.reports ?? [])
 
@@ -252,9 +252,9 @@ const penaltyStatus = ref<'' | 'Unpaid' | 'Paid'>('')
 const penaltyPage = ref(1)
 
 const { data: penaltyStats, execute: refetchPenaltyStats } =
-    useAsyncData('circ-penalty-stats', () => circulationService.fetchPenaltyStats(), { lazy: true })
+    useLiveAsyncData('circ-penalty-stats', () => circulationService.fetchPenaltyStats(), { lazy: true })
 
-const { data: penalties, pending: penaltiesPending, execute: refetchPenalties } = useAsyncData(
+const { data: penalties, pending: penaltiesPending, execute: refetchPenalties } = useLiveAsyncData(
     'circ-penalties',
     () => circulationService.fetchPenalties({
         search: penaltySearch.value || undefined,

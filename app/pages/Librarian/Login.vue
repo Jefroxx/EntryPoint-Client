@@ -1,5 +1,5 @@
 <template>
-    <main class="h-screen">
+    <main class="min-h-screen">
         <Login portal="librarian" />
     </main>
 </template>
@@ -8,6 +8,9 @@
 import Login from '~/components/Login.vue'
 
 definePageMeta({
-    layout: false
+    layout: false,
+    middleware: 'guest',
 })
+
+useHead({ title: 'Librarian sign in · EntryPoint' })
 </script>

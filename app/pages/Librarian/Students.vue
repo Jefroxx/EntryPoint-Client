@@ -88,9 +88,9 @@ const search = ref('')
 const programFilter = ref('')
 const page = ref(1)
 
-const { data: stats, execute: refetchStats } = useAsyncData('student-stats', () => librarianService.fetchStudentStats(), { lazy: true })
+const { data: stats, execute: refetchStats } = useLiveAsyncData('student-stats', () => librarianService.fetchStudentStats(), { lazy: true })
 
-const { data: students, pending: studentsPending, execute: refetchStudents } = useAsyncData(
+const { data: students, pending: studentsPending, execute: refetchStudents } = useLiveAsyncData(
     'students-list',
     () => librarianService.fetchStudents({
         search: search.value || undefined,

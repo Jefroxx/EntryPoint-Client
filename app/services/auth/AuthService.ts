@@ -1,4 +1,5 @@
 import { BaseService } from "../BaseService";
+import { SESSION_COOKIES, areaFromPath, type Area } from "~/utils/session";
 
 export interface LoginUser {
   userID: number;
@@ -121,15 +122,17 @@ export class AuthService extends BaseService {
     });
   }
 
-  async logout(): Promise<void> {
+  /** Revokes the token of one session (default: the area of the current page). */
+  async logout(area: Area = areaFromPath(useRoute().path)): Promise<void> {
     const runtimeConfig = useRuntimeConfig();
+    const token = useCookie<string | null>(SESSION_COOKIES[area].token).value;
 
     await $fetch("/logout", {
       baseURL: runtimeConfig.public.apiBaseURL,
       method: "POST",
       headers: {
         Accept: "application/json",
-        ...this.authHeaders(),
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
     });
     // Cookie cleanup is left to the caller (matches login() being pure I/O

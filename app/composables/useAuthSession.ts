@@ -1,3 +1,5 @@
+import { SESSION_COOKIES, type Area } from '~/utils/session'
+
 const SESSION_SECONDS = 60 * 60 * 24 * 7
 
 // Every writer of the auth cookies must use the same options. A cookie written
@@ -5,12 +7,18 @@ const SESSION_SECONDS = 60 * 60 * 24 * 7
 // that way (e.g. when the profile name changes) would silently downgrade it.
 const AUTH_COOKIE_OPTIONS = { maxAge: SESSION_SECONDS, sameSite: 'lax', path: '/' } as const
 
-export function useAuthSession() {
-  const token = useCookie<string | null>('_token', AUTH_COOKIE_OPTIONS)
-  const uuid = useCookie<string | null>('_uuid', AUTH_COOKIE_OPTIONS)
-  const role = useCookie<string | null>('_role', AUTH_COOKIE_OPTIONS)
-  const firstName = useCookie<string | null>('_firstName', AUTH_COOKIE_OPTIONS)
-  const lastName = useCookie<string | null>('_lastName', AUTH_COOKIE_OPTIONS)
+/**
+ * One session per area. `useAuthSession()` is the librarian session (as it always
+ * was); `useAuthSession('student')` is the student one. They don't touch each other.
+ */
+export function useAuthSession(area: Area = 'librarian') {
+  const names = SESSION_COOKIES[area]
+
+  const token = useCookie<string | null>(names.token, AUTH_COOKIE_OPTIONS)
+  const uuid = useCookie<string | null>(names.uuid, AUTH_COOKIE_OPTIONS)
+  const role = useCookie<string | null>(names.role, AUTH_COOKIE_OPTIONS)
+  const firstName = useCookie<string | null>(names.firstName, AUTH_COOKIE_OPTIONS)
+  const lastName = useCookie<string | null>(names.lastName, AUTH_COOKIE_OPTIONS)
 
   function signIn(user: { token: string; uuid: string; role: string; firstName: string; lastName: string }) {
     token.value = user.token
@@ -27,10 +35,17 @@ export function useAuthSession() {
     firstName.value = null
     lastName.value = null
 
-    // The next login should start with the sidebar closed.
-    useState('librarian-sidebar-open', () => false).value = false
+    if (area === 'librarian') {
+      // The next login should start with the sidebar closed.
+      useState('librarian-sidebar-open', () => false).value = false
+    } else {
+      // Student app state (profile counters, wishlist/cart) belongs to the person who just left.
+      useState('student-profile', () => null).value = null
+      useState('student-wishlist', () => []).value = []
+      useState('student-wish-optimistic', () => ({})).value = {}
+    }
 
-    // ...and must not briefly show the previous librarian's notifications.
+    // ...and neither area may briefly show the previous person's notifications.
     useState('librarian-notifications', () => []).value = []
     useState('librarian-notifications-loaded', () => false).value = false
   }

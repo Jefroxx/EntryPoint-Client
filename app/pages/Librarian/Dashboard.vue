@@ -63,15 +63,15 @@ definePageMeta({
 
 
 const { data: summary, pending: summaryPending } =
-    useAsyncData('dashboard-summary', () => librarianService.fetchDashboardSummary(), { lazy: true })
+    useLiveAsyncData('dashboard-summary', () => librarianService.fetchDashboardSummary(), { lazy: true })
 const { data: overview, pending: overviewPending } =
-    useAsyncData('borrowing-overview', () => librarianService.fetchBorrowingOverview(), { lazy: true })
+    useLiveAsyncData('borrowing-overview', () => librarianService.fetchBorrowingOverview(), { lazy: true })
 const { data: bookStatus, pending: bookStatusPending } =
-    useAsyncData('book-status-overview', () => librarianService.fetchBookStatusOverview(), { lazy: true })
+    useLiveAsyncData('book-status-overview', () => librarianService.fetchBookStatusOverview(), { lazy: true })
 const { data: recentLoans, pending: recentLoansPending } =
-    useAsyncData('recent-loans', () => librarianService.fetchRecentLoans(), { lazy: true })
+    useLiveAsyncData('recent-loans', () => librarianService.fetchRecentLoans(), { lazy: true })
 const { data: overdueLoans, pending: overdueLoansPending } =
-    useAsyncData('overdue-loans', () => librarianService.fetchOverdueLoans(), { lazy: true })
+    useLiveAsyncData('overdue-loans', () => librarianService.fetchOverdueLoans(), { lazy: true })
 
 const stats = computed(() => [
     { title: 'Total Books', value: summary.value?.totalBooks ?? '—', icon: 'i-lucide-book', tone: 'accent' as const },

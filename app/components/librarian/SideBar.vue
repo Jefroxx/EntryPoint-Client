@@ -84,7 +84,7 @@ onUnmounted(removeAfterEach)
 async function handleLogout() {
     isSigningOut.value = true
     try {
-        await authService.logout()
+        await authService.logout('librarian')
     } finally {
         signOut()
         await navigateTo('/librarian/login')

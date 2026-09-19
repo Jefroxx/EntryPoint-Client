@@ -1,6 +1,6 @@
 <template>
 	<Teleport to="body">
-		<div class="fixed inset-0 z-index:100; flex items-center justify-center p-6"
+		<div class="fixed inset-0 z-[100] flex items-center justify-center p-6"
 			:class="open ? '' : 'pointer-events-none'">
 			<Transition enter-active-class="transition-opacity duration-200 ease-out" enter-from-class="opacity-0"
 				enter-to-class="opacity-100" leave-active-class="transition-opacity duration-150 ease-out"
@@ -15,9 +15,9 @@
 				leave-to-class="scale-95 translate-y-1 opacity-0">
 				<div v-if="open" role="dialog" aria-modal="true" aria-labelledby="addBookTitle"
 					@keydown.esc="handleClose"
-					class="relative z-10 flex max-h-[min(680px,calc(100vh-48px))] w-full max-width: 560px flex-col rounded-[22px] bg-white shadow-2xl">
+					class="relative z-10 flex max-h-[min(680px,calc(100vh-48px))] w-full max-w-[560px] flex-col rounded-[22px] bg-white shadow-2xl">
 					<div
-						class="flex flex-shrink:0 items-start justify-between gap-3 border-b border-stone-100 px-6 py-5">
+						class="flex flex-shrink-0 items-start justify-between gap-3 border-b border-stone-100 px-6 py-5">
 						<div>
 							<h2 id="addBookTitle" class="dashboard-heading text-2xl font-bold text-amber-900">Add New
 								Book</h2>
@@ -158,7 +158,7 @@
 									</label>
 									<div class="flex items-start gap-2.5">
 										<div
-											class="flex  height: 52px; width: 38px; flex-shrink: 0; items-center justify-center overflow-hidden rounded-md bg-gradient-to-br from-accent-100 to-stone-200 text-stone-400">
+											class="flex h-[52px] w-[38px] shrink-0 items-center justify-center overflow-hidden rounded-md bg-gradient-to-br from-accent-100 to-stone-200 text-stone-400">
 											<img v-if="isValidCoverUrl" :src="form.coverImageURL!" alt=""
 												class="h-full w-full object-cover" @error="coverLoadFailed = true" />
 											<Icon v-else name="i-lucide-book" class="h-4 w-4" />
@@ -173,7 +173,7 @@
 						</div>
 					</div>
 
-					<div class="flex flex-shrink-0; justify-end gap-2 border-t border-stone-100 px-6 py-4">
+					<div class="flex flex-shrink-0 justify-end gap-2 border-t border-stone-100 px-6 py-4">
 						<ButtonsButton variant="ghost" @click="handleClose">Cancel</ButtonsButton>
 						<ButtonsButton variant="primary" :disabled="submitting" @click="handleSubmit">
 							<Icon v-if="submitting" name="i-lucide-loader-2" class="h-3.5 w-3.5 animate-spin" />

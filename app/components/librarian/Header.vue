@@ -186,7 +186,7 @@ function closeOnEscape(event: KeyboardEvent) {
 }
 
 // The API has no push channel, so poll — but only while the tab is in view.
-const POLL_MS = 30_000
+const POLL_MS = 15_000
 let pollTimer: ReturnType<typeof setInterval> | undefined
 
 function refreshIfVisible() {
@@ -211,7 +211,7 @@ onUnmounted(() => {
 async function handleLogout() {
     isSigningOut.value = true
     try {
-        await authService.logout()
+        await authService.logout('librarian')
     } finally {
         signOut()
         await navigateTo('/librarian/login')

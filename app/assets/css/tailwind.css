@@ -73,3 +73,103 @@
 		transform: none;
 	}
 }
+
+/* ------------------------------------------------------------------ */
+/* Student app                                                          */
+/* ------------------------------------------------------------------ */
+
+@theme {
+	/* iOS-style drawer/sheet curve (Ionic), used for anything that slides in from an edge */
+	--ease-drawer: cubic-bezier(.32, .72, 0, 1);
+}
+
+.student-app {
+	-webkit-tap-highlight-color: transparent;
+	-webkit-text-size-adjust: 100%;
+	background: #fffbeb;
+}
+
+.student-app button,
+.student-app a,
+.student-app [role="button"] {
+	touch-action: manipulation;
+}
+
+/* iOS zooms the page when an input under 16px gets focus, so touch devices always get 16px. */
+@media (pointer: coarse) {
+	.student-app input,
+	.student-app textarea,
+	.student-app select {
+		font-size: 16px !important;
+	}
+}
+
+.no-scrollbar {
+	scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+	display: none;
+}
+
+/* Sections stagger in on first load. Delay is set inline (35 ms apart); never blocks interaction. */
+.st-in {
+	opacity: 0;
+	animation: stIn .38s var(--ease-out) forwards;
+}
+
+@keyframes stIn {
+	from {
+		opacity: 0;
+		transform: translateY(8px);
+	}
+
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+
+/* A short cross-fade for content that swaps in place (segmented panels, filtered lists). */
+.st-swap {
+	animation: stSwap .2s var(--ease-out);
+}
+
+@keyframes stSwap {
+	from {
+		opacity: 0;
+		transform: translateY(6px);
+	}
+
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+
+.heart-pop {
+	animation: heartPop .34s var(--ease-out);
+}
+
+@keyframes heartPop {
+	0% {
+		transform: scale(.7);
+	}
+
+	55% {
+		transform: scale(1.25);
+	}
+
+	100% {
+		transform: scale(1);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.st-in,
+	.st-swap,
+	.heart-pop {
+		animation: none;
+		opacity: 1;
+	}
+}

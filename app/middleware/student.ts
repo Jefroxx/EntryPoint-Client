@@ -1,8 +1,9 @@
-export default defineNuxtRouteMiddleware(() => {
-  const token = useCookie('_token')
-  const role = useCookie('_role')
+// Student pages only look at the student session. Being signed in as a librarian in
+// another tab is a separate matter: it neither grants access here nor gets in the way.
+export default defineNuxtRouteMiddleware((to) => {
+  const token = useCookie(SESSION_COOKIES.student.token)
 
-  if (!token.value || role.value !== 'student') {
-    return navigateTo('/')
+  if (!token.value) {
+    return navigateTo({ path: '/login', query: { redirect: to.fullPath } })
   }
 })

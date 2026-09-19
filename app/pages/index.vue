@@ -1,16 +1,11 @@
 <template>
-    <main class="h-screen">
-        <Login />
-    </main>
+    <div />
 </template>
 
-
-
 <script setup lang="ts">
-import Login from '~/components/Login.vue';
+// Never rendered: the middleware redirects to /login or the user's home.
 definePageMeta({
-    layout: false
+    layout: false,
+    middleware: 'home',
 })
-
-
 </script>

@@ -103,7 +103,7 @@ onUnmounted(() => clearInterval(ticker))
 
 // ---- Resources ----
 const { data: resourcesResponse, pending: resourcesPending, execute: refetchResources } =
-    useAsyncData('resources-list', () => resourceService.fetchResources(), { lazy: true })
+    useLiveAsyncData('resources-list', () => resourceService.fetchResources(), { lazy: true })
 
 const resources = computed(() => resourcesResponse.value?.resources ?? [])
 const resourceSearch = ref('')
@@ -122,7 +122,7 @@ const filteredResources = computed(() => {
 
 // ---- Usage log ----
 const { data: logsResponse, pending: logsPending, execute: refetchLogs } =
-    useAsyncData('resource-usage-logs', () => resourceService.fetchUsageLogs(), { lazy: true })
+    useLiveAsyncData('resource-usage-logs', () => resourceService.fetchUsageLogs(), { lazy: true })
 
 const logs = computed(() => logsResponse.value?.usageLogs ?? [])
 const logSearch = ref('')

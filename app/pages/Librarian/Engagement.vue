@@ -122,11 +122,11 @@ const busy = ref(false)
 
 // ---- Data ----
 const { data: achievementsResponse, pending: achievementsPending, execute: refetchAchievements } =
-    useAsyncData('engagement-achievements', () => engagementService.fetchAchievements(), { lazy: true })
+    useLiveAsyncData('engagement-achievements', () => engagementService.fetchAchievements(), { lazy: true })
 const { data: itemsResponse, pending: itemsPending, execute: refetchItems } =
-    useAsyncData('engagement-items', () => engagementService.fetchMarketItems(), { lazy: true })
+    useLiveAsyncData('engagement-items', () => engagementService.fetchMarketItems(), { lazy: true })
 const { data: redemptionsResponse, pending: redemptionsPending, execute: refetchRedemptions } =
-    useAsyncData('engagement-redemptions', () => engagementService.fetchRedemptions(), { lazy: true })
+    useLiveAsyncData('engagement-redemptions', () => engagementService.fetchRedemptions(), { lazy: true })
 
 const achievements = computed(() => achievementsResponse.value?.achievements ?? [])
 const items = computed(() => itemsResponse.value?.items ?? [])

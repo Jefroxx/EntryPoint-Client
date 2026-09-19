@@ -25,7 +25,7 @@
 					</li>
 				</ol>
 
-				<ButtonsButton class="!h-[46px] w-full !text-[14.5px]" @click="navigateTo('/')">Back to sign in</ButtonsButton>
+				<ButtonsButton class="!h-[46px] w-full !text-[14.5px]" @click="navigateTo('/login')">Back to sign in</ButtonsButton>
 			</div>
 
 			<!-- Form -->
@@ -121,7 +121,7 @@
 
 				<p class="mt-4 text-center text-[13px] text-stone-500">
 					Already registered?
-					<NuxtLink to="/" class="font-semibold text-accent-500 hover:underline">Sign in</NuxtLink>
+					<NuxtLink to="/login" class="font-semibold text-accent-500 hover:underline">Sign in</NuxtLink>
 				</p>
 			</form>
 		</Transition>
@@ -131,7 +131,7 @@
 <script setup lang="ts">
 import { authService, type RegisterPayload } from '~/services/auth/AuthService'
 
-definePageMeta({ layout: false })
+definePageMeta({ layout: false, middleware: 'guest' })
 useHead({ title: 'Create account · EntryPoint' })
 
 // Free-text column on the API side; this is just a convenient list.

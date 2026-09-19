@@ -187,10 +187,10 @@ const activeTab = ref(['catalog', 'requests', 'categories'].includes(String(rout
 const search = ref('')
 const page = ref(1)
 
-const { data: stats, execute: refetchStats } = useAsyncData('library-stats', () => librarianService.fetchLibraryStats(), { lazy: true })
+const { data: stats, execute: refetchStats } = useLiveAsyncData('library-stats', () => librarianService.fetchLibraryStats(), { lazy: true })
 
 const { data: books, pending: booksPending, execute: refetchBooks } =
-    useAsyncData('library-books', () => librarianService.fetchBooks({ search: search.value || undefined, page: page.value, perPage: 10 }), { lazy: true })
+    useLiveAsyncData('library-books', () => librarianService.fetchBooks({ search: search.value || undefined, page: page.value, perPage: 10 }), { lazy: true })
 
 let searchTimeout: ReturnType<typeof setTimeout>
 watch(search, () => {
@@ -211,7 +211,7 @@ function goToPage(next: number) {
 const { perform } = useAction()
 
 const { data: subjectsResponse, pending: subjectsPending, execute: refetchSubjects } =
-    useAsyncData('library-subjects', () => subjectService.fetchSubjects(), { lazy: true })
+    useLiveAsyncData('library-subjects', () => subjectService.fetchSubjects(), { lazy: true })
 
 const subjects = computed(() => subjectsResponse.value?.subjects ?? [])
 const categorySearch = ref('')
@@ -275,7 +275,7 @@ async function handleBookCreated() {
 
 // ---- Book Requests (backed by the BookSuggestion feature) ----
 const { data: suggestionsResponse, pending: requestsPending, execute: refetchRequests } =
-    useAsyncData('book-suggestions', () => librarianService.fetchBookSuggestions(), { lazy: true })
+    useLiveAsyncData('book-suggestions', () => librarianService.fetchBookSuggestions(), { lazy: true })
 
 const suggestions = computed(() => suggestionsResponse.value?.suggestions ?? [])
 

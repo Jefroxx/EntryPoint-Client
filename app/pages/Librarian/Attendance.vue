@@ -64,9 +64,9 @@ definePageMeta({
 const search = ref('')
 const page = ref(1)
 
-const { data: stats } = useAsyncData('attendance-stats', () => librarianService.fetchAttendanceStats(), { lazy: true })
+const { data: stats } = useLiveAsyncData('attendance-stats', () => librarianService.fetchAttendanceStats(), { lazy: true })
 
-const { data: logs, pending: logsPending, execute: refetchLogs } = useAsyncData(
+const { data: logs, pending: logsPending, execute: refetchLogs } = useLiveAsyncData(
     'attendance-logs',
     () => librarianService.fetchAttendanceLogs({
         search: search.value || undefined,

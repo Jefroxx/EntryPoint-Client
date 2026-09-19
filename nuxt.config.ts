@@ -2,8 +2,16 @@ export default defineNuxtConfig({
 	compatibilityDate: '2025-07-15',
 	devtools: { enabled: true },
 	app: {
+		// viewport-fit=cover lets the student app paint under the notch / home indicator and
+		// pad its own content with env(safe-area-inset-*).
+		head: { viewport: 'width=device-width, initial-scale=1, viewport-fit=cover' },
 		// Short and quiet: navigation is high-frequency, so the fade shouldn't make it feel slower.
 		pageTransition: { name: 'page', mode: 'out-in' },
+	},
+	// The student app is a signed-in, client-driven app (live counters, drawers, media queries):
+	// it renders in the browser only. Sign-in and register pages stay server-rendered.
+	routeRules: {
+		'/student/**': { ssr: false },
 	},
 	css: ['~/assets/css/tailwind.css'],
 	modules: ['@nuxt/ui', '@nuxt/icon', '@nuxt/fonts'],
