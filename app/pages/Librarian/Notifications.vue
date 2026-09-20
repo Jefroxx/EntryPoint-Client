@@ -51,6 +51,8 @@ definePageMeta({
     layout: 'librarian',
 })
 
+useHead({ title: 'Notifications' })
+
 const alert = useAlert()
 
 const filter = ref('all')

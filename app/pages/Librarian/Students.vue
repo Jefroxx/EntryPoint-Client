@@ -80,6 +80,8 @@ definePageMeta({
     layout: 'librarian',
 })
 
+useHead({ title: 'Students' })
+
 const alert = useAlert()
 
 const route = useRoute()

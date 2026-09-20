@@ -52,7 +52,7 @@
 import { NuxtLink } from '#components'
 
 definePageMeta({ layout: 'student', middleware: 'student', title: 'Me', nav: 'home', tab: 'me' })
-useHead({ title: 'Me · EntryPoint' })
+useHead({ title: 'Me' })
 
 const drawer = useDrawer()
 const { firstName, lastName } = useAuthSession('student')

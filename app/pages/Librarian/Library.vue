@@ -181,6 +181,8 @@ definePageMeta({
     layout: 'librarian',
 })
 
+useHead({ title: 'Library' })
+
 
 const route = useRoute()
 const activeTab = ref(['catalog', 'requests', 'categories'].includes(String(route.query.tab)) ? String(route.query.tab) : 'catalog')

@@ -57,7 +57,7 @@ import { TONE_SOFT } from '~/utils/studentNotifications'
 import { useAlert } from '~/api/alert/useAlert'
 
 definePageMeta({ layout: 'student', middleware: 'student', title: 'Suggest a book', nav: 'home', tab: 'me' })
-useHead({ title: 'Suggest a book · EntryPoint' })
+useHead({ title: 'Suggest a book' })
 
 const alert = useAlert()
 const { data, pending, refresh } = useStudentData('student-suggestions', () => studentService.suggestions())

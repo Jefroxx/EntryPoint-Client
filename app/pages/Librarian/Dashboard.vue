@@ -61,6 +61,8 @@ definePageMeta({
     layout: 'librarian',
 })
 
+useHead({ title: 'Dashboard' })
+
 
 const { data: summary, pending: summaryPending } =
     useLiveAsyncData('dashboard-summary', () => librarianService.fetchDashboardSummary(), { lazy: true })

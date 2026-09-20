@@ -141,6 +141,8 @@ definePageMeta({
     layout: 'librarian',
 })
 
+useHead({ title: 'Circulation' })
+
 
 const route = useRoute()
 const activeTab = ref(['loans', 'reservations', 'selfreturn', 'penalties'].includes(String(route.query.tab)) ? String(route.query.tab) : 'loans')

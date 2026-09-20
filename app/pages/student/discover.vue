@@ -101,7 +101,7 @@
 import { studentService } from '~/services/studentService'
 
 definePageMeta({ layout: 'student', middleware: 'student', title: 'Discover', nav: 'discover', tab: 'discover' })
-useHead({ title: 'Discover · EntryPoint' })
+useHead({ title: 'Discover' })
 
 const route = useRoute()
 const router = useRouter()

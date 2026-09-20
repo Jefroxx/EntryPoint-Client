@@ -54,7 +54,7 @@ import { studentService } from '~/services/studentService'
 import { TONE_SOFT } from '~/utils/studentNotifications'
 
 definePageMeta({ layout: 'student', middleware: 'student', title: 'Computers & rooms', nav: 'spaces', tab: 'home' })
-useHead({ title: 'Computers & rooms · EntryPoint' })
+useHead({ title: 'Computers & rooms' })
 
 const { data, pending, refresh } = useStudentData('student-spaces', () => studentService.resources())
 

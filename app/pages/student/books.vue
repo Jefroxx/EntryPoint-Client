@@ -188,7 +188,7 @@ import { studentService, briefOf, type LoanRow, type ReservationRow } from '~/se
 import { TONE_SOFT, type StudentTone } from '~/utils/studentNotifications'
 
 definePageMeta({ layout: 'student', middleware: 'student', title: 'My books', nav: 'books', tab: 'books' })
-useHead({ title: 'My books · EntryPoint' })
+useHead({ title: 'My books' })
 
 const route = useRoute()
 const router = useRouter()

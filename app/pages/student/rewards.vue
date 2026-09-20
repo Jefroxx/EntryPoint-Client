@@ -139,7 +139,7 @@ import { TONE_SOFT, type StudentTone } from '~/utils/studentNotifications'
 import { useAlert } from '~/api/alert/useAlert'
 
 definePageMeta({ layout: 'student', middleware: 'student', title: 'Rewards', nav: 'rewards', tab: 'rewards' })
-useHead({ title: 'Rewards · EntryPoint' })
+useHead({ title: 'Rewards' })
 
 const alert = useAlert()
 const { perform } = useAction()

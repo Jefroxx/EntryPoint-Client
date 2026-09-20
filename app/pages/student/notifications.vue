@@ -19,7 +19,7 @@
 import { useAlert } from '~/api/alert/useAlert'
 
 definePageMeta({ layout: 'student', middleware: 'student', title: 'Notifications', nav: 'home', tab: 'me' })
-useHead({ title: 'Notifications · EntryPoint' })
+useHead({ title: 'Notifications' })
 
 const alert = useAlert()
 const { items, loaded, unreadCount, markAllRead, refresh } = useNotifications()

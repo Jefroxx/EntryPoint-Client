@@ -136,7 +136,7 @@ import { studentService, type LoanRow } from '~/services/studentService'
 import { TONE_SOFT, type StudentTone } from '~/utils/studentNotifications'
 
 definePageMeta({ layout: 'student', middleware: 'student', title: 'Home', nav: 'home', tab: 'home' })
-useHead({ title: 'Home · EntryPoint' })
+useHead({ title: 'Home' })
 
 const drawer = useDrawer()
 const { firstName } = useAuthSession('student')

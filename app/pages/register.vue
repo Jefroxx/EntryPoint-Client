@@ -132,7 +132,7 @@
 import { authService, type RegisterPayload } from '~/services/auth/AuthService'
 
 definePageMeta({ layout: false, middleware: 'guest' })
-useHead({ title: 'Create account · EntryPoint' })
+useHead({ title: 'Create account' })
 
 // Free-text column on the API side; this is just a convenient list.
 const programs = ['BSIT', 'BSCS', 'BSBA', 'BSHM', 'Other']

@@ -80,6 +80,8 @@ definePageMeta({
     layout: 'librarian',
 })
 
+useHead({ title: 'Reports' })
+
 
 const months = ref<3 | 6 | 12>(6)
 

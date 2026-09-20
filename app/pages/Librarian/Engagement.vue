@@ -114,6 +114,8 @@ definePageMeta({
     layout: 'librarian',
 })
 
+useHead({ title: 'Engagement' })
+
 const { perform } = useAction()
 const route = useRoute()
 

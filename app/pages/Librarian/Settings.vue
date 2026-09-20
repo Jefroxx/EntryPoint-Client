@@ -47,6 +47,8 @@ definePageMeta({
     layout: 'librarian',
 })
 
+useHead({ title: 'Settings' })
+
 
 const sections = [
     { label: 'Loan periods', value: 'loans' },

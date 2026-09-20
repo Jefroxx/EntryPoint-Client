@@ -60,6 +60,8 @@ definePageMeta({
     layout: 'librarian',
 })
 
+useHead({ title: 'Attendance' })
+
 
 const search = ref('')
 const page = ref(1)

@@ -79,7 +79,7 @@
 import { studentService } from '~/services/studentService'
 
 definePageMeta({ layout: 'student', middleware: 'student', title: 'Library ID', nav: 'home', tab: 'me' })
-useHead({ title: 'Library ID · EntryPoint' })
+useHead({ title: 'Library ID' })
 
 const { summary, streak } = useStudent()
 const profile = computed(() => summary.value?.profile ?? null)

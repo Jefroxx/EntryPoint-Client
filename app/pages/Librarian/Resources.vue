@@ -91,6 +91,8 @@ definePageMeta({
     layout: 'librarian',
 })
 
+useHead({ title: 'Resources' })
+
 const { perform } = useAction()
 
 const activeTab = ref('resources')
