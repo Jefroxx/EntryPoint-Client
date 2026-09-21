@@ -2,11 +2,11 @@
 	<LibrarianTableShell :columns="['Queue', 'Student', 'Book', 'Reserved At', 'Status', '']" :loading="loading"
 		:empty="reservations.length === 0" empty-text="No reservations match your filters.">
 		<tr v-for="(reservation, index) in reservations" :key="reservation.reservationID"
-			class="row-fade-in border-b border-stone-100 transition-colors duration-150 last:border-0 hover:bg-stone-50"
+			class="row-fade-in border-b border-stone-100 transition-colors duration-150 last:border-0 hover:bg-accent-50"
 			:style="{ animationDelay: `${index * 40}ms` }">
 			<td class="px-4 py-3">
 				<span v-if="queuePositions[reservation.reservationID]"
-					class="inline-flex h-5 min-w-[22px] items-center justify-center rounded-full bg-accent-100 px-1.5 text-[11px] font-bold text-accent-700">
+					class="inline-flex h-5 min-w-[22px] items-center justify-center rounded-full bg-accent-100 px-1.5 text-[12px] font-bold text-accent-700">
 					#{{ queuePositions[reservation.reservationID] }}
 				</span>
 				<span v-else class="text-stone-300">—</span>
@@ -17,7 +17,7 @@
 			<td class="px-4 py-3">
 				<LibrarianBookCell :title="reservation.book?.title ?? 'Removed book'" />
 			</td>
-			<td class="font-data px-4 py-3 text-[12.5px] text-stone-500">{{ formatDateTime(reservation.reservedAt) }}</td>
+			<td class="font-data px-4 py-3 text-[13.5px] text-stone-500">{{ formatDateTime(reservation.reservedAt) }}</td>
 			<td class="px-4 py-3">
 				<LibrarianStatusPill :label="reservation.status" :tone="tones[reservation.status]" />
 			</td>

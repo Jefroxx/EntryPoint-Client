@@ -12,12 +12,12 @@
 				leave-active-class="transition-[transform,opacity] duration-150 ease-out"
 				leave-from-class="scale-100 translate-y-0 opacity-100" leave-to-class="scale-95 translate-y-1 opacity-0">
 				<div v-if="open" role="dialog" aria-modal="true" :aria-labelledby="titleId"
-					class="relative z-10 flex max-h-[min(680px,calc(100vh-48px))] w-full flex-col rounded-[22px] bg-white shadow-2xl"
+					class="relative z-10 flex max-h-[min(680px,calc(100vh-48px))] w-full flex-col rounded-[22px] bg-white shadow-overlay"
 					:class="widthClass">
 					<div class="flex flex-shrink-0 items-start justify-between gap-3 border-b border-stone-100 px-6 py-5">
 						<div>
 							<h2 :id="titleId" class="dashboard-heading text-2xl font-bold text-amber-900">{{ title }}</h2>
-							<p v-if="subtitle" class="dashboard-heading text-[12.5px] text-amber-900">{{ subtitle }}</p>
+							<p v-if="subtitle" class="dashboard-heading text-[13.5px] text-amber-900">{{ subtitle }}</p>
 						</div>
 						<ButtonsButton variant="icon" size="md" aria-label="Close" @click="requestClose">
 							<Icon name="i-lucide-x" class="h-4 w-4" />

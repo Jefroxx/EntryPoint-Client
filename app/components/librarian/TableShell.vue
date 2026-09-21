@@ -5,7 +5,7 @@
 				<thead>
 					<tr>
 						<th v-for="(column, index) in columns" :key="`${index}-${column}`"
-							class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-stone-400">
+							class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-stone-400">
 							{{ column }}
 						</th>
 					</tr>
@@ -13,7 +13,7 @@
 				<tbody>
 					<slot />
 					<tr v-if="empty && !loading">
-						<td :colspan="columns.length" class="py-10 text-center text-sm text-stone-400">{{ emptyText }}</td>
+						<td :colspan="columns.length" class="py-10 text-center text-[15px] text-stone-400">{{ emptyText }}</td>
 					</tr>
 				</tbody>
 			</table>

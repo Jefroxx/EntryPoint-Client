@@ -1,19 +1,19 @@
 <template>
 	<div class="space-y-3">
 		<div v-if="!anyConfigured"
-			class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-[13px] leading-relaxed text-amber-800">
+			class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-[14px] leading-relaxed text-amber-800">
 			<strong>No fine rules are set up yet.</strong> Late returns are currently not being charged, because a fine
 			only accrues when a collection has a rule.
 		</div>
 
 		<section class="rounded-2xl border border-stone-200 bg-white p-5">
 			<h2 class="text-[15px] font-bold text-stone-900">Fine rules</h2>
-			<p class="mb-3 text-[12.5px] text-stone-400">Charged per unit of lateness, after the grace period.</p>
+			<p class="mb-3 text-[13.5px] text-stone-400">Charged per unit of lateness, after the grace period.</p>
 
 			<div class="overflow-x-auto">
 				<table class="w-full min-w-[560px] border-collapse text-left">
 					<thead>
-						<tr class="text-[10.5px] font-semibold uppercase tracking-wide text-stone-400">
+						<tr class="text-[11.5px] font-semibold uppercase tracking-wide text-stone-400">
 							<th class="pb-2 pr-3">Collection</th>
 							<th class="pb-2 pr-3">Rate (₱)</th>
 							<th class="pb-2 pr-3">Per</th>
@@ -23,7 +23,7 @@
 					</thead>
 					<tbody>
 						<tr v-for="collection in COLLECTIONS" :key="collection.area" class="border-t border-stone-100">
-							<td class="py-3 pr-3 text-[13.5px] font-semibold text-stone-800">{{ collection.label }}</td>
+							<td class="py-3 pr-3 text-[15px] font-semibold text-stone-800">{{ collection.label }}</td>
 							<td class="py-3 pr-3">
 								<input v-model="drafts[collection.area].rate" type="number" min="0" step="0.5" placeholder="0.00"
 									:aria-label="`${collection.label} rate`" class="rule-input w-24" />

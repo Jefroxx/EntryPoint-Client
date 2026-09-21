@@ -23,14 +23,14 @@
 
         <div class="mb-4 flex flex-wrap items-center gap-2">
             <div
-                class="flex h-[38px] min-w-[200px] max-w-[300px] flex-1 items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 transition-shadow focus-within:ring-2 focus-within:ring-accent-200">
+                class="flex h-[42px] min-w-[200px] max-w-[300px] flex-1 items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 transition-shadow focus-within:ring-2 focus-within:ring-accent-200">
                 <Icon name="i-lucide-search" class="h-[15px] w-[15px] text-stone-400" />
                 <input id="student-search" v-model="search" type="text" placeholder="Search name or student ID"
-                    class="w-full border-none bg-transparent text-[13.5px] text-stone-800 outline-none placeholder:text-stone-400" />
+                    class="w-full border-none bg-transparent text-[15px] text-stone-800 outline-none placeholder:text-stone-400" />
             </div>
 
             <select v-model="programFilter"
-                class="flex h-[38px] items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3 text-[13px] text-stone-500 transition-colors hover:bg-stone-50">
+                class="flex h-[42px] items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3 text-[14px] text-stone-500 transition-colors hover:bg-stone-50">
                 <option value="">All Programs</option>
                 <option v-for="p in programOptions" :key="p" :value="p">{{ p }}</option>
             </select>
@@ -45,7 +45,7 @@
         <LibrarianStudentsTable :students="students?.data ?? []" :loading="studentsPending"
             @view="openDrawer" @approve="handleApprove" @reject="handleReject" />
 
-        <div v-if="students" class="mt-3 flex items-center justify-between text-[12.5px] text-stone-400">
+        <div v-if="students" class="mt-3 flex items-center justify-between text-[13.5px] text-stone-400">
             <span>Showing {{ students.data.length }} of {{ students.total }} students</span>
             <span>Page {{ students.current_page }} of {{ students.last_page }}</span>
         </div>

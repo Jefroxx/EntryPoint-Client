@@ -1,10 +1,10 @@
 <template>
 	<LibrarianModalShell :open="open" title="Start Session"
 		:subtitle="resource ? `Assign ${resource.name} to a student.` : ''" :busy="busy" @close="emit('close')">
-		<label for="session-student" class="mb-1.5 block text-[12.5px] font-semibold text-stone-800">Student</label>
+		<label for="session-student" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">Student</label>
 		<LibrarianSearchSelect v-model="student" input-id="session-student" placeholder="Search name or student ID"
 			:fetcher="searchStudents" :get-label="label" :get-sublabel="sublabel" :invalid="!!error" />
-		<p v-if="error" class="mt-1 text-[11.5px] text-red-500">{{ error }}</p>
+		<p v-if="error" class="mt-1 text-[12.5px] text-red-500">{{ error }}</p>
 
 		<template #footer>
 			<ButtonsButton variant="ghost" :disabled="busy" @click="emit('close')">Cancel</ButtonsButton>

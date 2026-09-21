@@ -68,7 +68,7 @@
             <div class="mb-4 flex flex-wrap items-center gap-2">
                 <LibrarianSearchInput id="redemption-search" v-model="redemptionSearch" placeholder="Search student or item" />
                 <select v-model="redemptionStatus"
-                    class="h-[38px] rounded-xl border border-stone-200 bg-white px-3 text-[13px] text-stone-500 transition-colors hover:bg-stone-50">
+                    class="h-[42px] rounded-xl border border-stone-200 bg-white px-3 text-[14px] text-stone-500 transition-colors hover:bg-stone-50">
                     <option value="Pending">Pending</option>
                     <option value="">All statuses</option>
                     <option value="Fulfilled">Fulfilled</option>

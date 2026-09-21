@@ -2,15 +2,15 @@
 	<LibrarianTableShell :columns="['Category', 'Dewey code', 'Books', '']" :loading="loading" :empty="subjects.length === 0"
 		empty-text="No categories match your search." min-width="640px">
 		<tr v-for="(subject, index) in subjects" :key="subject.subjectID"
-			class="row-fade-in border-b border-stone-100 transition-colors duration-150 last:border-0 hover:bg-stone-50"
+			class="row-fade-in border-b border-stone-100 transition-colors duration-150 last:border-0 hover:bg-accent-50"
 			:style="{ animationDelay: `${index * 35}ms` }">
 			<td class="px-4 py-3">
-				<div class="flex items-center gap-2.5 text-[13.5px] font-semibold text-stone-900">
+				<div class="flex items-center gap-2.5 text-[15px] font-semibold text-stone-900">
 					<span class="h-2.5 w-2.5 shrink-0 rounded-[3px]" :style="{ backgroundColor: subjectSwatch(subject.name) }" />
 					{{ subject.name }}
 				</div>
 			</td>
-			<td class="font-data px-4 py-3 text-[12.5px] text-stone-500">{{ subject.classificationCode ?? '—' }}</td>
+			<td class="font-data px-4 py-3 text-[13.5px] text-stone-500">{{ subject.classificationCode ?? '—' }}</td>
 			<td class="px-4 py-3">
 				<div class="flex items-center gap-3">
 					<span class="min-w-[18px] font-bold tabular-nums text-stone-900">{{ subject.books_count }}</span>

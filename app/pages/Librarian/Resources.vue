@@ -26,7 +26,7 @@
                 <LibrarianSearchInput id="resource-search" v-model="resourceSearch" placeholder="Search resources" />
 
                 <select v-model="typeFilter"
-                    class="h-[38px] rounded-xl border border-stone-200 bg-white px-3 text-[13px] text-stone-500 transition-colors hover:bg-stone-50">
+                    class="h-[42px] rounded-xl border border-stone-200 bg-white px-3 text-[14px] text-stone-500 transition-colors hover:bg-stone-50">
                     <option value="">All types</option>
                     <option v-for="type in resourceTypes" :key="type" :value="type">{{ type }}</option>
                 </select>
@@ -45,7 +45,7 @@
             </div>
             <div v-else
                 class="flex min-h-[220px] items-center justify-center rounded-2xl border border-dashed border-stone-200 bg-white">
-                <p class="text-sm text-stone-400">
+                <p class="text-[15px] text-stone-400">
                     {{ resourcesPending ? 'Loading resources…' : 'No resources match your filters.' }}
                 </p>
             </div>
@@ -56,7 +56,7 @@
                 <LibrarianSearchInput id="usage-search" v-model="logSearch" placeholder="Search student or resource" />
 
                 <select v-model="logFilter"
-                    class="h-[38px] rounded-xl border border-stone-200 bg-white px-3 text-[13px] text-stone-500 transition-colors hover:bg-stone-50">
+                    class="h-[42px] rounded-xl border border-stone-200 bg-white px-3 text-[14px] text-stone-500 transition-colors hover:bg-stone-50">
                     <option value="all">All sessions</option>
                     <option value="active">Active only</option>
                 </select>

@@ -1,5 +1,5 @@
 <template>
-	<span class="inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-bold" :class="toneClasses">
+	<span class="inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[12px] font-bold" :class="toneClasses">
 		<Icon :name="icon" class="h-3 w-3" />
 		{{ status }}
 	</span>

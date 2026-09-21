@@ -7,7 +7,7 @@
                 :style="{ transform: `translateY(${highlightOffset}px)`, opacity: displayIndex === -1 ? 0 : 1 }" />
 
             <NuxtLink v-for="(link, index) in navLinks" :key="link.to" :ref="(el) => setLinkRef(el, index)" :to="link.to"
-                class="relative z-10 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors duration-[250ms]"
+                class="relative z-10 flex items-center gap-3 rounded-lg px-3 py-2.5 text-[15px] font-medium transition-colors duration-[250ms]"
                 :class="index === displayIndex ? 'text-white' : 'text-stone-500 hover:bg-stone-100 hover:text-stone-800'"
                 @click="pendingIndex = index">
                 <Icon :name="link.icon" class="h-5 w-5 shrink-0" />
@@ -17,7 +17,7 @@
 
         <div class="mt-3 w-56 border-t border-stone-200 pt-3">
             <button type="button"
-                class="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-stone-500 transition-colors duration-150 hover:bg-stone-100 hover:text-stone-800 disabled:cursor-not-allowed disabled:opacity-50"
+                class="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-[15px] font-medium text-stone-500 transition-colors duration-150 hover:bg-stone-100 hover:text-stone-800 disabled:cursor-not-allowed disabled:opacity-50"
                 :disabled="isSigningOut" @click="handleLogout">
                 <Icon name="i-lucide-log-out" class="h-5 w-5 shrink-0" />
                 {{ isSigningOut ? 'Signing out...' : 'Logout' }}

@@ -12,11 +12,11 @@
 				leave-active-class="transition-[transform,opacity] duration-150 ease-out"
 				leave-from-class="scale-100 translate-y-0 opacity-100" leave-to-class="scale-95 translate-y-1 opacity-0">
 				<div v-if="open" role="dialog" aria-modal="true" aria-labelledby="checkoutTitle" @keydown.esc="handleClose"
-					class="relative z-10 flex w-full max-w-[480px] flex-col rounded-[22px] bg-white shadow-2xl">
+					class="relative z-10 flex w-full max-w-[480px] flex-col rounded-[22px] bg-white shadow-overlay">
 					<div class="flex items-start justify-between gap-3 border-b border-stone-100 px-6 py-5">
 						<div>
 							<h2 id="checkoutTitle" class="dashboard-heading text-2xl font-bold text-amber-900">Checkout Book</h2>
-							<p class="dashboard-heading text-[12.5px] text-amber-900">Lend an available copy to an approved student.</p>
+							<p class="dashboard-heading text-[13.5px] text-amber-900">Lend an available copy to an approved student.</p>
 						</div>
 						<ButtonsButton variant="icon" size="md" aria-label="Close" @click="handleClose">
 							<Icon name="i-lucide-x" class="h-4 w-4" />
@@ -25,28 +25,28 @@
 
 					<div class="space-y-4 px-6 py-5">
 						<div>
-							<label for="checkout-student" class="mb-1.5 block text-[12.5px] font-semibold text-stone-800">Student</label>
+							<label for="checkout-student" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">Student</label>
 							<LibrarianSearchSelect v-model="student" input-id="checkout-student" placeholder="Search name or student ID"
 								:fetcher="searchStudents" :get-label="studentLabel" :get-sublabel="studentSublabel"
 								:invalid="!!errors.student" />
-							<p v-if="errors.student" class="mt-1 text-[11.5px] text-red-500">{{ errors.student }}</p>
+							<p v-if="errors.student" class="mt-1 text-[12.5px] text-red-500">{{ errors.student }}</p>
 						</div>
 
 						<div>
-							<label for="checkout-book" class="mb-1.5 block text-[12.5px] font-semibold text-stone-800">Book</label>
+							<label for="checkout-book" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">Book</label>
 							<LibrarianSearchSelect v-model="book" input-id="checkout-book" placeholder="Search by title"
 								:fetcher="searchBooks" :get-label="bookLabel" :get-sublabel="bookSublabel"
 								:invalid="!!errors.book" />
-							<p v-if="errors.book" class="mt-1 text-[11.5px] text-red-500">{{ errors.book }}</p>
+							<p v-if="errors.book" class="mt-1 text-[12.5px] text-red-500">{{ errors.book }}</p>
 						</div>
 
 						<div v-if="book">
-							<label for="checkout-copy" class="mb-1.5 block text-[12.5px] font-semibold text-stone-800">Copy</label>
+							<label for="checkout-copy" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">Copy</label>
 							<select v-if="availableCopies.length" id="checkout-copy" v-model="copyID"
-								class="font-data h-10 w-full rounded-[10px] border border-stone-200 bg-white px-3 text-[12.5px] text-stone-900 outline-none focus:border-accent-500 focus:ring-2 focus:ring-accent-200">
+								class="font-data h-11 w-full rounded-[10px] border border-stone-200 bg-white px-3 text-[13.5px] text-stone-900 outline-none focus:border-accent-500 focus:ring-2 focus:ring-accent-200">
 								<option v-for="copy in availableCopies" :key="copy.copyID" :value="copy.copyID">{{ copy.accessionNumber }}</option>
 							</select>
-							<p v-else class="rounded-lg bg-red-50 px-3 py-2 text-[12.5px] text-red-600">
+							<p v-else class="rounded-lg bg-red-50 px-3 py-2 text-[13.5px] text-red-600">
 								No copies of this book are available right now.
 							</p>
 						</div>

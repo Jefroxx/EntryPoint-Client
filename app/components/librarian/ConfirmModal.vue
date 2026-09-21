@@ -1,6 +1,6 @@
 <template>
 	<LibrarianModalShell :open="open" :title="title" size="sm" :busy="loading" @close="emit('close')">
-		<p class="text-[13.5px] leading-relaxed text-stone-600">{{ message }}</p>
+		<p class="text-[15px] leading-relaxed text-stone-600">{{ message }}</p>
 
 		<template #footer>
 			<ButtonsButton variant="ghost" :disabled="loading" @click="emit('close')">Cancel</ButtonsButton>

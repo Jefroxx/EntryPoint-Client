@@ -7,9 +7,9 @@
 
 			<div class="grid grid-cols-2 gap-3">
 				<div>
-					<label for="ach-metric" class="mb-1.5 block text-[12.5px] font-semibold text-stone-800">Unlocks when</label>
+					<label for="ach-metric" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">Unlocks when</label>
 					<select id="ach-metric" v-model="form.metric"
-						class="h-10 w-full rounded-[10px] border border-stone-200 bg-white px-3 text-[13.5px] text-stone-900 outline-none focus:border-accent-500 focus:ring-2 focus:ring-accent-200">
+						class="h-11 w-full rounded-[10px] border border-stone-200 bg-white px-3 text-[15px] text-stone-900 outline-none focus:border-accent-500 focus:ring-2 focus:ring-accent-200">
 						<option value="visitStreak">Visit streak reaches</option>
 						<option value="knowledgeScore">Knowledge score reaches</option>
 					</select>

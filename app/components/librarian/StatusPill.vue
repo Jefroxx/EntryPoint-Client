@@ -1,5 +1,5 @@
 <template>
-	<span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold" :class="toneClasses.pill">
+	<span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[12px] font-bold" :class="toneClasses.pill">
 		<span class="h-1.5 w-1.5 rounded-full" :class="toneClasses.dot" />
 		{{ label }}
 	</span>

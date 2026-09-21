@@ -7,7 +7,7 @@
 
         <div class="mb-5 flex flex-wrap items-center gap-2">
             <select v-model="months"
-                class="h-[38px] rounded-xl border border-stone-200 bg-white px-3 text-[13px] text-stone-600 transition-colors hover:bg-stone-50">
+                class="h-[42px] rounded-xl border border-stone-200 bg-white px-3 text-[14px] text-stone-600 transition-colors hover:bg-stone-50">
                 <option :value="3">Last 3 months</option>
                 <option :value="6">Last 6 months</option>
                 <option :value="12">Last 12 months</option>
@@ -38,7 +38,7 @@
             <section class="report-card lg:col-span-2">
                 <header class="mb-3 flex items-center justify-between">
                     <h2 class="report-title">Loans per month</h2>
-                    <div class="flex gap-4 text-[11.5px] text-stone-500">
+                    <div class="flex gap-4 text-[12.5px] text-stone-500">
                         <span class="flex items-center gap-1.5"><i class="h-2 w-2 rounded-sm" style="background:#9a5323" />Checked out</span>
                         <span class="flex items-center gap-1.5"><i class="h-2 w-2 rounded-sm" style="background:#d9b48a" />Returned</span>
                     </div>
@@ -61,7 +61,7 @@
             <section class="report-card lg:col-span-2">
                 <header class="mb-3 flex items-center justify-between">
                     <h2 class="report-title">Books by category</h2>
-                    <span class="text-[11.5px] text-stone-400">Whole collection</span>
+                    <span class="text-[12.5px] text-stone-400">Whole collection</span>
                 </header>
                 <LibrarianRankedBars :items="categories" empty="No categories yet." />
             </section>

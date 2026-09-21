@@ -1,8 +1,8 @@
 <template>
 	<div v-if="items.length" class="space-y-2.5">
-		<div v-for="(item, index) in items" :key="item.label" class="flex items-center gap-2.5 text-[13px]">
+		<div v-for="(item, index) in items" :key="item.label" class="flex items-center gap-2.5 text-[14px]">
 			<span v-if="ranked"
-				class="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-accent-100 text-[11px] font-bold text-accent-700">
+				class="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-accent-100 text-[12px] font-bold text-accent-700">
 				{{ index + 1 }}
 			</span>
 			<span class="min-w-0 flex-1 truncate font-medium text-stone-800" :title="item.label">{{ item.label }}</span>
@@ -13,7 +13,7 @@
 			<span class="w-7 shrink-0 text-right font-bold tabular-nums text-stone-900">{{ item.value }}</span>
 		</div>
 	</div>
-	<p v-else class="py-6 text-center text-sm text-stone-400">{{ empty }}</p>
+	<p v-else class="py-6 text-center text-[15px] text-stone-400">{{ empty }}</p>
 </template>
 
 <script setup lang="ts">

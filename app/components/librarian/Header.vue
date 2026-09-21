@@ -33,17 +33,17 @@
                     <Icon name="i-lucide-bell" class="h-[18px] w-[18px]" />
                 </ButtonsButton>
                 <span v-if="unreadCount > 0"
-                    class="pointer-events-none absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold leading-none text-white ring-2 ring-white">
+                    class="pointer-events-none absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[11px] font-bold leading-none text-white ring-2 ring-white">
                     {{ unreadCount > 9 ? '9+' : unreadCount }}
                 </span>
 
                 <div
-                    class="absolute right-0 top-[calc(100%+10px)] z-50 w-[380px] max-w-[calc(100vw-2rem)] origin-top-right overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-lg transition-all duration-150"
+                    class="absolute right-0 top-[calc(100%+10px)] z-50 w-[380px] max-w-[calc(100vw-2rem)] origin-top-right overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-card transition-all duration-150"
                     :class="isBellOpen ? 'scale-100 opacity-100' : 'pointer-events-none scale-95 opacity-0'">
                     <div class="flex items-center justify-between border-b border-stone-100 px-4 py-3">
-                        <p class="text-[13.5px] font-bold text-stone-900">Notifications</p>
+                        <p class="text-[15px] font-bold text-stone-900">Notifications</p>
                         <button type="button" :disabled="unreadCount === 0"
-                            class="text-[12px] font-semibold text-accent-500 hover:underline disabled:cursor-not-allowed disabled:opacity-40 disabled:no-underline"
+                            class="text-[13px] font-semibold text-accent-500 hover:underline disabled:cursor-not-allowed disabled:opacity-40 disabled:no-underline"
                             @click="markEverythingRead">
                             Mark all as read
                         </button>
@@ -52,13 +52,13 @@
                     <div class="max-h-[420px] overflow-y-auto [scrollbar-width:thin]">
                         <LibrarianNotificationRow v-for="(notification, index) in recent" :key="notification.notificationID"
                             :notification="notification" :index="index" @open="markOneRead" @go="openNotification" />
-                        <p v-if="recent.length === 0" class="px-4 py-10 text-center text-[13px] text-stone-400">
+                        <p v-if="recent.length === 0" class="px-4 py-10 text-center text-[14px] text-stone-400">
                             {{ loaded ? 'No notifications yet.' : 'Loading notifications…' }}
                         </p>
                     </div>
 
                     <NuxtLink to="/librarian/notifications"
-                        class="block border-t border-stone-100 px-4 py-2.5 text-center text-[12.5px] font-semibold text-accent-500 transition-colors hover:bg-stone-50"
+                        class="block border-t border-stone-100 px-4 py-2.5 text-center text-[13.5px] font-semibold text-accent-500 transition-colors hover:bg-stone-50"
                         @click="isBellOpen = false">
                         View all notifications
                     </NuxtLink>
@@ -69,31 +69,31 @@
                 <button type="button"
                     class="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full ring-1 ring-stone-200 transition-transform duration-150 active:scale-90"
                     aria-label="User menu" :aria-expanded="isMenuOpen" @click.stop="toggleUserMenu">
-                    <span class="flex h-full w-full items-center justify-center bg-gradient-to-br from-accent-500 to-accent-700 text-[13px] font-bold text-white">
+                    <span class="flex h-full w-full items-center justify-center bg-gradient-to-br from-accent-500 to-accent-700 text-[14px] font-bold text-white">
                         {{ initials }}
                     </span>
                 </button>
 
                 <div
-                    class="absolute right-0 top-[calc(100%+10px)] z-50 w-56 origin-top-right rounded-2xl border border-stone-200 bg-white p-2 shadow-lg transition-all duration-150"
+                    class="absolute right-0 top-[calc(100%+10px)] z-50 w-56 origin-top-right rounded-2xl border border-stone-200 bg-white p-2 shadow-card transition-all duration-150"
                     :class="isMenuOpen ? 'scale-100 opacity-100' : 'pointer-events-none scale-95 opacity-0'">
                     <div class="flex items-center gap-3 px-2 pb-2.5 pt-1">
-                        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-accent-500 to-accent-700 text-[12px] font-bold text-white">
+                        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-accent-500 to-accent-700 text-[13px] font-bold text-white">
                             {{ initials }}
                         </span>
                         <div class="min-w-0">
-                            <p class="truncate text-[13.5px] font-bold text-stone-900">{{ fullName }}</p>
-                            <p class="text-[11.5px] text-stone-400">{{ roleLabel }}</p>
+                            <p class="truncate text-[15px] font-bold text-stone-900">{{ fullName }}</p>
+                            <p class="text-[12.5px] text-stone-400">{{ roleLabel }}</p>
                         </div>
                     </div>
                     <hr class="mx-1 mb-1.5 border-stone-100" />
                     <button type="button"
-                        class="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-[13px] font-medium text-stone-600 transition-colors hover:bg-stone-50"
+                        class="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-[14px] font-medium text-stone-600 transition-colors hover:bg-stone-50"
                         @click="isMenuOpen = false">
                         <Icon name="i-lucide-settings" class="h-[15px] w-[15px]" />Account settings
                     </button>
                     <button type="button" :disabled="isSigningOut"
-                        class="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-[13px] font-medium text-red-500 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        class="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-[14px] font-medium text-red-500 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                         @click="handleLogout">
                         <Icon name="i-lucide-log-out" class="h-[15px] w-[15px]" />
                         {{ isSigningOut ? 'Signing out...' : 'Sign out' }}

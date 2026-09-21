@@ -16,6 +16,10 @@
 	/* Stronger, more intentional curves than Tailwind's defaults (Emil Kowalski) */
 	--ease-out: cubic-bezier(.23, 1, .32, 1);
 	--ease-in-out: cubic-bezier(.77, 0, .175, 1);
+
+	/* Two warm elevations for the whole app, in place of Tailwind's grey md/lg/2xl. */
+	--shadow-card: 0 1px 2px rgb(28 23 18 / .04), 0 12px 28px -12px rgb(28 23 18 / .28);
+	--shadow-overlay: 0 2px 6px rgb(28 23 18 / .06), 0 32px 64px -24px rgb(28 23 18 / .45);
 }
 
 /* Page-header font used across every Librarian page (was previously scoped

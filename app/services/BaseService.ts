@@ -6,25 +6,6 @@ export interface RequestOptions {
   body?: unknown;
 }
 
-let endingSession = false
-
-/**
- * A 401 means the token is dead (it was revoked, or the database was reset). Instead of leaving
- * every page silently empty, end that session and send the person to their own sign-in.
- */
-async function endExpiredSession(area: Area) {
-  if (!import.meta.client || endingSession) return
-
-  endingSession = true
-  try {
-    const back = useRoute().fullPath
-    useAuthSession(area).signOut()
-    await navigateTo({ path: area === 'student' ? '/login' : '/librarian/login', query: { redirect: back, expired: '1' } })
-  } finally {
-    endingSession = false
-  }
-}
-
 export abstract class BaseService {
   /**
    * Whose token a request carries. Services that belong to one area say so; shared ones
@@ -42,8 +23,6 @@ export abstract class BaseService {
 
   protected apiRequest<T>(path: string, options: RequestOptions = {}) {
     const runtimeConfig = useRuntimeConfig()
-    const area = this.area()
-
     return $fetch<T>(path, {
       baseURL: runtimeConfig.public.apiBaseURL,
       method: options.method ?? "GET",
@@ -52,9 +31,6 @@ export abstract class BaseService {
       headers: {
         Accept: "application/json",
         ...this.authHeaders(),
-      },
-      onResponseError: ({ response }) => {
-        if (response.status === 401) void endExpiredSession(area)
       },
     })
   }

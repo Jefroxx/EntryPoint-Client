@@ -1,6 +1,6 @@
 <template>
 	<div>
-		<div class="mt-3 flex items-center justify-between text-[12.5px] text-stone-400">
+		<div class="mt-3 flex items-center justify-between text-[13.5px] text-stone-400">
 			<span>Showing {{ shown }} of {{ total }} {{ noun }}</span>
 			<span>Page {{ page }} of {{ lastPage }}</span>
 		</div>

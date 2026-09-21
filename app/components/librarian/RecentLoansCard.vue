@@ -1,13 +1,13 @@
 <template>
-	<div class="flex h-full flex-col rounded-2xl border border-stone-200 bg-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+	<div class="flex h-full flex-col rounded-2xl border border-stone-200 bg-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-card">
 		<div class="mb-4">
 			<p class="font-bold text-amber-900">Recent Loans</p>
 		</div>
 
 		<div class="flex-1 overflow-x-auto">
-			<table class="w-full min-w-max text-left text-sm">
+			<table class="w-full min-w-max text-left text-[15px]">
 				<thead>
-					<tr class="border-b border-stone-100 text-xs font-medium text-stone-500">
+					<tr class="border-b border-stone-100 text-[13px] font-medium text-stone-500">
 						<th class="pb-2 pr-4 font-medium">Student</th>
 						<th class="pb-2 pr-4 font-medium">Book</th>
 						<th class="pb-2 pr-4 font-medium">Loan Date</th>
@@ -28,7 +28,7 @@
 						<td class="py-3 pr-4 text-stone-500">{{ formatDate(loan.checkoutDate) }}</td>
 						<td class="py-3 pr-4 text-stone-500">{{ formatDate(loan.dueDate) }}</td>
 						<td class="py-3">
-							<span class="inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-bold" :class="statusClass(loan.status)">
+							<span class="inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[13px] font-bold" :class="statusClass(loan.status)">
 								<Icon :name="statusIcon(loan.status)" class="h-3 w-3" />
 								{{ loan.status }}
 							</span>
@@ -36,7 +36,7 @@
 					</tr>
 
 					<tr v-if="loans.length === 0">
-						<td colspan="5" class="py-6 text-center text-sm text-stone-400">No recent loans.</td>
+						<td colspan="5" class="py-6 text-center text-[15px] text-stone-400">No recent loans.</td>
 					</tr>
 				</tbody>
 			</table>

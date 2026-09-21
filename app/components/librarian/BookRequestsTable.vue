@@ -4,39 +4,39 @@
 			<table class="w-full min-w-[860px] border-collapse text-left">
 				<thead>
 					<tr>
-						<th class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-stone-400">Title</th>
-						<th class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-stone-400">Author</th>
-						<th class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-stone-400">Reason</th>
-						<th class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-stone-400">Requested By</th>
-						<th class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-stone-400">Date Requested</th>
-						<th class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-stone-400">Status</th>
+						<th class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-stone-400">Title</th>
+						<th class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-stone-400">Author</th>
+						<th class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-stone-400">Reason</th>
+						<th class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-stone-400">Requested By</th>
+						<th class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-stone-400">Date Requested</th>
+						<th class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-stone-400">Status</th>
 						<th class="sticky top-0 z-10 border-b border-stone-100 bg-stone-50 px-4 py-3"></th>
 					</tr>
 				</thead>
 				<tbody>
 					<tr v-for="(suggestion, index) in suggestions" :key="suggestion.suggestionID"
-						class="row-enter border-b border-stone-100 opacity-0 transition-colors duration-150 last:border-0 hover:bg-stone-50"
+						class="row-enter border-b border-stone-100 opacity-0 transition-colors duration-150 last:border-0 hover:bg-accent-50"
 						:style="{ animationDelay: `${index * 40}ms` }">
 						<td class="px-4 py-3">
 							<div class="flex items-center gap-3">
-								<div class="flex h-11 w-8 shrink-0 items-center justify-center rounded-[4px] text-[11px] font-bold text-white shadow-sm"
+								<div class="flex h-11 w-8 shrink-0 items-center justify-center rounded-[4px] text-[12px] font-bold text-white shadow-sm"
 									:style="{ background: coverColor(suggestion.title) }">
 									{{ coverInitials(suggestion.title) }}
 								</div>
-								<p class="max-w-[220px] truncate text-[13.5px] font-semibold text-stone-900">{{ suggestion.title }}</p>
+								<p class="max-w-[220px] truncate text-[15px] font-semibold text-stone-900">{{ suggestion.title }}</p>
 							</div>
 						</td>
-						<td class="px-4 py-3 text-[13px] text-stone-600">{{ suggestion.author || '—' }}</td>
+						<td class="px-4 py-3 text-[14px] text-stone-600">{{ suggestion.author || '—' }}</td>
 						<td class="px-4 py-3">
-							<p class="max-w-[220px] truncate text-[13px] text-stone-500" :title="suggestion.reason || ''">
+							<p class="max-w-[220px] truncate text-[14px] text-stone-500" :title="suggestion.reason || ''">
 								{{ suggestion.reason || '—' }}
 							</p>
 						</td>
 						<td class="px-4 py-3">
-							<p class="text-[13px] font-medium text-stone-800">{{ requesterName(suggestion) }}</p>
-							<p v-if="suggestion.student?.academicProgram" class="text-[11.5px] text-stone-400">{{ suggestion.student.academicProgram }}</p>
+							<p class="text-[14px] font-medium text-stone-800">{{ requesterName(suggestion) }}</p>
+							<p v-if="suggestion.student?.academicProgram" class="text-[12.5px] text-stone-400">{{ suggestion.student.academicProgram }}</p>
 						</td>
-						<td class="px-4 py-3 text-[12.5px] text-stone-500">{{ formatDate(suggestion.submittedAt) }}</td>
+						<td class="px-4 py-3 text-[13.5px] text-stone-500">{{ formatDate(suggestion.submittedAt) }}</td>
 						<td class="px-4 py-3">
 							<LibrarianRequestStatusPill :status="suggestion.status" />
 						</td>
@@ -45,30 +45,13 @@
 								<ButtonsButton variant="primary" size="sm" @click="emit('review', suggestion)">
 									Review
 								</ButtonsButton>
-								<div class="relative">
-									<ButtonsButton variant="icon" size="sm" aria-label="More actions" @click.stop="toggleMenu(suggestion.suggestionID)">
-										<Icon name="i-lucide-ellipsis-vertical" class="h-[15px] w-[15px]" />
-									</ButtonsButton>
-									<div class="absolute right-0 top-[calc(100%+6px)] z-30 min-w-[150px] origin-top-right rounded-xl border border-stone-200 bg-white p-1.5 shadow-lg transition-all duration-150"
-										:class="openMenuId === suggestion.suggestionID ? 'scale-100 opacity-100' : 'pointer-events-none scale-95 opacity-0'">
-										<button type="button" :disabled="suggestion.status !== 'Pending'"
-											class="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[13px] text-emerald-600 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
-											@click="closeMenu(); emit('approve', suggestion)">
-											<Icon name="i-lucide-check" class="h-[14px] w-[14px] opacity-70" />Approve
-										</button>
-										<button type="button" :disabled="suggestion.status !== 'Pending'"
-											class="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[13px] text-red-500 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
-											@click="closeMenu(); emit('reject', suggestion)">
-											<Icon name="i-lucide-x" class="h-[14px] w-[14px] opacity-70" />Reject
-										</button>
-									</div>
-								</div>
+								<LibrarianRowMenu :items="menuItems(suggestion)" @select="onAction(suggestion, $event)" />
 							</div>
 						</td>
 					</tr>
 
 					<tr v-if="!loading && suggestions.length === 0">
-						<td colspan="7" class="py-10 text-center text-sm text-stone-400">No book requests match your filters.</td>
+						<td colspan="7" class="py-10 text-center text-[15px] text-stone-400">No book requests match your filters.</td>
 					</tr>
 				</tbody>
 			</table>
@@ -92,18 +75,18 @@ const emit = defineEmits<{
 	(e: 'reject', suggestion: BookSuggestion): void
 }>()
 
-const openMenuId = ref<number | null>(null)
-
-function toggleMenu(id: number) {
-	openMenuId.value = openMenuId.value === id ? null : id
+function menuItems(suggestion: BookSuggestion) {
+	const locked = suggestion.status !== 'Pending'
+	return [
+		{ key: 'approve', label: 'Approve', icon: 'i-lucide-check', tone: 'success' as const, disabled: locked },
+		{ key: 'reject', label: 'Reject', icon: 'i-lucide-x', tone: 'danger' as const, disabled: locked, separator: true },
+	]
 }
 
-function closeMenu() {
-	openMenuId.value = null
+function onAction(suggestion: BookSuggestion, key: string) {
+	if (key === 'approve') emit('approve', suggestion)
+	else emit('reject', suggestion)
 }
-
-onMounted(() => window.addEventListener('click', closeMenu))
-onUnmounted(() => window.removeEventListener('click', closeMenu))
 
 function requesterName(suggestion: BookSuggestion): string {
 	const user = suggestion.student?.user

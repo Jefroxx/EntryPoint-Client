@@ -141,10 +141,32 @@ export interface AttendanceStats {
   averageMinutesToday: number;
 }
 
+/** POST /librarian/attendance-logs/scan: one scan either checks a student in or checks them out. */
+export interface AttendanceScanResult {
+  message: string;
+  action: "check_in" | "check_out";
+  log: { logID: number; entryTime: string; exitTime: string | null };
+  student: { name: string; program: string | null; studentIDNumber: string; visitStreak: number };
+  /** Minutes spent inside; only set on a check-out. */
+  durationMinutes: number | null;
+  /** Visits from an earlier day that were closed automatically because the student never scanned out. */
+  autoClosed: { logID: number; exitTime: string }[];
+}
+
 export interface NewBookAuthor {
   name: string;
   role?: string | null;
 }
+
+/** Mirrors the `areasOfLibrary` enum on the `books` table. */
+export type LibraryArea =
+  | "circulation"
+  | "reserved"
+  | "filipiniana"
+  | "fiction"
+  | "thesis"
+  | "journal"
+  | "dissertation";
 
 export interface NewBookPayload {
   title: string;
@@ -153,9 +175,18 @@ export interface NewBookPayload {
   isbn?: string | null;
   publicationYear?: number | null;
   callNumber?: string | null;
+  areasOfLibrary?: LibraryArea | null;
   shelfLocation?: string | null;
   coverImageURL?: string | null;
   quantity: number;
+  publisher?: string | null;
+  edition?: string | null;
+  volume?: string | null;
+  pages?: number | null;
+  sourceOfFund?: string | null;
+  cost?: number | null;
+  copyNumber?: string | null;
+  remarks?: string | null;
 }
 
 class LibrarianServiceClass extends BaseService {
@@ -276,6 +307,13 @@ class LibrarianServiceClass extends BaseService {
         Accept: "application/json",
         ...this.authHeaders(),
       },
+    });
+  }
+
+  scanAttendance(barcodeValue: string) {
+    return this.apiRequest<AttendanceScanResult>("/librarian/attendance-logs/scan", {
+      method: "POST",
+      body: { barcodeValue },
     });
   }
 

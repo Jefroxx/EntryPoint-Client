@@ -8,7 +8,7 @@
         <div class="grid max-w-[940px] grid-cols-1 items-start gap-6 md:grid-cols-[200px_1fr]">
             <nav class="flex gap-1 md:sticky md:top-4 md:flex-col" aria-label="Settings sections">
                 <button v-for="section in sections" :key="section.value" type="button"
-                    class="rounded-[10px] px-3 py-2.5 text-left text-[13.5px] font-medium transition-colors duration-150"
+                    class="rounded-[10px] px-3 py-2.5 text-left text-[15px] font-medium transition-colors duration-150"
                     :class="active === section.value ? 'bg-accent-100 font-semibold text-accent-700' : 'text-stone-500 hover:bg-stone-100'"
                     @click="active = section.value">
                     {{ section.label }}
@@ -23,7 +23,7 @@
                         @saved="refetch" />
                     <LibrarianAccountSettings v-else :account="settings.account" @saved="refetch" />
                 </template>
-                <div v-else-if="error" role="alert" class="rounded-2xl border border-red-100 bg-red-50 p-5 text-[13.5px] text-red-600">
+                <div v-else-if="error" role="alert" class="rounded-2xl border border-red-100 bg-red-50 p-5 text-[15px] text-red-600">
                     <p class="font-semibold">Couldn't load your settings.</p>
                     <p class="mt-1 leading-snug">{{ apiErrorMessage(error, 'The server did not respond.') }}</p>
                     <ButtonsButton variant="ghost" class="mt-3" @click="refetch()">Try again</ButtonsButton>

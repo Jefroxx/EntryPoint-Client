@@ -1,9 +1,9 @@
 <template>
 	<div
-		class="flex h-[38px] min-w-[200px] max-w-[300px] flex-1 items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 transition-shadow focus-within:ring-2 focus-within:ring-accent-200">
+		class="flex h-[42px] min-w-[200px] max-w-[300px] flex-1 items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 transition-shadow focus-within:ring-2 focus-within:ring-accent-200">
 		<Icon name="i-lucide-search" class="h-[15px] w-[15px] text-stone-400" />
 		<input :id="id" :value="modelValue" type="text" :placeholder="placeholder"
-			class="w-full border-none bg-transparent text-[13.5px] text-stone-800 outline-none placeholder:text-stone-400"
+			class="w-full border-none bg-transparent text-[15px] text-stone-800 outline-none placeholder:text-stone-400"
 			@input="emit('update:modelValue', ($event.target as HTMLInputElement).value)" />
 	</div>
 </template>

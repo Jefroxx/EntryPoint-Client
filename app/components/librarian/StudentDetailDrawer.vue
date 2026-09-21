@@ -3,7 +3,7 @@
 		<div class="fixed inset-0 z-[60] bg-stone-900/35 backdrop-blur-[2px] transition-opacity duration-200"
 			:class="open ? 'opacity-100' : 'pointer-events-none opacity-0'" @click="emit('close')" />
 
-		<aside class="fixed right-0 top-0 z-[61] flex h-full w-full max-w-[400px] flex-col bg-white shadow-2xl transition-transform duration-300 ease-[cubic-bezier(.32,.72,0,1)]"
+		<aside class="fixed right-0 top-0 z-[61] flex h-full w-full max-w-[400px] flex-col bg-white shadow-overlay transition-transform duration-300 ease-[cubic-bezier(.32,.72,0,1)]"
 			:class="open ? 'translate-x-0' : 'translate-x-full'">
 			<div class="flex items-center justify-between border-b border-stone-100 px-5 py-4">
 				<h3 class="text-[17px] font-bold text-accent-700">Student details</h3>
@@ -17,24 +17,24 @@
 					<LibrarianStudentAvatar :name="studentName" class="!h-16 !w-16 !text-xl" />
 				</div>
 				<p class="mt-3 text-[16px] font-bold text-stone-900">{{ studentName }}</p>
-				<p class="text-[12.5px] text-stone-500">{{ student.studentIDNumber }} · {{ student.academicProgram ?? '—' }}</p>
+				<p class="text-[13.5px] text-stone-500">{{ student.studentIDNumber }} · {{ student.academicProgram ?? '—' }}</p>
 
 				<div class="mt-4 grid grid-cols-2 gap-x-4 gap-y-3.5">
 					<div class="col-span-2">
-						<p class="mb-0.5 text-[11px] font-bold uppercase tracking-wide text-stone-400">Email</p>
-						<p class="font-data text-[12.5px] font-medium text-stone-800">{{ student.user?.email ?? '—' }}</p>
+						<p class="mb-0.5 text-[12px] font-bold uppercase tracking-wide text-stone-400">Email</p>
+						<p class="font-data text-[13.5px] font-medium text-stone-800">{{ student.user?.email ?? '—' }}</p>
 					</div>
 					<div>
-						<p class="mb-0.5 text-[11px] font-bold uppercase tracking-wide text-stone-400">Status</p>
-						<p class="text-[13.5px] font-medium capitalize text-stone-800">{{ student.registrationStatus }}</p>
+						<p class="mb-0.5 text-[12px] font-bold uppercase tracking-wide text-stone-400">Status</p>
+						<p class="text-[15px] font-medium capitalize text-stone-800">{{ student.registrationStatus }}</p>
 					</div>
 					<div>
-						<p class="mb-0.5 text-[11px] font-bold uppercase tracking-wide text-stone-400">Visit streak</p>
-						<p class="text-[13.5px] font-medium text-stone-800">{{ student.visitStreak }} days</p>
+						<p class="mb-0.5 text-[12px] font-bold uppercase tracking-wide text-stone-400">Visit streak</p>
+						<p class="text-[15px] font-medium text-stone-800">{{ student.visitStreak }} days</p>
 					</div>
 					<div>
-						<p class="mb-0.5 text-[11px] font-bold uppercase tracking-wide text-stone-400">Knowledge score</p>
-						<p class="text-[13.5px] font-medium text-stone-800">{{ student.knowledgeScore }} pts</p>
+						<p class="mb-0.5 text-[12px] font-bold uppercase tracking-wide text-stone-400">Knowledge score</p>
+						<p class="text-[15px] font-medium text-stone-800">{{ student.knowledgeScore }} pts</p>
 					</div>
 				</div>
 			</div>

@@ -25,11 +25,11 @@
 
             <div class="mb-4 flex flex-wrap items-center gap-2">
                 <div
-                    class="flex h-[38px] min-w-[200px] max-w-[320px] flex-1 items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 transition-shadow focus-within:ring-2 focus-within:ring-accent-200">
+                    class="flex h-[42px] min-w-[200px] max-w-[320px] flex-1 items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 transition-shadow focus-within:ring-2 focus-within:ring-accent-200">
                     <Icon name="i-lucide-search" class="h-[15px] w-[15px] text-stone-400" />
                     <input id="library-search" v-model="search" type="text"
                         placeholder="Search book, author, or ISBN"
-                        class="w-full border-none bg-transparent text-[13.5px] text-stone-800 outline-none placeholder:text-stone-400" />
+                        class="w-full border-none bg-transparent text-[15px] text-stone-800 outline-none placeholder:text-stone-400" />
                 </div>
 
                 <ButtonsButton variant="ghost">
@@ -50,7 +50,7 @@
 
             <LibrarianBookCatalogTable :books="books?.data ?? []" :loading="booksPending" />
 
-            <div v-if="books" class="mt-3 flex items-center justify-between text-[12.5px] text-stone-400">
+            <div v-if="books" class="mt-3 flex items-center justify-between text-[13.5px] text-stone-400">
                 <span>Showing {{ books.data.length }} of {{ books.total }} books</span>
                 <span>Page {{ books.current_page }} of {{ books.last_page }}</span>
             </div>
@@ -81,15 +81,15 @@
 
             <div class="mb-4 flex flex-wrap items-center gap-2">
                 <div
-                    class="flex h-[38px] min-w-[200px] max-w-[320px] flex-1 items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 transition-shadow focus-within:ring-2 focus-within:ring-accent-200">
+                    class="flex h-[42px] min-w-[200px] max-w-[320px] flex-1 items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 transition-shadow focus-within:ring-2 focus-within:ring-accent-200">
                     <Icon name="i-lucide-search" class="h-[15px] w-[15px] text-stone-400" />
                     <input id="request-search" v-model="requestSearch" type="text"
                         placeholder="Search title, author, or requester"
-                        class="w-full border-none bg-transparent text-[13.5px] text-stone-800 outline-none placeholder:text-stone-400" />
+                        class="w-full border-none bg-transparent text-[15px] text-stone-800 outline-none placeholder:text-stone-400" />
                 </div>
 
                 <select v-model="requestStatusFilter"
-                    class="flex h-[38px] items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3 text-[13px] text-stone-500 transition-colors hover:bg-stone-50">
+                    class="flex h-[42px] items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3 text-[14px] text-stone-500 transition-colors hover:bg-stone-50">
                     <option value="">All Status</option>
                     <option value="Pending">Pending</option>
                     <option value="Approved">Approved</option>
@@ -103,12 +103,12 @@
                 </ButtonsButton>
             </div>
 
-            <p v-if="requestActionError" class="mb-3 text-[13px] font-medium text-red-600">{{ requestActionError }}</p>
+            <p v-if="requestActionError" class="mb-3 text-[14px] font-medium text-red-600">{{ requestActionError }}</p>
 
             <LibrarianBookRequestsTable :suggestions="pagedRequests" :loading="requestsPending"
                 @review="openReviewDrawer" @approve="handleApprove" @reject="handleReject" />
 
-            <div v-if="suggestions" class="mt-3 flex items-center justify-between text-[12.5px] text-stone-400">
+            <div v-if="suggestions" class="mt-3 flex items-center justify-between text-[13.5px] text-stone-400">
                 <span>Showing {{ pagedRequests.length }} of {{ filteredRequests.length }} requests</span>
                 <span>Page {{ requestsPage }} of {{ requestsTotalPages }}</span>
             </div>
@@ -146,7 +146,7 @@
             <LibrarianCategoriesTable :subjects="filteredSubjects" :loading="subjectsPending"
                 @edit="openCategoryForm" @delete="askDeleteCategory" />
 
-            <div class="mt-3 flex items-center justify-between text-[12.5px] text-stone-400">
+            <div class="mt-3 flex items-center justify-between text-[13.5px] text-stone-400">
                 <span>Showing {{ filteredSubjects.length }} of {{ subjects.length }} categories</span>
                 <span>{{ totalBooks }} books total</span>
             </div>

@@ -1,6 +1,6 @@
 <template>
 	<span
-		class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-100 text-xs font-semibold text-amber-900 ring-1 ring-amber-200">
+		class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-100 text-[13px] font-semibold text-amber-900 ring-1 ring-amber-200">
 		{{ initials }}
 	</span>
 </template>

@@ -20,7 +20,7 @@
 
         <div class="relative overflow-hidden rounded-2xl border border-stone-200 bg-white">
             <template v-for="group in groups" :key="group.label">
-                <p class="border-b border-stone-100 bg-stone-50 px-5 py-2.5 text-[10.5px] font-bold uppercase tracking-wider text-stone-400">
+                <p class="border-b border-stone-100 bg-stone-50 px-5 py-2.5 text-[11.5px] font-bold uppercase tracking-wider text-stone-400">
                     {{ group.label }}
                 </p>
                 <LibrarianNotificationRow v-for="(notification, index) in group.items"
@@ -28,7 +28,7 @@
                     @open="markRead" @go="go" />
             </template>
 
-            <p v-if="visible.length === 0" class="px-5 py-12 text-center text-sm text-stone-400">
+            <p v-if="visible.length === 0" class="px-5 py-12 text-center text-[15px] text-stone-400">
                 {{ !loaded ? 'Loading notifications…' : filter === 'unread' ? 'You\'re all caught up.' : 'No notifications yet.' }}
             </p>
 

@@ -1,5 +1,5 @@
 <template>
-	<div class="flex h-full flex-col rounded-2xl border border-stone-200 bg-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+	<div class="flex h-full flex-col rounded-2xl border border-stone-200 bg-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-card">
 		<p class="mb-4 font-bold text-amber-900">Book Status</p>
 
 		<div class="flex flex-1 items-center gap-6">
@@ -14,7 +14,7 @@
 				<text x="100" y="118" text-anchor="middle" font-size="12" fill="#b0a290">Total Books</text>
 			</svg>
 
-			<ul class="flex-1 space-y-2 text-sm">
+			<ul class="flex-1 space-y-2 text-[15px]">
 				<li v-for="segment in segments" :key="segment.label" class="flex items-center justify-between gap-4">
 					<span class="flex items-center gap-2 text-stone-600">
 						<span class="h-2.5 w-2.5 rounded-full" :style="{ backgroundColor: segment.color }" />

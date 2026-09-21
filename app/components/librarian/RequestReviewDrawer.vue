@@ -3,7 +3,7 @@
 		<div class="fixed inset-0 z-[60] bg-stone-900/35 backdrop-blur-[2px] transition-opacity duration-200"
 			:class="open ? 'opacity-100' : 'pointer-events-none opacity-0'" @click="emit('close')" />
 
-		<aside class="fixed right-0 top-0 z-[61] flex h-full w-full max-w-[420px] flex-col bg-white shadow-2xl transition-transform duration-300 ease-[cubic-bezier(.32,.72,0,1)]"
+		<aside class="fixed right-0 top-0 z-[61] flex h-full w-full max-w-[420px] flex-col bg-white shadow-overlay transition-transform duration-300 ease-[cubic-bezier(.32,.72,0,1)]"
 			:class="open ? 'translate-x-0' : 'translate-x-full'">
 			<div class="flex items-center justify-between border-b border-stone-100 px-5 py-4">
 				<h3 class="text-[17px] font-bold text-accent-700">Review request</h3>
@@ -20,7 +20,7 @@
 					</div>
 					<div>
 						<p class="text-[15.5px] font-bold leading-snug text-stone-900">{{ suggestion.title }}</p>
-						<p class="mt-0.5 text-[13px] text-stone-500">{{ suggestion.author || 'Author not specified' }}</p>
+						<p class="mt-0.5 text-[14px] text-stone-500">{{ suggestion.author || 'Author not specified' }}</p>
 						<div class="mt-2">
 							<LibrarianRequestStatusPill :status="suggestion.status" />
 						</div>
@@ -29,26 +29,26 @@
 
 				<div class="mb-5 grid grid-cols-2 gap-x-4 gap-y-3.5">
 					<div>
-						<p class="mb-0.5 text-[11px] font-bold uppercase tracking-wide text-stone-400">Requested by</p>
-						<p class="text-[13.5px] font-medium text-stone-800">{{ requesterName }}</p>
+						<p class="mb-0.5 text-[12px] font-bold uppercase tracking-wide text-stone-400">Requested by</p>
+						<p class="text-[15px] font-medium text-stone-800">{{ requesterName }}</p>
 					</div>
 					<div>
-						<p class="mb-0.5 text-[11px] font-bold uppercase tracking-wide text-stone-400">Section</p>
-						<p class="text-[13.5px] font-medium text-stone-800">{{ suggestion.student?.academicProgram || '—' }}</p>
+						<p class="mb-0.5 text-[12px] font-bold uppercase tracking-wide text-stone-400">Section</p>
+						<p class="text-[15px] font-medium text-stone-800">{{ suggestion.student?.academicProgram || '—' }}</p>
 					</div>
 					<div>
-						<p class="mb-0.5 text-[11px] font-bold uppercase tracking-wide text-stone-400">Date requested</p>
-						<p class="text-[13.5px] font-medium text-stone-800">{{ formattedDate }}</p>
+						<p class="mb-0.5 text-[12px] font-bold uppercase tracking-wide text-stone-400">Date requested</p>
+						<p class="text-[15px] font-medium text-stone-800">{{ formattedDate }}</p>
 					</div>
 					<div>
-						<p class="mb-0.5 text-[11px] font-bold uppercase tracking-wide text-stone-400">Progress</p>
-						<p class="text-[13.5px] font-medium text-stone-800">{{ suggestion.progressStep || suggestion.status }}</p>
+						<p class="mb-0.5 text-[12px] font-bold uppercase tracking-wide text-stone-400">Progress</p>
+						<p class="text-[15px] font-medium text-stone-800">{{ suggestion.progressStep || suggestion.status }}</p>
 					</div>
 				</div>
 
 				<div>
-					<p class="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-stone-400">Student's reason</p>
-					<div class="rounded-xl border border-stone-100 bg-stone-50 px-3.5 py-3 text-[13px] leading-relaxed text-stone-600">
+					<p class="mb-1.5 text-[12px] font-bold uppercase tracking-wide text-stone-400">Student's reason</p>
+					<div class="rounded-xl border border-stone-100 bg-stone-50 px-3.5 py-3 text-[14px] leading-relaxed text-stone-600">
 						{{ suggestion.reason || 'No reason provided.' }}
 					</div>
 				</div>

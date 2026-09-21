@@ -27,8 +27,8 @@ const variantMap = {
 }
 
 const sizeMap = {
-	sm: props.variant === 'icon' ? 'h-8 w-8 text-[13px]' : 'h-8 px-3 text-[13px]',
-	md: props.variant === 'icon' ? 'h-9 w-9 text-sm' : 'h-[38px] px-3.5 text-[13px]',
+	sm: props.variant === 'icon' ? 'h-9 w-9 text-[13.5px]' : 'h-9 px-3.5 text-[13.5px]',
+	md: props.variant === 'icon' ? 'h-10 w-10 text-sm' : 'h-[42px] px-4 text-[14px]',
 }
 
 const variantClasses = computed(() => variantMap[props.variant])

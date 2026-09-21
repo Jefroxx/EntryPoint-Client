@@ -23,7 +23,7 @@
                 <LibrarianSearchInput id="loan-search" v-model="loanSearch" placeholder="Search student or book" />
 
                 <select v-model="loanStatus"
-                    class="h-[38px] rounded-xl border border-stone-200 bg-white px-3 text-[13px] text-stone-500 transition-colors hover:bg-stone-50">
+                    class="h-[42px] rounded-xl border border-stone-200 bg-white px-3 text-[14px] text-stone-500 transition-colors hover:bg-stone-50">
                     <option value="active">Active loans</option>
                     <option value="overdue">Overdue only</option>
                     <option value="returned">Returned</option>
@@ -57,7 +57,7 @@
                 <LibrarianSearchInput id="reservation-search" v-model="reservationSearch" placeholder="Search student or book" />
 
                 <select v-model="reservationStatus"
-                    class="h-[38px] rounded-xl border border-stone-200 bg-white px-3 text-[13px] text-stone-500 transition-colors hover:bg-stone-50">
+                    class="h-[42px] rounded-xl border border-stone-200 bg-white px-3 text-[14px] text-stone-500 transition-colors hover:bg-stone-50">
                     <option value="">All statuses</option>
                     <option value="Waiting">Waiting</option>
                     <option value="Accepted">Accepted</option>
@@ -102,7 +102,7 @@
                 <LibrarianSearchInput id="penalty-search" v-model="penaltySearch" placeholder="Search student" />
 
                 <select v-model="penaltyStatus"
-                    class="h-[38px] rounded-xl border border-stone-200 bg-white px-3 text-[13px] text-stone-500 transition-colors hover:bg-stone-50">
+                    class="h-[42px] rounded-xl border border-stone-200 bg-white px-3 text-[14px] text-stone-500 transition-colors hover:bg-stone-50">
                     <option value="">All fines</option>
                     <option value="Unpaid">Unpaid</option>
                     <option value="Paid">Paid</option>

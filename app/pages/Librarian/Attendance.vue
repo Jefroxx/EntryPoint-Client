@@ -15,12 +15,14 @@
                 icon="i-lucide-clock" tone="warning" />
         </div>
 
+        <LibrarianScanStation class="mb-5" @scanned="onScanned" />
+
         <div class="mb-4 flex flex-wrap items-center gap-2">
             <div
-                class="flex h-[38px] min-w-[200px] max-w-[300px] flex-1 items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 transition-shadow focus-within:ring-2 focus-within:ring-accent-200">
+                class="flex h-[42px] min-w-[200px] max-w-[300px] flex-1 items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 transition-shadow focus-within:ring-2 focus-within:ring-accent-200">
                 <Icon name="i-lucide-search" class="h-[15px] w-[15px] text-stone-400" />
                 <input id="attendance-search" v-model="search" type="text" placeholder="Search student or ID"
-                    class="w-full border-none bg-transparent text-[13.5px] text-stone-800 outline-none placeholder:text-stone-400" />
+                    class="w-full border-none bg-transparent text-[15px] text-stone-800 outline-none placeholder:text-stone-400" />
             </div>
 
             <div class="flex-1"></div>
@@ -32,7 +34,7 @@
 
         <LibrarianAttendanceLogTable :logs="logs?.data ?? []" :loading="logsPending" />
 
-        <div v-if="logs" class="mt-3 flex items-center justify-between text-[12.5px] text-stone-400">
+        <div v-if="logs" class="mt-3 flex items-center justify-between text-[13.5px] text-stone-400">
             <span>Showing {{ logs.data.length }} of {{ logs.total }} logs</span>
             <span>Page {{ logs.current_page }} of {{ logs.last_page }}</span>
         </div>
@@ -66,7 +68,7 @@ useHead({ title: 'Attendance' })
 const search = ref('')
 const page = ref(1)
 
-const { data: stats } = useLiveAsyncData('attendance-stats', () => librarianService.fetchAttendanceStats(), { lazy: true })
+const { data: stats, execute: refetchStats } = useLiveAsyncData('attendance-stats', () => librarianService.fetchAttendanceStats(), { lazy: true })
 
 const { data: logs, pending: logsPending, execute: refetchLogs } = useLiveAsyncData(
     'attendance-logs',
@@ -86,6 +88,12 @@ watch(search, () => {
         refetchLogs()
     }, 300)
 })
+
+// A scan changes both the log and the "currently in library" numbers straight away.
+function onScanned() {
+    void refetchLogs()
+    void refetchStats()
+}
 
 function goToPage(next: number) {
     if (next < 1 || (logs.value && next > logs.value.last_page)) return

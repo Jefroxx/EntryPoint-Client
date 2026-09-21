@@ -1,15 +1,15 @@
 <template>
-	<div class="row-fade-in flex cursor-pointer items-center gap-3.5 border-b border-stone-100 px-5 py-3.5 transition-colors duration-150 last:border-0 hover:bg-stone-50"
+	<div class="row-fade-in flex cursor-pointer items-center gap-3.5 border-b border-stone-100 px-5 py-3.5 transition-colors duration-150 last:border-0 hover:bg-accent-50"
 		:style="{ animationDelay: `${index * 35}ms` }" @click="emit('open', notification)">
 		<div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" :class="tones[meta.tone]">
 			<Icon :name="meta.icon" class="h-4 w-4" />
 		</div>
 
 		<div class="min-w-0 flex-1">
-			<p class="text-[13.5px] leading-snug" :class="notification.isRead ? 'text-stone-500' : 'font-medium text-stone-900'">
+			<p class="text-[15px] leading-snug" :class="notification.isRead ? 'text-stone-500' : 'font-medium text-stone-900'">
 				{{ notification.message }}
 			</p>
-			<p class="mt-0.5 text-[11.5px] text-stone-400">{{ timeAgo(notification.sentAt) }}</p>
+			<p class="mt-0.5 text-[12.5px] text-stone-400">{{ timeAgo(notification.sentAt) }}</p>
 		</div>
 
 		<ButtonsButton v-if="meta.to" variant="ghost" size="sm" @click.stop="emit('go', notification)">

@@ -2,7 +2,7 @@
 	<LibrarianTableShell :columns="['Student', 'Book', 'Checkout Date', 'Due Date', 'Status', '']" :loading="loading"
 		:empty="loans.length === 0" empty-text="No loans match your filters.">
 		<tr v-for="(loan, index) in loans" :key="loan.loanID"
-			class="row-fade-in border-b border-stone-100 transition-colors duration-150 last:border-0 hover:bg-stone-50"
+			class="row-fade-in border-b border-stone-100 transition-colors duration-150 last:border-0 hover:bg-accent-50"
 			:style="{ animationDelay: `${index * 40}ms` }">
 			<td class="px-4 py-3">
 				<LibrarianPersonCell :name="personName(loan.student?.user)" :sub="loan.student?.studentIDNumber" />
@@ -10,8 +10,8 @@
 			<td class="px-4 py-3">
 				<LibrarianBookCell :title="loan.copy?.book?.title ?? 'Removed book'" :sub="loan.copy?.accessionNumber" />
 			</td>
-			<td class="font-data px-4 py-3 text-[12.5px] text-stone-500">{{ formatDate(loan.checkoutDate) }}</td>
-			<td class="font-data px-4 py-3 text-[12.5px] text-stone-500">{{ formatDate(loan.dueDate) }}</td>
+			<td class="font-data px-4 py-3 text-[13.5px] text-stone-500">{{ formatDate(loan.checkoutDate) }}</td>
+			<td class="font-data px-4 py-3 text-[13.5px] text-stone-500">{{ formatDate(loan.dueDate) }}</td>
 			<td class="px-4 py-3">
 				<LibrarianStatusPill v-bind="pill(loan)" />
 			</td>

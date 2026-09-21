@@ -7,10 +7,12 @@
 				<img src="~/assets/css/logo/EntryPointLogo.png" alt="EntryPoint" class="h-8 w-auto" />
 			</NuxtLink>
 
-			<nav class="flex gap-0.5" aria-label="Main">
-				<NuxtLink v-for="link in links" :key="link.nav" :to="link.to"
-					class="flex h-[34px] items-center gap-1.5 rounded-[10px] px-3.5 text-[14px] font-medium transition-[transform,background-color,color] duration-150 ease-out active:scale-[.97]"
-					:class="route.meta.nav === link.nav ? 'bg-accent-100 text-accent-700' : 'text-stone-500 hover:bg-stone-100 hover:text-stone-900'"
+			<nav class="relative flex gap-0.5" aria-label="Main">
+				<span class="pointer-events-none absolute left-0 top-0 h-[38px] rounded-[11px] bg-accent-100 transition-[transform,width,opacity] duration-[320ms] ease-out"
+					:style="pillStyle" />
+				<NuxtLink v-for="link in links" :key="link.nav" :ref="el => setLinkRef(link.nav, el)" :to="link.to"
+					class="relative z-[1] flex h-[38px] items-center gap-1.5 rounded-[11px] px-[15px] text-[15px] font-medium transition-[transform,color] duration-150 ease-out active:scale-[.97]"
+					:class="route.meta.nav === link.nav ? 'text-accent-700' : 'text-stone-500 hover:text-stone-900'"
 					:aria-current="route.meta.nav === link.nav ? 'page' : undefined">
 					{{ link.label }}
 					<span v-if="link.nav === 'books' && attention"
@@ -22,11 +24,11 @@
 
 			<label class="relative w-[260px]">
 				<span class="sr-only">Search books</span>
-				<Icon name="i-lucide-search" class="pointer-events-none absolute left-3 top-[9px] h-4 w-4 text-stone-400" />
+				<Icon name="i-lucide-search" class="pointer-events-none absolute left-3 top-[11px] h-4 w-4 text-stone-400" />
 				<input ref="searchInput" v-model="search" type="search" placeholder="Search books" autocomplete="off"
-					class="h-[34px] w-full rounded-[10px] border border-transparent bg-stone-100 pl-9 pr-9 text-[14px] outline-none transition-[border-color,box-shadow,background-color] duration-150 placeholder:text-stone-400 focus:border-accent-500 focus:bg-white focus:ring-[3px] focus:ring-accent-100"
+					class="h-[38px] w-full rounded-[10px] border border-transparent bg-stone-100 pl-9 pr-9 text-[15px] outline-none transition-[border-color,box-shadow,background-color] duration-150 placeholder:text-stone-400 focus:border-accent-500 focus:bg-white focus:ring-[3px] focus:ring-accent-100"
 					@input="onSearch">
-				<kbd class="font-data pointer-events-none absolute right-2 top-1.5 rounded-md border border-stone-200 bg-white px-1.5 text-[11px] text-stone-400">/</kbd>
+				<kbd class="font-data pointer-events-none absolute right-2 top-[9px] rounded-md border border-stone-200 bg-white px-1.5 text-[11px] text-stone-400">/</kbd>
 			</label>
 
 			<div class="flex items-center gap-0.5">
@@ -79,10 +81,12 @@
 		<nav aria-label="Main"
 			class="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-stone-200/80 bg-white/80 px-1.5 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))] pt-2 backdrop-blur-2xl backdrop-saturate-150 md:hidden">
 			<NuxtLink v-for="tab in tabs" :key="tab.key" :to="tab.to"
-				class="relative flex flex-col items-center gap-[3px] py-1 text-[10.5px] font-medium transition-[transform,color] duration-150 ease-out active:scale-90"
+				class="relative flex flex-col items-center gap-1 py-1 text-[11px] font-medium transition-[transform,color] duration-150 ease-out active:scale-90"
 				:class="route.meta.tab === tab.key ? 'text-accent-500' : 'text-stone-400'" :aria-current="route.meta.tab === tab.key ? 'page' : undefined">
-				<Icon :name="tab.icon" class="h-[22px] w-[22px] transition-transform duration-300 ease-out"
-					:class="route.meta.tab === tab.key ? '-translate-y-px scale-[1.06]' : ''" />
+				<span class="flex h-[30px] w-[46px] items-center justify-center rounded-[11px] transition-colors duration-[240ms] ease-out"
+					:class="route.meta.tab === tab.key ? 'bg-accent-100' : 'bg-transparent'">
+					<Icon :name="tab.icon" class="h-[23px] w-[23px]" />
+				</span>
 				<span>{{ tab.label }}</span>
 				<span v-if="tab.key === 'books' && attention"
 					class="absolute right-[calc(50%-22px)] top-0 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold text-white">{{ attention }}</span>
@@ -118,6 +122,31 @@ const tabs = [
 	{ key: 'rewards', label: 'Rewards', to: '/student/rewards', icon: 'i-lucide-gift' },
 	{ key: 'me', label: 'Me', to: '/student/me', icon: 'i-lucide-user' },
 ]
+
+/* ---- desktop nav: the active pill travels between links ---- */
+const linkEls: Record<string, HTMLElement> = {}
+const pill = reactive({ x: 0, w: 0 })
+
+const pillStyle = computed(() => ({
+	width: `${pill.w}px`,
+	transform: `translateX(${pill.x}px)`,
+	opacity: pill.w ? '1' : '0',
+}))
+
+function setLinkRef(nav: string, el: unknown) {
+	const node = el && typeof el === 'object' && '$el' in el ? (el as { $el: HTMLElement }).$el : (el as HTMLElement | null)
+	if (node) linkEls[nav] = node
+	else delete linkEls[nav]
+}
+
+function movePill() {
+	const el = linkEls[String(route.meta.nav ?? '')]
+	// Reads 0 on phones, where the bar is display:none — the pill just stays hidden.
+	pill.w = el?.offsetWidth ?? 0
+	pill.x = el?.offsetLeft ?? 0
+}
+
+watch(() => route.meta.nav, () => void nextTick(movePill))
 
 /* ---- collapsing title ---- */
 const scrolled = ref(false)
@@ -163,6 +192,10 @@ onMounted(() => {
 	void refreshShell()
 	void refreshNotifications()
 	onScroll()
+	void nextTick(movePill)
+	// Web fonts land after the first measure and change the link widths.
+	void document.fonts?.ready.then(movePill)
+	window.addEventListener('resize', movePill)
 	window.addEventListener('scroll', onScroll, { passive: true })
 	window.addEventListener('keydown', onKeydown)
 	document.addEventListener('visibilitychange', refreshIfVisible)
@@ -170,6 +203,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+	window.removeEventListener('resize', movePill)
 	window.removeEventListener('scroll', onScroll)
 	window.removeEventListener('keydown', onKeydown)
 	document.removeEventListener('visibilitychange', refreshIfVisible)
