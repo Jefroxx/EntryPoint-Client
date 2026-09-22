@@ -1,6 +1,6 @@
 // For /login, /register and /librarian/login: someone already signed in *to that door's
-// area* has nothing to do here, so they go straight to their home. A librarian session
-// doesn't count for the student door (or the reverse), so both can be signed in at once.
+// area* has nothing to do here, so they go straight to their home. A session in the other
+// area is no reason to turn anyone away — signing in ends it (see `useAuthSession`).
 export default defineNuxtRouteMiddleware((to) => {
   if (areaFromPath(to.path) === 'librarian') {
     const token = useCookie(SESSION_COOKIES.librarian.token)

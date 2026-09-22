@@ -1,8 +1,8 @@
 /**
  * Students and librarians each get their own session, stored under their own
- * cookie names, so both can be signed in at once in one browser (different
- * tabs) without one overwriting the other. The librarian names are the
- * original ones, so librarians who are already signed in stay signed in.
+ * cookie names. Only one of them may be signed in per browser: signing in to
+ * one portal ends the other's session (see `useAuthSession`). The librarian
+ * names are the original ones, so librarians already signed in stay signed in.
  */
 export type Area = 'librarian' | 'student'
 
@@ -10,6 +10,9 @@ export const SESSION_COOKIES = {
   librarian: { token: '_token', role: '_role', uuid: '_uuid', firstName: '_firstName', lastName: '_lastName' },
   student: { token: '_student_token', role: '_student_role', uuid: '_student_uuid', firstName: '_student_firstName', lastName: '_student_lastName' },
 } as const
+
+/** The portal that is not this one. */
+export const otherArea = (area: Area): Area => (area === 'student' ? 'librarian' : 'student')
 
 /** Which session a page belongs to: everything under /student, plus the student sign-in and register pages. */
 export function areaFromPath(path: string): Area {

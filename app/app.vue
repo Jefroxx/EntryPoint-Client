@@ -10,5 +10,8 @@
 // "EntryPoint" rather than "EntryPoint · EntryPoint".
 useHead({
 	titleTemplate: (title) => (title ? `${title} · EntryPoint` : 'EntryPoint'),
+	link: [
+		{ rel: 'icon', type: 'image/svg', href: '/Logo.svg' },
+	],
 })
 </script>

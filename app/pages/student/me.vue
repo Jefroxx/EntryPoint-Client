@@ -1,21 +1,31 @@
 <template>
 	<div>
 		<div class="st-in mt-2 flex items-center gap-3.5">
-			<div class="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-accent-500 to-accent-700 text-[22px] font-extrabold text-white">
+			<div
+				class="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-accent-500 to-accent-700 text-[22px] font-extrabold text-white">
 				<span class="dashboard-heading">{{ initialsText }}</span>
 			</div>
 			<div class="min-w-0">
-				<h1 class="dashboard-heading truncate text-[22px] font-extrabold leading-tight text-amber-900">{{ profile?.fullName ?? `${firstName} ${lastName}` }}</h1>
-				<p class="font-data mb-1.5 mt-0.5 truncate text-[12.5px] text-stone-500">{{ profile?.studentIDNumber }}{{ profile?.academicProgram ? ` · ${profile.academicProgram}` : '' }}</p>
-				<StudentPill tone="good"><Icon name="i-lucide-check" class="h-3 w-3" />Approved</StudentPill>
+				<h1 class="dashboard-heading truncate text-[22px] font-extrabold leading-tight text-amber-900">{{
+					profile?.fullName ?? `${firstName} ${lastName}` }}</h1>
+				<p class="font-data mb-1.5 mt-0.5 truncate text-[12.5px] text-stone-500">{{ profile?.studentIDNumber
+					}}{{ profile?.academicProgram ? ` · ${profile.academicProgram}` : '' }}</p>
+				<StudentPill tone="good">
+					<Icon name="i-lucide-check" class="h-3 w-3" />Approved
+				</StudentPill>
 			</div>
 		</div>
 
-		<div class="st-in mt-5 overflow-hidden rounded-2xl border border-stone-200 bg-white" style="animation-delay: 35ms">
-			<component :is="row.to ? NuxtLink : 'button'" v-for="row in rows" :key="row.label" :to="row.to" :type="row.to ? undefined : 'button'"
+		<div class="st-in mt-5 overflow-hidden rounded-2xl border border-stone-200 bg-white"
+			style="animation-delay: 35ms">
+			<component :is="row.to ? NuxtLink : 'button'" v-for="row in rows" :key="row.label" :to="row.to"
+				:type="row.to ? undefined : 'button'"
 				class="flex w-full items-center gap-3 border-b border-stone-100 px-4 py-3 text-left transition-colors duration-150 last:border-0 active:bg-stone-100"
 				@click="row.action?.()">
-				<span class="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[10px] bg-accent-100 text-accent-600"><Icon :name="row.icon" class="h-[17px] w-[17px]" /></span>
+				<span
+					class="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[10px] bg-accent-100 text-accent-600">
+					<Icon :name="row.icon" class="h-[17px] w-[17px]" />
+				</span>
 				<span class="min-w-0 flex-1">
 					<span class="block text-[14.5px] font-medium text-stone-900">{{ row.label }}</span>
 					<span v-if="row.sub" class="block text-[12.5px] text-stone-400">{{ row.sub }}</span>
@@ -24,25 +34,35 @@
 			</component>
 		</div>
 
-		<h2 class="st-in mb-2.5 mt-6 px-0.5 text-[11px] font-semibold uppercase tracking-[.08em] text-stone-400" style="animation-delay: 70ms">Account</h2>
-		<div v-if="profile" class="st-in overflow-hidden rounded-2xl border border-stone-200 bg-white" style="animation-delay: 70ms">
-			<div v-for="info in details" :key="info.icon" class="flex items-center gap-3 border-b border-stone-100 px-4 py-3 last:border-0">
-				<span class="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[10px] bg-stone-100 text-stone-500"><Icon :name="info.icon" class="h-[17px] w-[17px]" /></span>
+		<h2 class="st-in mb-2.5 mt-6 px-0.5 text-[11px] font-semibold uppercase tracking-[.08em] text-stone-400"
+			style="animation-delay: 70ms">Account</h2>
+		<div v-if="profile" class="st-in overflow-hidden rounded-2xl border border-stone-200 bg-white"
+			style="animation-delay: 70ms">
+			<div v-for="info in details" :key="info.icon"
+				class="flex items-center gap-3 border-b border-stone-100 px-4 py-3 last:border-0">
+				<span
+					class="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[10px] bg-stone-100 text-stone-500">
+					<Icon :name="info.icon" class="h-[17px] w-[17px]" />
+				</span>
 				<span class="min-w-0 break-words text-[14px] text-stone-900">{{ info.value }}</span>
 			</div>
 		</div>
 		<div v-else class="h-32 animate-pulse rounded-2xl bg-stone-200/70" aria-busy="true" />
-		<p class="st-in mx-1 mt-2 text-[12.5px] text-stone-400" style="animation-delay: 70ms">To change these details, ask a librarian at the desk.</p>
+		<p class="st-in mx-1 mt-2 text-[12.5px] text-stone-400" style="animation-delay: 70ms">To change these details,
+			ask a librarian at the desk.</p>
 
-		<ButtonsButton variant="danger" class="st-in mt-6 !h-[46px] w-full !text-[15px]" style="animation-delay: 105ms" @click="confirming = true">
+		<ButtonsButton variant="danger" class="st-in mt-6 !h-[46px] w-full !text-[15px]" style="animation-delay: 105ms"
+			@click="confirming = true">
 			<Icon name="i-lucide-log-out" class="h-4 w-4" />Sign out
 		</ButtonsButton>
 
 		<StudentSheet :open="confirming" title="Sign out?" @close="confirming = false">
 			You'll need your email and password to sign back in.
 			<template #actions>
-				<ButtonsButton variant="danger" class="!h-[46px] !text-[15px]" :disabled="signingOut" @click="confirmSignOut">Sign out</ButtonsButton>
-				<ButtonsButton variant="ghost" class="!h-[46px] !text-[15px]" @click="confirming = false">Stay signed in</ButtonsButton>
+				<ButtonsButton variant="danger" class="!h-[46px] !text-[15px]" :disabled="signingOut"
+					@click="confirmSignOut">Sign out</ButtonsButton>
+				<ButtonsButton variant="ghost" class="!h-[46px] !text-[15px]" @click="confirming = false">Stay signed in
+				</ButtonsButton>
 			</template>
 		</StudentSheet>
 	</div>

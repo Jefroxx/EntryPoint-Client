@@ -1,28 +1,8 @@
 export type CameraState = 'idle' | 'starting' | 'live' | 'blocked' | 'nocamera' | 'unsupported'
 
-// Browsers with a built-in BarcodeDetector (Chrome, Edge, Chrome on Android) need nothing extra.
-// Safari and Firefox don't have one, so this small decoder is loaded on demand, only if it's needed.
-const ZXING_URL = 'https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js'
-let zxingLoading: Promise<any> | null = null
-
-function loadZxing(): Promise<any> {
-  const existing = (window as any).ZXing
-  if (existing) return Promise.resolve(existing)
-
-  zxingLoading ??= new Promise((resolve, reject) => {
-    const script = document.createElement('script')
-    script.src = ZXING_URL
-    script.async = true
-    script.onload = () => resolve((window as any).ZXing)
-    script.onerror = () => {
-      zxingLoading = null
-      reject(new Error('decoder'))
-    }
-    document.head.appendChild(script)
-  })
-
-  return zxingLoading
-}
+// Browsers with a built-in BarcodeDetector (Chrome and Edge on Android, macOS and ChromeOS) need
+// nothing extra. Windows, Safari and Firefox have none, so this small decoder is imported on demand
+// — bundled, not fetched from a CDN, so a front desk with no internet still scans.
 
 /**
  * Reads Code 128 barcodes from the webcam or a phone camera. Every read is handed to `onCode`;
@@ -71,7 +51,7 @@ export function useCameraScanner(onCode: (code: string) => void) {
 
     let ZXing: any
     try {
-      ZXing = await loadZxing()
+      ZXing = await import('@zxing/library')
     } catch {
       throw Object.assign(new Error('decoder'), { name: 'DecoderError' })
     }

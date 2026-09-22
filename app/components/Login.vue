@@ -1,11 +1,16 @@
 <template>
 	<AuthShell :subtitle="isLibrarianPortal ? 'Librarian portal' : 'Library management system'">
-		<span v-if="isLibrarianPortal"
+		<!-- <span v-if="isLibrarianPortal"
 			class="mb-2.5 inline-flex h-6 items-center gap-1.5 rounded-full bg-stone-200 px-2.5 text-[11.5px] font-semibold text-stone-700">
 			<Icon name="i-lucide-shield-check" class="h-3.5 w-3.5" />Staff portal
+		</span> -->
+		<span v-if="isLibrarianPortal"
+			class="mb-2.5 inline-flex h-6 items-center gap-1.5 rounded-full bg-emerald-100 px-2.5 text-[11.5px] font-semibold text-emerald-700">
+			<Icon name="i-lucide-shield-check" class="h-3.5 w-3.5" />
+			Staff Portal
 		</span>
 		<h1 class="dashboard-heading text-[22px] font-bold text-amber-900">
-			{{ isLibrarianPortal ? 'Librarian sign in' : 'Welcome back' }}
+			{{ isLibrarianPortal ? 'Librarian Sign in' : 'Welcome back' }}
 		</h1>
 		<p class="mb-5 mt-1 text-[13px] text-stone-500">
 			{{ isLibrarianPortal ? 'Staff accounts only.' : 'Sign in with your school email.' }}
@@ -17,8 +22,9 @@
 			<AuthPasswordField id="password" v-model="password" label="Password" autocomplete="current-password"
 				placeholder="••••••••" @update:model-value="errorMessage = ''" />
 
-			<Transition enter-active-class="transition duration-200 ease-out" enter-from-class="-translate-y-1 opacity-0"
-				leave-active-class="transition duration-150 ease-out" leave-to-class="opacity-0">
+			<Transition enter-active-class="transition duration-200 ease-out"
+				enter-from-class="-translate-y-1 opacity-0" leave-active-class="transition duration-150 ease-out"
+				leave-to-class="opacity-0">
 				<div v-if="errorMessage" role="alert"
 					class="flex items-start gap-2 rounded-xl border border-red-100 bg-red-50 px-3 py-2.5 text-[12.5px] leading-snug text-red-600">
 					<Icon name="i-lucide-circle-alert" class="mt-px h-4 w-4 shrink-0" />
@@ -29,7 +35,8 @@
 			<ButtonsButton type="submit" class="mt-1 !h-[46px] w-full !text-[14.5px]"
 				:class="isLibrarianPortal ? '!border-stone-700 !bg-stone-700 hover:!border-stone-900 hover:!bg-stone-900' : ''"
 				:disabled="isLoading">
-				<span v-if="isLoading" class="h-[15px] w-[15px] animate-spin rounded-full border-2 border-white/40 border-t-white" />
+				<span v-if="isLoading"
+					class="h-[15px] w-[15px] animate-spin rounded-full border-2 border-white/40 border-t-white" />
 				{{ isLoading ? 'Signing in…' : 'Sign in' }}
 			</ButtonsButton>
 		</form>
@@ -42,11 +49,14 @@
 		<p class="mt-4 border-t border-stone-100 pt-4 text-center text-[12.5px] text-stone-400">
 			<template v-if="isLibrarianPortal">
 				Are you a student?
-				<NuxtLink to="/login" class="font-medium text-stone-500 hover:text-accent-500 hover:underline">Go to student sign-in</NuxtLink>
+				<NuxtLink to="/login" class="font-medium text-stone-500 hover:text-accent-500 hover:underline">Go to
+					student sign-in</NuxtLink>
 			</template>
 			<template v-else>
 				Library staff?
-				<NuxtLink to="/librarian/login" class="font-medium text-stone-500 hover:text-accent-500 hover:underline">Use the librarian sign-in</NuxtLink>
+				<NuxtLink to="/librarian/login"
+					class="font-medium text-stone-500 hover:text-accent-500 hover:underline">Use the librarian sign-in
+				</NuxtLink>
 			</template>
 		</p>
 	</AuthShell>

@@ -12,5 +12,5 @@ definePageMeta({
     middleware: 'guest',
 })
 
-useHead({ title: 'Librarian sign in' })
+useHead({ title: ' Sign in' })
 </script>

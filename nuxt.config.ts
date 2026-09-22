@@ -15,6 +15,16 @@ export default defineNuxtConfig({
 	},
 	css: ['~/assets/css/tailwind.css'],
 	modules: ['@nuxt/ui', '@nuxt/icon', '@nuxt/fonts'],
+	// Raleway (words) and Montserrat (numbers) are self-hosted by @nuxt/fonts. The
+	// weights are listed because the UI uses 500/600/800 as well as 400/700, and an
+	// absent weight would otherwise be faked by the browser.
+	fonts: {
+		defaults: {
+			weights: [300, 400, 500, 600, 700, 800],
+			styles: ['normal', 'italic'],
+			subsets: ['latin'],
+		},
+	},
 	runtimeConfig: {
 		public: {
 			apiBaseURL: process.env.NUXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000/api',

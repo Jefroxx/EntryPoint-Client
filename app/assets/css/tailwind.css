@@ -2,8 +2,10 @@
 @import "@nuxt/ui";
 
 @theme {
-	--font-display: 'Instrument Serif', Georgia, serif;
-	--font-data: 'JetBrains Mono', ui-monospace, monospace;
+	/* Words are Raleway, figures are Montserrat (see the rules below the theme). */
+	--font-sans: 'Raleway', ui-sans-serif, system-ui, sans-serif;
+	--font-display: 'Raleway', ui-sans-serif, system-ui, sans-serif;
+	--font-data: 'Montserrat', ui-sans-serif, system-ui, sans-serif;
 
 	--color-accent-50: #fbf1e6;
 	--color-accent-100: #f3e2cd;
@@ -20,6 +22,24 @@
 	/* Two warm elevations for the whole app, in place of Tailwind's grey md/lg/2xl. */
 	--shadow-card: 0 1px 2px rgb(28 23 18 / .04), 0 12px 28px -12px rgb(28 23 18 / .28);
 	--shadow-overlay: 0 2px 6px rgb(28 23 18 / .06), 0 32px 64px -24px rgb(28 23 18 / .45);
+}
+
+/* ------------------------------------------------------------------ */
+/* Type: Raleway for words, Montserrat for numbers — both roles          */
+/* ------------------------------------------------------------------ */
+
+/* Written out in full (not only as theme variables) so @nuxt/fonts sees both
+   families while scanning the CSS and self-hosts them. */
+:root {
+	font-family: 'Raleway', ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Anything already marked as figures takes the number face: `font-data` for IDs,
+   codes and times, `tabular-nums` for counts and totals that line up in a column.
+   No component has to name a font itself. */
+.tabular-nums,
+.font-data {
+	font-family: 'Montserrat', ui-sans-serif, system-ui, sans-serif;
 }
 
 /* Page-header font used across every Librarian page (was previously scoped
