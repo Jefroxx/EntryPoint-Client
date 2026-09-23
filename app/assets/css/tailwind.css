@@ -1,0 +1,202 @@
+@import "tailwindcss";
+@import "@nuxt/ui";
+
+@theme {
+	/* Words are Raleway, figures are Montserrat (see the rules below the theme). */
+	--font-sans: 'Raleway', ui-sans-serif, system-ui, sans-serif;
+	--font-display: 'Raleway', ui-sans-serif, system-ui, sans-serif;
+	--font-data: 'Montserrat', ui-sans-serif, system-ui, sans-serif;
+
+	--color-accent-50: #fbf1e6;
+	--color-accent-100: #f3e2cd;
+	--color-accent-200: #e6c7a3;
+	--color-accent-400: #c07a3e;
+	--color-accent-500: #9a5323;
+	--color-accent-600: #7a3f18;
+	--color-accent-700: #6f3a15;
+	/* Deep ends of the same brown, for surfaces that carry white text (the book panel on Home). */
+	--color-accent-800: #4a260d;
+	--color-accent-900: #2e1708;
+
+	/* Stronger, more intentional curves than Tailwind's defaults (Emil Kowalski) */
+	--ease-out: cubic-bezier(.23, 1, .32, 1);
+	--ease-in-out: cubic-bezier(.77, 0, .175, 1);
+
+	/* Two warm elevations for the whole app, in place of Tailwind's grey md/lg/2xl. */
+	--shadow-card: 0 1px 2px rgb(28 23 18 / .04), 0 12px 28px -12px rgb(28 23 18 / .28);
+	--shadow-overlay: 0 2px 6px rgb(28 23 18 / .06), 0 32px 64px -24px rgb(28 23 18 / .45);
+}
+
+/* ------------------------------------------------------------------ */
+/* Type: Raleway for words, Montserrat for numbers — both roles          */
+/* ------------------------------------------------------------------ */
+
+/* Written out in full (not only as theme variables) so @nuxt/fonts sees both
+   families while scanning the CSS and self-hosts them. */
+:root {
+	font-family: 'Raleway', ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Anything already marked as figures takes the number face: `font-data` for IDs,
+   codes and times, `tabular-nums` for counts and totals that line up in a column.
+   No component has to name a font itself. */
+.tabular-nums,
+.font-data {
+	font-family: 'Montserrat', ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Page-header font used across every Librarian page (was previously scoped
+   to Dashboard.vue only, so it silently had no effect anywhere else). */
+.dashboard-heading {
+	font-family: 'Raleway', sans-serif;
+}
+
+/* Staggered table-row entrance. Global (not scoped) so the animation name
+   always matches its keyframes; set the stagger with an inline animation-delay. */
+.row-fade-in {
+	opacity: 0;
+	animation: rowFadeIn .4s cubic-bezier(.22, 1, .36, 1) forwards;
+}
+
+@keyframes rowFadeIn {
+	to {
+		opacity: 1;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.row-fade-in {
+		animation: none;
+		opacity: 1;
+	}
+}
+
+/* Page transition (see app.pageTransition in nuxt.config.ts): quick fade out, then the
+   next page eases in from a few pixels below. */
+.page-leave-active {
+	transition: opacity 90ms ease-out;
+}
+
+.page-enter-active {
+	transition: opacity 200ms cubic-bezier(.23, 1, .32, 1), transform 200ms cubic-bezier(.23, 1, .32, 1);
+}
+
+.page-leave-to {
+	opacity: 0;
+}
+
+.page-enter-from {
+	opacity: 0;
+	transform: translateY(6px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.page-enter-active,
+	.page-leave-active {
+		transition: opacity 120ms ease;
+	}
+
+	.page-enter-from {
+		transform: none;
+	}
+}
+
+/* ------------------------------------------------------------------ */
+/* Student app                                                          */
+/* ------------------------------------------------------------------ */
+
+@theme {
+	/* iOS-style drawer/sheet curve (Ionic), used for anything that slides in from an edge */
+	--ease-drawer: cubic-bezier(.32, .72, 0, 1);
+}
+
+.student-app {
+	-webkit-tap-highlight-color: transparent;
+	-webkit-text-size-adjust: 100%;
+	background: #fffbeb;
+}
+
+.student-app button,
+.student-app a,
+.student-app [role="button"] {
+	touch-action: manipulation;
+}
+
+/* iOS zooms the page when an input under 16px gets focus, so touch devices always get 16px. */
+@media (pointer: coarse) {
+	.student-app input,
+	.student-app textarea,
+	.student-app select {
+		font-size: 16px !important;
+	}
+}
+
+.no-scrollbar {
+	scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+	display: none;
+}
+
+/* Sections stagger in on first load. Delay is set inline (35 ms apart); never blocks interaction. */
+.st-in {
+	opacity: 0;
+	animation: stIn .38s var(--ease-out) forwards;
+}
+
+@keyframes stIn {
+	from {
+		opacity: 0;
+		transform: translateY(8px);
+	}
+
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+
+/* A short cross-fade for content that swaps in place (segmented panels, filtered lists). */
+.st-swap {
+	animation: stSwap .2s var(--ease-out);
+}
+
+@keyframes stSwap {
+	from {
+		opacity: 0;
+		transform: translateY(6px);
+	}
+
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+
+.heart-pop {
+	animation: heartPop .34s var(--ease-out);
+}
+
+@keyframes heartPop {
+	0% {
+		transform: scale(.7);
+	}
+
+	55% {
+		transform: scale(1.25);
+	}
+
+	100% {
+		transform: scale(1);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.st-in,
+	.st-swap,
+	.heart-pop {
+		animation: none;
+		opacity: 1;
+	}
+}
