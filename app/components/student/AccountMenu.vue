@@ -17,7 +17,7 @@
 					<div class="min-w-0">
 						<p class="truncate text-[15px] font-semibold text-stone-900">{{ profile?.fullName ?? `${firstName} ${lastName}` }}</p>
 						<p class="font-data mt-0.5 truncate text-[12px] text-stone-400">{{ profile?.studentIDNumber }}{{ profile?.academicProgram ? ` · ${profile.academicProgram}` : '' }}</p>
-						<StudentPill tone="good" class="mt-1.5"><Icon name="i-lucide-check" class="h-3 w-3" />Approved</StudentPill>
+						<StudentPill tone="good" class="mt-1.5"><Icon name="i-tabler-check" class="h-3 w-3" />Approved</StudentPill>
 					</div>
 				</div>
 
@@ -30,16 +30,16 @@
 				</component>
 
 				<div v-if="profile" class="space-y-1.5 border-t border-stone-100 px-4 py-3 text-[12.5px] text-stone-400">
-					<p class="flex items-center gap-2"><Icon name="i-lucide-mail" class="h-3.5 w-3.5" />{{ profile.email }}</p>
-					<p v-if="profile.phoneNumber" class="flex items-center gap-2"><Icon name="i-lucide-phone" class="h-3.5 w-3.5" />{{ profile.phoneNumber }}</p>
-					<p v-if="profile.address" class="flex items-center gap-2"><Icon name="i-lucide-map-pin" class="h-3.5 w-3.5" />{{ profile.address }}</p>
-					<p class="pt-1">To change these, ask a librarian.</p>
+					<p class="flex items-center gap-2"><Icon name="i-tabler-mail" class="h-3.5 w-3.5" />{{ profile.email }}</p>
+					<p v-if="profile.phoneNumber" class="flex items-center gap-2"><Icon name="i-tabler-phone" class="h-3.5 w-3.5" />{{ profile.phoneNumber }}</p>
+					<p v-if="profile.address" class="flex items-center gap-2"><Icon name="i-tabler-map-pin" class="h-3.5 w-3.5" />{{ profile.address }}</p>
+					<p class="pt-1">Change your phone, address or password in Profile.</p>
 				</div>
 
 				<button type="button" role="menuitem"
 					class="flex w-full items-center gap-3 border-t border-stone-100 px-4 py-3 text-left text-[14px] font-medium text-red-600 transition-colors duration-150 hover:bg-red-50 active:bg-red-100"
 					@click="askSignOut">
-					<span class="flex h-8 w-8 items-center justify-center rounded-[10px] bg-red-50"><Icon name="i-lucide-log-out" class="h-4 w-4" /></span>
+					<span class="flex h-8 w-8 items-center justify-center rounded-[10px] bg-red-50"><Icon name="i-tabler-logout" class="h-4 w-4" /></span>
 					Sign out
 				</button>
 			</div>
@@ -69,9 +69,10 @@ const initialsText = computed(() => initials(profile.value?.firstName ?? firstNa
 interface MenuLink { label: string; hint: string; icon: string; to?: string; action?: () => void }
 
 const links = computed<MenuLink[]>(() => [
-	{ label: 'Library ID', hint: 'Barcode for check-in', icon: 'i-lucide-id-card', to: '/student/id' },
-	{ label: 'Wishlist', hint: `${wishlist.value.length} saved`, icon: 'i-lucide-heart', action: () => drawer.open('wishlist') },
-	{ label: 'Suggest a book', hint: '', icon: 'i-lucide-lightbulb', to: '/student/suggest' },
+	{ label: 'Profile', hint: 'Details, achievements and history', icon: 'i-tabler-user-circle', to: '/student/profile' },
+	{ label: 'Library ID', hint: 'Barcode for check-in', icon: 'i-tabler-id', to: '/student/id' },
+	{ label: 'Wishlist', hint: `${wishlist.value.length} saved`, icon: 'i-tabler-heart', to: '/student/wishlist' },
+	{ label: 'Suggest a book', hint: '', icon: 'i-tabler-bulb', to: '/student/suggest' },
 ])
 
 function pick(link: MenuLink) {

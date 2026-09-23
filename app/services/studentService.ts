@@ -38,6 +38,8 @@ export interface StudentProfile {
   email: string;
   phoneNumber: string | null;
   address: string | null;
+  /** YYYY-MM-DD */
+  birthDate: string | null;
   studentIDNumber: string;
   academicProgram: string | null;
   barcodeValue: string | null;
@@ -117,6 +119,8 @@ export interface WishlistRow {
   wishlistID: number;
   bookID: number;
   inCart: boolean;
+  /** Hearted. A row can be in the cart without being hearted. */
+  inWishlist: boolean;
   addedAt: string;
   book: RawBook;
 }
@@ -205,6 +209,15 @@ class StudentServiceClass extends BaseService {
 
   profile() {
     return this.apiRequest<ProfileResponse>("/student/profile");
+  }
+
+  /** The contact details a student may change themselves. Returns the refreshed profile. */
+  updateContact(body: { phoneNumber: string | null; address: string | null; birthDate: string | null }) {
+    return this.apiRequest<ProfileResponse & { message: string }>("/student/profile", { method: "PATCH", body });
+  }
+
+  changePassword(body: { currentPassword: string; newPassword: string; newPassword_confirmation: string }) {
+    return this.apiRequest<{ message: string }>("/student/password", { method: "PUT", body });
   }
 
   loans() {

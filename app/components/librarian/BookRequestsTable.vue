@@ -78,8 +78,8 @@ const emit = defineEmits<{
 function menuItems(suggestion: BookSuggestion) {
 	const locked = suggestion.status !== 'Pending'
 	return [
-		{ key: 'approve', label: 'Approve', icon: 'i-lucide-check', tone: 'success' as const, disabled: locked },
-		{ key: 'reject', label: 'Reject', icon: 'i-lucide-x', tone: 'danger' as const, disabled: locked, separator: true },
+		{ key: 'approve', label: 'Approve', icon: 'i-tabler-check', tone: 'success' as const, disabled: locked },
+		{ key: 'reject', label: 'Reject', icon: 'i-tabler-x', tone: 'danger' as const, disabled: locked, separator: true },
 	]
 }
 

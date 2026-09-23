@@ -32,7 +32,6 @@ export function useAuthSession(area: Area = 'librarian') {
   const other = areaCookies(otherArea(area))
   const apiBaseURL = useRuntimeConfig().public.apiBaseURL as string
 
-  const librarianSidebar = useState('librarian-sidebar-open', () => false)
   const studentProfile = useState<unknown>('student-profile', () => null)
   const studentWishlist = useState<unknown[]>('student-wishlist', () => [])
   const studentWishOptimistic = useState<Record<number, boolean>>('student-wish-optimistic', () => ({}))
@@ -43,10 +42,8 @@ export function useAuthSession(area: Area = 'librarian') {
   function clear(target: Area) {
     for (const cookie of Object.values(target === area ? self : other)) cookie.value = null
 
-    if (target === 'librarian') {
-      // The next login should start with the sidebar closed.
-      librarianSidebar.value = false
-    } else {
+    // (The librarian sidebar's expanded/collapsed state is a per-device preference cookie; it survives sign-outs.)
+    if (target !== 'librarian') {
       // Student app state (profile counters, wishlist/cart) belongs to the person who just left.
       studentProfile.value = null
       studentWishlist.value = []

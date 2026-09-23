@@ -11,7 +11,9 @@
 useHead({
 	titleTemplate: (title) => (title ? `${title} · EntryPoint` : 'EntryPoint'),
 	link: [
-		{ rel: 'icon', type: 'image/svg', href: '/Logo.svg' },
+		// The square brown mark; the wide wordmark is unreadable at tab size.
+		{ rel: 'icon', type: 'image/png', href: '/favicon.png' },
+		{ rel: 'apple-touch-icon', href: '/favicon.png' },
 	],
 })
 </script>

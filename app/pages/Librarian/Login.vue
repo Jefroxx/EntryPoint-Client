@@ -1,16 +1,17 @@
 <template>
-    <main class="min-h-screen">
-        <Login portal="librarian" />
-    </main>
+	<section class="auth-pane" data-side="left">
+		<Login portal="librarian" />
+	</section>
 </template>
 
 <script setup lang="ts">
 import Login from '~/components/Login.vue'
 
 definePageMeta({
-    layout: false,
-    middleware: 'guest',
+	layout: 'auth',
+	middleware: 'guest',
+	pageTransition: { name: 'auth-swap', mode: 'default' },
 })
 
-useHead({ title: ' Sign in' })
+useHead({ title: 'Librarian sign-in' })
 </script>

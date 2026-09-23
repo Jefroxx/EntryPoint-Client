@@ -5,7 +5,7 @@
 		<template #footer>
 			<ButtonsButton variant="ghost" :disabled="loading" @click="emit('close')">Cancel</ButtonsButton>
 			<ButtonsButton :variant="danger ? 'danger' : 'primary'" :disabled="loading" @click="emit('confirm')">
-				<Icon v-if="loading" name="i-lucide-loader-2" class="h-3.5 w-3.5 animate-spin" />
+				<Icon v-if="loading" name="i-tabler-loader-2" class="h-3.5 w-3.5 animate-spin" />
 				{{ confirmLabel }}
 			</ButtonsButton>
 		</template>

@@ -16,22 +16,22 @@
             <div class="flex-1"></div>
 
             <ButtonsButton variant="ghost" :disabled="!overview" @click="exportCsv">
-                <Icon name="i-lucide-download" class="h-3.5 w-3.5" />Export CSV
+                <Icon name="i-tabler-download" class="h-3.5 w-3.5" />Export CSV
             </ButtonsButton>
         </div>
 
         <div class="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
             <LibrarianCatalogStatTile label="Loans this month" :value="overview?.kpis.loansThisMonth ?? '—'"
-                icon="i-lucide-book-open" tone="accent" />
+                icon="i-tabler-book" tone="accent" />
             <LibrarianCatalogStatTile label="Returned on time"
                 :value="overview?.kpis.onTimeRate != null ? `${overview.kpis.onTimeRate}%` : '—'"
-                icon="i-lucide-circle-check" tone="success" />
+                icon="i-tabler-circle-check" tone="success" />
             <LibrarianCatalogStatTile label="Avg. visit length"
                 :value="overview?.kpis.avgVisitMinutes != null ? `${overview.kpis.avgVisitMinutes}m` : '—'"
-                icon="i-lucide-clock" tone="warning" />
+                icon="i-tabler-clock" tone="warning" />
             <LibrarianCatalogStatTile label="Fines outstanding"
                 :value="overview ? formatPeso(overview.kpis.finesOutstanding) : '—'"
-                icon="i-lucide-circle-dollar-sign" tone="danger" />
+                icon="i-tabler-coin" tone="danger" />
         </div>
 
         <div class="relative grid grid-cols-1 gap-3 lg:grid-cols-2">

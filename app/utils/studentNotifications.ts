@@ -8,34 +8,36 @@ export interface StudentNotificationMeta {
 }
 
 const BOOKS = '/student/books'
+// Loan links name their tab: My books opens on Reservations by default.
+const LOANS = `${BOOKS}?tab=loans`
 
 // The notification types students actually receive, and where each should lead.
 const META: Record<string, StudentNotificationMeta> = {
-  registration_approved: { icon: 'i-lucide-badge-check', tone: 'good', to: '/student/id' },
-  registration_rejected: { icon: 'i-lucide-circle-x', tone: 'bad' },
-  reservation_accepted: { icon: 'i-lucide-check', tone: 'good', to: `${BOOKS}?tab=reservations` },
-  reservation_rejected: { icon: 'i-lucide-circle-x', tone: 'bad', to: `${BOOKS}?tab=reservations` },
-  reservation_submitted: { icon: 'i-lucide-clock', tone: 'warn', to: `${BOOKS}?tab=reservations` },
-  loan_checkout: { icon: 'i-lucide-book-open', tone: 'accent', to: BOOKS },
-  loan_due_soon: { icon: 'i-lucide-clock', tone: 'warn', to: BOOKS },
-  loan_overdue: { icon: 'i-lucide-circle-alert', tone: 'bad', to: BOOKS },
-  loan_returned: { icon: 'i-lucide-undo-2', tone: 'good', to: BOOKS },
-  self_return_verified: { icon: 'i-lucide-check', tone: 'good', to: BOOKS },
-  self_return_rejected: { icon: 'i-lucide-circle-x', tone: 'bad', to: BOOKS },
-  penalty_settled: { icon: 'i-lucide-receipt', tone: 'good', to: `${BOOKS}?tab=fines` },
-  achievement_unlocked: { icon: 'i-lucide-trophy', tone: 'accent', to: '/student/rewards' },
-  achievement_redeemed: { icon: 'i-lucide-trophy', tone: 'good', to: '/student/rewards' },
-  redemption_requested: { icon: 'i-lucide-gift', tone: 'warn', to: '/student/rewards' },
-  redemption_fulfilled: { icon: 'i-lucide-gift', tone: 'good', to: '/student/rewards' },
-  redemption_cancelled: { icon: 'i-lucide-circle-x', tone: 'bad', to: '/student/rewards' },
-  book_suggestion_approved: { icon: 'i-lucide-lightbulb', tone: 'good', to: '/student/suggest' },
-  book_suggestion_rejected: { icon: 'i-lucide-lightbulb', tone: 'neutral', to: '/student/suggest' },
-  resource_session_started: { icon: 'i-lucide-monitor', tone: 'accent', to: '/student/spaces' },
-  resource_session_ended: { icon: 'i-lucide-monitor', tone: 'neutral', to: '/student/spaces' },
+  registration_approved: { icon: 'i-tabler-rosette-discount-check', tone: 'good', to: '/student/id' },
+  registration_rejected: { icon: 'i-tabler-circle-x', tone: 'bad' },
+  reservation_accepted: { icon: 'i-tabler-check', tone: 'good', to: `${BOOKS}?tab=reservations` },
+  reservation_rejected: { icon: 'i-tabler-circle-x', tone: 'bad', to: `${BOOKS}?tab=reservations` },
+  reservation_submitted: { icon: 'i-tabler-clock', tone: 'warn', to: `${BOOKS}?tab=reservations` },
+  loan_checkout: { icon: 'i-tabler-book', tone: 'accent', to: LOANS },
+  loan_due_soon: { icon: 'i-tabler-clock', tone: 'warn', to: LOANS },
+  loan_overdue: { icon: 'i-tabler-alert-circle', tone: 'bad', to: LOANS },
+  loan_returned: { icon: 'i-tabler-arrow-back-up', tone: 'good', to: LOANS },
+  self_return_verified: { icon: 'i-tabler-check', tone: 'good', to: LOANS },
+  self_return_rejected: { icon: 'i-tabler-circle-x', tone: 'bad', to: LOANS },
+  penalty_settled: { icon: 'i-tabler-receipt', tone: 'good', to: `${BOOKS}?tab=fines` },
+  achievement_unlocked: { icon: 'i-tabler-trophy', tone: 'accent', to: '/student/profile?tab=achievements' },
+  achievement_redeemed: { icon: 'i-tabler-trophy', tone: 'good', to: '/student/profile?tab=history' },
+  redemption_requested: { icon: 'i-tabler-gift', tone: 'warn', to: '/student/profile?tab=history' },
+  redemption_fulfilled: { icon: 'i-tabler-gift', tone: 'good', to: '/student/profile?tab=history' },
+  redemption_cancelled: { icon: 'i-tabler-circle-x', tone: 'bad', to: '/student/profile?tab=history' },
+  book_suggestion_approved: { icon: 'i-tabler-bulb', tone: 'good', to: '/student/suggest' },
+  book_suggestion_rejected: { icon: 'i-tabler-bulb', tone: 'neutral', to: '/student/suggest' },
+  resource_session_started: { icon: 'i-tabler-device-desktop', tone: 'accent', to: '/student/facilities' },
+  resource_session_ended: { icon: 'i-tabler-device-desktop', tone: 'neutral', to: '/student/facilities' },
 }
 
 export function studentNotificationMeta(type: string | null): StudentNotificationMeta {
-  return META[type ?? ''] ?? { icon: 'i-lucide-bell', tone: 'neutral' }
+  return META[type ?? ''] ?? { icon: 'i-tabler-bell', tone: 'neutral' }
 }
 
 /** Shared tone → class maps so pills, icon tiles and notices stay consistent. */

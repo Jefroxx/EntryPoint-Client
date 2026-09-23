@@ -30,7 +30,7 @@
 						<td class="font-data px-4 py-3 text-[13px] text-stone-500">{{ student.user?.email ?? '—' }}</td>
 						<td class="px-4 py-3">
 							<span class="inline-flex items-center gap-1 font-semibold tabular-nums text-stone-700">
-								<Icon name="i-lucide-flame" class="h-3 w-3 text-amber-500" />{{ student.visitStreak }}
+								<Icon name="i-tabler-flame" class="h-3 w-3 text-amber-500" />{{ student.visitStreak }}
 							</span>
 						</td>
 						<td class="font-data px-4 py-3 text-[13.5px] text-stone-500">{{ student.knowledgeScore }}</td>

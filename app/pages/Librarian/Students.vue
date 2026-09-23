@@ -12,19 +12,19 @@
 
         <div class="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
             <LibrarianCatalogStatTile label="Total Students" :value="stats?.total ?? '—'"
-                icon="i-lucide-users" tone="accent" />
+                icon="i-tabler-users" tone="accent" />
             <LibrarianCatalogStatTile label="Pending Approval" :value="stats?.pending ?? '—'"
-                icon="i-lucide-clock" tone="warning" />
+                icon="i-tabler-clock" tone="warning" />
             <LibrarianCatalogStatTile label="Approved" :value="stats?.approved ?? '—'"
-                icon="i-lucide-circle-check" tone="success" />
+                icon="i-tabler-circle-check" tone="success" />
             <LibrarianCatalogStatTile label="Rejected" :value="stats?.rejected ?? '—'"
-                icon="i-lucide-circle-x" tone="danger" />
+                icon="i-tabler-circle-x" tone="danger" />
         </div>
 
         <div class="mb-4 flex flex-wrap items-center gap-2">
             <div
                 class="flex h-[42px] min-w-[200px] max-w-[300px] flex-1 items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 transition-shadow focus-within:ring-2 focus-within:ring-accent-200">
-                <Icon name="i-lucide-search" class="h-[15px] w-[15px] text-stone-400" />
+                <Icon name="i-tabler-search" class="h-[15px] w-[15px] text-stone-400" />
                 <input id="student-search" v-model="search" type="text" placeholder="Search name or student ID"
                     class="w-full border-none bg-transparent text-[15px] text-stone-800 outline-none placeholder:text-stone-400" />
             </div>
@@ -38,7 +38,7 @@
             <div class="flex-1"></div>
 
             <ButtonsButton variant="ghost" @click="search = ''; programFilter = ''">
-                <Icon name="i-lucide-rotate-ccw" class="h-3.5 w-3.5" />Reset
+                <Icon name="i-tabler-rotate" class="h-3.5 w-3.5" />Reset
             </ButtonsButton>
         </div>
 
@@ -53,11 +53,11 @@
         <div v-if="students && students.last_page > 1" class="mt-3 flex items-center justify-center gap-2">
             <ButtonsButton variant="ghost" size="sm" :disabled="students.current_page <= 1"
                 @click="goToPage(students.current_page - 1)">
-                <Icon name="i-lucide-chevron-left" class="h-3.5 w-3.5" />Previous
+                <Icon name="i-tabler-chevron-left" class="h-3.5 w-3.5" />Previous
             </ButtonsButton>
             <ButtonsButton variant="ghost" size="sm" :disabled="students.current_page >= students.last_page"
                 @click="goToPage(students.current_page + 1)">
-                Next<Icon name="i-lucide-chevron-right" class="h-3.5 w-3.5" />
+                Next<Icon name="i-tabler-chevron-right" class="h-3.5 w-3.5" />
             </ButtonsButton>
         </div>
     

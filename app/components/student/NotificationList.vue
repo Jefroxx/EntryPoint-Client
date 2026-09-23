@@ -1,6 +1,6 @@
 <template>
 	<div>
-		<StudentEmptyState v-if="!items.length" icon="i-lucide-bell" title="No notifications yet"
+		<StudentEmptyState v-if="!items.length" icon="i-tabler-bell" title="No notifications yet"
 			text="Reservation updates, due dates and rewards will show up here." />
 
 		<template v-else>

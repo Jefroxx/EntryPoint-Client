@@ -20,7 +20,7 @@
 							<p v-if="subtitle" class="dashboard-heading text-[13.5px] text-amber-900">{{ subtitle }}</p>
 						</div>
 						<ButtonsButton variant="icon" size="md" aria-label="Close" @click="requestClose">
-							<Icon name="i-lucide-x" class="h-4 w-4" />
+							<Icon name="i-tabler-x" class="h-4 w-4" />
 						</ButtonsButton>
 					</div>
 

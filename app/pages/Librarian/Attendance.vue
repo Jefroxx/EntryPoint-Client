@@ -7,12 +7,12 @@
 
         <div class="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
             <LibrarianCatalogStatTile label="Currently in library" :value="stats?.currentlyInLibrary ?? '—'"
-                icon="i-lucide-circle-check" tone="success" />
+                icon="i-tabler-circle-check" tone="success" />
             <LibrarianCatalogStatTile label="Total visits today" :value="stats?.totalVisitsToday ?? '—'"
-                icon="i-lucide-user-check" tone="accent" />
+                icon="i-tabler-user-check" tone="accent" />
             <LibrarianCatalogStatTile label="Average time inside"
                 :value="stats?.averageMinutesToday != null ? `${stats.averageMinutesToday}m` : '—'"
-                icon="i-lucide-clock" tone="warning" />
+                icon="i-tabler-clock" tone="warning" />
         </div>
 
         <LibrarianScanStation class="mb-5" @scanned="onScanned" />
@@ -20,7 +20,7 @@
         <div class="mb-4 flex flex-wrap items-center gap-2">
             <div
                 class="flex h-[42px] min-w-[200px] max-w-[300px] flex-1 items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 transition-shadow focus-within:ring-2 focus-within:ring-accent-200">
-                <Icon name="i-lucide-search" class="h-[15px] w-[15px] text-stone-400" />
+                <Icon name="i-tabler-search" class="h-[15px] w-[15px] text-stone-400" />
                 <input id="attendance-search" v-model="search" type="text" placeholder="Search student or ID"
                     class="w-full border-none bg-transparent text-[15px] text-stone-800 outline-none placeholder:text-stone-400" />
             </div>
@@ -28,7 +28,7 @@
             <div class="flex-1"></div>
 
             <ButtonsButton variant="ghost" @click="search = ''">
-                <Icon name="i-lucide-rotate-ccw" class="h-3.5 w-3.5" />Reset
+                <Icon name="i-tabler-rotate" class="h-3.5 w-3.5" />Reset
             </ButtonsButton>
         </div>
 
@@ -42,12 +42,12 @@
         <div v-if="logs && logs.last_page > 1" class="mt-3 flex items-center justify-center gap-2">
             <ButtonsButton variant="ghost" size="sm" :disabled="logs.current_page <= 1"
                 @click="goToPage(logs.current_page - 1)">
-                <Icon name="i-lucide-chevron-left" class="h-3.5 w-3.5" />Previous
+                <Icon name="i-tabler-chevron-left" class="h-3.5 w-3.5" />Previous
             </ButtonsButton>
             <ButtonsButton variant="ghost" size="sm" :disabled="logs.current_page >= logs.last_page"
                 @click="goToPage(logs.current_page + 1)">
                 Next
-                <Icon name="i-lucide-chevron-right" class="h-3.5 w-3.5" />
+                <Icon name="i-tabler-chevron-right" class="h-3.5 w-3.5" />
             </ButtonsButton>
         </div>
     

@@ -11,7 +11,7 @@
 				<p class="font-data mb-1.5 mt-0.5 truncate text-[12.5px] text-stone-500">{{ profile?.studentIDNumber
 					}}{{ profile?.academicProgram ? ` · ${profile.academicProgram}` : '' }}</p>
 				<StudentPill tone="good">
-					<Icon name="i-lucide-check" class="h-3 w-3" />Approved
+					<Icon name="i-tabler-check" class="h-3 w-3" />Approved
 				</StudentPill>
 			</div>
 		</div>
@@ -30,7 +30,7 @@
 					<span class="block text-[14.5px] font-medium text-stone-900">{{ row.label }}</span>
 					<span v-if="row.sub" class="block text-[12.5px] text-stone-400">{{ row.sub }}</span>
 				</span>
-				<Icon name="i-lucide-chevron-right" class="h-4 w-4 text-stone-300" />
+				<Icon name="i-tabler-chevron-right" class="h-4 w-4 text-stone-300" />
 			</component>
 		</div>
 
@@ -48,12 +48,12 @@
 			</div>
 		</div>
 		<div v-else class="h-32 animate-pulse rounded-2xl bg-stone-200/70" aria-busy="true" />
-		<p class="st-in mx-1 mt-2 text-[12.5px] text-stone-400" style="animation-delay: 70ms">To change these details,
-			ask a librarian at the desk.</p>
+		<p class="st-in mx-1 mt-2 text-[12.5px] text-stone-400" style="animation-delay: 70ms">Change your phone, address or password
+			in Profile.</p>
 
 		<ButtonsButton variant="danger" class="st-in mt-6 !h-[46px] w-full !text-[15px]" style="animation-delay: 105ms"
 			@click="confirming = true">
-			<Icon name="i-lucide-log-out" class="h-4 w-4" />Sign out
+			<Icon name="i-tabler-logout" class="h-4 w-4" />Sign out
 		</ButtonsButton>
 
 		<StudentSheet :open="confirming" title="Sign out?" @close="confirming = false">
@@ -86,20 +86,21 @@ const initialsText = computed(() => initials(profile.value?.firstName ?? firstNa
 interface Row { label: string; sub: string; icon: string; to?: string; action?: () => void }
 
 const rows = computed<Row[]>(() => [
-	{ label: 'Library ID', sub: 'Barcode for check-in', icon: 'i-lucide-id-card', to: '/student/id' },
-	{ label: 'Notifications', sub: unreadCount.value ? `${unreadCount.value} unread` : 'All read', icon: 'i-lucide-bell', to: '/student/notifications' },
-	{ label: 'Wishlist', sub: `${wishlist.value.length} saved`, icon: 'i-lucide-heart', action: () => drawer.open('wishlist') },
-	{ label: 'Computers & rooms', sub: 'Live availability', icon: 'i-lucide-monitor', to: '/student/spaces' },
-	{ label: 'Suggest a book', sub: 'Tell us what to add', icon: 'i-lucide-lightbulb', to: '/student/suggest' },
+	{ label: 'Profile', sub: 'Details, achievements and history', icon: 'i-tabler-user-circle', to: '/student/profile' },
+	{ label: 'Library ID', sub: 'Barcode for check-in', icon: 'i-tabler-id', to: '/student/id' },
+	{ label: 'Notifications', sub: unreadCount.value ? `${unreadCount.value} unread` : 'All read', icon: 'i-tabler-bell', to: '/student/notifications' },
+	{ label: 'Wishlist', sub: `${wishlist.value.length} saved`, icon: 'i-tabler-heart', to: '/student/wishlist' },
+	{ label: 'Facilities', sub: 'Computers and rooms, live', icon: 'i-tabler-device-desktop', to: '/student/facilities' },
+	{ label: 'Suggest a book', sub: 'Tell us what to add', icon: 'i-tabler-bulb', to: '/student/suggest' },
 ])
 
 const details = computed(() => {
 	const p = profile.value
 	if (!p) return []
 	return [
-		{ icon: 'i-lucide-mail', value: p.email },
-		p.phoneNumber ? { icon: 'i-lucide-phone', value: p.phoneNumber } : null,
-		p.address ? { icon: 'i-lucide-map-pin', value: p.address } : null,
+		{ icon: 'i-tabler-mail', value: p.email },
+		p.phoneNumber ? { icon: 'i-tabler-phone', value: p.phoneNumber } : null,
+		p.address ? { icon: 'i-tabler-map-pin', value: p.address } : null,
 	].filter((row): row is { icon: string; value: string } => !!row)
 })
 

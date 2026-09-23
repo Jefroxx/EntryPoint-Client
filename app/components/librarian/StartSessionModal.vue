@@ -9,7 +9,7 @@
 		<template #footer>
 			<ButtonsButton variant="ghost" :disabled="busy" @click="emit('close')">Cancel</ButtonsButton>
 			<ButtonsButton variant="primary" :disabled="busy" @click="submit">
-				<Icon v-if="busy" name="i-lucide-loader-2" class="h-3.5 w-3.5 animate-spin" />
+				<Icon v-if="busy" name="i-tabler-loader-2" class="h-3.5 w-3.5 animate-spin" />
 				Start session
 			</ButtonsButton>
 		</template>

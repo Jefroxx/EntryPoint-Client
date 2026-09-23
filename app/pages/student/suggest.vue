@@ -37,7 +37,7 @@
 					enter-active-class="transition-[transform,opacity] duration-[250ms] ease-out" enter-from-class="-translate-y-2 opacity-0" move-class="transition-transform duration-200 ease-out">
 					<div v-for="s in data.suggestions" :key="s.suggestionID" class="flex items-center gap-3.5 border-b border-stone-100 bg-white px-4 py-3.5 last:border-0">
 						<span class="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[10px]" :class="s.status === 'Approved' ? TONE_SOFT.good : s.status === 'Rejected' ? TONE_SOFT.bad : TONE_SOFT.warn">
-							<Icon :name="s.status === 'Approved' ? 'i-lucide-check' : s.status === 'Rejected' ? 'i-lucide-x' : 'i-lucide-clock'" class="h-[17px] w-[17px]" />
+							<Icon :name="s.status === 'Approved' ? 'i-tabler-check' : s.status === 'Rejected' ? 'i-tabler-x' : 'i-tabler-clock'" class="h-[17px] w-[17px]" />
 						</span>
 						<div class="min-w-0 flex-1">
 							<p class="truncate text-[14px] font-medium text-stone-900">{{ s.title }}</p>

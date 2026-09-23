@@ -49,7 +49,7 @@
 						<td class="px-4 py-3">
 							<div class="flex items-center justify-end gap-1">
 								<ButtonsButton variant="icon" size="sm" :aria-label="`Edit ${book.title}`">
-									<Icon name="i-lucide-pencil" class="h-[15px] w-[15px]" />
+									<Icon name="i-tabler-pencil" class="h-[15px] w-[15px]" />
 								</ButtonsButton>
 								<LibrarianRowMenu :items="BOOK_MENU" />
 							</div>
@@ -76,9 +76,9 @@ const props = defineProps<{
 }>()
 
 const BOOK_MENU = [
-	{ key: 'view', label: 'View details', icon: 'i-lucide-eye' },
-	{ key: 'edit', label: 'Edit book', icon: 'i-lucide-pencil' },
-	{ key: 'remove', label: 'Remove', icon: 'i-lucide-trash-2', tone: 'danger', separator: true },
+	{ key: 'view', label: 'View details', icon: 'i-tabler-eye' },
+	{ key: 'edit', label: 'Edit book', icon: 'i-tabler-pencil' },
+	{ key: 'remove', label: 'Remove', icon: 'i-tabler-trash', tone: 'danger', separator: true },
 ] as const
 
 function authorNames(book: CatalogBook): string {

@@ -10,7 +10,9 @@ const MAX_CART_ITEMS = 3
  */
 export function useStudent() {
   const summary = useState<ProfileResponse | null>('student-profile', () => null)
-  const wishlist = useState<WishlistRow[]>('student-wishlist', () => [])
+  // Every row the student has: hearted, in the cart, or both. The wishlist and the cart are views of it.
+  const rows = useState<WishlistRow[]>('student-wishlist', () => [])
+  const wishlist = computed(() => rows.value.filter((row) => row.inWishlist))
   // Hearts flip instantly; the server answer confirms (or undoes) them.
   const optimisticWish = useState<Record<number, boolean>>('student-wish-optimistic', () => ({}))
   const alert = useAlert()
@@ -23,7 +25,7 @@ export function useStudent() {
   const points = computed(() => summary.value?.points ?? 0)
   const streak = computed(() => summary.value?.visitStreak ?? 0)
   const slotsLeft = computed(() => stats.value?.slotsLeft ?? 3)
-  const cart = computed(() => wishlist.value.filter((row) => row.inCart))
+  const cart = computed(() => rows.value.filter((row) => row.inCart))
   const attention = computed(() => (stats.value?.overdueLoans ?? 0) + (stats.value?.readyReservations ?? 0))
 
   const wishedIds = computed(() => new Set(wishlist.value.map((row) => row.bookID)))
@@ -41,7 +43,7 @@ export function useStudent() {
 
   async function refreshWishlist() {
     try {
-      wishlist.value = (await studentService.wishlist()).wishlist
+      rows.value = (await studentService.wishlist()).wishlist
     } catch {
       // Same: never blank the UI because a refresh failed.
     }
@@ -56,6 +58,7 @@ export function useStudent() {
     optimisticWish.value = { ...optimisticWish.value, [bookID]: next }
 
     try {
+      // The server keeps a cart-only row when hearting it, and keeps the cart when un-hearting.
       if (existing && !next) await studentService.removeFromWishlist(existing.wishlistID)
       else if (!existing && next) await studentService.addToWishlist(bookID)
       await Promise.all([refreshWishlist(), refreshProfile()])

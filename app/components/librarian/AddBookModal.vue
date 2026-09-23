@@ -25,7 +25,7 @@
 								physical copies.</p>
 						</div>
 						<ButtonsButton variant="icon" size="md" aria-label="Close" @click="handleClose">
-							<Icon name="i-lucide-x" class="h-4 w-4" />
+							<Icon name="i-tabler-x" class="h-4 w-4" />
 						</ButtonsButton>
 					</div>
 
@@ -60,7 +60,7 @@
 									</select>
 									<ButtonsButton variant="icon" size="sm" aria-label="Remove author"
 										:disabled="authors.length === 1" @click="removeAuthor(index)">
-										<Icon name="i-lucide-trash-2" class="h-3.5 w-3.5" />
+										<Icon name="i-tabler-trash" class="h-3.5 w-3.5" />
 									</ButtonsButton>
 								</div>
 								<p v-if="errors.authors" class="mb-1.5 text-[12.5px] text-red-500">{{ errors.authors }}
@@ -68,7 +68,7 @@
 								<button type="button"
 									class="inline-flex items-center gap-1.5 text-[13.5px] font-semibold text-accent-500 transition-opacity hover:opacity-70"
 									@click="addAuthor">
-									<Icon name="i-lucide-plus" class="h-3.5 w-3.5" />Add author
+									<Icon name="i-tabler-plus" class="h-3.5 w-3.5" />Add author
 								</button>
 							</div>
 
@@ -177,7 +177,7 @@
 											class="flex h-[52px] w-[38px] shrink-0 items-center justify-center overflow-hidden rounded-md bg-gradient-to-br from-accent-100 to-stone-200 text-stone-400">
 											<img v-if="isValidCoverUrl" :src="form.coverImageURL!" alt=""
 												class="h-full w-full object-cover" @error="coverLoadFailed = true" />
-											<Icon v-else name="i-lucide-book" class="h-4 w-4" />
+											<Icon v-else name="i-tabler-book-2" class="h-4 w-4" />
 										</div>
 										<input id="bookCover" v-model="form.coverImageURL" type="text"
 											placeholder="https://…"
@@ -197,7 +197,7 @@
 										<span class="text-[14px] font-bold text-stone-800">More details</span>
 										<span class="text-[12.5px] text-stone-500">Publisher, edition, cost, remarks, and more</span>
 									</span>
-									<Icon name="i-lucide-chevron-down"
+									<Icon name="i-tabler-chevron-down"
 										class="h-4 w-4 flex-shrink-0 text-stone-500 transition-transform duration-200 ease-out"
 										:class="showMoreDetails ? 'rotate-180' : ''" />
 								</button>
@@ -298,7 +298,7 @@
 					<div class="flex flex-shrink-0 justify-end gap-2 border-t border-stone-100 px-6 py-4">
 						<ButtonsButton variant="ghost" @click="handleClose">Cancel</ButtonsButton>
 						<ButtonsButton variant="primary" :disabled="submitting" @click="handleSubmit">
-							<Icon v-if="submitting" name="i-lucide-loader-2" class="h-3.5 w-3.5 animate-spin" />
+							<Icon v-if="submitting" name="i-tabler-loader-2" class="h-3.5 w-3.5 animate-spin" />
 							{{ submitting ? 'Adding…' : 'Add Book' }}
 						</ButtonsButton>
 					</div>

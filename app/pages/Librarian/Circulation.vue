@@ -12,11 +12,11 @@
         <template v-if="activeTab === 'loans'">
             <div class="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <LibrarianCatalogStatTile label="Active Loans" :value="loanStats?.active ?? '—'"
-                    icon="i-lucide-book-open" tone="accent" />
+                    icon="i-tabler-book" tone="accent" />
                 <LibrarianCatalogStatTile label="Due Soon" :value="loanStats?.dueSoon ?? '—'"
-                    icon="i-lucide-clock" tone="warning" />
+                    icon="i-tabler-clock" tone="warning" />
                 <LibrarianCatalogStatTile label="Overdue" :value="loanStats?.overdue ?? '—'"
-                    icon="i-lucide-circle-alert" tone="danger" />
+                    icon="i-tabler-alert-circle" tone="danger" />
             </div>
 
             <div class="mb-4 flex flex-wrap items-center gap-2">
@@ -32,7 +32,7 @@
                 <div class="flex-1"></div>
 
                 <ButtonsButton variant="primary" @click="isCheckoutOpen = true">
-                    <Icon name="i-lucide-plus" class="h-3.5 w-3.5" />Checkout Book
+                    <Icon name="i-tabler-plus" class="h-3.5 w-3.5" />Checkout Book
                 </ButtonsButton>
             </div>
 
@@ -46,11 +46,11 @@
         <template v-else-if="activeTab === 'reservations'">
             <div class="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <LibrarianCatalogStatTile label="Waiting" :value="reservationStats.waiting"
-                    icon="i-lucide-clock" tone="warning" />
+                    icon="i-tabler-clock" tone="warning" />
                 <LibrarianCatalogStatTile label="Accepted" :value="reservationStats.accepted"
-                    icon="i-lucide-circle-check" tone="success" />
+                    icon="i-tabler-circle-check" tone="success" />
                 <LibrarianCatalogStatTile label="Fulfilled" :value="reservationStats.fulfilled"
-                    icon="i-lucide-book-open" tone="accent" />
+                    icon="i-tabler-book" tone="accent" />
             </div>
 
             <div class="mb-4 flex flex-wrap items-center gap-2">
@@ -79,7 +79,7 @@
         <template v-else-if="activeTab === 'selfreturn'">
             <div class="mb-5 grid grid-cols-1 gap-3 sm:max-w-[280px]">
                 <LibrarianCatalogStatTile label="Pending Verification" :value="selfReturns.length"
-                    icon="i-lucide-clock" tone="warning" />
+                    icon="i-tabler-clock" tone="warning" />
             </div>
 
             <LibrarianSelfReturnTable :reports="selfReturns" :loading="selfReturnsPending"
@@ -90,12 +90,12 @@
         <template v-else>
             <div class="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <LibrarianCatalogStatTile label="Unpaid Fines" :value="penaltyStats?.unpaidCount ?? '—'"
-                    icon="i-lucide-circle-alert" tone="danger" />
+                    icon="i-tabler-alert-circle" tone="danger" />
                 <LibrarianCatalogStatTile label="Unpaid Total"
                     :value="penaltyStats ? formatPeso(penaltyStats.unpaidTotal) : '—'"
-                    icon="i-lucide-circle-dollar-sign" tone="warning" />
+                    icon="i-tabler-coin" tone="warning" />
                 <LibrarianCatalogStatTile label="Settled" :value="penaltyStats?.paidCount ?? '—'"
-                    icon="i-lucide-circle-check" tone="success" />
+                    icon="i-tabler-circle-check" tone="success" />
             </div>
 
             <div class="mb-4 flex flex-wrap items-center gap-2">

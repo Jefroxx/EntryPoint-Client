@@ -1,22 +1,13 @@
 <template>
-	<AuthShell :subtitle="isLibrarianPortal ? 'Librarian portal' : 'Library management system'">
-		<!-- <span v-if="isLibrarianPortal"
-			class="mb-2.5 inline-flex h-6 items-center gap-1.5 rounded-full bg-stone-200 px-2.5 text-[11.5px] font-semibold text-stone-700">
-			<Icon name="i-lucide-shield-check" class="h-3.5 w-3.5" />Staff portal
-		</span> -->
-		<span v-if="isLibrarianPortal"
-			class="mb-2.5 inline-flex h-6 items-center gap-1.5 rounded-full bg-emerald-100 px-2.5 text-[11.5px] font-semibold text-emerald-700">
-			<Icon name="i-lucide-shield-check" class="h-3.5 w-3.5" />
-			Staff Portal
-		</span>
-		<h1 class="dashboard-heading text-[22px] font-bold text-amber-900">
-			{{ isLibrarianPortal ? 'Librarian Sign in' : 'Welcome back' }}
+	<div class="mx-auto w-full max-w-[360px]">
+		<h1 class="dashboard-heading text-balance text-[30px] font-extrabold leading-[1.15] tracking-[-.02em] text-amber-900">
+			{{ isLibrarianPortal ? 'Librarian sign-in' : 'Welcome back' }}
 		</h1>
-		<p class="mb-5 mt-1 text-[13px] text-stone-500">
+		<p class="mb-7 mt-2 text-[14px] text-stone-500">
 			{{ isLibrarianPortal ? 'Staff accounts only.' : 'Sign in with your school email.' }}
 		</p>
 
-		<form class="grid gap-3" novalidate @submit.prevent="handleLogin">
+		<form class="grid gap-3.5" novalidate @submit.prevent="handleLogin">
 			<LibrarianTextField id="email" v-model="email" label="Email" type="email" autocomplete="email"
 				placeholder="you@school.edu.ph" @update:model-value="errorMessage = ''" />
 			<AuthPasswordField id="password" v-model="password" label="Password" autocomplete="current-password"
@@ -27,12 +18,12 @@
 				leave-to-class="opacity-0">
 				<div v-if="errorMessage" role="alert"
 					class="flex items-start gap-2 rounded-xl border border-red-100 bg-red-50 px-3 py-2.5 text-[12.5px] leading-snug text-red-600">
-					<Icon name="i-lucide-circle-alert" class="mt-px h-4 w-4 shrink-0" />
+					<Icon name="i-tabler-alert-circle" class="mt-px h-4 w-4 shrink-0" />
 					<span>{{ errorMessage }}</span>
 				</div>
 			</Transition>
 
-			<ButtonsButton type="submit" class="mt-1 !h-[46px] w-full !text-[14.5px]"
+			<ButtonsButton type="submit" class="mt-2 !h-[46px] w-full !text-[14.5px]"
 				:class="isLibrarianPortal ? '!border-stone-700 !bg-stone-700 hover:!border-stone-900 hover:!bg-stone-900' : ''"
 				:disabled="isLoading">
 				<span v-if="isLoading"
@@ -41,25 +32,24 @@
 			</ButtonsButton>
 		</form>
 
-		<p v-if="!isLibrarianPortal" class="mt-4 text-center text-[13px] text-stone-500">
+		<!-- On wide screens the brand panel carries this link. -->
+		<p v-if="!isLibrarianPortal" class="mt-5 text-center text-[13px] text-stone-500 lg:hidden">
 			New student?
 			<NuxtLink to="/register" class="font-semibold text-accent-500 hover:underline">Create an account</NuxtLink>
 		</p>
 
-		<p class="mt-4 border-t border-stone-100 pt-4 text-center text-[12.5px] text-stone-400">
+		<p class="mt-6 border-t border-stone-100 pt-5 text-center text-[12.5px] text-stone-500"
+			:class="isLibrarianPortal ? 'lg:hidden' : ''">
 			<template v-if="isLibrarianPortal">
 				Are you a student?
-				<NuxtLink to="/login" class="font-medium text-stone-500 hover:text-accent-500 hover:underline">Go to
-					student sign-in</NuxtLink>
+				<NuxtLink to="/login" class="font-semibold text-stone-700 hover:text-accent-500 hover:underline">Go to student sign-in</NuxtLink>
 			</template>
 			<template v-else>
 				Library staff?
-				<NuxtLink to="/librarian/login"
-					class="font-medium text-stone-500 hover:text-accent-500 hover:underline">Use the librarian sign-in
-				</NuxtLink>
+				<NuxtLink to="/librarian/login" class="font-semibold text-stone-700 hover:text-accent-500 hover:underline">Use the librarian sign-in</NuxtLink>
 			</template>
 		</p>
-	</AuthShell>
+	</div>
 </template>
 
 <script setup lang="ts">

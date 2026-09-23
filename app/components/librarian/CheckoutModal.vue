@@ -19,7 +19,7 @@
 							<p class="dashboard-heading text-[13.5px] text-amber-900">Lend an available copy to an approved student.</p>
 						</div>
 						<ButtonsButton variant="icon" size="md" aria-label="Close" @click="handleClose">
-							<Icon name="i-lucide-x" class="h-4 w-4" />
+							<Icon name="i-tabler-x" class="h-4 w-4" />
 						</ButtonsButton>
 					</div>
 
@@ -55,7 +55,7 @@
 					<div class="flex justify-end gap-2 border-t border-stone-100 px-6 py-4">
 						<ButtonsButton variant="ghost" @click="handleClose">Cancel</ButtonsButton>
 						<ButtonsButton variant="primary" :disabled="submitting" @click="handleSubmit">
-							<Icon v-if="submitting" name="i-lucide-loader-2" class="h-3.5 w-3.5 animate-spin" />
+							<Icon v-if="submitting" name="i-tabler-loader-2" class="h-3.5 w-3.5 animate-spin" />
 							{{ submitting ? 'Checking out…' : 'Checkout' }}
 						</ButtonsButton>
 					</div>

@@ -7,10 +7,10 @@
 
 		<div v-if="lastPage > 1" class="mt-3 flex items-center justify-center gap-2">
 			<ButtonsButton variant="ghost" size="sm" :disabled="page <= 1" @click="emit('change', page - 1)">
-				<Icon name="i-lucide-chevron-left" class="h-3.5 w-3.5" />Previous
+				<Icon name="i-tabler-chevron-left" class="h-3.5 w-3.5" />Previous
 			</ButtonsButton>
 			<ButtonsButton variant="ghost" size="sm" :disabled="page >= lastPage" @click="emit('change', page + 1)">
-				Next<Icon name="i-lucide-chevron-right" class="h-3.5 w-3.5" />
+				Next<Icon name="i-tabler-chevron-right" class="h-3.5 w-3.5" />
 			</ButtonsButton>
 		</div>
 	</div>

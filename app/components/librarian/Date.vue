@@ -1,7 +1,7 @@
 <template>
     <UPopover>
-        <UButton color="neutral" variant="outline" class="rounded-full" icon="i-lucide-calendar"
-            trailing-icon="i-lucide-chevron-down">
+        <UButton color="neutral" variant="outline" class="rounded-full" icon="i-tabler-calendar"
+            trailing-icon="i-tabler-chevron-down">
             {{ formattedDate }}
         </UButton>
 

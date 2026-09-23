@@ -3,7 +3,7 @@
 		<!-- After reserving -->
 		<div v-if="done">
 			<div class="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
-				<Icon name="i-lucide-check" class="h-6 w-6" />
+				<Icon name="i-tabler-check" class="h-6 w-6" />
 			</div>
 			<h3 class="dashboard-heading text-[22px] font-extrabold text-amber-900">Reservation sent</h3>
 			<ul class="mt-2 space-y-1 text-[14px] text-stone-600">
@@ -28,7 +28,7 @@
 
 			<div v-if="over" role="alert"
 				class="mt-3.5 flex items-start gap-2.5 rounded-2xl bg-red-50 px-3.5 py-3 text-[13px] leading-snug text-red-600">
-				<Icon name="i-lucide-circle-alert" class="mt-px h-4 w-4 shrink-0" />
+				<Icon name="i-tabler-alert-circle" class="mt-px h-4 w-4 shrink-0" />
 				<span>
 					You have {{ slotsLeft }} reservation slot{{ slotsLeft === 1 ? '' : 's' }} left. Remove
 					{{ cart.length - slotsLeft }} book{{ cart.length - slotsLeft === 1 ? '' : 's' }} to continue.
@@ -49,19 +49,20 @@
 							</div>
 						</div>
 						<ButtonsButton variant="icon" aria-label="Remove from cart" @click="removeFromCart(row)">
-							<Icon name="i-lucide-x" class="h-4 w-4" />
+							<Icon name="i-tabler-x" class="h-4 w-4" />
 						</ButtonsButton>
 					</div>
 				</TransitionGroup>
 
 				<div class="mt-3.5 flex items-start gap-2.5 rounded-2xl bg-accent-100 px-3.5 py-3 text-[13px] leading-snug text-accent-600">
-					<Icon name="i-lucide-id-card" class="mt-px h-4 w-4 shrink-0" />
+					<Icon name="i-tabler-id" class="mt-px h-4 w-4 shrink-0" />
 					<span>Reserving doesn't check the book out. A librarian accepts your request, then you collect it at the desk with your ID.</span>
 				</div>
 			</template>
 
-			<StudentEmptyState v-else icon="i-lucide-shopping-bag" title="Your cart is empty"
+			<StudentEmptyState v-else title="Your cart is empty"
 				text="Add books from Discover or your wishlist.">
+				<template #icon><StudentCartIcon class="h-7 w-7" /></template>
 				<NuxtLink to="/student/discover">
 					<ButtonsButton>Browse books</ButtonsButton>
 				</NuxtLink>

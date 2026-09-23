@@ -37,7 +37,7 @@
 			</div>
 		</div>
 
-		<StudentEmptyState v-else-if="failed" icon="i-lucide-book-x" title="Couldn't load this book"
+		<StudentEmptyState v-else-if="failed" icon="i-tabler-book-off" title="Couldn't load this book"
 			text="It may have been removed from the catalog.">
 			<ButtonsButton variant="ghost" @click="load">Try again</ButtonsButton>
 		</StudentEmptyState>
@@ -52,10 +52,10 @@
 			<StudentHeartButton :active="isWished(book.bookID)" class="border border-stone-200 bg-white" @toggle="toggleWish(book.bookID)" />
 			<ButtonsButton v-if="isInCart(book.bookID)" variant="ghost" class="!h-[46px] flex-1 !border-accent-100 !bg-accent-100 !text-[15px] !text-accent-600"
 				@click="drawer.open('cart')">
-				<Icon name="i-lucide-check" class="h-4 w-4" />In cart · View cart
+				<Icon name="i-tabler-check" class="h-4 w-4" />In cart · View cart
 			</ButtonsButton>
 			<ButtonsButton v-else class="!h-[46px] flex-1 !text-[15px]" @click="addToCart(book.bookID)">
-				<Icon name="i-lucide-shopping-bag" class="h-4 w-4" />{{ book.availableCopies ? 'Add to cart' : 'Add to cart & join queue' }}
+				<StudentCartIcon class="h-5 w-5" />{{ book.availableCopies ? 'Add to cart' : 'Add to cart & join queue' }}
 			</ButtonsButton>
 		</template>
 	</StudentDrawer>

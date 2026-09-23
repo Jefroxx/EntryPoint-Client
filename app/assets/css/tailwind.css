@@ -14,6 +14,9 @@
 	--color-accent-500: #9a5323;
 	--color-accent-600: #7a3f18;
 	--color-accent-700: #6f3a15;
+	/* Deep ends of the same brown, for surfaces that carry white text (the book panel on Home). */
+	--color-accent-800: #4a260d;
+	--color-accent-900: #2e1708;
 
 	/* Stronger, more intentional curves than Tailwind's defaults (Emil Kowalski) */
 	--ease-out: cubic-bezier(.23, 1, .32, 1);

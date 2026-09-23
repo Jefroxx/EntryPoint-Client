@@ -12,14 +12,14 @@
 
         <template v-if="activeTab === 'resources'">
             <div class="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <LibrarianCatalogStatTile label="Total Resources" :value="resources.length" icon="i-lucide-monitor"
+                <LibrarianCatalogStatTile label="Total Resources" :value="resources.length" icon="i-tabler-device-desktop"
                     tone="accent" />
                 <LibrarianCatalogStatTile label="Available" :value="countByStatus('Available')"
-                    icon="i-lucide-circle-check" tone="success" />
-                <LibrarianCatalogStatTile label="In Use" :value="countByStatus('In Use')" icon="i-lucide-clock"
+                    icon="i-tabler-circle-check" tone="success" />
+                <LibrarianCatalogStatTile label="In Use" :value="countByStatus('In Use')" icon="i-tabler-clock"
                     tone="warning" />
                 <LibrarianCatalogStatTile label="Unavailable" :value="countByStatus('Unavailable')"
-                    icon="i-lucide-circle-x" tone="danger" />
+                    icon="i-tabler-circle-x" tone="danger" />
             </div>
 
             <div class="mb-4 flex flex-wrap items-center gap-2">
@@ -34,7 +34,7 @@
                 <div class="flex-1"></div>
 
                 <ButtonsButton variant="primary" @click="openForm(null)">
-                    <Icon name="i-lucide-plus" class="h-3.5 w-3.5" />Add Resource
+                    <Icon name="i-tabler-plus" class="h-3.5 w-3.5" />Add Resource
                 </ButtonsButton>
             </div>
 

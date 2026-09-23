@@ -14,19 +14,19 @@
         <template v-if="activeTab === 'catalog'">
             <div class="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <LibrarianCatalogStatTile label="Total Books" :value="stats?.totalBooks ?? '—'"
-                    icon="i-lucide-book" tone="accent" />
+                    icon="i-tabler-book-2" tone="accent" />
                 <LibrarianCatalogStatTile label="Available Books" :value="stats?.availableBooks ?? '—'"
-                    icon="i-lucide-circle-check" tone="success" />
+                    icon="i-tabler-circle-check" tone="success" />
                 <LibrarianCatalogStatTile label="Borrowed Books" :value="stats?.borrowedBooks ?? '—'"
-                    icon="i-lucide-book-open" tone="warning" />
+                    icon="i-tabler-book" tone="warning" />
                 <LibrarianCatalogStatTile label="Overdue Books" :value="stats?.overdueBooks ?? '—'"
-                    icon="i-lucide-circle-alert" tone="danger" />
+                    icon="i-tabler-alert-circle" tone="danger" />
             </div>
 
             <div class="mb-4 flex flex-wrap items-center gap-2">
                 <div
                     class="flex h-[42px] min-w-[200px] max-w-[320px] flex-1 items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 transition-shadow focus-within:ring-2 focus-within:ring-accent-200">
-                    <Icon name="i-lucide-search" class="h-[15px] w-[15px] text-stone-400" />
+                    <Icon name="i-tabler-search" class="h-[15px] w-[15px] text-stone-400" />
                     <input id="library-search" v-model="search" type="text"
                         placeholder="Search book, author, or ISBN"
                         class="w-full border-none bg-transparent text-[15px] text-stone-800 outline-none placeholder:text-stone-400" />
@@ -34,17 +34,17 @@
 
                 <ButtonsButton variant="ghost">
                     All Categories
-                    <Icon name="i-lucide-chevron-down" class="h-3.5 w-3.5 opacity-60" />
+                    <Icon name="i-tabler-chevron-down" class="h-3.5 w-3.5 opacity-60" />
                 </ButtonsButton>
                 <ButtonsButton variant="ghost">
                     All Availability
-                    <Icon name="i-lucide-chevron-down" class="h-3.5 w-3.5 opacity-60" />
+                    <Icon name="i-tabler-chevron-down" class="h-3.5 w-3.5 opacity-60" />
                 </ButtonsButton>
 
                 <div class="flex-1"></div>
 
                 <ButtonsButton variant="primary" @click="isAddModalOpen = true">
-                    <Icon name="i-lucide-plus" class="h-3.5 w-3.5" />Add New Book
+                    <Icon name="i-tabler-plus" class="h-3.5 w-3.5" />Add New Book
                 </ButtonsButton>
             </div>
 
@@ -58,11 +58,11 @@
             <div v-if="books && books.last_page > 1" class="mt-3 flex items-center justify-center gap-2">
                 <ButtonsButton variant="ghost" size="sm" :disabled="books.current_page <= 1"
                     @click="goToPage(books.current_page - 1)">
-                    <Icon name="i-lucide-chevron-left" class="h-3.5 w-3.5" />Previous
+                    <Icon name="i-tabler-chevron-left" class="h-3.5 w-3.5" />Previous
                 </ButtonsButton>
                 <ButtonsButton variant="ghost" size="sm" :disabled="books.current_page >= books.last_page"
                     @click="goToPage(books.current_page + 1)">
-                    Next<Icon name="i-lucide-chevron-right" class="h-3.5 w-3.5" />
+                    Next<Icon name="i-tabler-chevron-right" class="h-3.5 w-3.5" />
                 </ButtonsButton>
             </div>
         </template>
@@ -70,19 +70,19 @@
         <template v-else-if="activeTab === 'requests'">
             <div class="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <LibrarianCatalogStatTile label="Total Requests" :value="requestStats.total"
-                    icon="i-lucide-clipboard-list" tone="accent" />
+                    icon="i-tabler-clipboard-list" tone="accent" />
                 <LibrarianCatalogStatTile label="Pending Requests" :value="requestStats.pending"
-                    icon="i-lucide-clock" tone="warning" />
+                    icon="i-tabler-clock" tone="warning" />
                 <LibrarianCatalogStatTile label="Approved Requests" :value="requestStats.approved"
-                    icon="i-lucide-circle-check" tone="success" />
+                    icon="i-tabler-circle-check" tone="success" />
                 <LibrarianCatalogStatTile label="Rejected Requests" :value="requestStats.rejected"
-                    icon="i-lucide-circle-x" tone="danger" />
+                    icon="i-tabler-circle-x" tone="danger" />
             </div>
 
             <div class="mb-4 flex flex-wrap items-center gap-2">
                 <div
                     class="flex h-[42px] min-w-[200px] max-w-[320px] flex-1 items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 transition-shadow focus-within:ring-2 focus-within:ring-accent-200">
-                    <Icon name="i-lucide-search" class="h-[15px] w-[15px] text-stone-400" />
+                    <Icon name="i-tabler-search" class="h-[15px] w-[15px] text-stone-400" />
                     <input id="request-search" v-model="requestSearch" type="text"
                         placeholder="Search title, author, or requester"
                         class="w-full border-none bg-transparent text-[15px] text-stone-800 outline-none placeholder:text-stone-400" />
@@ -99,7 +99,7 @@
                 <div class="flex-1"></div>
 
                 <ButtonsButton variant="ghost" @click="requestSearch = ''; requestStatusFilter = ''">
-                    <Icon name="i-lucide-rotate-ccw" class="h-3.5 w-3.5" />Reset
+                    <Icon name="i-tabler-rotate" class="h-3.5 w-3.5" />Reset
                 </ButtonsButton>
             </div>
 
@@ -115,23 +115,23 @@
 
             <div v-if="requestsTotalPages > 1" class="mt-3 flex items-center justify-center gap-2">
                 <ButtonsButton variant="ghost" size="sm" :disabled="requestsPage <= 1" @click="requestsPage--">
-                    <Icon name="i-lucide-chevron-left" class="h-3.5 w-3.5" />Previous
+                    <Icon name="i-tabler-chevron-left" class="h-3.5 w-3.5" />Previous
                 </ButtonsButton>
                 <ButtonsButton variant="ghost" size="sm" :disabled="requestsPage >= requestsTotalPages" @click="requestsPage++">
-                    Next<Icon name="i-lucide-chevron-right" class="h-3.5 w-3.5" />
+                    Next<Icon name="i-tabler-chevron-right" class="h-3.5 w-3.5" />
                 </ButtonsButton>
             </div>
         </template>
 
         <template v-else>
             <div class="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
-                <LibrarianCatalogStatTile label="Categories" :value="subjects.length" icon="i-lucide-tags"
+                <LibrarianCatalogStatTile label="Categories" :value="subjects.length" icon="i-tabler-tags"
                     tone="accent" />
                 <LibrarianCatalogStatTile label="With a Dewey code"
-                    :value="`${classifiedCount} of ${subjects.length}`" icon="i-lucide-circle-check"
+                    :value="`${classifiedCount} of ${subjects.length}`" icon="i-tabler-circle-check"
                     tone="success" />
                 <LibrarianCatalogStatTile label="Largest category" :value="largestSubject?.name ?? '—'"
-                    icon="i-lucide-book" tone="warning" />
+                    icon="i-tabler-book-2" tone="warning" />
             </div>
 
             <div class="mb-4 flex flex-wrap items-center gap-2">
@@ -139,7 +139,7 @@
                     placeholder="Search categories" />
                 <div class="flex-1"></div>
                 <ButtonsButton variant="primary" @click="openCategoryForm(null)">
-                    <Icon name="i-lucide-plus" class="h-3.5 w-3.5" />Add Category
+                    <Icon name="i-tabler-plus" class="h-3.5 w-3.5" />Add Category
                 </ButtonsButton>
             </div>
 

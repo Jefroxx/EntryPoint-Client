@@ -1,12 +1,12 @@
 <template>
-	<AuthShell wide :subtitle="submitted ? undefined : 'Create your student library account'">
+	<section class="auth-pane" data-side="right">
 		<Transition mode="out-in" enter-active-class="transition duration-300 ease-out"
 			enter-from-class="translate-y-1.5 opacity-0" leave-active-class="transition duration-150 ease-out"
 			leave-to-class="opacity-0">
 			<!-- After submit -->
 			<div v-if="submitted" key="done" class="px-1 py-2 text-center">
 				<div class="mx-auto mb-3.5 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
-					<Icon name="i-lucide-check" class="h-6 w-6" />
+					<Icon name="i-tabler-check" class="h-6 w-6" />
 				</div>
 				<h1 class="dashboard-heading text-[22px] font-bold text-amber-900">Registration submitted</h1>
 				<p class="mt-1 text-[13px] leading-relaxed text-stone-500">
@@ -18,7 +18,7 @@
 					<li v-for="step in steps" :key="step.title" class="flex items-start gap-3 text-[13px] leading-snug text-stone-500">
 						<span class="mt-px flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full text-[11px] font-bold"
 							:class="step.state === 'done' ? 'bg-emerald-50 text-emerald-600' : step.state === 'now' ? 'bg-amber-100 text-amber-700' : 'bg-stone-100 text-stone-500'">
-							<Icon v-if="step.state === 'done'" name="i-lucide-check" class="h-3 w-3" />
+							<Icon v-if="step.state === 'done'" name="i-tabler-check" class="h-3 w-3" />
 							<template v-else>{{ step.n }}</template>
 						</span>
 						<span><b class="font-semibold text-stone-900">{{ step.title }}</b><br>{{ step.body }}</span>
@@ -29,23 +29,46 @@
 			</div>
 
 			<!-- Form -->
-			<form v-else key="form" novalidate @submit.prevent="submit">
-				<h1 class="dashboard-heading text-[22px] font-bold text-amber-900">Create account</h1>
-				<p class="mb-5 mt-1 text-[13px] leading-relaxed text-stone-500">
+			<form v-else key="form" novalidate @submit.prevent="step === 1 ? next() : submit()">
+				<h1 class="dashboard-heading text-[30px] font-extrabold leading-[1.15] tracking-[-.02em] text-amber-900">Create account</h1>
+				<p class="mt-2 text-[14px] leading-relaxed text-stone-500">
 					A librarian will review your registration before you can sign in.
 				</p>
+
+				<!-- Two short steps instead of one long form. A finished step can be reopened. -->
+				<ol class="mb-6 mt-5 grid grid-cols-2 gap-2.5" aria-label="Registration steps">
+					<li v-for="s in stepList" :key="s.n" :aria-current="step === s.n ? 'step' : undefined">
+						<button type="button" :disabled="s.n > step"
+							class="group w-full rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-200 disabled:cursor-default"
+							@click="goTo(s.n)">
+							<span class="block h-1 rounded-full transition-colors duration-300"
+								:class="s.n <= step ? 'bg-accent-500' : 'bg-stone-200'" />
+							<span class="mt-2 flex items-center gap-1.5 text-[12.5px] font-semibold transition-colors duration-300"
+								:class="step === s.n ? 'text-accent-600' : s.n < step ? 'text-stone-700 group-hover:text-accent-600' : 'text-stone-400'">
+								<Icon v-if="s.n < step" name="i-tabler-check" class="h-3.5 w-3.5" />
+								<span v-else class="tabular-nums">{{ s.n }}.</span>
+								{{ s.label }}
+							</span>
+						</button>
+					</li>
+				</ol>
 
 				<Transition enter-active-class="transition duration-200 ease-out" enter-from-class="-translate-y-1 opacity-0"
 					leave-active-class="transition duration-150 ease-out" leave-to-class="opacity-0">
 					<div v-if="formError" role="alert"
 						class="mb-4 flex items-start gap-2 rounded-xl border border-red-100 bg-red-50 px-3 py-2.5 text-[12.5px] leading-snug text-red-600">
-						<Icon name="i-lucide-circle-alert" class="mt-px h-4 w-4 shrink-0" />
+						<Icon name="i-tabler-alert-circle" class="mt-px h-4 w-4 shrink-0" />
 						<span>{{ formError }}</span>
 					</div>
 				</Transition>
 
-				<fieldset class="mb-5">
-					<legend class="mb-2.5 text-[10.5px] font-bold uppercase tracking-[.08em] text-stone-400">About you</legend>
+				<Transition mode="out-in" enter-active-class="transition duration-300 ease-out"
+					:enter-from-class="direction > 0 ? 'translate-x-3 opacity-0' : '-translate-x-3 opacity-0'"
+					leave-active-class="transition duration-150 ease-out" leave-to-class="opacity-0"
+					@after-enter="focusPending">
+				<div v-if="step === 1" key="about">
+				<fieldset class="mb-6">
+					<legend class="sr-only">About you</legend>
 					<div class="grid gap-3 sm:grid-cols-[1fr_84px_1fr]" @focusout="touch">
 						<LibrarianTextField id="firstName" v-model="form.firstName" label="First name" autocomplete="given-name"
 							placeholder="Matt" :error="err('firstName')" @update:model-value="clear('firstName')" />
@@ -68,6 +91,13 @@
 					</div>
 				</fieldset>
 
+				<ButtonsButton type="submit" class="!h-[46px] w-full !text-[14.5px]">
+					Continue
+					<Icon name="i-tabler-arrow-right" class="h-4 w-4" />
+				</ButtonsButton>
+				</div>
+
+				<div v-else key="school">
 				<fieldset class="mb-5">
 					<legend class="mb-2.5 text-[10.5px] font-bold uppercase tracking-[.08em] text-stone-400">School</legend>
 					<div class="grid gap-3 sm:grid-cols-2" @focusout="touch">
@@ -114,24 +144,37 @@
 					</ul>
 				</fieldset>
 
-				<ButtonsButton type="submit" class="!h-[46px] w-full !text-[14.5px]" :disabled="submitting">
-					<span v-if="submitting" class="h-[15px] w-[15px] animate-spin rounded-full border-2 border-white/40 border-t-white" />
-					{{ submitting ? 'Creating account…' : 'Create account' }}
-				</ButtonsButton>
+				<div class="flex gap-2.5">
+					<ButtonsButton type="button" variant="ghost" class="!h-[46px] !px-4 !text-[14.5px]" :disabled="submitting"
+						@click="goTo(1)">
+						<Icon name="i-tabler-arrow-left" class="h-4 w-4" />
+						Back
+					</ButtonsButton>
+					<ButtonsButton type="submit" class="!h-[46px] flex-1 !text-[14.5px]" :disabled="submitting">
+						<span v-if="submitting" class="h-[15px] w-[15px] animate-spin rounded-full border-2 border-white/40 border-t-white" />
+						{{ submitting ? 'Creating account…' : 'Create account' }}
+					</ButtonsButton>
+				</div>
+				</div>
+				</Transition>
 
-				<p class="mt-4 text-center text-[13px] text-stone-500">
+				<p class="mt-4 text-center text-[13px] text-stone-500 lg:hidden">
 					Already registered?
 					<NuxtLink to="/login" class="font-semibold text-accent-500 hover:underline">Sign in</NuxtLink>
 				</p>
 			</form>
 		</Transition>
-	</AuthShell>
+	</section>
 </template>
 
 <script setup lang="ts">
 import { authService, type RegisterPayload } from '~/services/auth/AuthService'
 
-definePageMeta({ layout: false, middleware: 'guest' })
+definePageMeta({
+	layout: 'auth',
+	middleware: 'guest',
+	pageTransition: { name: 'auth-swap', mode: 'default' },
+})
 useHead({ title: 'Create account' })
 
 // Free-text column on the API side; this is just a convenient list.
@@ -196,6 +239,52 @@ function err(field: Field) {
 	return serverErrors.value[field] ?? (touched.has(field) ? clientErrors.value[field] : undefined)
 }
 
+const stepList = [
+	{ n: 1, label: 'About you' },
+	{ n: 2, label: 'School & sign-in' },
+] as const
+type Step = (typeof stepList)[number]['n']
+
+const stepFields: Record<Step, Field[]> = {
+	1: ['firstName', 'middleInitial', 'lastName', 'birthDate', 'phoneNumber', 'address'],
+	2: ['studentIDNumber', 'academicProgram', 'email', 'password', 'password_confirmation'],
+}
+const stepOf = (field: Field): Step => (stepFields[1].includes(field) ? 1 : 2)
+
+const step = ref<Step>(1)
+const direction = ref(1)
+// Set before a step change; focused once the new step has finished entering (see @after-enter).
+const pendingFocus = ref<Field | null>(null)
+
+function focusField(field: Field) {
+	if (stepOf(field) === step.value) {
+		document.getElementById(field)?.focus()
+		return
+	}
+	pendingFocus.value = field
+	goTo(stepOf(field))
+}
+
+function focusPending() {
+	if (pendingFocus.value) document.getElementById(pendingFocus.value)?.focus()
+	pendingFocus.value = null
+}
+
+function goTo(target: Step) {
+	if (target === step.value) return
+	direction.value = target > step.value ? 1 : -1
+	pendingFocus.value ??= stepFields[target][0]!
+	step.value = target
+}
+
+/** Step 1 is checked on its own, so the second step only opens once the first is right. */
+function next() {
+	stepFields[1].forEach((f) => touched.add(f))
+	const firstInvalid = stepFields[1].find((f) => clientErrors.value[f])
+	if (firstInvalid) focusField(firstInvalid)
+	else goTo(2)
+}
+
 function clear(field: Field) {
 	if (serverErrors.value[field]) serverErrors.value = { ...serverErrors.value, [field]: undefined }
 	if (formError.value) formError.value = ''
@@ -213,7 +302,7 @@ async function submit() {
 
 	const firstInvalid = (Object.keys(form) as Field[]).find((f) => clientErrors.value[f])
 	if (firstInvalid) {
-		document.getElementById(firstInvalid)?.focus()
+		focusField(firstInvalid)
 		return
 	}
 
@@ -248,7 +337,8 @@ async function submit() {
 				? 'We couldn\'t create your account. Check the highlighted fields and try again.'
 				: apiErrorMessage(error, 'Something went wrong. Please try again.')
 			const firstServer = (Object.keys(form) as Field[]).find((f) => fields[f])
-			if (firstServer) document.getElementById(firstServer)?.focus()
+			// A server error can belong to either step (e.g. a name that's too long), so go to it.
+			if (firstServer) focusField(firstServer)
 		}
 	} finally {
 		submitting.value = false

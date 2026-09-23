@@ -3,7 +3,7 @@
 		<div class="st-in mb-5 flex flex-wrap items-end justify-between gap-4">
 			<div>
 				<h1 class="dashboard-heading text-3xl font-bold text-amber-900">My books</h1>
-				<p class="dashboard-heading mt-1 text-amber-900">What you hold, what you've reserved, and what you owe.</p>
+				<p class="dashboard-heading mt-1 text-amber-900">What you've reserved, what you hold, and what you owe.</p>
 			</div>
 			<LibrarianSegmentedTabs v-model="tab" :tabs="tabs" />
 		</div>
@@ -16,7 +16,7 @@
 
 				<!-- LOANS -->
 				<template v-else-if="data && tab === 'loans'">
-					<StudentEmptyState v-if="!openLoans.length" icon="i-lucide-book-open" title="Nothing borrowed"
+					<StudentEmptyState v-if="!openLoans.length" icon="i-tabler-book" title="Nothing borrowed"
 						text="Books you borrow at the desk show up here.">
 						<NuxtLink to="/student/discover"><ButtonsButton>Browse books</ButtonsButton></NuxtLink>
 					</StudentEmptyState>
@@ -45,7 +45,7 @@
 								<p v-if="loan.status === 'Reported'" class="text-[12.5px] text-stone-400 md:max-w-[150px] md:text-right">Reported. A librarian will verify it.</p>
 								<ButtonsButton v-else variant="ghost" size="sm" class="!h-10 w-full !border-accent-100 !bg-accent-100 !text-[14px] !text-accent-600 md:!h-8 md:w-auto md:!text-[13px]"
 									@click="returning = loan">
-									<Icon name="i-lucide-undo-2" class="h-3.5 w-3.5" />I returned this
+									<Icon name="i-tabler-arrow-back-up" class="h-3.5 w-3.5" />I returned this
 								</ButtonsButton>
 							</div>
 						</div>
@@ -60,7 +60,7 @@
 									<p class="truncate text-[14px] font-semibold text-stone-900">{{ loan.book.title }}</p>
 									<p class="text-[12.5px] text-stone-400">Returned {{ loan.returnDate ? formatDate(loan.returnDate) : '' }}</p>
 								</div>
-								<Icon name="i-lucide-check" class="h-4 w-4 text-emerald-600" />
+								<Icon name="i-tabler-check" class="h-4 w-4 text-emerald-600" />
 							</div>
 						</div>
 					</template>
@@ -69,11 +69,11 @@
 				<!-- RESERVATIONS -->
 				<template v-else-if="data && tab === 'reservations'">
 					<div class="mb-3.5 flex items-start gap-2.5 rounded-2xl bg-accent-100 px-3.5 py-3 text-[13px] leading-snug text-accent-600">
-						<Icon name="i-lucide-id-card" class="mt-px h-4 w-4 shrink-0" />
+						<Icon name="i-tabler-id" class="mt-px h-4 w-4 shrink-0" />
 						<span>{{ slotsLeft }} of 3 reservation slots free. Books are handed over at the desk once accepted.</span>
 					</div>
 
-					<StudentEmptyState v-if="!activeReservations.length" icon="i-lucide-clock" title="No active reservations"
+					<StudentEmptyState v-if="!activeReservations.length" icon="i-tabler-clock" title="No active reservations"
 						text="Add books to your cart, then reserve them.">
 						<NuxtLink to="/student/discover"><ButtonsButton>Find a book</ButtonsButton></NuxtLink>
 					</StudentEmptyState>
@@ -89,8 +89,8 @@
 									<p class="text-[14.5px] font-semibold leading-tight text-stone-900">{{ r.book.title }}</p>
 									<p class="mt-0.5 truncate text-[12.5px] text-stone-400">{{ authorLine(briefOf(r.book)) }} · Reserved {{ formatDate(r.reservedAt) }}</p>
 									<div class="mt-2">
-										<StudentPill v-if="r.status === 'Waiting'" tone="warn"><Icon name="i-lucide-clock" class="h-3 w-3" />#{{ r.queuePosition }} in line</StudentPill>
-										<StudentPill v-else tone="good"><Icon name="i-lucide-check" class="h-3 w-3" />Ready for pickup</StudentPill>
+										<StudentPill v-if="r.status === 'Waiting'" tone="warn"><Icon name="i-tabler-clock" class="h-3 w-3" />#{{ r.queuePosition }} in line</StudentPill>
+										<StudentPill v-else tone="good"><Icon name="i-tabler-check" class="h-3 w-3" />Ready for pickup</StudentPill>
 									</div>
 								</div>
 							</div>
@@ -136,7 +136,7 @@
 						<div class="overflow-hidden rounded-2xl border border-stone-200 bg-white">
 							<div v-for="f in data.penalties" :key="f.penaltyID" class="flex items-center gap-3.5 border-b border-stone-100 px-4 py-3.5 last:border-0">
 								<span class="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[10px]" :class="f.paymentStatus === 'Paid' ? TONE_SOFT.good : TONE_SOFT.bad">
-									<Icon :name="f.paymentStatus === 'Paid' ? 'i-lucide-check' : 'i-lucide-circle-alert'" class="h-[17px] w-[17px]" />
+									<Icon :name="f.paymentStatus === 'Paid' ? 'i-tabler-check' : 'i-tabler-alert-circle'" class="h-[17px] w-[17px]" />
 								</span>
 								<div class="min-w-0 flex-1">
 									<p class="truncate text-[14px] font-semibold text-stone-900">{{ f.book.title }}</p>
@@ -165,7 +165,7 @@
 					</div>
 				</dl>
 				<div class="mt-3 flex items-start gap-2.5 rounded-2xl bg-accent-100 px-3.5 py-3 text-[13px] leading-snug text-accent-600">
-					<Icon name="i-lucide-id-card" class="mt-px h-4 w-4 shrink-0" />
+					<Icon name="i-tabler-id" class="mt-px h-4 w-4 shrink-0" />
 					<span>Books are handed over at the desk. Bring your school ID.</span>
 				</div>
 			</aside>
@@ -195,9 +195,10 @@ const router = useRouter()
 const { perform } = useAction()
 const { stats, slotsLeft, refreshProfile, bumpData } = useStudent()
 
-const TABS = ['loans', 'reservations', 'fines']
+// In the order a borrow happens: reserve it, borrow it, settle any fine. Reservations opens by default.
+const TABS = ['reservations', 'loans', 'fines']
 const tab = computed<string>({
-	get: () => (TABS.includes(String(route.query.tab)) ? String(route.query.tab) : 'loans'),
+	get: () => (TABS.includes(String(route.query.tab)) ? String(route.query.tab) : TABS[0]!),
 	set: (value) => { void router.replace({ query: { ...route.query, tab: value } }) },
 })
 
@@ -212,8 +213,8 @@ const activeReservations = computed(() => (data.value?.reservations ?? []).filte
 const pastReservations = computed(() => (data.value?.reservations ?? []).filter((r) => r.status === 'Rejected' || r.status === 'Fulfilled').slice(0, 8))
 
 const tabs = computed(() => [
-	{ label: 'Loans', value: 'loans', badge: openLoans.value.filter((l) => l.status === 'Active' && l.daysLeft < 0).length || undefined },
 	{ label: 'Reservations', value: 'reservations', badge: activeReservations.value.filter((r) => r.status === 'Accepted').length || undefined },
+	{ label: 'Loans', value: 'loans', badge: openLoans.value.filter((l) => l.status === 'Active' && l.daysLeft < 0).length || undefined },
 	{ label: 'Fines', value: 'fines', badge: (data.value?.penalties ?? []).filter((p) => p.paymentStatus !== 'Paid').length || undefined },
 ])
 

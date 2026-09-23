@@ -3,7 +3,7 @@
 		<span ref="anchorRef" class="inline-flex">
 			<ButtonsButton variant="icon" size="sm" :aria-label="label" :aria-expanded="open" aria-haspopup="menu"
 				@click="toggle">
-				<Icon name="i-lucide-ellipsis-vertical" class="h-4 w-4" />
+				<Icon name="i-tabler-dots-vertical" class="h-4 w-4" />
 			</ButtonsButton>
 		</span>
 

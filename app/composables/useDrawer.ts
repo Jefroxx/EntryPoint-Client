@@ -1,10 +1,10 @@
-export type DrawerKind = 'book' | 'cart' | 'wishlist'
+export type DrawerKind = 'book' | 'cart'
 
-const DRAWER_KEYS = ['book', 'cart', 'wishlist']
+const DRAWER_KEYS = ['book', 'cart']
 
 /**
- * Book details, the cart and the wishlist are drawers driven by the URL
- * (?book=12, ?cart=1, ?wishlist=1). That gives them the right behaviour for
+ * Book details and the cart are drawers driven by the URL (?book=12, ?cart=1).
+ * The wishlist is its own page (/student/wishlist). That gives them the right behaviour for
  * free: the phone's back button closes them, and a link opens straight to one.
  */
 export function useDrawer() {
@@ -15,7 +15,6 @@ export function useDrawer() {
     const q = route.query
     if (q.book) return { kind: 'book', id: Number(q.book) }
     if (q.cart) return { kind: 'cart' }
-    if (q.wishlist) return { kind: 'wishlist' }
     return null
   })
 

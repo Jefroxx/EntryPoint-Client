@@ -14,7 +14,7 @@
             <div class="flex-1"></div>
 
             <ButtonsButton variant="ghost" :disabled="unreadCount === 0" @click="markAll">
-                <Icon name="i-lucide-check-check" class="h-3.5 w-3.5" />Mark all as read
+                <Icon name="i-tabler-checks" class="h-3.5 w-3.5" />Mark all as read
             </ButtonsButton>
         </div>
 

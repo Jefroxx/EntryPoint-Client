@@ -17,13 +17,13 @@
 					<button type="button"
 						class="flex h-10 items-center gap-0.5 rounded-xl pr-2 text-[15px] font-medium text-accent-500 transition-[transform,opacity] duration-150 ease-out active:scale-95 active:opacity-70 md:hidden"
 						@click="emit('close')">
-						<Icon name="i-lucide-chevron-left" class="h-5 w-5" />Back
+						<Icon name="i-tabler-chevron-left" class="h-5 w-5" />Back
 					</button>
 					<h2 class="dashboard-heading truncate text-[15px] font-semibold text-stone-900 md:text-[17px] md:font-bold md:text-amber-900">{{ title }}</h2>
 					<button type="button" aria-label="Close"
 						class="hidden h-9 w-9 items-center justify-center rounded-xl text-stone-500 transition-[transform,background-color] duration-150 ease-out hover:bg-stone-100 active:scale-90 md:flex"
 						@click="emit('close')">
-						<Icon name="i-lucide-x" class="h-[18px] w-[18px]" />
+						<Icon name="i-tabler-x" class="h-[18px] w-[18px]" />
 					</button>
 					<!-- keeps the title centred on phones -->
 					<span class="w-[60px] md:hidden" />

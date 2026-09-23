@@ -10,11 +10,11 @@
 						</span>
 						<button type="button" class="flex h-8 w-8 items-center justify-center rounded-lg text-stone-500 transition-[transform,background-color] duration-150 ease-out hover:bg-stone-100 active:scale-90"
 							:aria-label="sound ? 'Turn sound off' : 'Turn sound on'" :aria-pressed="sound" @click="sound = !sound">
-							<Icon :name="sound ? 'i-lucide-volume-2' : 'i-lucide-volume-x'" class="h-4 w-4" />
+							<Icon :name="sound ? 'i-tabler-volume' : 'i-tabler-volume-off'" class="h-4 w-4" />
 						</button>
 						<button type="button" class="flex h-8 w-8 items-center justify-center rounded-lg text-stone-500 transition-[transform,background-color] duration-150 ease-out hover:bg-stone-100 active:scale-90"
 							:aria-label="kiosk ? 'Exit full screen' : 'Full screen'" @click="toggleKiosk">
-							<Icon :name="kiosk ? 'i-lucide-minimize' : 'i-lucide-maximize'" class="h-4 w-4" />
+							<Icon :name="kiosk ? 'i-tabler-minimize' : 'i-tabler-maximize'" class="h-4 w-4" />
 						</button>
 					</div>
 				</div>
@@ -24,11 +24,11 @@
 				<!-- Webcam / phone camera -->
 				<div v-if="mode !== 'hardware'" class="mb-3.5 flex gap-3.5">
 					<div v-if="mode === 'phone'" class="hidden w-[190px] shrink-0 rounded-2xl bg-stone-100 p-3.5 text-center text-[13px] leading-snug text-stone-500 sm:block">
-						<Icon name="i-lucide-smartphone" class="mx-auto mb-2 h-8 w-8 text-stone-400" />
+						<Icon name="i-tabler-device-mobile" class="mx-auto mb-2 h-8 w-8 text-stone-400" />
 						<b class="mb-0.5 block text-[13.5px] text-stone-900">Use your phone</b>
 						Open this page on your phone and sign in. The back camera opens by itself.
 						<ButtonsButton variant="ghost" size="sm" class="mt-3 w-full" @click="copyLink">
-							<Icon name="i-lucide-copy" class="h-3.5 w-3.5" />{{ copied ? 'Copied' : 'Copy link' }}
+							<Icon name="i-tabler-copy" class="h-3.5 w-3.5" />{{ copied ? 'Copied' : 'Copy link' }}
 						</ButtonsButton>
 					</div>
 
@@ -50,11 +50,11 @@
 								<button v-if="torchAvailable" type="button" aria-label="Torch" :aria-pressed="torchOn"
 									class="flex h-8 w-8 items-center justify-center rounded-full transition-[transform,background-color] duration-150 ease-out active:scale-90"
 									:class="torchOn ? 'bg-amber-300 text-stone-900' : 'bg-black/45 text-white'" @click="toggleTorch">
-									<Icon name="i-lucide-zap" class="h-4 w-4" />
+									<Icon name="i-tabler-bolt" class="h-4 w-4" />
 								</button>
 								<button v-if="mode === 'phone'" type="button" aria-label="Flip camera"
 									class="flex h-8 w-8 items-center justify-center rounded-full bg-black/45 text-white transition-transform duration-150 ease-out active:scale-90" @click="flip">
-									<Icon name="i-lucide-refresh-cw" class="h-4 w-4" />
+									<Icon name="i-tabler-refresh" class="h-4 w-4" />
 								</button>
 							</div>
 						</template>
@@ -64,7 +64,7 @@
 								<span class="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />Starting the camera…
 							</div>
 							<div v-else class="max-w-[300px]">
-								<Icon name="i-lucide-camera-off" class="mx-auto mb-2 h-8 w-8 opacity-80" />
+								<Icon name="i-tabler-camera-off" class="mx-auto mb-2 h-8 w-8 opacity-80" />
 								<p class="mb-0.5 text-[15.5px] font-semibold">{{ camMessage.title }}</p>
 								<p class="mb-3 text-white/70">{{ camMessage.text }}</p>
 								<div class="flex flex-wrap justify-center gap-2">
@@ -79,7 +79,7 @@
 				<!-- Scanner input (also the typed fallback in every mode) -->
 				<form autocomplete="off" @submit.prevent="scan(code)">
 					<div class="relative">
-						<Icon name="i-lucide-scan-barcode" class="pointer-events-none absolute left-4 top-1/2 h-[22px] w-[22px] -translate-y-1/2 text-stone-400" />
+						<Icon name="i-tabler-barcode" class="pointer-events-none absolute left-4 top-1/2 h-[22px] w-[22px] -translate-y-1/2 text-stone-400" />
 						<input ref="input" v-model="code" type="text" inputmode="text" enterkeyhint="done" autocomplete="off" autocapitalize="off" spellcheck="false"
 							placeholder="Scan an ID, or type a student number" aria-label="Scan an ID or type a student number" :disabled="busy"
 							class="w-full rounded-2xl border-2 border-stone-200 bg-stone-50 pl-[52px] pr-4 font-medium tracking-wide text-stone-900 outline-none transition-[border-color,box-shadow,background-color] duration-150 placeholder:font-normal placeholder:tracking-normal placeholder:text-stone-400 focus:border-accent-500 focus:bg-white focus:ring-4 focus:ring-accent-100 disabled:opacity-70"
@@ -94,7 +94,7 @@
 				<div class="relative mt-3.5 grid place-items-center overflow-hidden rounded-[20px] border p-5 text-center"
 					:class="[result ? TONES[result.tone].box : 'border-dashed border-stone-200 bg-stone-50', kiosk ? 'min-h-[min(50dvh,480px)]' : 'min-h-[170px]']" aria-live="polite">
 					<div v-if="!result" class="text-stone-400">
-						<Icon :name="mode === 'hardware' ? 'i-lucide-scan-barcode' : 'i-lucide-camera'" class="mx-auto mb-2 h-10 w-10" />
+						<Icon :name="mode === 'hardware' ? 'i-tabler-barcode' : 'i-tabler-camera'" class="mx-auto mb-2 h-10 w-10" />
 						<p class="text-[16px] font-semibold text-stone-600">Ready to scan</p>
 						<p class="text-[14px]">{{ mode === 'hardware' ? 'Hold the ID under the scanner.' : 'Hold the ID up to the camera.' }}</p>
 					</div>
@@ -253,7 +253,7 @@ async function scan(raw: string, via: Mode = mode.value) {
 			? (apiFieldErrors(error).barcodeValue || apiErrorMessage(error, 'Could not scan that.'))
 			: "Can't reach the server. Check the connection and try again."
 		const tone: Tone = /just scanned/i.test(message) ? 'warn' : 'err'
-		show({ key: ++seq, tone, icon: tone === 'warn' ? 'i-lucide-clock' : 'i-lucide-circle-x', verdict: tone === 'warn' ? 'Too soon' : 'Not checked in', message, notes: [] }, null, via)
+		show({ key: ++seq, tone, icon: tone === 'warn' ? 'i-tabler-clock' : 'i-tabler-circle-x', verdict: tone === 'warn' ? 'Too soon' : 'Not checked in', message, notes: [] }, null, via)
 	} finally {
 		busy.value = false
 		code.value = ''
@@ -266,12 +266,12 @@ function fromSuccess(res: AttendanceScanResult): ResultView {
 	const checkIn = res.action === 'check_in'
 	const notes: ResultView['notes'] = []
 
-	if (!checkIn && res.durationMinutes != null) notes.push({ icon: 'i-lucide-clock', text: `Stayed ${formatMinutes(res.durationMinutes)}` })
-	if (checkIn && res.student.visitStreak > 1) notes.push({ icon: 'i-lucide-flame', text: `${res.student.visitStreak}-day streak` })
-	for (const closed of res.autoClosed) notes.push({ icon: 'i-lucide-circle-alert', text: `Yesterday's visit was closed at ${formatTime(closed.exitTime)}` })
+	if (!checkIn && res.durationMinutes != null) notes.push({ icon: 'i-tabler-clock', text: `Stayed ${formatMinutes(res.durationMinutes)}` })
+	if (checkIn && res.student.visitStreak > 1) notes.push({ icon: 'i-tabler-flame', text: `${res.student.visitStreak}-day streak` })
+	for (const closed of res.autoClosed) notes.push({ icon: 'i-tabler-alert-circle', text: `Yesterday's visit was closed at ${formatTime(closed.exitTime)}` })
 
 	return {
-		key: ++seq, tone: checkIn ? 'in' : 'out', icon: checkIn ? 'i-lucide-log-in' : 'i-lucide-log-out', verdict: checkIn ? 'Checked in' : 'Checked out',
+		key: ++seq, tone: checkIn ? 'in' : 'out', icon: checkIn ? 'i-tabler-login' : 'i-tabler-logout', verdict: checkIn ? 'Checked in' : 'Checked out',
 		time: formatTime(checkIn ? res.log.entryTime : (res.log.exitTime ?? res.log.entryTime)),
 		name: res.student.name, program: res.student.program, sid: res.student.studentIDNumber, notes,
 	}
@@ -285,7 +285,7 @@ function show(view: ResultView, res: AttendanceScanResult | null, via: Mode) {
 	clearTimer = setTimeout(() => { result.value = null }, 4000)
 
 	feed.value = [{
-		key: view.key, tone: view.tone, icon: view.tone === 'in' ? 'i-lucide-log-in' : view.tone === 'out' ? 'i-lucide-log-out' : view.tone === 'warn' ? 'i-lucide-clock' : 'i-lucide-circle-x',
+		key: view.key, tone: view.tone, icon: view.tone === 'in' ? 'i-tabler-login' : view.tone === 'out' ? 'i-tabler-logout' : view.tone === 'warn' ? 'i-tabler-clock' : 'i-tabler-circle-x',
 		title: view.name ?? 'Unknown scan',
 		sub: res ? (res.action === 'check_in' ? 'Checked in' : `Checked out · ${formatMinutes(res.durationMinutes ?? 0)}`) : (view.message ?? ''),
 		at: clock(), via,

@@ -12,6 +12,8 @@ export default defineNuxtConfig({
 	// it renders in the browser only. Sign-in and register pages stay server-rendered.
 	routeRules: {
 		'/student/**': { ssr: false },
+		// "Spaces" was renamed "Facilities"; old links and bookmarks still land on it.
+		'/student/spaces': { redirect: '/student/facilities' },
 	},
 	css: ['~/assets/css/tailwind.css'],
 	modules: ['@nuxt/ui', '@nuxt/icon', '@nuxt/fonts'],

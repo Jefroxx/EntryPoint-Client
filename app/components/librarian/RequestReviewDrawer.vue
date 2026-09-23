@@ -8,7 +8,7 @@
 			<div class="flex items-center justify-between border-b border-stone-100 px-5 py-4">
 				<h3 class="text-[17px] font-bold text-accent-700">Review request</h3>
 				<ButtonsButton variant="icon" aria-label="Close" @click="emit('close')">
-					<Icon name="i-lucide-x" class="h-[18px] w-[18px]" />
+					<Icon name="i-tabler-x" class="h-[18px] w-[18px]" />
 				</ButtonsButton>
 			</div>
 

@@ -8,7 +8,7 @@
 				<div v-for="alert in alerts" :key="alert.id" role="status"
 					class="pointer-events-auto flex w-full max-w-[380px] items-center gap-2.5 rounded-2xl bg-stone-900 px-3.5 py-3 text-[13.5px] font-medium text-stone-50 shadow-[0_12px_30px_-12px_rgba(0,0,0,.5)]"
 					@click="dismiss(alert.id)">
-					<Icon :name="alert.variant === 'success' ? 'i-lucide-check' : 'i-lucide-circle-alert'" class="h-[18px] w-[18px] shrink-0"
+					<Icon :name="alert.variant === 'success' ? 'i-tabler-check' : 'i-tabler-alert-circle'" class="h-[18px] w-[18px] shrink-0"
 						:class="alert.variant === 'success' ? 'text-emerald-400' : 'text-red-400'" />
 					<span class="min-w-0">
 						{{ alert.title }}

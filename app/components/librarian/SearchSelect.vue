@@ -7,7 +7,7 @@
 				<p v-if="getSublabel" class="truncate text-[12px] text-stone-500">{{ getSublabel(modelValue) }}</p>
 			</div>
 			<ButtonsButton variant="icon" size="sm" aria-label="Clear selection" @click="emit('update:modelValue', null)">
-				<Icon name="i-lucide-x" class="h-3.5 w-3.5" />
+				<Icon name="i-tabler-x" class="h-3.5 w-3.5" />
 			</ButtonsButton>
 		</div>
 
@@ -15,7 +15,7 @@
 			<div
 				class="flex h-10 items-center gap-2 rounded-[10px] border bg-white px-3 transition-shadow focus-within:border-accent-500 focus-within:ring-2 focus-within:ring-accent-200"
 				:class="invalid ? 'border-red-400 bg-red-50' : 'border-stone-200'">
-				<Icon name="i-lucide-search" class="h-[14px] w-[14px] text-stone-400" />
+				<Icon name="i-tabler-search" class="h-[14px] w-[14px] text-stone-400" />
 				<input :id="inputId" v-model="query" type="text" :placeholder="placeholder" autocomplete="off"
 					class="w-full border-none bg-transparent text-[15px] text-stone-900 outline-none placeholder:text-stone-400"
 					@focus="openList" @blur="isOpen = false" />

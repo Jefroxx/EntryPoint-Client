@@ -1,11 +1,13 @@
 <template>
 	<div ref="root" class="relative">
-		<button type="button" aria-label="Notifications" :aria-expanded="open" aria-haspopup="dialog"
-			class="relative flex h-9 w-9 items-center justify-center rounded-[10px] text-stone-500 transition-[transform,background-color,color] duration-150 ease-out hover:bg-stone-100 hover:text-stone-900 active:scale-90"
+		<!-- Same tile as the points pill and the cart beside it: white, hairline border, 40px. -->
+		<button type="button" :aria-label="unreadCount ? `Notifications, ${unreadCount} unread` : 'Notifications'" :aria-expanded="open" aria-haspopup="dialog"
+			class="relative flex h-10 w-10 items-center justify-center rounded-xl border bg-white transition-[transform,border-color,color] duration-150 ease-out active:scale-95"
+			:class="open ? 'border-accent-200 text-accent-600' : 'border-stone-200 text-stone-700 hover:border-accent-200 hover:text-accent-600'"
 			@click="open = !open">
-			<Icon name="i-lucide-bell" class="h-[18px] w-[18px]" />
+			<Icon name="i-tabler-bell" class="h-[22px] w-[22px]" />
 			<span v-if="unreadCount"
-				class="absolute -right-0.5 top-0 box-content flex h-[15px] min-w-[15px] items-center justify-center rounded-full border-2 border-white bg-red-500 px-[3px] text-[10px] font-bold leading-none text-white">{{ unreadCount > 9 ? '9+' : unreadCount }}</span>
+				class="absolute -right-1.5 -top-1.5 box-content flex h-[18px] min-w-[18px] items-center justify-center rounded-full border-2 border-amber-50 bg-red-500 px-1 text-[11px] font-bold leading-none text-white tabular-nums">{{ unreadCount > 9 ? '9+' : unreadCount }}</span>
 		</button>
 
 		<!-- Scales out from the bell (its top-right corner), not from the middle of the panel. -->

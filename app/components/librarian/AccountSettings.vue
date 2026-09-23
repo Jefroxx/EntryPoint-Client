@@ -17,7 +17,7 @@
 
 			<div class="mt-5 flex justify-end border-t border-stone-100 pt-4">
 				<ButtonsButton variant="primary" :disabled="!profileDirty || savingProfile" @click="saveProfile">
-					<Icon v-if="savingProfile" name="i-lucide-loader-2" class="h-3.5 w-3.5 animate-spin" />
+					<Icon v-if="savingProfile" name="i-tabler-loader-2" class="h-3.5 w-3.5 animate-spin" />
 					Save profile
 				</ButtonsButton>
 			</div>
@@ -40,7 +40,7 @@
 
 			<div class="mt-5 flex justify-end border-t border-stone-100 pt-4">
 				<ButtonsButton variant="primary" :disabled="!passwordReady || savingPassword" @click="savePassword">
-					<Icon v-if="savingPassword" name="i-lucide-loader-2" class="h-3.5 w-3.5 animate-spin" />
+					<Icon v-if="savingPassword" name="i-tabler-loader-2" class="h-3.5 w-3.5 animate-spin" />
 					Change password
 				</ButtonsButton>
 			</div>

@@ -25,7 +25,7 @@
 		<div class="flex items-center justify-between border-t border-stone-100 pt-4">
 			<span class="text-[13.5px] text-stone-400">{{ dirty ? 'Unsaved changes' : 'No changes' }}</span>
 			<ButtonsButton variant="primary" :disabled="!dirty || saving" @click="save">
-				<Icon v-if="saving" name="i-lucide-loader-2" class="h-3.5 w-3.5 animate-spin" />
+				<Icon v-if="saving" name="i-tabler-loader-2" class="h-3.5 w-3.5 animate-spin" />
 				Save changes
 			</ButtonsButton>
 		</div>

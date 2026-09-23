@@ -1,23 +1,16 @@
 <template>
     <!-- backdrop-blur makes the header its own stacking layer; without an explicit z-index the
          dropdowns inside it get painted over by page content (sticky table heads, cards, sidebar). -->
-    <header class="relative z-40 flex h-[68px] w-full items-center justify-between border-b border-stone-200 bg-white/90 px-6 backdrop-blur-sm">
+    <!-- Sticky, so the menu button and the bell stay reachable on long pages (the sidebar sits just under it). -->
+    <header class="sticky top-0 z-40 flex h-[68px] w-full items-center justify-between border-b border-stone-200 bg-white/90 px-6 backdrop-blur-sm">
         <!-- Left: hamburger + logo -->
         <div class="flex items-center gap-4">
-            <button type="button"
-                class="flex h-9 w-9 items-center justify-center rounded-lg text-stone-500 transition-colors duration-150 hover:bg-stone-100 hover:text-stone-800 active:scale-90"
-                aria-label="Toggle sidebar" :aria-expanded="isSidebarOpen" @click="$emit('toggle-sidebar')">
-                <span class="relative block h-4 w-5">
-                    <span
-                        class="absolute left-0 block h-0.5 w-5 rounded-full bg-current transition-all duration-300 ease-[cubic-bezier(.22,1,.36,1)]"
-                        :class="isSidebarOpen ? 'top-1/2 -translate-y-1/2 rotate-45' : 'top-0 rotate-0'" />
-                    <span
-                        class="absolute left-0 top-1/2 block h-0.5 w-5 -translate-y-1/2 rounded-full bg-current transition-all duration-300 ease-[cubic-bezier(.22,1,.36,1)]"
-                        :class="isSidebarOpen ? 'scale-x-0 opacity-0' : 'scale-x-100 opacity-100'" />
-                    <span
-                        class="absolute left-0 block h-0.5 w-5 rounded-full bg-current transition-all duration-300 ease-[cubic-bezier(.22,1,.36,1)]"
-                        :class="isSidebarOpen ? 'bottom-1/2 translate-y-1/2 -rotate-45' : 'bottom-0 rotate-0'" />
-                </span>
+            <!-- Folds the sidebar to icons and back (it never disappears), so the icon stays a plain menu. -->
+            <button type="button" aria-controls="librarian-sidebar" :aria-expanded="isSidebarOpen"
+                :aria-label="isSidebarOpen ? 'Collapse sidebar to icons' : 'Expand sidebar'" :title="isSidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'"
+                class="-ml-2 flex h-10 w-10 items-center justify-center rounded-xl text-stone-600 transition-[transform,background-color,color] duration-150 ease-out hover:bg-stone-900/5 hover:text-stone-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-200 active:scale-90"
+                @click="$emit('toggle-sidebar')">
+                <Icon name="i-tabler-menu-2" class="h-[22px] w-[22px]" />
             </button>
 
             <NuxtLink to="/librarian/dashboard" class="flex items-center leading-none">
@@ -26,14 +19,18 @@
         </div>
 
         <!-- Right: notifications + profile -->
-        <div class="flex items-center gap-4">
+        <div class="flex items-center gap-3">
             <div class="relative" ref="bellRootRef">
-                <ButtonsButton variant="icon" class="!rounded-full" aria-label="Notifications" :aria-expanded="isBellOpen"
+                <!-- Same tile as the student bell: white, hairline border, 40px, a 22px bell that reads at a glance. -->
+                <button type="button" :aria-label="unreadCount ? `Notifications, ${unreadCount} unread` : 'Notifications'"
+                    :aria-expanded="isBellOpen" aria-haspopup="dialog"
+                    class="relative flex h-10 w-10 items-center justify-center rounded-xl border bg-white transition-[transform,border-color,color] duration-150 ease-out active:scale-95"
+                    :class="isBellOpen ? 'border-accent-200 text-accent-600' : 'border-stone-200 text-stone-700 hover:border-accent-200 hover:text-accent-600'"
                     @click.stop="toggleBell">
-                    <Icon name="i-lucide-bell" class="h-[18px] w-[18px]" />
-                </ButtonsButton>
+                    <Icon name="i-tabler-bell" class="h-[22px] w-[22px]" />
+                </button>
                 <span v-if="unreadCount > 0"
-                    class="pointer-events-none absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[11px] font-bold leading-none text-white ring-2 ring-white">
+                    class="pointer-events-none absolute -right-1.5 -top-1.5 box-content flex h-[18px] min-w-[18px] items-center justify-center rounded-full border-2 border-white bg-red-500 px-1 text-[11px] font-bold leading-none text-white tabular-nums">
                     {{ unreadCount > 9 ? '9+' : unreadCount }}
                 </span>
 
@@ -90,12 +87,12 @@
                     <button type="button"
                         class="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-[14px] font-medium text-stone-600 transition-colors hover:bg-stone-50"
                         @click="isMenuOpen = false">
-                        <Icon name="i-lucide-settings" class="h-[15px] w-[15px]" />Account settings
+                        <Icon name="i-tabler-settings" class="h-[15px] w-[15px]" />Account settings
                     </button>
                     <button type="button" :disabled="isSigningOut"
                         class="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-[14px] font-medium text-red-500 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                         @click="handleLogout">
-                        <Icon name="i-lucide-log-out" class="h-[15px] w-[15px]" />
+                        <Icon name="i-tabler-logout" class="h-[15px] w-[15px]" />
                         {{ isSigningOut ? 'Signing out...' : 'Sign out' }}
                     </button>
                 </div>

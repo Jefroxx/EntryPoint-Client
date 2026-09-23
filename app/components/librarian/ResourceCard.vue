@@ -60,14 +60,14 @@ const emit = defineEmits<{
 const inUse = computed(() => props.resource.status === 'In Use')
 
 const menuItems = computed(() => [
-	{ key: 'edit', label: 'Edit', icon: 'i-lucide-pencil' },
+	{ key: 'edit', label: 'Edit', icon: 'i-tabler-pencil' },
 	{
 		key: 'toggle',
 		label: props.resource.status === 'Unavailable' ? 'Make available' : 'Mark unavailable',
-		icon: 'i-lucide-power',
+		icon: 'i-tabler-power',
 		disabled: inUse.value,
 	},
-	{ key: 'delete', label: 'Delete', icon: 'i-lucide-trash-2', tone: 'danger' as const, disabled: inUse.value, separator: true },
+	{ key: 'delete', label: 'Delete', icon: 'i-tabler-trash', tone: 'danger' as const, disabled: inUse.value, separator: true },
 ])
 
 function pick(action: 'edit' | 'toggle' | 'delete') {
@@ -88,10 +88,10 @@ const iconTone = computed(() => ({
 
 const typeIcon = computed(() => {
 	const type = props.resource.resourceType.toLowerCase()
-	if (type.includes('computer') || type.includes('pc')) return 'i-lucide-monitor'
-	if (type.includes('room')) return 'i-lucide-door-open'
-	if (type.includes('table') || type.includes('desk')) return 'i-lucide-users'
-	return 'i-lucide-box'
+	if (type.includes('computer') || type.includes('pc')) return 'i-tabler-device-desktop'
+	if (type.includes('room')) return 'i-tabler-door-enter'
+	if (type.includes('table') || type.includes('desk')) return 'i-tabler-users'
+	return 'i-tabler-box'
 })
 </script>
 

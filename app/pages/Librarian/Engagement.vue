@@ -11,11 +11,11 @@
         <!-- Achievements -->
         <template v-if="activeTab === 'achievements'">
             <div class="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
-                <LibrarianCatalogStatTile label="Achievements" :value="achievements.length" icon="i-lucide-trophy"
+                <LibrarianCatalogStatTile label="Achievements" :value="achievements.length" icon="i-tabler-trophy"
                     tone="accent" />
                 <LibrarianCatalogStatTile label="Unlocked by students" :value="totalUnlocked"
-                    icon="i-lucide-circle-check" tone="success" />
-                <LibrarianCatalogStatTile label="Redeemed" :value="totalRedeemed" icon="i-lucide-gift"
+                    icon="i-tabler-circle-check" tone="success" />
+                <LibrarianCatalogStatTile label="Redeemed" :value="totalRedeemed" icon="i-tabler-gift"
                     tone="warning" />
             </div>
 
@@ -23,7 +23,7 @@
                 <LibrarianSearchInput id="achievement-search" v-model="achievementSearch" placeholder="Search achievements" />
                 <div class="flex-1"></div>
                 <ButtonsButton variant="primary" @click="openAchievementForm(null)">
-                    <Icon name="i-lucide-plus" class="h-3.5 w-3.5" />Add Achievement
+                    <Icon name="i-tabler-plus" class="h-3.5 w-3.5" />Add Achievement
                 </ButtonsButton>
             </div>
 
@@ -34,19 +34,19 @@
         <!-- Market -->
         <template v-else-if="activeTab === 'market'">
             <div class="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
-                <LibrarianCatalogStatTile label="Market items" :value="items.length" icon="i-lucide-gift"
+                <LibrarianCatalogStatTile label="Market items" :value="items.length" icon="i-tabler-gift"
                     tone="accent" />
-                <LibrarianCatalogStatTile label="Low stock" :value="lowStockCount" icon="i-lucide-circle-alert"
+                <LibrarianCatalogStatTile label="Low stock" :value="lowStockCount" icon="i-tabler-alert-circle"
                     tone="warning" />
                 <LibrarianCatalogStatTile label="Total redemptions" :value="totalItemRedemptions"
-                    icon="i-lucide-circle-check" tone="success" />
+                    icon="i-tabler-circle-check" tone="success" />
             </div>
 
             <div class="mb-4 flex flex-wrap items-center gap-2">
                 <LibrarianSearchInput id="item-search" v-model="itemSearch" placeholder="Search items" />
                 <div class="flex-1"></div>
                 <ButtonsButton variant="primary" @click="openItemForm(null)">
-                    <Icon name="i-lucide-plus" class="h-3.5 w-3.5" />Add Item
+                    <Icon name="i-tabler-plus" class="h-3.5 w-3.5" />Add Item
                 </ButtonsButton>
             </div>
 
@@ -57,12 +57,12 @@
         <!-- Redemptions -->
         <template v-else>
             <div class="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
-                <LibrarianCatalogStatTile label="Pending" :value="redemptionCount('Pending')" icon="i-lucide-clock"
+                <LibrarianCatalogStatTile label="Pending" :value="redemptionCount('Pending')" icon="i-tabler-clock"
                     tone="warning" />
                 <LibrarianCatalogStatTile label="Fulfilled" :value="redemptionCount('Fulfilled')"
-                    icon="i-lucide-circle-check" tone="success" />
+                    icon="i-tabler-circle-check" tone="success" />
                 <LibrarianCatalogStatTile label="Cancelled" :value="redemptionCount('Cancelled')"
-                    icon="i-lucide-circle-x" tone="danger" />
+                    icon="i-tabler-circle-x" tone="danger" />
             </div>
 
             <div class="mb-4 flex flex-wrap items-center gap-2">

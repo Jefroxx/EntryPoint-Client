@@ -9,7 +9,7 @@
 			<button type="button" :aria-label="visible ? 'Hide password' : 'Show password'" :aria-pressed="visible"
 				class="absolute right-1 top-1 flex h-8 w-8 items-center justify-center rounded-lg text-stone-400 transition-[transform,background-color,color] duration-150 ease-out hover:bg-stone-100 hover:text-stone-700 active:scale-90"
 				@click="visible = !visible">
-				<Icon :name="visible ? 'i-lucide-eye-off' : 'i-lucide-eye'" class="h-4 w-4" />
+				<Icon :name="visible ? 'i-tabler-eye-off' : 'i-tabler-eye'" class="h-4 w-4" />
 			</button>
 		</div>
 		<p v-if="error" class="mt-1 text-[11.5px] text-red-500">{{ error }}</p>

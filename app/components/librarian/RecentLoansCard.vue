@@ -73,15 +73,15 @@ function statusClass(status: RecentLoan['status']): string {
 function statusIcon(status: RecentLoan['status']): string {
 	switch (status) {
 		case 'Active':
-			return 'i-lucide-clock'
+			return 'i-tabler-clock'
 		case 'Due Soon':
-			return 'i-lucide-alarm-clock'
+			return 'i-tabler-alarm'
 		case 'Due':
-			return 'i-lucide-circle-alert'
+			return 'i-tabler-alert-circle'
 		case 'Returned':
-			return 'i-lucide-check'
+			return 'i-tabler-check'
 		default:
-			return 'i-lucide-circle'
+			return 'i-tabler-circle'
 	}
 }
 </script>

@@ -11,7 +11,7 @@
 					:class="alert.variant === 'success' ? 'border-emerald-100' : 'border-red-100'">
 					<div class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full"
 						:class="alert.variant === 'success' ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'">
-						<Icon :name="alert.variant === 'success' ? 'i-lucide-check' : 'i-lucide-x'"
+						<Icon :name="alert.variant === 'success' ? 'i-tabler-check' : 'i-tabler-x'"
 							class="h-3.5 w-3.5" />
 					</div>
 					<div class="min-w-0 flex-1 pt-0.5">
@@ -22,7 +22,7 @@
 					<button type="button" aria-label="Dismiss"
 						class="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-stone-300 transition-colors hover:bg-stone-100 hover:text-stone-600"
 						@click="dismiss(alert.id)">
-						<Icon name="i-lucide-x" class="h-3.5 w-3.5" />
+						<Icon name="i-tabler-x" class="h-3.5 w-3.5" />
 					</button>
 				</div>
 			</TransitionGroup>

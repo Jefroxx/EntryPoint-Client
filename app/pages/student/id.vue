@@ -41,7 +41,7 @@
 
 				<div
 					class="mt-3.5 flex max-w-[420px] items-start gap-2.5 rounded-2xl bg-accent-100 px-3.5 py-3 text-[13px] leading-snug text-accent-600">
-					<Icon name="i-lucide-scan-barcode" class="mt-px h-4 w-4 shrink-0" />
+					<Icon name="i-tabler-barcode" class="mt-px h-4 w-4 shrink-0" />
 					<span>On a phone, raise the screen brightness so the scanner can read it.</span>
 				</div>
 			</div>
@@ -54,7 +54,7 @@
 					<div class="flex items-center gap-2.5">
 						<span
 							class="flex h-[34px] w-[34px] items-center justify-center rounded-[10px] bg-accent-100 text-accent-600">
-							<Icon name="i-lucide-flame" class="h-[17px] w-[17px]" />
+							<Icon name="i-tabler-flame" class="h-[17px] w-[17px]" />
 						</span>
 						<div>
 							<b class="text-[15px]">{{ streak }} day{{ streak === 1 ? '' : 's' }} in a row</b>
@@ -66,7 +66,7 @@
 							class="flex flex-col items-center gap-1.5 text-[11px] text-stone-400">
 							<i class="flex h-7 w-7 items-center justify-center rounded-full text-white"
 								:class="day.visited ? 'bg-accent-500' : 'bg-stone-100'">
-								<Icon v-if="day.visited" name="i-lucide-check" class="h-3.5 w-3.5" />
+								<Icon v-if="day.visited" name="i-tabler-check" class="h-3.5 w-3.5" />
 							</i>
 							{{ day.label }}
 						</div>
@@ -85,7 +85,7 @@
 						class="flex items-center gap-3.5 border-b border-stone-100 px-4 py-3 last:border-0">
 						<span
 							class="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[10px] bg-stone-100 text-stone-500">
-							<Icon name="i-lucide-door-open" class="h-[17px] w-[17px]" />
+							<Icon name="i-tabler-door-enter" class="h-[17px] w-[17px]" />
 						</span>
 						<div class="min-w-0 flex-1">
 							<p class="text-[14px] font-medium text-stone-900">{{ timeAgo(v.entryTime) }}</p>

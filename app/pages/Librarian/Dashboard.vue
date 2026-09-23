@@ -76,10 +76,10 @@ const { data: overdueLoans, pending: overdueLoansPending } =
     useLiveAsyncData('overdue-loans', () => librarianService.fetchOverdueLoans(), { lazy: true })
 
 const stats = computed(() => [
-    { title: 'Total Books', value: summary.value?.totalBooks ?? '—', icon: 'i-lucide-book', tone: 'accent' as const },
-    { title: 'Total Members', value: summary.value?.totalMembers ?? '—', icon: 'i-lucide-users', tone: 'accent' as const },
-    { title: 'Active Loans', value: summary.value?.activeLoans ?? '—', icon: 'i-lucide-book-open', tone: 'warning' as const },
-    { title: 'Pending Fines', value: summary.value?.pendingFines ?? '—', icon: 'i-lucide-circle-dollar-sign', tone: 'danger' as const },
+    { title: 'Total Books', value: summary.value?.totalBooks ?? '—', icon: 'i-tabler-book-2', tone: 'accent' as const },
+    { title: 'Total Members', value: summary.value?.totalMembers ?? '—', icon: 'i-tabler-users', tone: 'accent' as const },
+    { title: 'Active Loans', value: summary.value?.activeLoans ?? '—', icon: 'i-tabler-book', tone: 'warning' as const },
+    { title: 'Pending Fines', value: summary.value?.pendingFines ?? '—', icon: 'i-tabler-coin', tone: 'danger' as const },
 ])
 </script>
 
