@@ -9,7 +9,7 @@
 				<h1 class="dashboard-heading truncate text-[22px] font-extrabold leading-tight text-amber-900">{{
 					profile?.fullName ?? `${firstName} ${lastName}` }}</h1>
 				<p class="font-data mb-1.5 mt-0.5 truncate text-[12.5px] text-stone-500">{{ profile?.studentIDNumber
-					}}{{ profile?.academicProgram ? ` · ${profile.academicProgram}` : '' }}</p>
+				}}{{ profile?.academicProgram ? ` · ${profile.academicProgram}` : '' }}</p>
 				<StudentPill tone="good">
 					<Icon name="i-lucide-check" class="h-3 w-3" />Approved
 				</StudentPill>
@@ -86,7 +86,7 @@ const initialsText = computed(() => initials(profile.value?.firstName ?? firstNa
 interface Row { label: string; sub: string; icon: string; to?: string; action?: () => void }
 
 const rows = computed<Row[]>(() => [
-	{ label: 'Library ID', sub: 'Barcode for check-in', icon: 'i-lucide-id-card', to: '/student/id' },
+	{ label: 'Student Barcode', sub: 'Barcode for check-in', icon: 'i-lucide-id-card', to: '/student/id' },
 	{ label: 'Notifications', sub: unreadCount.value ? `${unreadCount.value} unread` : 'All read', icon: 'i-lucide-bell', to: '/student/notifications' },
 	{ label: 'Wishlist', sub: `${wishlist.value.length} saved`, icon: 'i-lucide-heart', action: () => drawer.open('wishlist') },
 	{ label: 'Computers & rooms', sub: 'Live availability', icon: 'i-lucide-monitor', to: '/student/spaces' },

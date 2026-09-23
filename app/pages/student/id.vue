@@ -1,7 +1,7 @@
 <template>
 	<div>
 		<div class="st-in mb-5">
-			<h1 class="dashboard-heading text-3xl font-bold text-amber-900">Library ID</h1>
+			<h1 class="dashboard-heading text-3xl font-bold text-amber-900">Student Barcode</h1>
 			<p class="dashboard-heading mt-1 text-amber-900">Show this at the entrance to check in and out.</p>
 		</div>
 
@@ -104,8 +104,8 @@
 <script setup lang="ts">
 import { studentService } from '~/services/studentService'
 
-definePageMeta({ layout: 'student', middleware: 'student', title: 'Library ID', nav: 'home', tab: 'me' })
-useHead({ title: 'Library ID' })
+definePageMeta({ layout: 'student', middleware: 'student', title: 'Student Barcode', nav: 'home', tab: 'me' })
+useHead({ title: 'Student Barcode' })
 
 const { summary, streak } = useStudent()
 const profile = computed(() => summary.value?.profile ?? null)
