@@ -30,6 +30,9 @@ export interface RegisterPayload {
   academicProgram?: string;
 }
 
+/** Thrown by login() when the password was right but the student hasn't clicked the link in their email. */
+export class NeedsVerificationError extends Error {}
+
 interface RawLoginResponse {
   access_token: string;
   token_type: string;
@@ -87,6 +90,13 @@ export class AuthService extends BaseService {
         error?.data?.message ||
         error?.message;
 
+      // The account exists but its email isn't confirmed yet: the sign-in page offers a new link.
+      // (Laravel's top-level message would end in "(and 1 more error)", so use the field's own text.)
+      const errors = error?.response?._data?.errors;
+      if (status === 422 && errors?.verification) {
+        throw new NeedsVerificationError(errors.email?.[0] || message);
+      }
+
       switch (status) {
         case 400:
         case 401:
@@ -119,6 +129,20 @@ export class AuthService extends BaseService {
         Accept: "application/json",
       },
       body: payload,
+    });
+  }
+
+  /** Mails a fresh confirmation link. The server answers the same whether or not the email has an account. */
+  async resendVerification(email: string): Promise<{ message: string }> {
+    const runtimeConfig = useRuntimeConfig();
+
+    return await $fetch<{ message: string }>("/email/resend", {
+      baseURL: runtimeConfig.public.apiBaseURL,
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+      },
+      body: { email },
     });
   }
 

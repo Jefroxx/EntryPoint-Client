@@ -3,7 +3,7 @@
 		<div class="w-full" :class="wide ? 'max-w-[560px]' : 'max-w-[400px] sm:mt-[6vh]'">
 			<div class="mb-5 text-center">
 				<NuxtLink :to="signInPath" class="inline-flex items-center leading-none" aria-label="EntryPoint">
-					<img src="~/assets/css/logo/EntryPointLogo.png" alt="EntryPoint" class="h-10 w-auto" />
+					<img src="~/assets/css/logo/EntryPointLogoStacked.png" alt="EntryPoint" class="h-[88px] w-auto" />
 				</NuxtLink>
 				<p v-if="subtitle" class="mt-1.5 text-[13.5px] text-stone-500">{{ subtitle }}</p>
 			</div>

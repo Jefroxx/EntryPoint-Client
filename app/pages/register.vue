@@ -1,17 +1,19 @@
 <template>
 	<section class="auth-pane" data-side="right">
+		<AuthLogo />
 		<Transition mode="out-in" enter-active-class="transition duration-300 ease-out"
 			enter-from-class="translate-y-1.5 opacity-0" leave-active-class="transition duration-150 ease-out"
 			leave-to-class="opacity-0">
 			<!-- After submit -->
 			<div v-if="submitted" key="done" class="px-1 py-2 text-center">
-				<div class="mx-auto mb-3.5 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
-					<Icon name="i-tabler-check" class="h-6 w-6" />
+				<div class="mx-auto mb-3.5 flex h-14 w-14 items-center justify-center rounded-full bg-amber-100 text-amber-700">
+					<Icon name="i-tabler-mail-forward" class="h-6 w-6" />
 				</div>
-				<h1 class="dashboard-heading text-[22px] font-bold text-amber-900">Registration submitted</h1>
+				<h1 class="dashboard-heading text-[22px] font-bold text-amber-900">Check your email</h1>
 				<p class="mt-1 text-[13px] leading-relaxed text-stone-500">
-					Thanks, <span class="font-semibold text-stone-800">{{ form.firstName.trim() }}</span>. Your account is
-					waiting for a librarian to approve it.
+					Thanks, <span class="font-semibold text-stone-800">{{ form.firstName.trim() }}</span>. We sent a link to
+					<span class="font-semibold text-stone-800">{{ form.email.trim() }}</span>. Open it to confirm the address
+					is yours. Not there? Check your Junk folder.
 				</p>
 
 				<ol class="my-5 grid gap-2.5 text-left">
@@ -26,13 +28,27 @@
 				</ol>
 
 				<ButtonsButton class="!h-[46px] w-full !text-[14.5px]" @click="navigateTo('/login')">Back to sign in</ButtonsButton>
+
+				<p class="mt-4 text-[12.5px] text-stone-500">
+					<template v-if="resendState === 'sent'">
+						<Icon name="i-tabler-check" class="-mt-px mr-0.5 inline h-3.5 w-3.5 text-emerald-600" />New link sent.
+					</template>
+					<template v-else-if="resendState === 'failed'">Couldn't send it. Wait a minute and try again.</template>
+					<template v-else>
+						Didn't get it?
+						<button type="button" class="font-semibold text-accent-600 hover:underline disabled:opacity-60"
+							:disabled="resendState === 'sending'" @click="resend">
+							{{ resendState === 'sending' ? 'Sending…' : 'Send a new link' }}
+						</button>
+					</template>
+				</p>
 			</div>
 
 			<!-- Form -->
 			<form v-else key="form" novalidate @submit.prevent="step === 1 ? next() : submit()">
-				<h1 class="dashboard-heading text-[30px] font-extrabold leading-[1.15] tracking-[-.02em] text-amber-900">Create account</h1>
-				<p class="mt-2 text-[14px] leading-relaxed text-stone-500">
-					A librarian will review your registration before you can sign in.
+				<h1 class="dashboard-heading text-center text-[30px] font-extrabold leading-[1.15] tracking-[-.02em] text-amber-900">Create account</h1>
+				<p class="mt-2 text-center text-[14px] leading-relaxed text-stone-500">
+					We'll email you a link to confirm your address, then a librarian reviews your registration.
 				</p>
 
 				<!-- Two short steps instead of one long form. A finished step can be reopened. -->
@@ -123,7 +139,9 @@
 					<legend class="mb-2.5 text-[10.5px] font-bold uppercase tracking-[.08em] text-stone-400">Sign-in details</legend>
 					<div @focusout="touch">
 						<LibrarianTextField id="email" v-model="form.email" label="Email" type="email" autocomplete="email"
-							placeholder="you@school.edu.ph" :error="err('email')" @update:model-value="clear('email')" />
+							:placeholder="emailDomain ? `you@${emailDomain}` : 'you@school.edu.ph'"
+							:hint="emailDomain ? `Your school email, ending in @${emailDomain}. We'll send a confirmation link there.` : undefined"
+							:error="err('email')" @update:model-value="clear('email')" />
 					</div>
 					<div class="mt-3 grid gap-3 sm:grid-cols-2" @focusout="touch">
 						<AuthPasswordField id="password" v-model="form.password" label="Password" autocomplete="new-password"
@@ -158,9 +176,12 @@
 				</div>
 				</Transition>
 
-				<p class="mt-4 text-center text-[13px] text-stone-500 lg:hidden">
-					Already registered?
-					<NuxtLink to="/login" class="font-semibold text-accent-500 hover:underline">Sign in</NuxtLink>
+				<!-- On wide screens the brand panel carries this link. -->
+				<p class="mt-5 text-center text-[13.5px] text-stone-500 lg:hidden">
+					Already have an account?
+					<NuxtLink to="/login" class="group inline-flex items-center gap-1 font-semibold text-accent-600 hover:underline">
+						Sign in<Icon name="i-tabler-arrow-right" class="h-3.5 w-3.5 transition-transform duration-150 ease-out group-hover:translate-x-0.5" />
+					</NuxtLink>
 				</p>
 			</form>
 		</Transition>
@@ -182,9 +203,24 @@ const programs = ['BSIT', 'BSCS', 'BSBA', 'BSHM', 'Other']
 
 const steps = [
 	{ n: 1, state: 'done', title: 'Registration received', body: "We've saved your details." },
-	{ n: 2, state: 'now', title: 'Librarian review', body: 'Usually done at the library desk — bring your school ID.' },
-	{ n: 3, state: 'todo', title: 'You can sign in', body: 'Once a librarian approves your account.' },
+	{ n: 2, state: 'now', title: 'Confirm your email', body: 'Click the link in the email. It works for an hour.' },
+	{ n: 3, state: 'todo', title: 'Librarian review', body: 'Usually done at the library desk. Bring your school ID.' },
+	{ n: 4, state: 'todo', title: 'You can sign in', body: 'Once a librarian approves your account.' },
 ] as const
+
+const emailDomain = useRuntimeConfig().public.studentEmailDomain as string
+
+const resendState = ref<'idle' | 'sending' | 'sent' | 'failed'>('idle')
+
+async function resend() {
+	resendState.value = 'sending'
+	try {
+		await authService.resendVerification(form.email.trim())
+		resendState.value = 'sent'
+	} catch {
+		resendState.value = 'failed'
+	}
+}
 
 const form = reactive({
 	firstName: '',
@@ -223,6 +259,7 @@ const clientErrors = computed<Partial<Record<Field, string>>>(() => {
 	if (!f.studentIDNumber.trim()) e.studentIDNumber = 'Enter your student ID number.'
 	if (!f.email.trim()) e.email = 'Enter your email.'
 	else if (!emailPattern.test(f.email.trim())) e.email = "That doesn't look like an email address."
+	else if (emailDomain && !f.email.trim().toLowerCase().endsWith(`@${emailDomain}`)) e.email = `Use your school email (ending in @${emailDomain}).`
 	if (!f.password) e.password = 'Choose a password.'
 	else if (f.password.length < 8) e.password = 'Use at least 8 characters.'
 	if (f.password_confirmation !== f.password) e.password_confirmation = "The passwords don't match."

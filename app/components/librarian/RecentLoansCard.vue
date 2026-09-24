@@ -1,7 +1,8 @@
 <template>
 	<div class="flex h-full flex-col rounded-2xl border border-stone-200 bg-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-card">
-		<div class="mb-4">
-			<p class="font-bold text-amber-900">Recent Loans</p>
+		<div class="mb-4 flex items-center justify-between gap-2">
+			<p class="font-bold text-amber-900">Recent loans</p>
+			<NuxtLink to="/librarian/circulation" class="text-[13px] font-semibold text-accent-600 hover:underline">View all</NuxtLink>
 		</div>
 
 		<div class="flex-1 overflow-x-auto">

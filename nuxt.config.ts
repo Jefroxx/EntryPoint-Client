@@ -30,6 +30,8 @@ export default defineNuxtConfig({
 	runtimeConfig: {
 		public: {
 			apiBaseURL: process.env.NUXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000/api',
+			// Only a hint on the forms; the server's STUDENT_EMAIL_DOMAIN is what's enforced. Keep the two in step.
+			studentEmailDomain: process.env.NUXT_PUBLIC_STUDENT_EMAIL_DOMAIN ?? 'davao.sti.edu.ph',
 		},
 	},
 })

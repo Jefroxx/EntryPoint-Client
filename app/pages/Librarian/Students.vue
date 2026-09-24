@@ -37,9 +37,7 @@
 
             <div class="flex-1"></div>
 
-            <ButtonsButton variant="ghost" @click="search = ''; programFilter = ''">
-                <Icon name="i-tabler-rotate" class="h-3.5 w-3.5" />Reset
-            </ButtonsButton>
+            <LibrarianResetFiltersButton @click="search = ''; programFilter = ''" />
         </div>
 
         <LibrarianStudentsTable :students="students?.data ?? []" :loading="studentsPending"

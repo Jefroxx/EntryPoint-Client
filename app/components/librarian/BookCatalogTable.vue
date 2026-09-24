@@ -23,7 +23,8 @@
 									<img v-if="book.coverImageURL" :src="book.coverImageURL" alt="" class="h-full w-full object-cover" />
 								</div>
 								<div>
-									<p class="text-[15px] font-semibold text-stone-900">{{ book.title }}</p>
+									<button type="button" class="text-left text-[15px] font-semibold text-stone-900 hover:text-accent-600 hover:underline"
+										@click="emit('view', book)">{{ book.title }}</button>
 									<p v-if="book.isbn" class="font-data text-[12px] text-stone-400">ISBN {{ book.isbn }}</p>
 								</div>
 							</div>
@@ -48,16 +49,19 @@
 						</td>
 						<td class="px-4 py-3">
 							<div class="flex items-center justify-end gap-1">
-								<ButtonsButton variant="icon" size="sm" :aria-label="`Edit ${book.title}`">
+								<ButtonsButton variant="icon" size="sm" :aria-label="`Edit ${book.title}`" @click="emit('edit', book)">
 									<Icon name="i-tabler-pencil" class="h-[15px] w-[15px]" />
 								</ButtonsButton>
-								<LibrarianRowMenu :items="BOOK_MENU" />
+								<LibrarianRowMenu :items="BOOK_MENU" :label="`More actions for ${book.title}`"
+									@select="(key: string) => onMenu(key, book)" />
 							</div>
 						</td>
 					</tr>
 
 					<tr v-if="!loading && books.length === 0">
-						<td colspan="7" class="py-10 text-center text-[15px] text-stone-400">No books match your search.</td>
+						<td colspan="7" class="py-10 text-center text-[15px] text-stone-400">
+							{{ filtered ? 'No books match these filters.' : 'No books in the catalog yet.' }}
+						</td>
 					</tr>
 				</tbody>
 			</table>
@@ -73,6 +77,12 @@ import type { CatalogBook } from '~/services/librarianService'
 const props = defineProps<{
 	books: CatalogBook[]
 	loading: boolean
+	/** Filters or a search are narrowing the list, so an empty table means "no match", not "no books". */
+	filtered?: boolean
+}>()
+
+const emit = defineEmits<{
+	(e: 'view' | 'edit' | 'remove', book: CatalogBook): void
 }>()
 
 const BOOK_MENU = [
@@ -80,6 +90,10 @@ const BOOK_MENU = [
 	{ key: 'edit', label: 'Edit book', icon: 'i-tabler-pencil' },
 	{ key: 'remove', label: 'Remove', icon: 'i-tabler-trash', tone: 'danger', separator: true },
 ] as const
+
+function onMenu(key: string, book: CatalogBook) {
+	if (key === 'view' || key === 'edit' || key === 'remove') emit(key, book)
+}
 
 function authorNames(book: CatalogBook): string {
 	return book.authors.length ? book.authors.map((a) => a.name).join(', ') : '—'

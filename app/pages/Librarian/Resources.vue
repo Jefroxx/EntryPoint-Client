@@ -33,6 +33,7 @@
 
                 <div class="flex-1"></div>
 
+                <LibrarianResetFiltersButton @click="resourceSearch = ''; typeFilter = ''" />
                 <ButtonsButton variant="primary" @click="openForm(null)">
                     <Icon name="i-tabler-plus" class="h-3.5 w-3.5" />Add Resource
                 </ButtonsButton>
@@ -60,6 +61,10 @@
                     <option value="all">All sessions</option>
                     <option value="active">Active only</option>
                 </select>
+
+                <div class="flex-1"></div>
+
+                <LibrarianResetFiltersButton @click="logSearch = ''; logFilter = 'all'" />
             </div>
 
             <LibrarianUsageLogTable :logs="pagedLogs" :loading="logsPending" :now-ms="nowMs" />
