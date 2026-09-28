@@ -1,99 +1,115 @@
 <template>
-	<main class="auth-page relative flex min-h-screen flex-col items-center overflow-hidden px-4 pb-6 pt-10 sm:pt-14 lg:pt-10">
-		<!-- The backdrop: the brand star, oversized and faint, half out of frame. Decoration only. -->
-		<svg v-for="star in backdropStars" :key="star.class" class="auth-bg-star pointer-events-none absolute text-accent-500" :class="star.class"
+	<main class="auth-page relative min-h-screen overflow-x-hidden">
+		<!-- Small screens: the brand star, oversized and faint, half out of frame, behind a stacked card. -->
+		<svg v-for="star in backdropStars" :key="star.class" class="pointer-events-none absolute text-accent-500 lg:hidden" :class="star.class"
 			viewBox="0 0 100 100" aria-hidden="true">
-			<path fill="currentColor" d="M50 0C53 35 65 47 100 50 65 53 53 65 50 100 47 65 35 53 0 50 35 47 47 35 50 0Z" />
+			<path fill="currentColor" :d="STAR" />
 		</svg>
 
-		<!-- my-auto centres the card in the window but, unlike align-items: center, never pushes a tall
-			 card (registration step 2) up out of reach: it just scrolls. It also pins the footer to the bottom. -->
-		<div class="relative z-10 w-full max-w-[560px] lg:my-auto lg:max-w-[920px]">
-			<!-- Small screens have no room for the panel, so the logo sits above the card instead. -->
-			<div class="mb-5 text-center lg:hidden">
-				<NuxtLink :to="signInPath" class="inline-flex items-center leading-none" aria-label="EntryPoint">
-					<img src="~/assets/css/logo/EntryPointLogo.png" alt="EntryPoint" class="h-10 w-auto" />
-				</NuxtLink>
+		<!-- Wide screens: a full-height split. The form owns a white column on one edge; the illustrated
+			 panel fills the rest and slides across when you move between sign-in and registration. -->
+		<div class="auth-shell relative z-10 mx-auto flex min-h-screen w-full max-w-[560px] flex-col px-4 pb-6 pt-10 sm:pt-14 lg:max-w-none lg:bg-white lg:p-0"
+			:data-panel="side">
+			<!-- A card on phones; on wide screens it dissolves (display: contents) so each page's form lands in the grid. -->
+			<div class="auth-card grid overflow-hidden rounded-[28px] border border-stone-200 bg-white shadow-overlay lg:contents">
+				<slot />
 			</div>
 
-			<div class="auth-card relative grid overflow-hidden rounded-[28px] border border-stone-200 bg-white shadow-overlay lg:min-h-[540px] lg:grid-cols-2">
-				<slot />
+			<!-- The form column's footer, pinned to the bottom of the column. It shares the grid cell with the
+				 form; each page opens with the shared <AuthLogo>, so logo and form centre together. -->
+			<div class="auth-chrome pointer-events-none hidden flex-col justify-end px-12 pb-9 lg:flex">
+				<p class="flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1 text-center text-[12.5px] text-stone-400">
+					<span class="font-semibold text-accent-700">EntryPoint</span><span aria-hidden="true">·</span>
+					<span>STI College Davao Library</span><span aria-hidden="true">·</span><span>© {{ year }}</span>
+				</p>
+			</div>
 
-				<!-- One element for every auth page: it stays mounted between routes, so moving it is a slide, not a swap. -->
-				<aside class="auth-panel absolute inset-y-0 left-0 hidden w-1/2 overflow-hidden rounded-[28px] text-white lg:block"
-					:class="variant === 'librarian' ? 'bg-stone-800' : 'bg-accent-500'" :data-side="side">
-					<svg class="auth-star pointer-events-none absolute -bottom-28 -right-24 h-[420px] w-[420px] text-white/[.07]"
+			<!-- One element for every auth page: it stays mounted between routes, so moving it is a slide, not a swap. -->
+			<aside class="auth-panel hidden text-white lg:block" :class="variant === 'librarian' ? 'is-staff' : ''" :data-side="side">
+				<div class="sticky top-3 h-[calc(100vh-24px)] overflow-hidden rounded-[28px]">
+					<!-- The illustration: a glowing brand star over a library shelf, drawn in code. Decoration only. -->
+					<div class="auth-glow pointer-events-none absolute -right-24 -top-24 h-[560px] w-[560px] rounded-full" aria-hidden="true" />
+					<svg class="auth-star pointer-events-none absolute right-[8%] top-[9%] h-[clamp(140px,17vw,230px)] w-[clamp(140px,17vw,230px)] text-white/[.9]"
 						viewBox="0 0 100 100" aria-hidden="true">
-						<path fill="currentColor" d="M50 0C53 35 65 47 100 50 65 53 53 65 50 100 47 65 35 53 0 50 35 47 47 35 50 0Z" />
+						<path fill="currentColor" :d="STAR" />
+					</svg>
+					<svg v-for="s in sparkles" :key="s.class" class="pointer-events-none absolute text-white" :class="s.class" viewBox="0 0 100 100" aria-hidden="true">
+						<path fill="currentColor" :d="STAR" />
 					</svg>
 
-					<div class="relative flex h-full flex-col px-11 py-10">
-						<NuxtLink :to="signInPath" class="self-start leading-none" aria-label="EntryPoint">
-							<img src="~/assets/css/logo/EntryPointLogo.png" alt="" class="h-8 w-auto brightness-0 invert" />
-						</NuxtLink>
+					<svg class="auth-shelf pointer-events-none absolute inset-x-0 bottom-0 h-[34%] w-full" viewBox="0 0 800 380"
+						preserveAspectRatio="xMinYMax slice" aria-hidden="true">
+						<g v-for="shelf in shelves" :key="shelf.y">
+							<rect :x="shelf.x" :y="shelf.y" :width="shelf.w" height="9" rx="3" fill="#fff" fill-opacity=".2" />
+							<rect v-for="(book, i) in shelf.books" :key="i" :x="book.x" :y="shelf.y - book.h" :width="book.w" :height="book.h" rx="4"
+								fill="#fff" :fill-opacity="book.o" :transform="book.lean ? `rotate(${book.lean} ${book.x + (book.lean > 0 ? book.w : 0)} ${shelf.y})` : undefined" />
+						</g>
+					</svg>
 
-						<div class="my-auto max-w-[350px] py-8">
-							<Transition mode="out-in" enter-active-class="transition duration-300 ease-out delay-150"
-								enter-from-class="translate-y-2 opacity-0" leave-active-class="transition duration-200 ease-out"
-								leave-to-class="opacity-0">
-								<div :key="variant">
-									<h2 class="text-balance text-[30px] font-extrabold leading-[1.1] tracking-[-.02em]">{{ copy.title }}</h2>
-									<p class="mt-2.5 text-pretty text-[14.5px] leading-relaxed text-white/80">{{ copy.lead }}</p>
-								</div>
-							</Transition>
+					<!-- Headline up top, the steps as one row sitting just above the shelf (the bottom 34%). -->
+					<div class="relative flex h-full flex-col px-12 pb-[calc((100vh-24px)*0.34+28px)] pt-[11vh] xl:px-16">
+						<Transition mode="out-in" enter-active-class="transition duration-300 ease-out delay-150"
+							enter-from-class="translate-y-2 opacity-0" leave-active-class="transition duration-200 ease-out"
+							leave-to-class="opacity-0">
+							<div :key="variant" class="max-w-[min(540px,68%)]">
+								<h2 class="text-balance text-[clamp(36px,3.7vw,58px)] font-extrabold leading-[1.02] tracking-[-.03em]">{{ copy.title }}</h2>
+								<p class="mt-4 max-w-[420px] text-pretty text-[16px] leading-relaxed text-white/80">{{ copy.lead }}</p>
+								<!-- The switch between sign-in and registration lives here on wide screens (the forms show it on phones).
+									 The librarian page has none: its form already links to the student sign-in. -->
+								<NuxtLink v-if="copy.cta" :to="copy.to"
+									class="mt-8 inline-flex h-11 items-center gap-2 rounded-xl border-[1.5px] border-white/75 px-6 text-[14px] font-semibold transition-colors duration-200 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2"
+									:class="variant === 'librarian' ? 'hover:text-stone-800 focus-visible:ring-offset-stone-800' : 'hover:text-accent-600 focus-visible:ring-offset-accent-500'">
+									{{ copy.cta }}
+									<Icon name="i-tabler-arrow-right" class="h-4 w-4" />
+								</NuxtLink>
+							</div>
+						</Transition>
 
-							<!-- Sign-in and register share the same three steps, so the list stays put through the slide
-								 and only "You're here" moves. The librarian panel has its own list. -->
-							<Transition mode="out-in" enter-active-class="transition duration-300 ease-out delay-150"
-								enter-from-class="opacity-0" leave-active-class="transition duration-200 ease-out" leave-to-class="opacity-0">
-								<ol :key="copy.list" class="mt-6 grid gap-4">
-									<li v-for="(item, i) in lists[copy.list]" :key="item.title" class="flex items-start gap-3.5">
-										<span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[13px] font-bold tabular-nums transition-colors duration-500"
+						<!-- Sign-in and register share the same three steps, so the row stays put through the slide and
+							 only the highlighted step moves. The track across the top reads as one path, left to right. -->
+						<Transition mode="out-in" enter-active-class="transition duration-300 ease-out delay-150"
+							enter-from-class="opacity-0" leave-active-class="transition duration-200 ease-out" leave-to-class="opacity-0">
+							<ol :key="copy.list" class="mt-auto grid grid-cols-3 gap-x-5">
+								<li v-for="(item, i) in lists[copy.list]" :key="item.title" class="border-t-2 pt-4 transition-colors duration-500"
+									:class="copy.current === i ? 'border-white' : 'border-white/25'">
+									<span class="flex items-center gap-2.5">
+										<span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[12.5px] font-bold tabular-nums transition-colors duration-500"
 											:class="copy.current === i ? 'bg-white text-accent-600' : 'bg-white/15 text-white'">
-											<Icon v-if="item.icon" :name="item.icon" class="h-4 w-4" />
+											<Icon v-if="item.icon" :name="item.icon" class="h-3.5 w-3.5" />
 											<template v-else>{{ i + 1 }}</template>
 										</span>
-										<span class="min-w-0 pt-0.5">
-											<span class="flex items-center gap-2 text-[14.5px] font-semibold leading-tight">
-												{{ item.title }}
-												<span v-if="copy.current === i" class="rounded-full bg-white/20 px-2 py-0.5 text-[10.5px] font-semibold">You're here</span>
-											</span>
-											<span class="mt-0.5 block text-[13px] leading-snug text-white/75">{{ item.body }}</span>
-										</span>
-									</li>
-								</ol>
-							</Transition>
-
-							<NuxtLink :to="copy.to"
-								class="mt-7 inline-flex h-11 items-center gap-2 rounded-xl border-[1.5px] border-white/75 px-6 text-[14px] font-semibold transition-colors duration-200 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2"
-								:class="variant === 'librarian' ? 'hover:text-stone-800 focus-visible:ring-offset-stone-800' : 'hover:text-accent-600 focus-visible:ring-offset-accent-500'">
-								{{ copy.cta }}
-								<Icon name="i-tabler-arrow-right" class="h-4 w-4" />
-							</NuxtLink>
-						</div>
+										<span v-if="copy.current === i" class="rounded-full bg-white/20 px-2 py-0.5 text-[10.5px] font-semibold">You're here</span>
+									</span>
+									<span class="mt-2.5 block text-[15px] font-semibold leading-tight">{{ item.title }}</span>
+									<span class="mt-1 block text-pretty text-[13px] leading-snug text-white/75">{{ item.body }}</span>
+								</li>
+							</ol>
+						</Transition>
 					</div>
-				</aside>
-			</div>
-		</div>
+				</div>
+			</aside>
 
-		<footer class="relative z-10 mt-8 flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1 text-[12.5px] text-stone-500">
-			<span class="font-semibold text-accent-700">EntryPoint</span>
-			<span aria-hidden="true">·</span>
-			<span>STI College Davao Library</span>
-			<span aria-hidden="true">·</span>
-			<span>© {{ year }}</span>
-		</footer>
+			<footer class="mt-8 flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1 text-[12.5px] text-stone-500 lg:hidden">
+				<span class="font-semibold text-accent-700">EntryPoint</span>
+				<span aria-hidden="true">·</span>
+				<span>STI College Davao Library</span>
+				<span aria-hidden="true">·</span>
+				<span>© {{ year }}</span>
+			</footer>
+		</div>
 	</main>
 </template>
 
 <script setup lang="ts">
+const STAR = 'M50 0C53 35 65 47 100 50 65 53 53 65 50 100 47 65 35 53 0 50 35 47 47 35 50 0Z'
+
 const route = useRoute()
 const path = computed(() => route.path.toLowerCase())
 
 const variant = computed(() =>
 	path.value.startsWith('/register') ? 'register' : path.value.startsWith('/librarian') ? 'librarian' : 'student',
 )
-// The form sits opposite the panel: sign-in on the left, registration on the right.
+// Which side the illustrated panel is on. The form sits opposite: sign-in on the left, registration on the right.
 const side = computed(() => (variant.value === 'register' ? 'left' : 'right'))
 
 // The panel answers the question people ask at the desk: how do I get an account (or, for staff, where things are).
@@ -112,48 +128,80 @@ const lists = {
 
 const panelCopy = {
 	student: {
-		title: 'New to the library?',
-		lead: 'Getting an account takes three steps.',
+		title: 'Your library, one scan away.',
+		lead: 'Find a book, borrow it, and keep track of due dates and points from your EntryPoint account.',
 		list: 'join',
 		current: -1,
 		cta: 'Create an account',
 		to: '/register',
 	},
 	register: {
-		title: 'Three steps to borrowing',
-		lead: 'Your account works once a librarian approves it.',
+		title: 'Three steps to borrowing.',
+		lead: 'Your account works once a librarian approves it at the desk.',
 		list: 'join',
 		current: 0,
 		cta: 'I already have an account',
 		to: '/login',
 	},
 	librarian: {
-		title: 'At the desk',
-		lead: 'Where the day-to-day work lives once you sign in.',
+		title: 'The whole desk, in one place.',
+		lead: 'Attendance, circulation and new registrations, ready as soon as you sign in.',
 		list: 'desk',
 		current: -1,
-		cta: 'Student sign-in',
+		cta: '',
 		to: '/login',
 	},
 } as const
 const copy = computed(() => panelCopy[variant.value])
 
-const signInPath = computed(() => (variant.value === 'librarian' ? '/librarian/login' : '/login'))
-
 const year = new Date().getFullYear()
 
-// Three oversized stars around the card: big and faint, each half out of frame, so the page reads
-// as EntryPoint without competing with the form. Hidden on phones, where the card fills the width.
+// Phones: three oversized stars around the card, big and faint, each half out of frame.
 const backdropStars = [
 	{ class: '-left-24 -top-28 hidden h-[380px] w-[380px] rotate-12 opacity-[.07] md:block' },
 	{ class: '-bottom-40 -right-28 hidden h-[520px] w-[520px] -rotate-6 opacity-[.08] md:block' },
-	{ class: 'right-[12%] top-[9%] hidden h-[90px] w-[90px] rotate-45 opacity-[.10] lg:block' },
+	{ class: 'right-[12%] top-[9%] hidden h-[90px] w-[90px] rotate-45 opacity-[.10] md:block' },
+]
+
+// Small glints around the big star, like the sparkle in the EntryPoint wordmark.
+const sparkles = [
+	{ class: 'right-[34%] top-[7%] h-5 w-5 opacity-60' },
+	{ class: 'right-[5%] top-[36%] h-7 w-7 opacity-40' },
+	{ class: 'right-[30%] top-[33%] h-3 w-3 opacity-50' },
+	{ class: 'left-[46%] top-[4%] h-3.5 w-3.5 opacity-30' },
+]
+
+/*
+ * The shelf: a plank of book spines in white at low opacity, so the panel reads as a library without
+ * competing with the text above it. Sizes and the odd leaning book are fixed (not random) so the
+ * drawing is identical on the server and in the browser.
+ */
+function row(startX: number, widths: number[], heights: number[], opacities: number[], leans: Record<number, number> = {}) {
+	let x = startX
+	return widths.map((w, i) => {
+		const h = heights[i % heights.length]!
+		const lean = leans[i] ?? 0
+		// A leaning book's top swings out by h·sin(angle); leave that much room on the side it leans to.
+		const swing = Math.ceil(h * Math.sin((Math.abs(lean) * Math.PI) / 180))
+		if (lean < 0) x += swing
+		const book = { x, w, h, o: opacities[i % opacities.length]!, lean }
+		x += w + 4 + (lean > 0 ? swing : 0)
+		return book
+	})
+}
+
+const shelves = [
+	{
+		x: 0, y: 370, w: 800,
+		books: row(14, [34, 26, 42, 30, 24, 38, 28, 32, 46, 26, 30, 36, 24, 40, 28, 34, 30, 26, 38, 30, 36],
+			[130, 150, 118, 160, 142, 124, 156, 136, 112, 148, 164, 128, 146, 120, 152, 138, 158, 126, 144, 134, 154],
+			[.12, .18, .1, .22, .14, .16, .1, .2, .13, .17, .11, .19, .15, .12, .21, .1, .16, .14, .18, .12, .2], { 6: 9, 14: -8 }),
+	},
 ]
 </script>
 
 <style>
-/* The sign-in backdrop: warm light from the top-left, a deeper glow bottom-right, and a faint
-   field of the brand star so the page around the card isn't a flat sheet of cream. */
+/* Phones: warm light from the top-left, a deeper glow bottom-right, and a faint field of the brand star. */
 .auth-page {
 	background-color: #fffbeb;
 	background-image:
@@ -163,9 +211,7 @@ const backdropStars = [
 	background-size: auto, auto, 56px 56px;
 }
 
-/* Each auth page's root is an .auth-pane. Both panes share the first grid row, so while the
-   route changes the outgoing form fades in its column and the incoming one appears in the
-   other, under the panel, which then slides off it. */
+/* Each auth page's root is an .auth-pane. */
 .auth-pane {
 	display: flex;
 	flex-direction: column;
@@ -180,9 +226,28 @@ const backdropStars = [
 }
 
 @media (min-width: 1024px) {
+	/* Three tracks: form | gap | form. The panel covers two of them, so whichever outer track it leaves
+	   open is where that page's form shows. Both panes share the row, so during a route change the
+	   outgoing form fades in its column while the incoming one appears in the other, under the panel. */
+	.auth-shell {
+		--fw: clamp(440px, 38vw, 580px);
+		display: grid;
+		grid-template-columns: var(--fw) 1fr var(--fw);
+		grid-template-rows: minmax(100vh, auto);
+	}
+
+	/* Logo + form are centred as one group above the footer, so the space above and below stays even
+	   and the logo sits a fixed, short distance over the heading. */
 	.auth-pane {
 		grid-row: 1;
-		padding: 3.5rem 3rem;
+		padding: 3rem 3rem 4.5rem;
+	}
+
+	/* Not images: a logo keeps its own proportions (this unlayered rule would beat Tailwind's w-auto). */
+	.auth-pane > :not(img) {
+		width: 100%;
+		max-width: 440px;
+		margin-inline: auto;
 	}
 
 	.auth-pane[data-side='left'] {
@@ -191,21 +256,62 @@ const backdropStars = [
 	}
 
 	.auth-pane[data-side='right'] {
-		grid-column: 2;
+		grid-column: 3;
 		--enter-from: 14px;
+	}
+
+	.auth-chrome {
+		grid-row: 1;
+		grid-column: 1;
+	}
+
+	.auth-shell[data-panel='left'] .auth-chrome {
+		grid-column: 3;
+	}
+
+	.auth-panel {
+		position: absolute;
+		top: 12px;
+		bottom: 12px;
+		left: 12px;
+		width: calc(100% - var(--fw) - 24px);
 	}
 }
 
+.auth-panel > div {
+	background-color: var(--color-accent-500);
+	background-image:
+		radial-gradient(90% 60% at 0% 0%, rgb(255 255 255 / .10), transparent 60%),
+		linear-gradient(160deg, var(--color-accent-500) 0%, #6f3a17 100%);
+	transition: background-color 500ms ease-out;
+}
+
+.auth-panel.is-staff > div {
+	background-color: #292524;
+	background-image:
+		radial-gradient(90% 60% at 0% 0%, rgb(255 255 255 / .08), transparent 60%),
+		linear-gradient(160deg, #3a3330 0%, #1c1917 100%);
+}
+
 .auth-panel {
-	background-image: radial-gradient(120% 70% at 0% 0%, rgb(255 255 255 / .12), transparent 60%);
-	transition: transform 760ms var(--ease-in-out), background-color 500ms ease-out;
+	transition: transform 760ms var(--ease-in-out);
 }
 
 .auth-panel[data-side='right'] {
-	transform: translateX(100%);
+	transform: translateX(var(--fw));
+}
+
+/* The star's glow: warm light, not a halo ring. */
+.auth-glow {
+	background: radial-gradient(closest-side, rgb(255 214 170 / .35), rgb(255 214 170 / .08) 60%, transparent);
+}
+
+.auth-panel.is-staff .auth-glow {
+	background: radial-gradient(closest-side, rgb(255 255 255 / .16), rgb(255 255 255 / .04) 60%, transparent);
 }
 
 .auth-star {
+	filter: drop-shadow(0 10px 30px rgb(0 0 0 / .18));
 	transition: transform 1100ms var(--ease-out);
 }
 

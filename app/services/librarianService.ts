@@ -1,5 +1,24 @@
 import { BaseService } from "./BaseService";
 
+/** GET /librarian/dashboard/today — today's desk traffic and the queues waiting on a librarian. */
+export interface DashboardToday {
+  inLibrary: number;
+  visitsToday: number;
+  checkedOut: number;
+  returned: number;
+  dueToday: number;
+  overdue: number;
+  attention: {
+    registrations: number;
+    bookRequests: number;
+    reservations: number;
+    selfReturns: number;
+    redemptions: number;
+    unpaidFines: number;
+    unpaidTotal: number;
+  };
+}
+
 export interface DashboardSummary {
   totalBooks: number;
   totalMembers: number;
@@ -11,6 +30,20 @@ export interface BorrowingOverview {
   labels: string[];
   borrowed: number[];
   returned: number[];
+  /** Every entrance scan that week. */
+  visits: number[];
+  /** Different students who came that week (each counted once). */
+  visitors: number[];
+  /** Different students across the whole month. */
+  visitorsTotal: number;
+}
+
+export type DemographicsScope = "members" | "visitors";
+
+/** Students by academic program; the five largest keep their name, the rest are "Other". */
+export interface Demographics {
+  total: number;
+  slices: { label: string; count: number }[];
 }
 
 export interface BookStatusOverview {
@@ -107,6 +140,34 @@ export interface CatalogBook {
   copies: BookCopySummary[];
 }
 
+/** GET /librarian/books/{id}: every stored field, for View details and Edit book. */
+export interface BookDetail {
+  bookID: number;
+  title: string;
+  isbn: string | null;
+  callNumber: string;
+  areasOfLibrary: LibraryArea | null;
+  publicationYear: number | null;
+  volume: string | null;
+  edition: string | null;
+  pages: number | null;
+  publisher: string | null;
+  sourceOfFund: string | null;
+  cost: string | number | null;
+  copyNumber: string | null;
+  remarks: string | null;
+  coverImageURL: string | null;
+  shelfLocation: string | null;
+  subject: { subjectID: number; name: string } | null;
+  authors: (BookAuthor & { role: string | null })[];
+  /** Retired copies are left out. */
+  copies: (BookCopySummary & { barcodeValue: string })[];
+  loans: { total: number; active: number };
+  createdAt: string | null;
+}
+
+export type BookAvailabilityFilter = "" | "available" | "unavailable";
+
 export interface PaginatedBooks {
   data: CatalogBook[];
   current_page: number;
@@ -190,6 +251,19 @@ export interface NewBookPayload {
 }
 
 class LibrarianServiceClass extends BaseService {
+  fetchDashboardToday() {
+    const runtimeConfig = useRuntimeConfig();
+
+    return $fetch<DashboardToday>("/librarian/dashboard/today", {
+      baseURL: runtimeConfig.public.apiBaseURL,
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        ...this.authHeaders(),
+      },
+    });
+  }
+
   fetchDashboardSummary() {
     const runtimeConfig = useRuntimeConfig();
 
@@ -210,6 +284,20 @@ class LibrarianServiceClass extends BaseService {
       baseURL: runtimeConfig.public.apiBaseURL,
       method: "GET",
       query: month ? { month } : undefined,
+      headers: {
+        Accept: "application/json",
+        ...this.authHeaders(),
+      },
+    });
+  }
+
+  fetchDemographics(scope: DemographicsScope, month?: string) {
+    const runtimeConfig = useRuntimeConfig();
+
+    return $fetch<Demographics>("/librarian/dashboard/demographics", {
+      baseURL: runtimeConfig.public.apiBaseURL,
+      method: "GET",
+      query: { scope, ...(month ? { month } : {}) },
       headers: {
         Accept: "application/json",
         ...this.authHeaders(),
@@ -269,7 +357,7 @@ class LibrarianServiceClass extends BaseService {
     });
   }
 
-  fetchBooks(params: { search?: string; page?: number; perPage?: number } = {}) {
+  fetchBooks(params: { search?: string; subjectID?: number; availability?: Exclude<BookAvailabilityFilter, "">; page?: number; perPage?: number } = {}) {
     const runtimeConfig = useRuntimeConfig();
 
     return $fetch<PaginatedBooks>("/books", {
@@ -329,6 +417,19 @@ class LibrarianServiceClass extends BaseService {
         ...this.authHeaders(),
       },
     });
+  }
+
+  fetchBook(bookID: number) {
+    return this.apiRequest<{ book: BookDetail }>(`/librarian/books/${bookID}`);
+  }
+
+  /** Same fields as createBook; `quantity` here is the new number of copies (0 retires them all). */
+  updateBook(bookID: number, payload: Partial<NewBookPayload> & { quantity?: number }) {
+    return this.apiRequest<{ message: string }>(`/librarian/books/${bookID}`, { method: "PATCH", body: payload });
+  }
+
+  deleteBook(bookID: number) {
+    return this.apiRequest<{ message: string }>(`/librarian/books/${bookID}`, { method: "DELETE" });
   }
 
   fetchBookSuggestions() {

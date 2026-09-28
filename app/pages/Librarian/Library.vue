@@ -32,23 +32,29 @@
                         class="w-full border-none bg-transparent text-[15px] text-stone-800 outline-none placeholder:text-stone-400" />
                 </div>
 
-                <ButtonsButton variant="ghost">
-                    All Categories
-                    <Icon name="i-tabler-chevron-down" class="h-3.5 w-3.5 opacity-60" />
-                </ButtonsButton>
-                <ButtonsButton variant="ghost">
-                    All Availability
-                    <Icon name="i-tabler-chevron-down" class="h-3.5 w-3.5 opacity-60" />
-                </ButtonsButton>
-
+                <select v-model="subjectFilter" aria-label="Filter by category"
+                    class="h-[42px] rounded-xl border bg-white px-3 text-[14px] outline-none transition-colors hover:bg-stone-50 focus:ring-2 focus:ring-accent-200"
+                    :class="subjectFilter ? 'border-accent-300 text-stone-800' : 'border-stone-200 text-stone-500'">
+                    <option value="">All Categories</option>
+                    <option v-for="s in subjects" :key="s.subjectID" :value="s.subjectID">{{ s.name }}</option>
+                </select>
+                <select v-model="availabilityFilter" aria-label="Filter by availability"
+                    class="h-[42px] rounded-xl border bg-white px-3 text-[14px] outline-none transition-colors hover:bg-stone-50 focus:ring-2 focus:ring-accent-200"
+                    :class="availabilityFilter ? 'border-accent-300 text-stone-800' : 'border-stone-200 text-stone-500'">
+                    <option value="">All Availability</option>
+                    <option value="available">On the shelf</option>
+                    <option value="unavailable">None on the shelf</option>
+                </select>
                 <div class="flex-1"></div>
 
-                <ButtonsButton variant="primary" @click="isAddModalOpen = true">
+                <LibrarianResetFiltersButton @click="clearBookFilters" />
+                <ButtonsButton variant="primary" @click="openAddBook">
                     <Icon name="i-tabler-plus" class="h-3.5 w-3.5" />Add New Book
                 </ButtonsButton>
             </div>
 
-            <LibrarianBookCatalogTable :books="books?.data ?? []" :loading="booksPending" />
+            <LibrarianBookCatalogTable :books="books?.data ?? []" :loading="booksPending" :filtered="hasBookFilters"
+                @view="openBookDetail" @edit="openEditBook" @remove="askRemoveBook" />
 
             <div v-if="books" class="mt-3 flex items-center justify-between text-[13.5px] text-stone-400">
                 <span>Showing {{ books.data.length }} of {{ books.total }} books</span>
@@ -98,9 +104,7 @@
 
                 <div class="flex-1"></div>
 
-                <ButtonsButton variant="ghost" @click="requestSearch = ''; requestStatusFilter = ''">
-                    <Icon name="i-tabler-rotate" class="h-3.5 w-3.5" />Reset
-                </ButtonsButton>
+                <LibrarianResetFiltersButton @click="requestSearch = ''; requestStatusFilter = ''" />
             </div>
 
             <p v-if="requestActionError" class="mb-3 text-[14px] font-medium text-red-600">{{ requestActionError }}</p>
@@ -156,8 +160,16 @@
         <LibrarianRequestReviewDrawer :open="isDrawerOpen" :suggestion="activeRequest" @close="isDrawerOpen = false"
             @approve="handleApprove" @reject="handleReject" />
 
-        <LibrarianAddBookModal :open="isAddModalOpen" :categories="bookCategories" @close="isAddModalOpen = false"
-            @created="handleBookCreated" />
+        <LibrarianAddBookModal :open="isAddModalOpen" :categories="bookCategories" :book="editingBook"
+            @close="isAddModalOpen = false" @created="handleBookCreated" @updated="handleBookUpdated" />
+
+        <LibrarianBookDetailDrawer :open="isDetailOpen" :book="detailBook" :loading="detailLoading" :error="detailError"
+            @close="isDetailOpen = false" @edit="openEditBook" @remove="askRemoveBook" />
+
+        <LibrarianConfirmModal :open="isRemoveBookOpen" title="Remove this book?"
+            :message="`“${removingBook?.title ?? 'This book'}” leaves the catalog and its copies are retired. Past loans and fines stay on students' records.`"
+            confirm-label="Remove" :loading="removingBusy" @close="isRemoveBookOpen = false"
+            @confirm="handleRemoveBook" />
 
         <LibrarianCategoryFormModal :open="isCategoryOpen" :subject="editingSubject" :busy="categoryBusy"
             @close="isCategoryOpen = false" @submit="saveCategory" />
@@ -172,9 +184,10 @@
 </template>
 
 <script setup lang="ts">
-import { librarianService, type BookSuggestion } from '~/services/librarianService'
+import { librarianService, type BookAvailabilityFilter, type BookDetail, type BookSuggestion, type CatalogBook } from '~/services/librarianService'
 import { subjectService, type SubjectRecord } from '~/services/subjectService'
 import AlertToast from '~/api/alert/AlertToast.vue'
+import { useAlert } from '~/api/alert/useAlert'
 
 definePageMeta({
     middleware: 'librarian',
@@ -191,8 +204,18 @@ const page = ref(1)
 
 const { data: stats, execute: refetchStats } = useLiveAsyncData('library-stats', () => librarianService.fetchLibraryStats(), { lazy: true })
 
+const subjectFilter = ref<number | ''>('')
+const availabilityFilter = ref<BookAvailabilityFilter>('')
+const hasBookFilters = computed(() => !!(search.value.trim() || subjectFilter.value || availabilityFilter.value))
+
 const { data: books, pending: booksPending, execute: refetchBooks } =
-    useLiveAsyncData('library-books', () => librarianService.fetchBooks({ search: search.value || undefined, page: page.value, perPage: 10 }), { lazy: true })
+    useLiveAsyncData('library-books', () => librarianService.fetchBooks({
+        search: search.value || undefined,
+        subjectID: subjectFilter.value || undefined,
+        availability: availabilityFilter.value || undefined,
+        page: page.value,
+        perPage: 10,
+    }), { lazy: true })
 
 let searchTimeout: ReturnType<typeof setTimeout>
 watch(search, () => {
@@ -202,6 +225,18 @@ watch(search, () => {
         refetchBooks()
     }, 300)
 })
+
+// Dropdowns apply straight away (no typing to wait out), always from the first page.
+watch([subjectFilter, availabilityFilter], () => {
+    page.value = 1
+    refetchBooks()
+})
+
+function clearBookFilters() {
+    search.value = ''
+    subjectFilter.value = ''
+    availabilityFilter.value = ''
+}
 
 function goToPage(next: number) {
     if (next < 1 || (books.value && next > books.value.last_page)) return
@@ -273,6 +308,90 @@ const bookCategories = computed(() => subjects.value.map((s) => s.name))
 
 async function handleBookCreated() {
     await Promise.all([refetchBooks(), refetchStats(), refetchSubjects()])
+}
+
+// ---- View / edit / remove a book ----
+// The table only carries what its columns show; details and the edit form need the full record.
+const detailBook = ref<BookDetail | null>(null)
+const isDetailOpen = ref(false)
+const detailLoading = ref(false)
+const detailError = ref('')
+
+async function loadBookDetail(bookID: number): Promise<BookDetail | null> {
+    detailLoading.value = true
+    detailError.value = ''
+    try {
+        const { book } = await librarianService.fetchBook(bookID)
+        detailBook.value = book
+        return book
+    } catch (error) {
+        detailError.value = apiErrorMessage(error, 'Please try again.')
+        return null
+    } finally {
+        detailLoading.value = false
+    }
+}
+
+async function openBookDetail(book: CatalogBook) {
+    if (detailBook.value?.bookID !== book.bookID) detailBook.value = null
+    isDetailOpen.value = true
+    await loadBookDetail(book.bookID)
+}
+
+const editingBook = ref<BookDetail | null>(null)
+const alert = useAlert()
+
+function openAddBook() {
+    editingBook.value = null
+    isAddModalOpen.value = true
+}
+
+// Dashboard quick action: /librarian/library?new=book opens the Add Book form straight away.
+// The flag is dropped from the address so a refresh doesn't reopen it.
+onMounted(() => {
+    if (route.query.new !== 'book') return
+    openAddBook()
+    const { new: _, ...rest } = route.query
+    void navigateTo({ query: rest }, { replace: true })
+})
+
+/** From the table (a list row, so fetch the full record) or from the details drawer (already full). */
+async function openEditBook(book: CatalogBook | BookDetail) {
+    const full = 'loans' in book ? book : await loadBookDetail(book.bookID)
+    if (!full) {
+        alert.error('Could not open this book', detailError.value)
+        return
+    }
+    editingBook.value = full
+    isDetailOpen.value = false
+    isAddModalOpen.value = true
+}
+
+async function handleBookUpdated() {
+    const bookID = editingBook.value?.bookID
+    await Promise.all([refetchBooks(), refetchStats(), refetchSubjects(), bookID ? loadBookDetail(bookID) : null])
+}
+
+const removingBook = ref<{ bookID: number; title: string } | null>(null)
+const isRemoveBookOpen = ref(false)
+const removingBusy = ref(false)
+
+function askRemoveBook(book: CatalogBook | BookDetail) {
+    removingBook.value = { bookID: book.bookID, title: book.title }
+    isRemoveBookOpen.value = true
+}
+
+async function handleRemoveBook() {
+    if (!removingBook.value) return
+    const { bookID } = removingBook.value
+    removingBusy.value = true
+    const ok = await perform(() => librarianService.deleteBook(bookID), 'Book removed', 'Could not remove book',
+        [refetchBooks, refetchStats, refetchSubjects])
+    removingBusy.value = false
+    if (ok) {
+        isRemoveBookOpen.value = false
+        if (detailBook.value?.bookID === bookID) isDetailOpen.value = false
+    }
 }
 
 // ---- Book Requests (backed by the BookSuggestion feature) ----

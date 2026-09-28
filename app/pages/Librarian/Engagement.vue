@@ -22,6 +22,7 @@
             <div class="mb-4 flex flex-wrap items-center gap-2">
                 <LibrarianSearchInput id="achievement-search" v-model="achievementSearch" placeholder="Search achievements" />
                 <div class="flex-1"></div>
+                <LibrarianResetFiltersButton @click="achievementSearch = ''" />
                 <ButtonsButton variant="primary" @click="openAchievementForm(null)">
                     <Icon name="i-tabler-plus" class="h-3.5 w-3.5" />Add Achievement
                 </ButtonsButton>
@@ -45,6 +46,7 @@
             <div class="mb-4 flex flex-wrap items-center gap-2">
                 <LibrarianSearchInput id="item-search" v-model="itemSearch" placeholder="Search items" />
                 <div class="flex-1"></div>
+                <LibrarianResetFiltersButton @click="itemSearch = ''" />
                 <ButtonsButton variant="primary" @click="openItemForm(null)">
                     <Icon name="i-tabler-plus" class="h-3.5 w-3.5" />Add Item
                 </ButtonsButton>
@@ -74,6 +76,8 @@
                     <option value="Fulfilled">Fulfilled</option>
                     <option value="Cancelled">Cancelled</option>
                 </select>
+                <div class="flex-1"></div>
+                <LibrarianResetFiltersButton @click="redemptionSearch = ''; redemptionStatus = 'Pending'" />
             </div>
 
             <LibrarianRedemptionsTable :redemptions="pagedRedemptions" :loading="redemptionsPending"

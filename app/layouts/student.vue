@@ -141,7 +141,20 @@
 		<!-- Phones: bottom tab bar (a translucent material; content scrolls beneath it) -->
 		<nav aria-label="Main"
 			class="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-stone-200/80 bg-white/80 px-1.5 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))] pt-2 backdrop-blur-2xl backdrop-saturate-150 md:hidden">
-			<NuxtLink v-for="tab in tabs" :key="tab.key" :to="tab.to"
+			<template v-for="tab in tabs" :key="tab.key">
+			<!-- The Library ID sits raised in the middle: it's what a student opens at the door to check in. -->
+			<NuxtLink v-if="tab.key === 'id'" :to="tab.to" aria-label="Library ID"
+				class="group relative flex flex-col items-center gap-1 text-[11.5px] font-bold text-accent-600 transition-transform duration-150 ease-out active:scale-90"
+				:aria-current="route.meta.tab === tab.key ? 'page' : undefined">
+				<!-- A round, raised button with a white ring and a soft brown halo, so it reads as the main action
+					 from any tab; the label stays brown and bold even when another tab is open. -->
+				<span class="id-fab -mt-8 flex h-[62px] w-[62px] items-center justify-center rounded-full text-white transition-[filter,transform] duration-200 ease-out group-hover:brightness-110"
+					:class="route.meta.tab === tab.key ? 'is-active' : ''">
+					<Icon :name="tab.icon" class="h-7 w-7" />
+				</span>
+				<span>{{ tab.label }}</span>
+			</NuxtLink>
+			<NuxtLink v-else :to="tab.to"
 				class="relative flex flex-col items-center gap-1 py-1 text-[11px] font-medium transition-[transform,color] duration-150 ease-out active:scale-90"
 				:class="route.meta.tab === tab.key ? 'text-accent-500' : 'text-stone-400'" :aria-current="route.meta.tab === tab.key ? 'page' : undefined">
 				<span class="flex h-[30px] w-[46px] items-center justify-center rounded-[11px] transition-colors duration-[240ms] ease-out"
@@ -152,6 +165,7 @@
 				<span v-if="tab.key === 'books' && attention"
 					class="absolute right-[calc(50%-22px)] top-0 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold text-white">{{ attention }}</span>
 			</NuxtLink>
+			</template>
 		</nav>
 
 		<StudentBookDrawer />
@@ -193,8 +207,9 @@ const isActive = (to: string) => route.path.toLowerCase() === to
 const tabs = [
 	{ key: 'home', label: 'Home', to: '/student/home', icon: 'i-tabler-home' },
 	{ key: 'discover', label: 'Discover', to: '/student/discover', icon: 'i-tabler-search' },
-	// Rewards gave up its tab: phones reach it from the points pill in the top bar and Home's "Spend".
-	{ key: 'wishlist', label: 'Wishlist', to: '/student/wishlist', icon: 'i-tabler-heart' },
+	// The Library ID takes the centre: it's the barcode scanned at the door, so it's one tap from anywhere.
+	// Rewards and Wishlist gave up their tabs: Rewards via the points pill and Home's "Spend", Wishlist via Me.
+	{ key: 'id', label: 'My ID', to: '/student/id', icon: 'i-tabler-id' },
 	{ key: 'books', label: 'My books', to: '/student/books', icon: 'i-tabler-book' },
 	{ key: 'me', label: 'Me', to: '/student/me', icon: 'i-tabler-user' },
 ]
@@ -292,6 +307,23 @@ watch(() => route.path, () => { void refreshProfile() })
 </script>
 
 <style>
+/* The phone bar's Library ID button. */
+.id-fab {
+	background: radial-gradient(120% 120% at 30% 20%, var(--color-accent-400), var(--color-accent-500) 55%, #7a3f18);
+	box-shadow:
+		0 0 0 4px #fff,
+		0 0 0 8px rgb(230 199 163 / .55),
+		0 12px 24px -8px rgb(154 83 35 / .8);
+}
+
+.id-fab.is-active {
+	background: radial-gradient(120% 120% at 30% 20%, var(--color-accent-500), #7a3f18);
+	box-shadow:
+		0 0 0 4px #fff,
+		0 0 0 8px rgb(192 122 62 / .5),
+		0 12px 26px -8px rgb(154 83 35 / .9);
+}
+
 /* Folding the sidebar animates its width; the content column beside it grows into the space. */
 .sidebar {
 	transition: width 320ms var(--ease-out);

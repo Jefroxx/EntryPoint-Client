@@ -31,6 +31,7 @@
 
                 <div class="flex-1"></div>
 
+                <LibrarianResetFiltersButton @click="loanSearch = ''; loanStatus = 'active'" />
                 <ButtonsButton variant="primary" @click="isCheckoutOpen = true">
                     <Icon name="i-tabler-plus" class="h-3.5 w-3.5" />Checkout Book
                 </ButtonsButton>
@@ -64,6 +65,10 @@
                     <option value="Rejected">Rejected</option>
                     <option value="Fulfilled">Fulfilled</option>
                 </select>
+
+                <div class="flex-1"></div>
+
+                <LibrarianResetFiltersButton @click="reservationSearch = ''; reservationStatus = 'Waiting'" />
             </div>
 
             <LibrarianReservationsTable :reservations="pagedReservations" :queue-positions="queuePositions"
@@ -107,6 +112,10 @@
                     <option value="Unpaid">Unpaid</option>
                     <option value="Paid">Paid</option>
                 </select>
+
+                <div class="flex-1"></div>
+
+                <LibrarianResetFiltersButton @click="penaltySearch = ''; penaltyStatus = ''" />
             </div>
 
             <LibrarianPenaltiesTable :penalties="penalties?.data ?? []" :loading="penaltiesPending"
@@ -147,6 +156,14 @@ useHead({ title: 'Circulation' })
 const route = useRoute()
 const activeTab = ref(['loans', 'reservations', 'selfreturn', 'penalties'].includes(String(route.query.tab)) ? String(route.query.tab) : 'loans')
 const isCheckoutOpen = ref(false)
+
+// Dashboard quick action: /librarian/circulation?new=checkout opens the checkout form straight away.
+onMounted(() => {
+    if (route.query.new !== 'checkout') return
+    isCheckoutOpen.value = true
+    const { new: _, ...rest } = route.query
+    void navigateTo({ query: rest }, { replace: true })
+})
 
 function debounced(fn: () => void, ms = 300) {
     let timeout: ReturnType<typeof setTimeout>

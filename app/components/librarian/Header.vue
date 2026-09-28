@@ -1,9 +1,9 @@
 <template>
     <!-- backdrop-blur makes the header its own stacking layer; without an explicit z-index the
          dropdowns inside it get painted over by page content (sticky table heads, cards, sidebar). -->
-    <!-- Sticky, so the menu button and the bell stay reachable on long pages (the sidebar sits just under it). -->
+    <!-- Sticky, so the menu button and the bell stay reachable on long pages (the sidebar sits beside it). -->
     <header class="sticky top-0 z-40 flex h-[68px] w-full items-center justify-between border-b border-stone-200 bg-white/90 px-6 backdrop-blur-sm">
-        <!-- Left: hamburger + logo -->
+        <!-- Left: the sidebar toggle (the logo lives at the top of the sidebar, as on the student side) -->
         <div class="flex items-center gap-4">
             <!-- Folds the sidebar to icons and back (it never disappears), so the icon stays a plain menu. -->
             <button type="button" aria-controls="librarian-sidebar" :aria-expanded="isSidebarOpen"
@@ -13,9 +13,6 @@
                 <Icon name="i-tabler-menu-2" class="h-[22px] w-[22px]" />
             </button>
 
-            <NuxtLink to="/librarian/dashboard" class="flex items-center leading-none">
-                <img src="~/assets/css/logo/EntryPointLogo.png" alt="EntryPoint" class="h-8 w-auto" />
-            </NuxtLink>
         </div>
 
         <!-- Right: notifications + profile -->

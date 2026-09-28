@@ -1,9 +1,11 @@
 <template>
-    <div class="min-h-screen bg-amber-50">
-        <LibrarianHeader :is-sidebar-open="sidebarOpen" @toggle-sidebar="sidebarOpen = !sidebarOpen" />
+    <!-- Sidebar runs the full height on the left (logo on top); header and page share the column beside it,
+         the same arrangement as the student layout. -->
+    <div class="flex min-h-screen bg-amber-50">
+        <LibrarianSideBar :open="sidebarOpen" />
 
-        <div class="flex">
-            <LibrarianSideBar :open="sidebarOpen" />
+        <div class="flex min-w-0 flex-1 flex-col">
+            <LibrarianHeader :is-sidebar-open="sidebarOpen" @toggle-sidebar="sidebarOpen = !sidebarOpen" />
 
             <main class="min-w-0 flex-1 p-6">
                 <slot />

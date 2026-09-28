@@ -104,7 +104,7 @@
 <script setup lang="ts">
 import { studentService } from '~/services/studentService'
 
-definePageMeta({ layout: 'student', middleware: 'student', title: 'Library ID', nav: 'home', tab: 'me' })
+definePageMeta({ layout: 'student', middleware: 'student', title: 'Library ID', nav: 'home', tab: 'id' })
 useHead({ title: 'Library ID' })
 
 const { summary, streak } = useStudent()

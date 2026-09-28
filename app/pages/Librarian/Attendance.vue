@@ -15,7 +15,32 @@
                 icon="i-tabler-clock" tone="warning" />
         </div>
 
-        <LibrarianScanStation class="mb-5" @scanned="onScanned" />
+        <!-- The scanner runs in its own tab; this card opens it and shows whether it's running. -->
+        <section class="mb-5 flex flex-wrap items-center gap-4 rounded-2xl border p-4 md:p-5 transition-colors duration-300"
+            :class="stationOpen ? 'border-emerald-200 bg-emerald-50' : 'border-stone-200 bg-white'">
+            <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl"
+                :class="stationOpen ? 'bg-emerald-600 text-white' : 'bg-accent-100 text-accent-600'">
+                <Icon :name="stationOpen ? 'i-tabler-scan' : 'i-tabler-camera'" class="h-6 w-6" />
+            </span>
+            <div class="min-w-0 flex-1">
+                <p class="flex items-center gap-2 text-[16px] font-bold text-stone-900">
+                    {{ stationOpen ? 'Attendance station is running' : 'Start taking attendance' }}
+                    <span v-if="stationOpen" class="relative flex h-2.5 w-2.5">
+                        <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-60" />
+                        <span class="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-600" />
+                    </span>
+                </p>
+                <p class="text-[13.5px] leading-snug text-stone-500">
+                    {{ stationOpen
+                        ? 'Scans from the station tab show up here straight away.'
+                        : 'Opens the scanner in its own tab using the webcam or a phone camera. Students hold up the barcode on their digital ID.' }}
+                </p>
+            </div>
+            <ButtonsButton :variant="stationOpen ? 'ghost' : 'primary'" @click="openStation">
+                <Icon :name="stationOpen ? 'i-tabler-external-link' : 'i-tabler-player-play'" class="h-4 w-4" />
+                {{ stationOpen ? 'Go to station' : 'Start attendance' }}
+            </ButtonsButton>
+        </section>
 
         <div class="mb-4 flex flex-wrap items-center gap-2">
             <div
@@ -27,9 +52,7 @@
 
             <div class="flex-1"></div>
 
-            <ButtonsButton variant="ghost" @click="search = ''">
-                <Icon name="i-tabler-rotate" class="h-3.5 w-3.5" />Reset
-            </ButtonsButton>
+            <LibrarianResetFiltersButton @click="search = ''" />
         </div>
 
         <LibrarianAttendanceLogTable :logs="logs?.data ?? []" :loading="logsPending" />
@@ -89,11 +112,22 @@ watch(search, () => {
     }, 300)
 })
 
-// A scan changes both the log and the "currently in library" numbers straight away.
-function onScanned() {
-    void refetchLogs()
-    void refetchStats()
-}
+/* ---------- scan station (its own tab) ---------- */
+const stationOpen = ref(false)
+const openStation = openAttendanceStation
+
+// The station tab tells us when it opens, closes, or scans someone.
+const { post } = useStationChannel((message) => {
+    if (message.type === 'open') stationOpen.value = true
+    else if (message.type === 'closed') stationOpen.value = false
+    else if (message.type === 'scanned') {
+        // A scan changes both the log and the "currently in library" numbers straight away.
+        void refetchLogs()
+        void refetchStats()
+    }
+})
+
+onMounted(() => post({ type: 'ping' }))
 
 function goToPage(next: number) {
     if (next < 1 || (logs.value && next > logs.value.last_page)) return
