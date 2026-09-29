@@ -1,18 +1,20 @@
 <template>
     <div>
         <div class="mb-6">
-            <h1 class="dashboard-heading text-3xl font-bold text-amber-900">Library</h1>
-            <p class="dashboard-heading mt-1 text-amber-900">Manage and organize all library books.</p>
+            <h1 class="dashboard-heading text-3xl font-bold text-crimson">Library</h1>
+            <p class="dashboard-heading mt-1 text-crimson">Manage and organize all library books.</p>
         </div>
 
         <LibrarianSegmentedTabs v-model="activeTab" class="mb-5" :tabs="[
+            { label: 'Accession Record', value: 'accession' },
             { label: 'Book Catalog', value: 'catalog' },
             { label: 'Book Requests', value: 'requests' },
             { label: 'Categories / Genres', value: 'categories' },
         ]" />
 
-        <template v-if="activeTab === 'catalog'">
-            <div class="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <!-- Accession Record (a row per book, its copies' accession numbers listed) and Book Catalog
+             (a row per copy with the fuller record) share the shelf numbers. -->
+        <div v-if="activeTab === 'accession' || activeTab === 'catalog'" class="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <LibrarianCatalogStatTile label="Total Books" :value="stats?.totalBooks ?? '—'"
                     icon="i-tabler-book-2" tone="accent" />
                 <LibrarianCatalogStatTile label="Available Books" :value="stats?.availableBooks ?? '—'"
@@ -21,7 +23,9 @@
                     icon="i-tabler-book" tone="warning" />
                 <LibrarianCatalogStatTile label="Overdue Books" :value="stats?.overdueBooks ?? '—'"
                     icon="i-tabler-alert-circle" tone="danger" />
-            </div>
+        </div>
+
+        <template v-if="activeTab === 'accession'">
 
             <div class="mb-4 flex flex-wrap items-center gap-2">
                 <div
@@ -53,7 +57,7 @@
                 </ButtonsButton>
             </div>
 
-            <LibrarianBookCatalogTable :books="books?.data ?? []" :loading="booksPending" :filtered="hasBookFilters"
+            <LibrarianAccessionRecordTable :books="books?.data ?? []" :loading="booksPending" :filtered="hasBookFilters"
                 @view="openBookDetail" @edit="openEditBook" @remove="askRemoveBook" />
 
             <div v-if="books" class="mt-3 flex items-center justify-between text-[13.5px] text-stone-400">
@@ -68,6 +72,66 @@
                 </ButtonsButton>
                 <ButtonsButton variant="ghost" size="sm" :disabled="books.current_page >= books.last_page"
                     @click="goToPage(books.current_page + 1)">
+                    Next<Icon name="i-tabler-chevron-right" class="h-3.5 w-3.5" />
+                </ButtonsButton>
+            </div>
+        </template>
+
+        <template v-else-if="activeTab === 'catalog'">
+            <div class="mb-4 flex flex-wrap items-center gap-2">
+                <div
+                    class="flex h-[42px] min-w-[200px] max-w-[320px] flex-1 items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 transition-shadow focus-within:ring-2 focus-within:ring-accent-200">
+                    <Icon name="i-tabler-search" class="h-[15px] w-[15px] text-stone-400" />
+                    <input id="copy-search" v-model="copySearch" type="text"
+                        placeholder="Search accession no., title, author, or ISBN"
+                        class="w-full border-none bg-transparent text-[15px] text-stone-800 outline-none placeholder:text-stone-400" />
+                </div>
+
+                <select v-model="copySubjectFilter" aria-label="Filter by category"
+                    class="h-[42px] rounded-xl border bg-white px-3 text-[14px] outline-none transition-colors hover:bg-stone-50 focus:ring-2 focus:ring-accent-200"
+                    :class="copySubjectFilter ? 'border-accent-300 text-stone-800' : 'border-stone-200 text-stone-500'">
+                    <option value="">All Categories</option>
+                    <option v-for="s in subjects" :key="s.subjectID" :value="s.subjectID">{{ s.name }}</option>
+                </select>
+                <select v-model="copyAreaFilter" aria-label="Filter by area of the library"
+                    class="h-[42px] rounded-xl border bg-white px-3 text-[14px] outline-none transition-colors hover:bg-stone-50 focus:ring-2 focus:ring-accent-200"
+                    :class="copyAreaFilter ? 'border-accent-300 text-stone-800' : 'border-stone-200 text-stone-500'">
+                    <option value="">All Areas</option>
+                    <option v-for="(label, area) in LIBRARY_AREAS" :key="area" :value="area">{{ label }}</option>
+                </select>
+                <select v-model="copyStatusFilter" aria-label="Filter by status"
+                    class="h-[42px] rounded-xl border bg-white px-3 text-[14px] outline-none transition-colors hover:bg-stone-50 focus:ring-2 focus:ring-accent-200"
+                    :class="copyStatusFilter ? 'border-accent-300 text-stone-800' : 'border-stone-200 text-stone-500'">
+                    <option value="">All Status</option>
+                    <option value="available">On the shelf</option>
+                    <option value="borrowed">Borrowed</option>
+                    <option value="damaged">Damaged</option>
+                    <option value="lost">Lost</option>
+                </select>
+                <div class="flex-1"></div>
+
+                <LibrarianResetFiltersButton @click="clearCopyFilters" />
+                <ButtonsButton variant="primary" @click="openAddBook">
+                    <Icon name="i-tabler-plus" class="h-3.5 w-3.5" />Add New Book
+                </ButtonsButton>
+            </div>
+
+            <LibrarianBookCatalogTable :copies="copies?.data ?? []" :loading="copiesPending" :filtered="hasCopyFilters"
+                @view="(copy) => openBookDetail(copy.book)" @edit-book="(copy) => openEditBook(copy.book)"
+                @edit-copy="openEditCopy" />
+
+            <div v-if="copies" class="mt-3 flex items-center justify-between text-[13.5px] text-stone-400">
+                <span>Showing {{ copies.data.length }} of {{ copies.total }} copies</span>
+                <span>Page {{ copies.current_page }} of {{ copies.last_page }}</span>
+            </div>
+
+            <div v-if="copies && copies.last_page > 1" class="mt-3 flex items-center justify-center gap-2">
+                <ButtonsButton variant="ghost" size="sm" :disabled="copies.current_page <= 1"
+                    @click="goToCopyPage(copies.current_page - 1)">
+                    <Icon name="i-tabler-chevron-left" class="h-3.5 w-3.5" />Previous
+                </ButtonsButton>
+                <ButtonsButton variant="ghost" size="sm" :disabled="copies.current_page >= copies.last_page"
+                    @click="goToCopyPage(copies.current_page + 1)">
                     Next<Icon name="i-tabler-chevron-right" class="h-3.5 w-3.5" />
                 </ButtonsButton>
             </div>
@@ -163,6 +227,9 @@
         <LibrarianAddBookModal :open="isAddModalOpen" :categories="bookCategories" :book="editingBook"
             @close="isAddModalOpen = false" @created="handleBookCreated" @updated="handleBookUpdated" />
 
+        <LibrarianEditCopyModal :open="isEditCopyOpen" :copy="editingCopy" :busy="copyBusy"
+            @close="isEditCopyOpen = false" @submit="saveCopyStatus" />
+
         <LibrarianBookDetailDrawer :open="isDetailOpen" :book="detailBook" :loading="detailLoading" :error="detailError"
             @close="isDetailOpen = false" @edit="openEditBook" @remove="askRemoveBook" />
 
@@ -184,7 +251,7 @@
 </template>
 
 <script setup lang="ts">
-import { librarianService, type BookAvailabilityFilter, type BookDetail, type BookSuggestion, type CatalogBook } from '~/services/librarianService'
+import { LIBRARY_AREAS, librarianService, type BookAvailabilityFilter, type BookDetail, type BookSuggestion, type CatalogBook, type CopyCatalogRow, type CopyStatus, type LibraryArea } from '~/services/librarianService'
 import { subjectService, type SubjectRecord } from '~/services/subjectService'
 import AlertToast from '~/api/alert/AlertToast.vue'
 import { useAlert } from '~/api/alert/useAlert'
@@ -198,7 +265,7 @@ useHead({ title: 'Library' })
 
 
 const route = useRoute()
-const activeTab = ref(['catalog', 'requests', 'categories'].includes(String(route.query.tab)) ? String(route.query.tab) : 'catalog')
+const activeTab = ref(['accession', 'catalog', 'requests', 'categories'].includes(String(route.query.tab)) ? String(route.query.tab) : 'accession')
 const search = ref('')
 const page = ref(1)
 
@@ -244,6 +311,72 @@ function goToPage(next: number) {
     refetchBooks()
 }
 
+// ---- Book Catalog: every copy on its own row ----
+const copySearch = ref('')
+const copySubjectFilter = ref<number | ''>('')
+const copyAreaFilter = ref<LibraryArea | ''>('')
+const copyStatusFilter = ref<CopyStatus | ''>('')
+const copyPage = ref(1)
+const hasCopyFilters = computed(() => !!(copySearch.value.trim() || copySubjectFilter.value || copyAreaFilter.value || copyStatusFilter.value))
+
+const { data: copies, pending: copiesPending, execute: refetchCopies } =
+    useLiveAsyncData('library-copies', () => librarianService.fetchCopies({
+        search: copySearch.value.trim() || undefined,
+        subjectID: copySubjectFilter.value || undefined,
+        area: copyAreaFilter.value || undefined,
+        status: copyStatusFilter.value || undefined,
+        page: copyPage.value,
+        perPage: 15,
+    }), { lazy: true })
+
+let copySearchTimeout: ReturnType<typeof setTimeout>
+watch(copySearch, () => {
+    clearTimeout(copySearchTimeout)
+    copySearchTimeout = setTimeout(() => {
+        copyPage.value = 1
+        refetchCopies()
+    }, 300)
+})
+
+watch([copySubjectFilter, copyAreaFilter, copyStatusFilter], () => {
+    copyPage.value = 1
+    refetchCopies()
+})
+
+function clearCopyFilters() {
+    copySearch.value = ''
+    copySubjectFilter.value = ''
+    copyAreaFilter.value = ''
+    copyStatusFilter.value = ''
+}
+
+function goToCopyPage(next: number) {
+    if (next < 1 || (copies.value && next > copies.value.last_page)) return
+    copyPage.value = next
+    refetchCopies()
+}
+
+// One copy's status (Book Catalog pencil). Shelf counts and both tables follow.
+const isEditCopyOpen = ref(false)
+const editingCopy = ref<CopyCatalogRow | null>(null)
+const copyBusy = ref(false)
+
+function openEditCopy(copy: CopyCatalogRow) {
+    editingCopy.value = copy
+    isEditCopyOpen.value = true
+}
+
+async function saveCopyStatus(status: Exclude<CopyStatus, 'borrowed'> | 'retired') {
+    const copy = editingCopy.value
+    if (!copy) return
+    copyBusy.value = true
+    const ok = await perform(() => librarianService.updateCopy(copy.copyID, { status }),
+        status === 'retired' ? `Accession no. ${copy.accessionNumber} removed` : `Accession no. ${copy.accessionNumber} updated`,
+        'Could not update this copy', [refetchCopies, refetchBooks, refetchStats])
+    copyBusy.value = false
+    if (ok) isEditCopyOpen.value = false
+}
+
 // ---- Categories / genres ----
 const { perform } = useAction()
 
@@ -278,7 +411,7 @@ async function saveCategory(payload: { name: string; classificationCode: string 
         () => target ? subjectService.updateSubject(target.subjectID, payload) : subjectService.createSubject(payload),
         target ? 'Category updated' : 'Category added',
         'Could not save category',
-        [refetchSubjects, refetchBooks],
+        [refetchSubjects, refetchBooks, refetchCopies],
     )
     categoryBusy.value = false
     if (ok) isCategoryOpen.value = false
@@ -307,7 +440,7 @@ const isAddModalOpen = ref(false)
 const bookCategories = computed(() => subjects.value.map((s) => s.name))
 
 async function handleBookCreated() {
-    await Promise.all([refetchBooks(), refetchStats(), refetchSubjects()])
+    await Promise.all([refetchBooks(), refetchCopies(), refetchStats(), refetchSubjects()])
 }
 
 // ---- View / edit / remove a book ----
@@ -332,7 +465,7 @@ async function loadBookDetail(bookID: number): Promise<BookDetail | null> {
     }
 }
 
-async function openBookDetail(book: CatalogBook) {
+async function openBookDetail(book: Pick<CatalogBook, 'bookID'>) {
     if (detailBook.value?.bookID !== book.bookID) detailBook.value = null
     isDetailOpen.value = true
     await loadBookDetail(book.bookID)
@@ -356,7 +489,7 @@ onMounted(() => {
 })
 
 /** From the table (a list row, so fetch the full record) or from the details drawer (already full). */
-async function openEditBook(book: CatalogBook | BookDetail) {
+async function openEditBook(book: Pick<CatalogBook, 'bookID'> | BookDetail) {
     const full = 'loans' in book ? book : await loadBookDetail(book.bookID)
     if (!full) {
         alert.error('Could not open this book', detailError.value)
@@ -369,7 +502,7 @@ async function openEditBook(book: CatalogBook | BookDetail) {
 
 async function handleBookUpdated() {
     const bookID = editingBook.value?.bookID
-    await Promise.all([refetchBooks(), refetchStats(), refetchSubjects(), bookID ? loadBookDetail(bookID) : null])
+    await Promise.all([refetchBooks(), refetchCopies(), refetchStats(), refetchSubjects(), bookID ? loadBookDetail(bookID) : null])
 }
 
 const removingBook = ref<{ bookID: number; title: string } | null>(null)
@@ -386,7 +519,7 @@ async function handleRemoveBook() {
     const { bookID } = removingBook.value
     removingBusy.value = true
     const ok = await perform(() => librarianService.deleteBook(bookID), 'Book removed', 'Could not remove book',
-        [refetchBooks, refetchStats, refetchSubjects])
+        [refetchBooks, refetchCopies, refetchStats, refetchSubjects])
     removingBusy.value = false
     if (ok) {
         isRemoveBookOpen.value = false

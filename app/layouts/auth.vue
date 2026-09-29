@@ -203,11 +203,11 @@ const shelves = [
 <style>
 /* Phones: warm light from the top-left, a deeper glow bottom-right, and a faint field of the brand star. */
 .auth-page {
-	background-color: #fffbeb;
+	background-color: var(--color-parchment);
 	background-image:
-		radial-gradient(55% 50% at 0% 0%, rgb(230 199 163 / .55), transparent 70%),
-		radial-gradient(50% 45% at 100% 100%, rgb(192 122 62 / .20), transparent 72%),
-		url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2756%27 height=%2756%27 viewBox=%270 0 56 56%27%3E%3Cpath fill=%27%239a5323%27 fill-opacity=%27.07%27 d=%27M28 22c.4 3.6 1.6 4.8 5.2 5.2-3.6.4-4.8 1.6-5.2 5.2-.4-3.6-1.6-4.8-5.2-5.2 3.6-.4 4.8-1.6 5.2-5.2Z%27/%3E%3C/svg%3E");
+		radial-gradient(55% 50% at 0% 0%, rgb(221 200 189 / .55), transparent 70%),
+		radial-gradient(50% 45% at 100% 100%, rgb(133 94 86 / .20), transparent 72%),
+		url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2756%27 height=%2756%27 viewBox=%270 0 56 56%27%3E%3Cpath fill=%27%23532c2e%27 fill-opacity=%27.07%27 d=%27M28 22c.4 3.6 1.6 4.8 5.2 5.2-3.6.4-4.8 1.6-5.2 5.2-.4-3.6-1.6-4.8-5.2-5.2 3.6-.4 4.8-1.6 5.2-5.2Z%27/%3E%3C/svg%3E");
 	background-size: auto, auto, 56px 56px;
 }
 
@@ -282,7 +282,7 @@ const shelves = [
 	background-color: var(--color-accent-500);
 	background-image:
 		radial-gradient(90% 60% at 0% 0%, rgb(255 255 255 / .10), transparent 60%),
-		linear-gradient(160deg, var(--color-accent-500) 0%, #6f3a17 100%);
+		linear-gradient(160deg, var(--color-accent-500) 0%, var(--color-crimson) 100%);
 	transition: background-color 500ms ease-out;
 }
 
@@ -303,7 +303,7 @@ const shelves = [
 
 /* The star's glow: warm light, not a halo ring. */
 .auth-glow {
-	background: radial-gradient(closest-side, rgb(255 214 170 / .35), rgb(255 214 170 / .08) 60%, transparent);
+	background: radial-gradient(closest-side, rgb(237 225 219 / .35), rgb(237 225 219 / .08) 60%, transparent);
 }
 
 .auth-panel.is-staff .auth-glow {

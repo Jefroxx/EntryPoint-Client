@@ -97,7 +97,7 @@ function formatDate(value: string): string {
 	return new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
-const COVER_COLORS = ['#7a3f18', '#9a5323', '#4E220A', '#c07a3e', '#6f3a15']
+const COVER_COLORS = ['#532c2e', '#4a1f24', '#34000b', '#855e56', '#1e423f']
 
 function coverInitials(title: string): string {
 	const words = title.split(/\s+/).filter((w) => w.length > 2)

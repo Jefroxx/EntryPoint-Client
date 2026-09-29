@@ -7,7 +7,7 @@
 			@click="open = !open">
 			<Icon name="i-tabler-bell" class="h-[22px] w-[22px]" />
 			<span v-if="unreadCount"
-				class="absolute -right-1.5 -top-1.5 box-content flex h-[18px] min-w-[18px] items-center justify-center rounded-full border-2 border-amber-50 bg-red-500 px-1 text-[11px] font-bold leading-none text-white tabular-nums">{{ unreadCount > 9 ? '9+' : unreadCount }}</span>
+				class="absolute -right-1.5 -top-1.5 box-content flex h-[18px] min-w-[18px] items-center justify-center rounded-full border-2 border-parchment bg-red-500 px-1 text-[11px] font-bold leading-none text-white tabular-nums">{{ unreadCount > 9 ? '9+' : unreadCount }}</span>
 		</button>
 
 		<!-- Scales out from the bell (its top-right corner), not from the middle of the panel. -->

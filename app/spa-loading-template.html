@@ -1,0 +1,54 @@
+<!-- Shown by Nuxt on client-only routes (/student/**) until the app mounts. Plain HTML/CSS because
+     Tailwind isn't loaded yet; keep it matching components/AppLoader.vue. -->
+<div class="ep-boot" role="status" aria-live="polite">
+	<img src="/favicon.png" alt="" width="120" height="120" />
+	<span class="ep-boot-sr">Loading EntryPoint…</span>
+</div>
+<style>
+	.ep-boot {
+		position: fixed;
+		inset: 0;
+		z-index: 1000;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: #f6f2ea;
+	}
+
+	.ep-boot img {
+		animation: epBootQuarter 1.2s infinite;
+	}
+
+	.ep-boot-sr {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip: rect(0 0 0 0);
+		white-space: nowrap;
+	}
+
+	@keyframes epBootQuarter {
+		0% {
+			transform: rotate(0deg);
+			animation-timing-function: cubic-bezier(.65, 0, .35, 1);
+		}
+
+		58%,
+		100% {
+			transform: rotate(90deg);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.ep-boot img {
+			animation: epBootPulse 1.4s ease-in-out infinite;
+		}
+
+		@keyframes epBootPulse {
+			50% {
+				opacity: .45;
+			}
+		}
+	}
+</style>

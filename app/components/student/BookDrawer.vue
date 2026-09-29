@@ -2,11 +2,11 @@
 	<StudentDrawer :open="open" title="Book details" @close="drawer.close()">
 		<div v-if="book">
 			<div class="-mx-4 -mt-5 flex justify-center px-4 pb-6 pt-6 md:-mx-5 md:px-5"
-				:style="{ background: `linear-gradient(180deg, color-mix(in srgb, ${swatch} 20%, #fffbeb), #fffbeb)` }">
+				:style="{ background: `linear-gradient(180deg, color-mix(in srgb, ${swatch} 20%, var(--color-parchment)), var(--color-parchment))` }">
 				<StudentCover :book="book" :width="140" />
 			</div>
 
-			<h3 class="dashboard-heading mt-2 text-[24px] font-extrabold leading-tight tracking-tight text-amber-900">{{ book.title }}</h3>
+			<h3 class="dashboard-heading mt-2 text-[24px] font-extrabold leading-tight tracking-tight text-crimson">{{ book.title }}</h3>
 			<p class="mt-1 text-[14px] text-stone-500">{{ authorLine(book) }}</p>
 
 			<dl class="mt-4 rounded-2xl border border-stone-200 bg-white px-4 py-1 text-[13.5px]">
@@ -15,6 +15,9 @@
 					<dd class="text-right text-stone-800" :class="row.mono ? 'font-data text-[12.5px]' : ''">{{ row.value }}</dd>
 				</div>
 			</dl>
+
+			<!-- Photos of the table of contents, index… so a student can check a book before borrowing it. -->
+			<BookPagesGallery v-if="book.pages?.length" class="mt-6" :pages="book.pages" />
 
 			<h4 class="mb-2.5 mt-6 px-0.5 text-[11px] font-semibold uppercase tracking-[.08em] text-stone-400">Availability</h4>
 			<div class="rounded-2xl border border-stone-200 bg-white p-4">
@@ -63,6 +66,7 @@
 
 <script setup lang="ts">
 import { studentService, type CatalogBook } from '~/services/studentService'
+import type { BookPagePhoto } from '~/utils/bookPages'
 
 const drawer = useDrawer()
 const { isWished, isInCart, toggleWish, addToCart } = useStudent()
@@ -75,7 +79,8 @@ watch(() => drawer.active.value, (active) => {
 	if (active?.kind === 'book' && active.id) bookId.value = active.id
 }, { immediate: true })
 
-const book = ref<CatalogBook | null>(null)
+// The full record also carries the page photos, which list rows don't.
+const book = ref<(CatalogBook & { pages?: BookPagePhoto[] }) | null>(null)
 const failed = ref(false)
 
 async function load() {

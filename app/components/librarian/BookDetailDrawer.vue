@@ -69,6 +69,8 @@
 					</div>
 				</dl>
 
+				<BookPagesGallery v-if="book.pages?.length" class="mt-6" :pages="book.pages" />
+
 				<h4 class="mb-2 mt-6 text-[12px] font-bold uppercase tracking-wide text-stone-400">
 					Copies <span class="font-medium normal-case tracking-normal text-stone-400">({{ book.copies.length }})</span>
 				</h4>
@@ -100,7 +102,7 @@
 </template>
 
 <script setup lang="ts">
-import type { BookDetail } from '~/services/librarianService'
+import { LIBRARY_AREAS, type BookDetail } from '~/services/librarianService'
 
 const props = defineProps<{
 	open: boolean
@@ -121,10 +123,7 @@ const COPY_STATUS: Record<string, { label: string; tone: 'success' | 'warning' |
 	damaged: { label: 'Damaged', tone: 'danger' },
 }
 
-const AREAS: Record<string, string> = {
-	circulation: 'Circulation', reserved: 'Reserved', filipiniana: 'Filipiniana', fiction: 'Fiction',
-	thesis: 'Thesis', journal: 'Journal', dissertation: 'Dissertation',
-}
+const AREAS: Record<string, string> = LIBRARY_AREAS
 
 const onShelf = computed(() => props.book?.copies.filter((c) => c.status === 'available').length ?? 0)
 
@@ -137,7 +136,7 @@ const fields = computed(() => {
 	const rows: { label: string; value: string | number; mono?: boolean; wide?: boolean; optional?: boolean }[] = [
 		{ label: 'Call number', value: b.callNumber || '—', mono: true },
 		{ label: 'ISBN', value: b.isbn || '—', mono: true },
-		{ label: 'Library area', value: b.areasOfLibrary ? AREAS[b.areasOfLibrary] ?? b.areasOfLibrary : '—' },
+		{ label: 'Area of the library', value: b.areaOfLibrary ? AREAS[b.areaOfLibrary] ?? b.areaOfLibrary : '—' },
 		{ label: 'Shelf location', value: b.shelfLocation || '—' },
 		{ label: 'Published', value: b.publicationYear ?? '—' },
 		{ label: 'Publisher', value: b.publisher ?? '', optional: true },

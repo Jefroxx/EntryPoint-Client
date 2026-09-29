@@ -1,4 +1,4 @@
-const SWATCHES = ['#9a5323', '#3d6b8f', '#3f7d54', '#a5751f', '#7a3f18', '#6b5b95', '#c07a3e', '#4a7c74', '#b0523f', '#5c7a3d']
+const SWATCHES = ['#532c2e', '#1e423f', '#a97954', '#34000b', '#855e56', '#2f5d58', '#c29b87', '#6b4a3a', '#4a1f24', '#5b6f55']
 
 // A stable colour per category name, so a category keeps the same swatch everywhere
 // it appears (Categories tab, catalog table) and as the list changes.

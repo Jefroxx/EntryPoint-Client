@@ -1,8 +1,8 @@
 <template>
 	<div>
 		<div class="st-in mb-5">
-			<h1 class="dashboard-heading text-3xl font-bold text-amber-900">Rewards</h1>
-			<p class="dashboard-heading mt-1 text-amber-900">Spend your knowledge points. A librarian hands over what you pick.</p>
+			<h1 class="dashboard-heading text-3xl font-bold text-crimson">Rewards</h1>
+			<p class="dashboard-heading mt-1 text-crimson">Spend your knowledge points. A librarian hands over what you pick.</p>
 		</div>
 
 		<!-- Same shape as Home's points card: balance left, its one action pinned top-right, progress along the bottom. -->

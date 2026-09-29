@@ -7,16 +7,42 @@
 	--font-display: 'Raleway', ui-sans-serif, system-ui, sans-serif;
 	--font-data: 'Montserrat', ui-sans-serif, system-ui, sans-serif;
 
-	--color-accent-50: #fbf1e6;
-	--color-accent-100: #f3e2cd;
-	--color-accent-200: #e6c7a3;
-	--color-accent-400: #c07a3e;
-	--color-accent-500: #9a5323;
-	--color-accent-600: #7a3f18;
-	--color-accent-700: #6f3a15;
-	/* Deep ends of the same brown, for surfaces that carry white text (the book panel on Home). */
-	--color-accent-800: #4a260d;
-	--color-accent-900: #2e1708;
+	/* "Old Library" palette. Six named colours, each with one job:
+	   parchment = page background, leather = soft borders/tints, oak = highlights (large text and icons only,
+	   3.8:1 on white), manuscript = secondary, binding = primary, crimson = deep surfaces and headings. */
+	--color-parchment: #f6f2ea;
+	--color-leather: #c29b87;
+	--color-oak: #a97954;
+	--color-manuscript: #1e423f;
+	--color-binding: #532c2e;
+	--color-crimson: #34000b;
+
+	/* Primary: built around Binding (500). Light end is Leather washed toward white, dark end runs into Crimson. */
+	--color-accent-50: #f6f0ed;
+	--color-accent-100: #ede1db;
+	--color-accent-200: #ddc8bd;
+	--color-accent-300: #c29b87;
+	--color-accent-400: #855e56;
+	--color-accent-500: #532c2e;
+	--color-accent-600: #4a1f24;
+	--color-accent-700: #42141b;
+	/* Deep ends of the same maroon, for surfaces that carry white text (the book panel on Home). */
+	--color-accent-800: #3a0912;
+	--color-accent-900: #34000b;
+
+	/* Secondary: Manuscript green. */
+	--color-secondary-50: #eff2f2;
+	--color-secondary-100: #e0e5e4;
+	--color-secondary-200: #c0cac9;
+	--color-secondary-500: #1e423f;
+	--color-secondary-600: #173331;
+	--color-secondary-700: #102523;
+
+	/* Highlight: Oak. Use 500 for icons, stars and large figures; 700 when it has to be small text. */
+	--color-highlight-50: #f5efea;
+	--color-highlight-100: #ece2d9;
+	--color-highlight-500: #a97954;
+	--color-highlight-700: #76553b;
 
 	/* Stronger, more intentional curves than Tailwind's defaults (Emil Kowalski) */
 	--ease-out: cubic-bezier(.23, 1, .32, 1);
@@ -102,6 +128,37 @@
 }
 
 /* ------------------------------------------------------------------ */
+/* Printing one thing on its own (utils/printOnly.ts)                   */
+/* ------------------------------------------------------------------ */
+
+/* Printable copies (the library card, a checkout receipt) live at the end of <body> and never show on
+   screen. printOnly() marks the one being printed with .print-now and <body> with .printing; only then
+   does everything else drop out of the print. A plain Ctrl+P still prints the page as it looks. */
+.print-only {
+	display: none;
+}
+
+@media print {
+	@page {
+		margin: 10mm;
+	}
+
+	body.printing > *:not(.print-now) {
+		display: none !important;
+	}
+
+	body.printing {
+		background: #fff !important;
+	}
+
+	.print-only.print-now {
+		display: block !important;
+		-webkit-print-color-adjust: exact;
+		print-color-adjust: exact;
+	}
+}
+
+/* ------------------------------------------------------------------ */
 /* Student app                                                          */
 /* ------------------------------------------------------------------ */
 
@@ -113,7 +170,7 @@
 .student-app {
 	-webkit-tap-highlight-color: transparent;
 	-webkit-text-size-adjust: 100%;
-	background: #fffbeb;
+	background: var(--color-parchment);
 }
 
 .student-app button,

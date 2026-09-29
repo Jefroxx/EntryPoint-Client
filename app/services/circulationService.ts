@@ -16,7 +16,7 @@ export interface LoanRecord {
   student: PersonRef | null;
   copy: {
     copyID: number;
-    accessionNumber: string;
+    accessionNumber: number;
     book: { bookID: number; title: string } | null;
   } | null;
 }
@@ -74,6 +74,36 @@ export interface CheckoutPayload {
   reservationID?: number;
 }
 
+/** What a checkout receipt shows (POST /librarian/loans, GET /librarian/loans/{id}/receipt). */
+export interface LoanReceipt {
+  /** "L-000123" */
+  receiptNumber: string;
+  status: string;
+  checkoutDate: string;
+  dueDate: string | null;
+  /** Set once the book is back; the slip then says so. */
+  returnDate: string | null;
+  student: { name: string; studentIDNumber: string; program: string | null };
+  book: {
+    title: string;
+    authors: string[];
+    callNumber: string;
+    accessionNumber: number;
+    barcodeValue: string | null;
+    isbn: string | null;
+    edition: string | null;
+    volume: string | null;
+    publisher: string | null;
+    publicationYear: number | null;
+    pages: number | null;
+    subject: string | null;
+    areaOfLibrary: string | null;
+  };
+  /** The fine rule for this book's area, counted from the due date. Null when the area has none. */
+  fine: { rate: number; rateUnit: "day" | "hour" } | null;
+  printedBy: string | null;
+}
+
 class CirculationServiceClass extends BaseService {
   private request<T>(path: string, options: RequestOptions = {}) {
     return this.apiRequest<T>(path, options);
@@ -88,7 +118,12 @@ class CirculationServiceClass extends BaseService {
   }
 
   checkoutBook(payload: CheckoutPayload) {
-    return this.request<{ message: string; loan: LoanRecord }>("/librarian/loans", { method: "POST", body: payload });
+    return this.request<{ message: string; loan: LoanRecord; receipt: LoanReceipt }>("/librarian/loans", { method: "POST", body: payload });
+  }
+
+  /** A loan's checkout receipt again, for a reprint. */
+  fetchReceipt(loanID: number) {
+    return this.request<{ receipt: LoanReceipt }>(`/librarian/loans/${loanID}/receipt`);
   }
 
   returnLoan(loanID: number) {

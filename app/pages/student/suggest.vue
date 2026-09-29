@@ -1,8 +1,8 @@
 <template>
 	<div>
 		<div class="st-in mb-5">
-			<h1 class="dashboard-heading text-3xl font-bold text-amber-900">Suggest a book</h1>
-			<p class="dashboard-heading mt-1 text-amber-900">Can't find it? Tell the librarians what to add next.</p>
+			<h1 class="dashboard-heading text-3xl font-bold text-crimson">Suggest a book</h1>
+			<p class="dashboard-heading mt-1 text-crimson">Can't find it? Tell the librarians what to add next.</p>
 		</div>
 
 		<div class="md:grid md:grid-cols-[minmax(0,520px)_minmax(0,1fr)] md:items-start md:gap-10">

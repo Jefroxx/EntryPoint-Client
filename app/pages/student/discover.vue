@@ -2,7 +2,7 @@
 	<div>
 		<div class="st-in mb-5 flex flex-wrap items-end justify-between gap-x-6 gap-y-2">
 			<div>
-				<h1 class="dashboard-heading text-3xl font-bold text-amber-900">Discover</h1>
+				<h1 class="dashboard-heading text-3xl font-bold text-crimson">Discover</h1>
 				<p class="mt-1 text-[14px] text-stone-500">Search the catalog and see what's on the shelf right now.</p>
 			</div>
 			<NuxtLink to="/student/suggest"
@@ -24,7 +24,7 @@
 		<div class="min-w-0">
 		<div ref="sentinel" aria-hidden="true" />
 		<div class="st-in z-20 -mx-4 mb-4 px-4 py-2.5 md:sticky md:top-[68px] md:-mx-6 md:px-6 lg:-mx-8 lg:px-8 xl:hidden"
-			:class="stuck ? 'border-b border-stone-200 bg-amber-50/90 backdrop-blur-sm' : 'border-b border-transparent'"
+			:class="stuck ? 'border-b border-stone-200 bg-parchment/90 backdrop-blur-sm' : 'border-b border-transparent'"
 			style="animation-delay: 70ms">
 			<div class="flex items-center gap-3">
 				<div class="no-scrollbar flex min-w-0 flex-1 gap-2 overflow-x-auto [mask-image:linear-gradient(to_right,black_calc(100%-32px),transparent)] md:pr-8"

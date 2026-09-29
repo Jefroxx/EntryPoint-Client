@@ -1,8 +1,8 @@
 <template>
     <div>
         <div class="mb-6">
-            <h1 class="dashboard-heading text-3xl font-bold text-amber-900">Reports</h1>
-            <p class="dashboard-heading mt-1 text-amber-900">Review circulation, attendance and collection trends.</p>
+            <h1 class="dashboard-heading text-3xl font-bold text-crimson">Reports</h1>
+            <p class="dashboard-heading mt-1 text-crimson">Review circulation, attendance and collection trends.</p>
         </div>
 
         <div class="mb-5 flex flex-wrap items-center gap-2">
@@ -39,8 +39,8 @@
                 <header class="mb-3 flex items-center justify-between">
                     <h2 class="report-title">Loans per month</h2>
                     <div class="flex gap-4 text-[12.5px] text-stone-500">
-                        <span class="flex items-center gap-1.5"><i class="h-2 w-2 rounded-sm" style="background:#9a5323" />Checked out</span>
-                        <span class="flex items-center gap-1.5"><i class="h-2 w-2 rounded-sm" style="background:#d9b48a" />Returned</span>
+                        <span class="flex items-center gap-1.5"><i class="h-2 w-2 rounded-sm" style="background:#532c2e" />Checked out</span>
+                        <span class="flex items-center gap-1.5"><i class="h-2 w-2 rounded-sm" style="background:#1e423f" />Returned</span>
                     </div>
                 </header>
                 <LibrarianBarChart :labels="overview?.loansPerMonth.labels ?? []" :series="loanSeries"
@@ -92,12 +92,12 @@ const { data: overview, pending } = useAsyncData(
 )
 
 const loanSeries = computed(() => [
-    { name: 'Checked out', color: '#9a5323', values: overview.value?.loansPerMonth.checkedOut ?? [] },
-    { name: 'Returned', color: '#d9b48a', values: overview.value?.loansPerMonth.returned ?? [] },
+    { name: 'Checked out', color: '#532c2e', values: overview.value?.loansPerMonth.checkedOut ?? [] },
+    { name: 'Returned', color: '#1e423f', values: overview.value?.loansPerMonth.returned ?? [] },
 ])
 
 const visitSeries = computed(() => [
-    { name: 'Visits', color: '#9a5323', values: overview.value?.visitsByWeekday.counts ?? [] },
+    { name: 'Visits', color: '#532c2e', values: overview.value?.visitsByWeekday.counts ?? [] },
 ])
 
 const topBooks = computed(() => (overview.value?.topBooks ?? []).map((b) => ({ label: b.title, value: b.count })))

@@ -14,7 +14,7 @@
 					class="flex h-9 w-9 items-center justify-center text-stone-500 transition-colors hover:bg-stone-50 active:scale-90"
 					@click="step(collection.area, -1)">–</button>
 				<span class="flex h-9 w-16 items-center justify-center border-x border-stone-200 text-[14px] font-bold tabular-nums text-stone-900">
-					{{ draft[collection.area] }} days
+					{{ draft[collection.area] }} {{ draft[collection.area] === 1 ? 'day' : 'days' }}
 				</span>
 				<button type="button" :aria-label="`Increase ${collection.label} days`"
 					class="flex h-9 w-9 items-center justify-center text-stone-500 transition-colors hover:bg-stone-50 active:scale-90"

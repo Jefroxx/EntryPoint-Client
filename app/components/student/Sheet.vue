@@ -18,7 +18,7 @@
 						@pointerup="onPointerUp" @pointercancel="onPointerUp">
 						<div class="mx-auto h-[5px] w-[38px] rounded-full bg-stone-200" />
 					</div>
-					<h3 class="dashboard-heading mb-1.5 text-[20px] font-extrabold text-amber-900">{{ title }}</h3>
+					<h3 class="dashboard-heading mb-1.5 text-[20px] font-extrabold text-crimson">{{ title }}</h3>
 					<div class="text-[14px] leading-relaxed text-stone-600">
 						<slot />
 					</div>

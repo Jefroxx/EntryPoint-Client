@@ -1,4 +1,6 @@
 import { BaseService } from "./BaseService";
+import type { LoanReceipt } from "./circulationService";
+import type { BookPagePhoto } from "~/utils/bookPages";
 import type { Area } from "~/utils/session";
 
 /* ---------- shapes the app works with ---------- */
@@ -136,6 +138,37 @@ export interface ReservationRow {
   book: RawBook;
 }
 
+export interface HallOfFameLeader {
+  rank: number;
+  /** "First L." */
+  name: string;
+  initials: string;
+  program: string | null;
+  /** Librarian Dashboard only. */
+  studentIDNumber?: string | null;
+  value: number;
+  isYou: boolean;
+}
+
+export interface HallOfFameCategory {
+  key: string;
+  title: string;
+  blurb: string;
+  icon: string;
+  /** Singular; the page pluralises it ("1 day", "7 days"). */
+  unit: string;
+  /** month: this month, starts over on the 1st · now: right now · all: all time */
+  period: "month" | "now" | "all";
+  leaders: HallOfFameLeader[];
+  /** Student view only: the viewer's own number in this category. */
+  yourValue?: number;
+}
+
+export interface HallOfFame {
+  month: string;
+  categories: HallOfFameCategory[];
+}
+
 export interface AchievementRow {
   achievementID: number;
   name: string;
@@ -224,12 +257,22 @@ class StudentServiceClass extends BaseService {
     return this.apiRequest<{ loans: LoanRow[] }>("/student/loans");
   }
 
+  /** The checkout receipt for one of the student's own loans: a digital copy if the paper one is lost. */
+  loanReceipt(loanID: number) {
+    return this.apiRequest<{ receipt: LoanReceipt }>(`/student/loans/${loanID}/receipt`);
+  }
+
   penalties() {
     return this.apiRequest<{ penalties: PenaltyRow[]; unpaidTotal: number }>("/student/penalties");
   }
 
   attendance() {
     return this.apiRequest<{ visits: VisitRow[]; recentDates: string[] }>("/student/attendance");
+  }
+
+  /** The Home page's Hall of Fame: the top three in each category, and where the viewer stands. */
+  hallOfFame() {
+    return this.apiRequest<HallOfFame>("/student/hall-of-fame");
   }
 
   redemptions() {
@@ -249,7 +292,8 @@ class StudentServiceClass extends BaseService {
   }
 
   catalogBook(bookID: number) {
-    return this.apiRequest<{ book: CatalogBook }>(`/student/catalog/${bookID}`);
+    // One book in full: also its page photos, for "Look inside".
+    return this.apiRequest<{ book: CatalogBook & { pages: BookPagePhoto[] } }>(`/student/catalog/${bookID}`);
   }
 
   subjects() {

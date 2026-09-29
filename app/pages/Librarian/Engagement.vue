@@ -1,8 +1,8 @@
 <template>
     <div>
         <div class="mb-6">
-            <h1 class="dashboard-heading text-3xl font-bold text-amber-900">Engagement</h1>
-            <p class="dashboard-heading mt-1 text-amber-900">Reward student participation with achievements and a
+            <h1 class="dashboard-heading text-3xl font-bold text-crimson">Engagement</h1>
+            <p class="dashboard-heading mt-1 text-crimson">Reward student participation with achievements and a
                 points market.</p>
         </div>
 

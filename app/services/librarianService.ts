@@ -1,4 +1,6 @@
 import { BaseService } from "./BaseService";
+import type { HallOfFame } from "./studentService";
+import type { BookPagePhoto, BookPageSection } from "~/utils/bookPages";
 
 /** GET /librarian/dashboard/today — today's desk traffic and the queues waiting on a librarian. */
 export interface DashboardToday {
@@ -125,7 +127,7 @@ export interface BookAuthor {
 
 export interface BookCopySummary {
   copyID: number;
-  accessionNumber: string;
+  accessionNumber: number;
   status: string;
 }
 
@@ -146,7 +148,7 @@ export interface BookDetail {
   title: string;
   isbn: string | null;
   callNumber: string;
-  areasOfLibrary: LibraryArea | null;
+  areaOfLibrary: LibraryArea | null;
   publicationYear: number | null;
   volume: string | null;
   edition: string | null;
@@ -164,12 +166,50 @@ export interface BookDetail {
   copies: (BookCopySummary & { barcodeValue: string })[];
   loans: { total: number; active: number };
   createdAt: string | null;
+  /** Page photos (table of contents, index…), in book order. */
+  pages: BookPagePhoto[];
 }
 
 export type BookAvailabilityFilter = "" | "available" | "unavailable";
 
 export interface PaginatedBooks {
   data: CatalogBook[];
+  current_page: number;
+  last_page: number;
+  total: number;
+  per_page: number;
+}
+
+export type CopyStatus = "available" | "borrowed" | "lost" | "damaged";
+
+/** GET /librarian/copies: one Book Catalog row, a single copy with its book's fuller record. */
+export interface CopyCatalogRow {
+  copyID: number;
+  accessionNumber: number;
+  barcodeValue: string | null;
+  status: CopyStatus;
+  book: {
+    bookID: number;
+    title: string;
+    isbn: string | null;
+    callNumber: string;
+    areaOfLibrary: LibraryArea | null;
+    publicationYear: number | null;
+    volume: string | null;
+    edition: string | null;
+    pages: number | null;
+    publisher: string | null;
+    sourceOfFund: string | null;
+    cost: string | number | null;
+    shelfLocation: string | null;
+    coverImageURL: string | null;
+    subject: { subjectID: number; name: string } | null;
+    authors: string[];
+  };
+}
+
+export interface PaginatedCopies {
+  data: CopyCatalogRow[];
   current_page: number;
   last_page: number;
   total: number;
@@ -219,7 +259,7 @@ export interface NewBookAuthor {
   role?: string | null;
 }
 
-/** Mirrors the `areasOfLibrary` enum on the `books` table. */
+/** Mirrors the `areaOfLibrary` enum on the `books` table. */
 export type LibraryArea =
   | "circulation"
   | "reserved"
@@ -229,6 +269,17 @@ export type LibraryArea =
   | "journal"
   | "dissertation";
 
+/** Display names for each area of the library, in the order the filters list them. */
+export const LIBRARY_AREAS: Record<LibraryArea, string> = {
+  circulation: "Circulation",
+  reserved: "Reserved",
+  filipiniana: "Filipiniana",
+  fiction: "Fiction",
+  thesis: "Thesis",
+  journal: "Journal",
+  dissertation: "Dissertation",
+};
+
 export interface NewBookPayload {
   title: string;
   authors: NewBookAuthor[];
@@ -236,7 +287,7 @@ export interface NewBookPayload {
   isbn?: string | null;
   publicationYear?: number | null;
   callNumber?: string | null;
-  areasOfLibrary?: LibraryArea | null;
+  areaOfLibrary?: LibraryArea | null;
   shelfLocation?: string | null;
   coverImageURL?: string | null;
   quantity: number;
@@ -371,6 +422,22 @@ class LibrarianServiceClass extends BaseService {
     });
   }
 
+  /** The Dashboard's Hall of Fame: the same boards students see, with full names and ID numbers. */
+  fetchHallOfFame() {
+    return this.apiRequest<HallOfFame>("/librarian/dashboard/hall-of-fame");
+  }
+
+  /** The Book Catalog tab: every copy on its own row, in accession order. */
+  fetchCopies(params: { search?: string; subjectID?: number; status?: CopyStatus; area?: LibraryArea; page?: number; perPage?: number } = {}) {
+    return this.apiRequest<PaginatedCopies>("/librarian/copies", { query: params });
+  }
+
+  /** One copy's status. Borrowed copies change only through check-in; "retired" removes the copy. */
+  updateCopy(copyID: number, payload: { status: Exclude<CopyStatus, "borrowed"> | "retired" }) {
+    return this.apiRequest<{ message: string; copy: { copyID: number; accessionNumber: number; status: string } }>(
+      `/librarian/copies/${copyID}`, { method: "PATCH", body: payload });
+  }
+
   fetchAttendanceLogs(params: { search?: string; date?: string; active?: boolean; page?: number; perPage?: number } = {}) {
     const runtimeConfig = useRuntimeConfig();
 
@@ -421,6 +488,22 @@ class LibrarianServiceClass extends BaseService {
 
   fetchBook(bookID: number) {
     return this.apiRequest<{ book: BookDetail }>(`/librarian/books/${bookID}`);
+  }
+
+  /** Adds photos to the end of a section, in the order given. Photos are compressed first (compressPagePhoto). */
+  uploadBookPages(bookID: number, section: BookPageSection, photos: Blob[]) {
+    const body = new FormData();
+    body.append("section", section);
+    photos.forEach((photo, i) => body.append("photos[]", photo, `page-${i + 1}.jpg`));
+    return this.apiRequest<{ message: string; pages: BookPagePhoto[] }>(`/librarian/books/${bookID}/pages`, { method: "POST", body });
+  }
+
+  reorderBookPages(bookID: number, section: BookPageSection, pageIDs: number[]) {
+    return this.apiRequest<{ message: string }>(`/librarian/books/${bookID}/pages/order`, { method: "PUT", body: { section, pageIDs } });
+  }
+
+  deleteBookPage(pageID: number) {
+    return this.apiRequest<{ message: string }>(`/librarian/book-pages/${pageID}`, { method: "DELETE" });
   }
 
   /** Same fields as createBook; `quantity` here is the new number of copies (0 retires them all). */

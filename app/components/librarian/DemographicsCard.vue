@@ -2,7 +2,7 @@
 	<div class="flex h-full flex-col rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
 		<div class="mb-4 flex flex-wrap items-start justify-between gap-3">
 			<div>
-				<p class="font-bold text-amber-900">{{ title }}</p>
+				<p class="font-bold text-crimson">{{ title }}</p>
 				<p class="text-[13px] text-stone-500">{{ subtitle }}</p>
 			</div>
 			<slot name="actions" />

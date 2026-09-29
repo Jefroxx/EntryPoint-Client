@@ -1,8 +1,8 @@
 <template>
     <div>
         <div class="mb-6">
-            <h1 class="dashboard-heading text-3xl font-bold text-amber-900">Students</h1>
-            <p class="dashboard-heading mt-1 text-amber-900">Review registrations and manage member accounts.</p>
+            <h1 class="dashboard-heading text-3xl font-bold text-crimson">Students</h1>
+            <p class="dashboard-heading mt-1 text-crimson">Review registrations and manage member accounts.</p>
         </div>
 
         <LibrarianSegmentedTabs v-model="activeTab" class="mb-5" :tabs="[

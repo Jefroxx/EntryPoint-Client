@@ -30,13 +30,16 @@
 					<video ref="video" muted playsinline autoplay class="absolute inset-0 h-full w-full object-cover" :class="facing === 'user' ? '-scale-x-100' : ''" />
 
 					<template v-if="camState === 'live'">
-						<div class="pointer-events-none absolute inset-x-[12%] inset-y-[26%]" :class="mode === 'phone' ? '!inset-x-[9%] !inset-y-[34%]' : ''">
+						<!-- The target: barcode-shaped, and the only part of the picture the decoder reads (plus a small
+							 margin). Everything outside it is dimmed, so it's obvious where the ID goes. -->
+						<div class="pointer-events-none absolute rounded-[10px] shadow-[0_0_0_9999px_rgba(12,10,9,.45)]" :style="frameStyle">
 							<i v-for="corner in CORNERS" :key="corner" class="absolute h-6 w-6 border-[3px] transition-colors duration-150"
 								:class="[corner, flash ? 'border-emerald-300' : 'border-white/90']" />
+							<div v-if="!flash" class="scan-line absolute inset-x-2 h-0.5 bg-gradient-to-r from-transparent via-red-400 to-transparent" />
 						</div>
-						<div v-if="!flash" class="scan-line pointer-events-none absolute inset-x-[12%] top-[26%] h-0.5 bg-gradient-to-r from-transparent via-red-400 to-transparent"
-							:class="mode === 'phone' ? '!inset-x-[9%] !top-[34%]' : ''" />
-						<p class="pointer-events-none absolute inset-x-0 bottom-3 text-center text-[14px] text-white/85">{{ flash ? 'Got it' : 'Hold the student’s barcode inside the frame' }}</p>
+						<p class="pointer-events-none absolute inset-x-0 bottom-3 px-3 text-center text-[14px] text-white/90">
+							{{ flash ? 'Got it' : 'Bring the barcode close until it fills the box' }}
+						</p>
 						<div class="pointer-events-none absolute inset-0 bg-emerald-300 transition-opacity duration-300" :class="flash ? 'opacity-40' : 'opacity-0'" />
 
 						<div class="absolute right-2.5 top-2.5 flex gap-1.5">
@@ -137,6 +140,7 @@
 
 <script setup lang="ts">
 import { librarianService, type AttendanceScanResult } from '~/services/librarianService'
+import type { ScanRegion } from '~/composables/useCameraScanner'
 
 const emit = defineEmits<{ (e: 'scanned'): void }>()
 
@@ -177,7 +181,20 @@ let clearTimer: ReturnType<typeof setTimeout> | undefined
 const paused = ref(false)
 
 /* ---------- camera ---------- */
-const { video, state: camState, facing, torchAvailable, torchOn, start, stop, flip, toggleTorch } = useCameraScanner(onCameraCode)
+// The target box, as fractions of the camera view. Wide and short like a barcode, and smaller than the
+// view, so students bring the ID close enough for the bars to be sharp instead of holding it back to
+// fit a big frame. The decoder crops to this same box, so what's drawn is what's read.
+const REGIONS: Record<Mode, ScanRegion> = {
+	webcam: { left: 0.2, top: 0.34, width: 0.6, height: 0.32 },
+	phone: { left: 0.08, top: 0.38, width: 0.84, height: 0.22 },
+}
+const frameStyle = computed(() => {
+	const r = REGIONS[mode.value]
+	return { left: `${r.left * 100}%`, top: `${r.top * 100}%`, width: `${r.width * 100}%`, height: `${r.height * 100}%` }
+})
+
+const { video, state: camState, facing, torchAvailable, torchOn, start, stop, flip, toggleTorch } =
+	useCameraScanner(onCameraCode, () => REGIONS[mode.value])
 
 // A read flashes the frame and pauses for a moment, so one ID held up is never counted twice.
 function onCameraCode(value: string) {
@@ -347,17 +364,18 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
+/* Sweeps the height of the frame, whatever size the frame is. */
 .scan-line {
-	animation: scanSweep 2.2s ease-in-out infinite alternate;
+	animation: scanSweep 1.8s ease-in-out infinite alternate;
 }
 
 @keyframes scanSweep {
 	from {
-		transform: translateY(0);
+		top: 12%;
 	}
 
 	to {
-		transform: translateY(78px);
+		top: 88%;
 	}
 }
 

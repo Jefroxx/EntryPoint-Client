@@ -1,5 +1,5 @@
 <template>
-	<div class="flex min-h-screen justify-center bg-amber-50 px-4 pb-12 pt-12 sm:pt-16">
+	<div class="flex min-h-screen justify-center bg-parchment px-4 pb-12 pt-12 sm:pt-16">
 		<div class="w-full" :class="wide ? 'max-w-[560px]' : 'max-w-[400px] sm:mt-[6vh]'">
 			<div class="mb-5 text-center">
 				<NuxtLink :to="signInPath" class="inline-flex items-center leading-none" aria-label="EntryPoint">

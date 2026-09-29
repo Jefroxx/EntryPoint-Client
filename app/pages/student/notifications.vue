@@ -1,7 +1,7 @@
 <template>
 	<div>
 		<div class="st-in mb-5 flex items-end justify-between gap-4">
-			<h1 class="dashboard-heading text-3xl font-bold text-amber-900">Notifications</h1>
+			<h1 class="dashboard-heading text-3xl font-bold text-crimson">Notifications</h1>
 			<ButtonsButton v-if="unreadCount" variant="ghost" size="sm" @click="readAll">Mark all read</ButtonsButton>
 		</div>
 

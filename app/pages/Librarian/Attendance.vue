@@ -1,8 +1,8 @@
 <template>
     <div>
         <div class="mb-6">
-            <h1 class="dashboard-heading text-3xl font-bold text-amber-900">Attendance</h1>
-            <p class="dashboard-heading mt-1 text-amber-900">Manage attendance records and related activities.</p>
+            <h1 class="dashboard-heading text-3xl font-bold text-crimson">Attendance</h1>
+            <p class="dashboard-heading mt-1 text-crimson">Manage attendance records and related activities.</p>
         </div>
 
         <div class="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">

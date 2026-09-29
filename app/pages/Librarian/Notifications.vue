@@ -1,8 +1,8 @@
 <template>
     <div>
         <div class="mb-6">
-            <h1 class="dashboard-heading text-3xl font-bold text-amber-900">Notifications</h1>
-            <p class="dashboard-heading mt-1 text-amber-900">Stay on top of registrations, requests and returns.</p>
+            <h1 class="dashboard-heading text-3xl font-bold text-crimson">Notifications</h1>
+            <p class="dashboard-heading mt-1 text-crimson">Stay on top of registrations, requests and returns.</p>
         </div>
 
         <div class="mb-4 flex flex-wrap items-center gap-2">

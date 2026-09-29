@@ -1,8 +1,8 @@
 <template>
 	<div>
 		<div class="st-in mb-5">
-			<h1 class="dashboard-heading text-3xl font-bold text-amber-900">Library ID</h1>
-			<p class="dashboard-heading mt-1 text-amber-900">Show this at the entrance to check in and out.</p>
+			<h1 class="dashboard-heading text-3xl font-bold text-crimson">Library ID</h1>
+			<p class="dashboard-heading mt-1 text-crimson">Show this at the entrance to check in and out.</p>
 		</div>
 
 		<div class="md:grid md:grid-cols-[minmax(0,420px)_minmax(0,1fr)] md:items-start md:gap-10">
@@ -12,16 +12,23 @@
 					<div
 						class="flex items-center justify-between bg-gradient-to-br from-accent-600 to-accent-500 px-[22px] py-[18px] text-white">
 						<b class="dashboard-heading text-[18px]">EntryPoint</b>
-						<span class="text-[12px] opacity-90">Student</span>
+						<button v-if="printable" type="button"
+							class="inline-flex h-8 items-center gap-1.5 rounded-lg bg-white/15 px-2.5 text-[12.5px] font-semibold text-white transition-[background-color,transform] duration-150 hover:bg-white/25 active:scale-95"
+							@click="enlarged = true">
+							<Icon name="i-tabler-arrows-maximize" class="h-4 w-4" />Enlarge
+						</button>
+						<span v-else class="text-[12px] opacity-90">Student</span>
 					</div>
 					<div class="p-[22px]">
-						<p class="dashboard-heading text-[22px] font-extrabold leading-tight text-amber-900">{{
+						<p class="dashboard-heading text-[22px] font-extrabold leading-tight text-crimson">{{
 							profile?.fullName ?? '…' }}</p>
 						<p class="font-data mt-0.5 text-[13px] text-stone-500">{{ profile?.studentIDNumber }}{{
 							profile?.academicProgram ? ` · ${profile.academicProgram}` : '' }}</p>
 
-						<div v-if="profile?.barcodeValue"
-							class="mt-[18px] rounded-2xl border border-stone-200 bg-white px-3 pb-2 pt-3.5">
+						<!-- Tapping the barcode enlarges it too: it's what people reach for at the door. -->
+						<button v-if="profile?.barcodeValue" type="button" aria-label="Enlarge your Library ID"
+							class="mt-[18px] block w-full rounded-2xl border border-stone-200 bg-white px-3 pb-2 pt-3.5 text-left transition-[border-color,transform] duration-150 hover:border-accent-200 active:scale-[.99]"
+							@click="enlarged = true">
 							<svg :viewBox="`0 0 ${barcode.width} 64`" preserveAspectRatio="none" role="img"
 								:aria-label="`Barcode ${profile.barcodeValue}`" class="block h-16 w-full">
 								<rect v-for="([x, w], i) in barcode.bars" :key="i" :x="x" y="0" :width="w" height="64"
@@ -29,7 +36,7 @@
 							</svg>
 							<p class="font-data mt-1.5 text-center text-12px tracking-[.16em] text-stone-900">{{
 								profile.barcodeValue }}</p>
-						</div>
+						</button>
 						<p v-else-if="profile"
 							class="mt-[18px] rounded-2xl bg-amber-50 px-3.5 py-3 text-[13px] text-amber-700">
 							Your barcode isn't ready yet. Ask a librarian at the desk to issue it.
@@ -43,6 +50,17 @@
 					class="mt-3.5 flex max-w-[420px] items-start gap-2.5 rounded-2xl bg-accent-100 px-3.5 py-3 text-[13px] leading-snug text-accent-600">
 					<Icon name="i-tabler-barcode" class="mt-px h-4 w-4 shrink-0" />
 					<span>On a phone, raise the screen brightness so the scanner can read it.</span>
+				</div>
+
+				<!-- A physical card, for students who'd rather not use their phone at the door. Needs a barcode to be useful. -->
+				<div v-if="printable" class="mt-3.5 flex max-w-[420px] items-center gap-3 rounded-2xl border border-stone-200 bg-white px-3.5 py-3">
+					<div class="min-w-0 flex-1">
+						<p class="text-[14px] font-semibold text-stone-900">Prefer a card?</p>
+						<p class="text-[12.5px] leading-snug text-stone-500">Print it at ID-card size, cut it out, and scan it at the entrance.</p>
+					</div>
+					<ButtonsButton variant="primary" size="sm" class="shrink-0" @click="printCard">
+						<Icon name="i-tabler-printer" class="h-4 w-4" />Print card
+					</ButtonsButton>
 				</div>
 			</div>
 
@@ -98,6 +116,9 @@
 				</div>
 			</div>
 		</div>
+
+		<StudentLibraryCardPrint v-if="printable" ref="cardPrint" :profile="printable" />
+		<StudentLibraryIdFullscreen v-if="printable" :open="enlarged" :profile="printable" @close="enlarged = false" />
 	</div>
 </template>
 
@@ -116,6 +137,21 @@ const { data, pending } = useStudentData('student-attendance', async () => {
 })
 
 const barcode = computed(() => code128(profile.value?.barcodeValue ?? ''))
+
+// Printing only makes sense once the desk has issued a barcode; the card itself is StudentLibraryCardPrint.
+const printable = computed(() => {
+	const p = profile.value
+	return p?.barcodeValue
+		? { fullName: p.fullName, studentIDNumber: p.studentIDNumber, academicProgram: p.academicProgram, barcodeValue: p.barcodeValue }
+		: null
+})
+
+const enlarged = ref(false)
+const cardPrint = ref<{ print: () => void } | null>(null)
+
+function printCard() {
+	cardPrint.value?.print()
+}
 const week = computed(() => lastSevenDays(data.value?.recentDates ?? []))
 
 const streakHint = computed(() => {

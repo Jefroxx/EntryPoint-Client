@@ -2,8 +2,8 @@
 	<div>
 		<div class="st-in mb-5 flex flex-wrap items-end justify-between gap-4">
 			<div>
-				<h1 class="dashboard-heading text-3xl font-bold text-amber-900">My books</h1>
-				<p class="dashboard-heading mt-1 text-amber-900">What you've reserved, what you hold, and what you owe.</p>
+				<h1 class="dashboard-heading text-3xl font-bold text-crimson">My books</h1>
+				<p class="dashboard-heading mt-1 text-crimson">What you've reserved, what you hold, and what you owe.</p>
 			</div>
 			<LibrarianSegmentedTabs v-model="tab" :tabs="tabs" />
 		</div>
@@ -41,11 +41,15 @@
 								<StudentPill :tone="loanTone(loan)">{{ loanLabel(loan) }}</StudentPill>
 								<p class="mt-1 text-[12.5px] text-stone-400">Due {{ formatDate(loan.dueDate) }}</p>
 							</div>
-							<div class="mt-3 md:mt-0 md:flex md:justify-end">
-								<p v-if="loan.status === 'Reported'" class="text-[12.5px] text-stone-400 md:max-w-[150px] md:text-right">Reported. A librarian will verify it.</p>
-								<ButtonsButton v-else variant="ghost" size="sm" class="!h-10 w-full !border-accent-100 !bg-accent-100 !text-[14px] !text-accent-600 md:!h-8 md:w-auto md:!text-[13px]"
+							<div class="mt-3 flex gap-2 md:mt-0 md:flex-col md:items-end md:gap-1.5">
+								<p v-if="loan.status === 'Reported'" class="flex-1 text-[12.5px] text-stone-400 md:max-w-[150px] md:flex-none md:text-right">Reported. A librarian will verify it.</p>
+								<ButtonsButton v-else variant="ghost" size="sm" class="!h-10 flex-1 !border-accent-100 !bg-accent-100 !text-[14px] !text-accent-600 md:!h-8 md:w-[150px] md:flex-none md:!text-[13px]"
 									@click="returning = loan">
 									<Icon name="i-tabler-arrow-back-up" class="h-3.5 w-3.5" />I returned this
+								</ButtonsButton>
+								<ButtonsButton variant="ghost" size="sm" class="!h-10 shrink-0 !text-[14px] md:!h-8 md:w-[150px] md:!text-[13px]"
+									@click="openReceipt(loan)">
+									<Icon name="i-tabler-receipt" class="h-3.5 w-3.5" />Receipt
 								</ButtonsButton>
 							</div>
 						</div>
@@ -61,6 +65,11 @@
 									<p class="text-[12.5px] text-stone-400">Returned {{ loan.returnDate ? formatDate(loan.returnDate) : '' }}</p>
 								</div>
 								<Icon name="i-tabler-check" class="h-4 w-4 text-emerald-600" />
+								<button type="button" :aria-label="`Receipt for ${loan.book.title}`" title="Receipt"
+									class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-stone-500 transition-[background-color,transform] duration-150 hover:bg-stone-100 hover:text-stone-800 active:scale-90"
+									@click="openReceipt(loan)">
+									<Icon name="i-tabler-receipt" class="h-[18px] w-[18px]" />
+								</button>
 							</div>
 						</div>
 					</template>
@@ -173,6 +182,20 @@
 
 		<StudentReturnSheet :loan="returning" @close="returning = null" />
 
+		<!-- A digital copy of the checkout receipt, the same slip the desk printed. -->
+		<StudentDrawer :open="!!receiptFor" title="Borrowing receipt" @close="receiptFor = null">
+			<div v-if="receiptLoading" class="mx-auto h-[520px] max-w-[80mm] animate-pulse rounded-2xl bg-stone-100" aria-busy="true" />
+			<p v-else-if="receiptError" class="rounded-2xl bg-red-50 px-4 py-6 text-center text-[13.5px] text-red-600">{{ receiptError }}</p>
+			<LoanReceipt v-else-if="receipt" ref="receiptView" :receipt="receipt" />
+
+			<template #footer>
+				<p class="flex-1 text-[12.5px] leading-snug text-stone-500">Show this at the desk if you lose the paper one.</p>
+				<ButtonsButton :disabled="!receipt" @click="receiptView?.print()">
+					<Icon name="i-tabler-printer" class="h-4 w-4" />Save or print
+				</ButtonsButton>
+			</template>
+		</StudentDrawer>
+
 		<StudentSheet :open="!!cancelling" title="Cancel this reservation?" @close="cancelling = null">
 			You'll lose your place in line for <b class="text-stone-900">{{ (cancelling ?? lastCancelled)?.book.title }}</b>. You can reserve it again, but you'd join the back of the queue.
 			<template #actions>
@@ -185,6 +208,7 @@
 
 <script setup lang="ts">
 import { studentService, briefOf, type LoanRow, type ReservationRow } from '~/services/studentService'
+import type { LoanReceipt as LoanReceiptData } from '~/services/circulationService'
 import { TONE_SOFT, type StudentTone } from '~/utils/studentNotifications'
 
 definePageMeta({ layout: 'student', middleware: 'student', title: 'My books', nav: 'books', tab: 'books' })
@@ -233,6 +257,28 @@ const glance = computed(() => [
 	{ label: 'Reservation slots', value: `${slotsLeft.value} of 3 free` },
 	{ label: 'Unpaid fines', value: formatPeso(stats.value?.unpaidFines ?? 0) },
 ])
+
+/* ---- receipt (digital copy) ---- */
+const receiptFor = ref<LoanRow | null>(null)
+const receipt = ref<LoanReceiptData | null>(null)
+const receiptLoading = ref(false)
+const receiptError = ref('')
+const receiptView = ref<{ print: () => void } | null>(null)
+
+async function openReceipt(loan: LoanRow) {
+	receiptFor.value = loan
+	receipt.value = null
+	receiptError.value = ''
+	receiptLoading.value = true
+	try {
+		const response = await studentService.loanReceipt(loan.loanID)
+		if (receiptFor.value?.loanID === loan.loanID) receipt.value = response.receipt
+	} catch (error) {
+		receiptError.value = apiErrorMessage(error, "Couldn't load this receipt. Please try again.")
+	} finally {
+		receiptLoading.value = false
+	}
+}
 
 /* ---- return + cancel ---- */
 const returning = ref<LoanRow | null>(null)

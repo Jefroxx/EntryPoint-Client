@@ -99,7 +99,7 @@
 </template>
 
 <script setup lang="ts">
-import { authService } from '~/services/auth/AuthService'
+import { authService } from '~/services/authService'
 import type { NotificationRecord } from '~/services/notificationService'
 
 defineProps<{

@@ -1,4 +1,4 @@
-import { authService } from '~/services/auth/AuthService'
+import { authService } from '~/services/authService'
 
 /** Ends the student session on the server (best effort), clears it here, and returns to /login. */
 export function useStudentSession() {
