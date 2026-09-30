@@ -12,18 +12,25 @@
 				leave-active-class="transition-[transform,opacity] duration-150 ease-out"
 				leave-from-class="scale-100 translate-y-0 opacity-100" leave-to-class="scale-95 translate-y-1 opacity-0">
 				<div v-if="open" role="dialog" aria-modal="true" aria-labelledby="checkoutTitle" @keydown.esc="handleClose"
-					class="relative z-10 flex w-full max-w-[480px] flex-col rounded-[22px] bg-white shadow-overlay">
+					class="relative z-10 flex max-h-[calc(100vh-48px)] w-full max-w-[480px] flex-col rounded-[22px] bg-white shadow-overlay">
 					<div class="flex items-start justify-between gap-3 border-b border-stone-100 px-6 py-5">
 						<div>
-							<h2 id="checkoutTitle" class="dashboard-heading text-2xl font-bold text-amber-900">Checkout Book</h2>
-							<p class="dashboard-heading text-[13.5px] text-amber-900">Lend an available copy to an approved student.</p>
+							<h2 id="checkoutTitle" class="dashboard-heading text-2xl font-bold text-crimson">{{ receipt ? 'Checked out' : 'Checkout Book' }}</h2>
+							<p class="dashboard-heading text-[13.5px] text-crimson">
+								{{ receipt ? 'Print the receipt for the student to keep.' : 'Lend an available copy to an approved student.' }}
+							</p>
 						</div>
 						<ButtonsButton variant="icon" size="md" aria-label="Close" @click="handleClose">
 							<Icon name="i-tabler-x" class="h-4 w-4" />
 						</ButtonsButton>
 					</div>
 
-					<div class="space-y-4 px-6 py-5">
+					<!-- After checkout: the receipt, ready to print. -->
+					<div v-if="receipt" class="overflow-y-auto px-6 py-5">
+						<LoanReceipt ref="receiptView" :receipt="receipt" />
+					</div>
+
+					<div v-else class="space-y-4 px-6 py-5">
 						<div>
 							<label for="checkout-student" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">Student</label>
 							<LibrarianSearchSelect v-model="student" input-id="checkout-student" placeholder="Search name or student ID"
@@ -52,7 +59,14 @@
 						</div>
 					</div>
 
-					<div class="flex justify-end gap-2 border-t border-stone-100 px-6 py-4">
+					<div v-if="receipt" class="flex justify-end gap-2 border-t border-stone-100 px-6 py-4">
+						<ButtonsButton variant="ghost" @click="emit('close')">Done</ButtonsButton>
+						<ButtonsButton variant="primary" @click="receiptView?.print()">
+							<Icon name="i-tabler-printer" class="h-4 w-4" />Print receipt
+						</ButtonsButton>
+					</div>
+
+					<div v-else class="flex justify-end gap-2 border-t border-stone-100 px-6 py-4">
 						<ButtonsButton variant="ghost" @click="handleClose">Cancel</ButtonsButton>
 						<ButtonsButton variant="primary" :disabled="submitting" @click="handleSubmit">
 							<Icon v-if="submitting" name="i-tabler-loader-2" class="h-3.5 w-3.5 animate-spin" />
@@ -67,7 +81,7 @@
 
 <script setup lang="ts">
 import { librarianService, type StudentRecord, type CatalogBook } from '~/services/librarianService'
-import { circulationService } from '~/services/circulationService'
+import { circulationService, type LoanReceipt as LoanReceiptData } from '~/services/circulationService'
 import { useAlert } from '~/api/alert/useAlert'
 
 const props = defineProps<{ open: boolean }>()
@@ -84,6 +98,9 @@ const book = ref<CatalogBook | null>(null)
 const copyID = ref<number | null>(null)
 const submitting = ref(false)
 const errors = reactive({ student: '', book: '' })
+// Set once the checkout goes through; the window then shows the receipt instead of the form.
+const receipt = ref<LoanReceiptData | null>(null)
+const receiptView = ref<{ print: () => void } | null>(null)
 
 const availableCopies = computed(() => (book.value?.copies ?? []).filter((c) => c.status === 'available'))
 
@@ -95,6 +112,7 @@ watch(student, () => { errors.student = '' })
 
 watch(() => props.open, (isOpen) => {
 	if (!isOpen) return
+	receipt.value = null
 	student.value = null
 	book.value = null
 	copyID.value = null
@@ -136,10 +154,10 @@ async function handleSubmit() {
 
 	submitting.value = true
 	try {
-		await circulationService.checkoutBook({ studentID: student.value.studentID, copyID: copyID.value })
+		const response = await circulationService.checkoutBook({ studentID: student.value.studentID, copyID: copyID.value })
 		alert.success('Book checked out', `"${book.value.title}" was lent to ${studentLabel(student.value)}.`)
 		emit('created')
-		emit('close')
+		receipt.value = response.receipt
 	} catch (error: any) {
 		const serverErrors = error?.data?.errors
 		const detail = serverErrors?.copyID?.[0] ?? serverErrors?.studentID?.[0] ?? error?.data?.message

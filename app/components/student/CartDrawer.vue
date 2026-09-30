@@ -5,7 +5,7 @@
 			<div class="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
 				<Icon name="i-tabler-check" class="h-6 w-6" />
 			</div>
-			<h3 class="dashboard-heading text-[22px] font-extrabold text-amber-900">Reservation sent</h3>
+			<h3 class="dashboard-heading text-[22px] font-extrabold text-crimson">Reservation sent</h3>
 			<ul class="mt-2 space-y-1 text-[14px] text-stone-600">
 				<li v-for="line in done" :key="line.title">
 					<b class="text-stone-900">{{ line.title }}</b> · you're #{{ line.queue }} in line

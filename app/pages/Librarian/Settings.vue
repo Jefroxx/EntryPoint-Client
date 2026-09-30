@@ -1,8 +1,8 @@
 <template>
     <div>
         <div class="mb-6">
-            <h1 class="dashboard-heading text-3xl font-bold text-amber-900">Settings</h1>
-            <p class="dashboard-heading mt-1 text-amber-900">Configure loan periods, fines and your account.</p>
+            <h1 class="dashboard-heading text-3xl font-bold text-crimson">Settings</h1>
+            <p class="dashboard-heading mt-1 text-crimson">Configure loan periods, fines and your account.</p>
         </div>
 
         <div class="grid max-w-[940px] grid-cols-1 items-start gap-6 md:grid-cols-[200px_1fr]">

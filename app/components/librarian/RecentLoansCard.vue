@@ -1,7 +1,9 @@
 <template>
+	<!-- Same build as OverdueBooksCard (Student · Book · one pill), so the two read as a pair side by side.
+		 The pill carries the loan's state in its colour and the due date as its text. -->
 	<div class="flex h-full flex-col rounded-2xl border border-stone-200 bg-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-card">
 		<div class="mb-4 flex items-center justify-between gap-2">
-			<p class="font-bold text-amber-900">Recent loans</p>
+			<p class="font-bold text-crimson">Recent loans</p>
 			<NuxtLink to="/librarian/circulation" class="text-[13px] font-semibold text-accent-600 hover:underline">View all</NuxtLink>
 		</div>
 
@@ -11,9 +13,7 @@
 					<tr class="border-b border-stone-100 text-[13px] font-medium text-stone-500">
 						<th class="pb-2 pr-4 font-medium">Student</th>
 						<th class="pb-2 pr-4 font-medium">Book</th>
-						<th class="pb-2 pr-4 font-medium">Loan Date</th>
-						<th class="pb-2 pr-4 font-medium">Due Date</th>
-						<th class="pb-2 font-medium">Status</th>
+						<th class="pb-2 font-medium">Due</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -26,18 +26,17 @@
 							</div>
 						</td>
 						<td class="py-3 pr-4 text-stone-700">{{ loan.bookTitle }}</td>
-						<td class="py-3 pr-4 text-stone-500">{{ formatDate(loan.checkoutDate) }}</td>
-						<td class="py-3 pr-4 text-stone-500">{{ formatDate(loan.dueDate) }}</td>
 						<td class="py-3">
-							<span class="inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[13px] font-bold" :class="statusClass(loan.status)">
+							<span class="inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[13px] font-bold"
+								:class="statusClass(loan.status)" :title="`${loan.status}, borrowed ${shortDate(loan.checkoutDate)}`">
 								<Icon :name="statusIcon(loan.status)" class="h-3 w-3" />
-								{{ loan.status }}
+								{{ loan.status === 'Returned' ? 'Returned' : shortDate(loan.dueDate) }}
 							</span>
 						</td>
 					</tr>
 
 					<tr v-if="loans.length === 0">
-						<td colspan="5" class="py-6 text-center text-[15px] text-stone-400">No recent loans.</td>
+						<td colspan="3" class="py-6 text-center text-[15px] text-stone-400">No recent loans.</td>
 					</tr>
 				</tbody>
 			</table>
@@ -52,8 +51,8 @@ defineProps<{
 	loans: RecentLoan[]
 }>()
 
-function formatDate(value: string): string {
-	return new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+function shortDate(value: string): string {
+	return new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
 function statusClass(status: RecentLoan['status']): string {

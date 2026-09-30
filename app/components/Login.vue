@@ -1,7 +1,7 @@
 <template>
 	<div class="mx-auto w-full max-w-[360px]">
 		<AuthLogo />
-		<h1 class="dashboard-heading text-balance text-center text-[30px] font-extrabold leading-[1.15] tracking-[-.02em] text-amber-900">
+		<h1 class="dashboard-heading text-balance text-center text-[30px] font-extrabold leading-[1.15] tracking-[-.02em] text-crimson">
 			{{ isLibrarianPortal ? 'Librarian sign-in' : 'Welcome back' }}
 		</h1>
 		<p class="mb-7 mt-2 text-center text-[14px] text-stone-500">
@@ -77,7 +77,7 @@
 </template>
 
 <script setup lang="ts">
-import { authService, NeedsVerificationError } from '~/services/auth/AuthService'
+import { authService, NeedsVerificationError } from '~/services/authService'
 
 const props = withDefaults(defineProps<{ portal?: 'student' | 'librarian' }>(), { portal: 'student' })
 const isLibrarianPortal = props.portal === 'librarian'

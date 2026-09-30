@@ -45,7 +45,7 @@
 </template>
 
 <script setup lang="ts">
-import { authService } from '~/services/auth/AuthService'
+import { authService } from '~/services/authService'
 
 const props = withDefaults(defineProps<{ open?: boolean }>(), { open: true })
 

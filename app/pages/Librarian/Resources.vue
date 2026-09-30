@@ -1,8 +1,8 @@
 <template>
     <div>
         <div class="mb-6">
-            <h1 class="dashboard-heading text-3xl font-bold text-amber-900">Resources</h1>
-            <p class="dashboard-heading mt-1 text-amber-900">Manage library computers, rooms and study spaces.</p>
+            <h1 class="dashboard-heading text-3xl font-bold text-crimson">Resources</h1>
+            <p class="dashboard-heading mt-1 text-crimson">Manage library computers, rooms and study spaces.</p>
         </div>
 
         <LibrarianSegmentedTabs v-model="activeTab" class="mb-5" :tabs="[

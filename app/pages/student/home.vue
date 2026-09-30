@@ -5,7 +5,7 @@
 			<div class="st-in mb-5 flex items-end justify-between gap-4">
 				<div class="min-w-0">
 					<p class="text-[12.5px] text-stone-500">{{ today }}</p>
-					<h1 class="dashboard-heading mt-1 text-3xl font-bold text-amber-900">
+					<h1 class="dashboard-heading mt-1 text-3xl font-bold text-crimson">
 						{{ greeting() }}, {{ profile?.firstName ?? firstName }}
 					</h1>
 				</div>
@@ -94,6 +94,9 @@
 					{{ tile.label }}
 				</component>
 			</section>
+
+			<!-- Hall of Fame: the students who use the library best, for everyone to see -->
+			<StudentHallOfFameStrip class="st-in mt-5" style="animation-delay: 122ms" :board="hallOfFame ?? null" :loading="hallOfFamePending" />
 
 			<!-- Recommended -->
 			<section class="st-in mt-5 rounded-[22px] border border-stone-200 bg-white p-5 md:p-6" style="animation-delay: 140ms">
@@ -217,6 +220,9 @@
 						</div>
 					</dl>
 
+					<!-- Photos of the table of contents, index… (fetched for the selected book; list rows don't carry them). -->
+					<BookPagesGallery v-if="selectedPages.length" dark class="mt-5" :pages="selectedPages" />
+
 					<p class="mt-4 text-pretty text-[13px] leading-relaxed text-accent-100/85">
 						{{ selected.availableCopies
 							? 'Add it to your cart and collect it at the desk once a librarian accepts.'
@@ -254,6 +260,7 @@
 import { NuxtLink } from '#components'
 import { studentService, type CatalogBook, type LoanRow } from '~/services/studentService'
 import { TONE_SOFT, type StudentTone } from '~/utils/studentNotifications'
+import type { BookPagePhoto } from '~/utils/bookPages'
 
 definePageMeta({ layout: 'student', middleware: 'student', title: 'Home', nav: 'home', tab: 'home', wide: true })
 useHead({ title: 'Home' })
@@ -299,6 +306,9 @@ const { data, pending } = useStudentData('student-home', async () => {
 		basis: bySubject ? basis : null,
 	}
 })
+
+// Its own request, so the rest of Home doesn't wait on the rankings.
+const { data: hallOfFame, pending: hallOfFamePending } = useStudentData('student-hall-of-fame', () => studentService.hallOfFame())
 
 const recommended = computed(() => data.value?.recommended ?? [])
 const recommendedReason = computed(() => {
@@ -349,8 +359,23 @@ function pick(book: CatalogBook) {
 	else void drawer.open('book', book.bookID)
 }
 
+// "Look inside" photos for the panel's book. The shelf lists don't include them, so they're fetched once
+// per book the panel shows (only on wide screens, where the panel exists) and remembered for this visit.
+const pagesByBook = ref(new Map<number, BookPagePhoto[]>())
+const selectedPages = computed(() => (selected.value ? pagesByBook.value.get(selected.value.bookID) ?? [] : []))
+
+watch([() => selected.value?.bookID, wideScreen], async ([bookID, wide]) => {
+	if (!bookID || !wide || pagesByBook.value.has(bookID)) return
+	try {
+		const { book } = await studentService.catalogBook(bookID)
+		pagesByBook.value = new Map(pagesByBook.value).set(bookID, book.pages ?? [])
+	} catch {
+		// No photos is a fine fallback; the rest of the panel doesn't depend on them.
+	}
+}, { immediate: true })
+
 const swatchOf = (book: CatalogBook) => subjectSwatch(book.subject?.name ?? book.title)
-const tileTint = (book: CatalogBook) => `color-mix(in srgb, ${swatchOf(book)} 16%, #fffbeb)`
+const tileTint = (book: CatalogBook) => `color-mix(in srgb, ${swatchOf(book)} 16%, var(--color-parchment))`
 const whereOf = (book: CatalogBook) =>
 	book.shelfLocation ?? (book.circulationType ? book.circulationType.charAt(0).toUpperCase() + book.circulationType.slice(1) : '—')
 

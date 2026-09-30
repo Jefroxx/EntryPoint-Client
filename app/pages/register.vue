@@ -9,7 +9,7 @@
 				<div class="mx-auto mb-3.5 flex h-14 w-14 items-center justify-center rounded-full bg-amber-100 text-amber-700">
 					<Icon name="i-tabler-mail-forward" class="h-6 w-6" />
 				</div>
-				<h1 class="dashboard-heading text-[22px] font-bold text-amber-900">Check your email</h1>
+				<h1 class="dashboard-heading text-[22px] font-bold text-crimson">Check your email</h1>
 				<p class="mt-1 text-[13px] leading-relaxed text-stone-500">
 					Thanks, <span class="font-semibold text-stone-800">{{ form.firstName.trim() }}</span>. We sent a link to
 					<span class="font-semibold text-stone-800">{{ form.email.trim() }}</span>. Open it to confirm the address
@@ -46,7 +46,7 @@
 
 			<!-- Form -->
 			<form v-else key="form" novalidate @submit.prevent="step === 1 ? next() : submit()">
-				<h1 class="dashboard-heading text-center text-[30px] font-extrabold leading-[1.15] tracking-[-.02em] text-amber-900">Create account</h1>
+				<h1 class="dashboard-heading text-center text-[30px] font-extrabold leading-[1.15] tracking-[-.02em] text-crimson">Create account</h1>
 				<p class="mt-2 text-center text-[14px] leading-relaxed text-stone-500">
 					We'll email you a link to confirm your address, then a librarian reviews your registration.
 				</p>
@@ -189,7 +189,7 @@
 </template>
 
 <script setup lang="ts">
-import { authService, type RegisterPayload } from '~/services/auth/AuthService'
+import { authService, type RegisterPayload } from '~/services/authService'
 
 definePageMeta({
 	layout: 'auth',

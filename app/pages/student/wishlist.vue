@@ -2,7 +2,7 @@
 	<div>
 		<div class="st-in mb-5 flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
 			<div>
-				<h1 class="dashboard-heading text-3xl font-bold text-amber-900">Wishlist</h1>
+				<h1 class="dashboard-heading text-3xl font-bold text-crimson">Wishlist</h1>
 				<p class="mt-1 text-[14px] text-stone-500">
 					<template v-if="books.length">
 						<span class="font-semibold text-stone-800 tabular-nums">{{ books.length }}</span> saved ·

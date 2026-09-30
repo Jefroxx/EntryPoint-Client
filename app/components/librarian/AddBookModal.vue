@@ -20,9 +20,9 @@
 					<div class="flex-shrink-0 border-b border-stone-100 px-6 pb-4 pt-5 sm:px-7">
 						<div class="flex items-start justify-between gap-3">
 							<div>
-								<h2 id="addBookTitle" class="dashboard-heading text-2xl font-bold text-amber-900">
+								<h2 id="addBookTitle" class="dashboard-heading text-2xl font-bold text-crimson">
 									{{ isEdit ? 'Edit Book' : 'Add New Book' }}</h2>
-								<p class="dashboard-heading text-[13.5px] text-amber-900">
+								<p class="dashboard-heading text-[13.5px] text-crimson">
 									{{ isEdit ? 'Jump to any section, change what you need, then save.' : 'Catalog a new title and its physical copies.' }}</p>
 							</div>
 							<ButtonsButton variant="icon" size="md" aria-label="Close" @click="handleClose">
@@ -30,7 +30,7 @@
 							</ButtonsButton>
 						</div>
 
-						<ol class="mt-4 grid grid-cols-3 gap-2.5" aria-label="Book form sections">
+						<ol class="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-4" aria-label="Book form sections">
 							<li v-for="s in stepList" :key="s.n" :aria-current="step === s.n ? 'step' : undefined">
 								<button type="button" :disabled="!canOpen(s.n)"
 									class="group w-full rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-200 disabled:cursor-default"
@@ -190,8 +190,8 @@
 										<div class="grid gap-3 sm:grid-cols-2">
 											<div>
 												<label for="bookArea" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">
-													Library area</label>
-												<select id="bookArea" v-model="form.areasOfLibrary" :class="[inputClass, 'border-stone-200']">
+													Area of the library</label>
+												<select id="bookArea" v-model="form.areaOfLibrary" :class="[inputClass, 'border-stone-200']">
 													<option value="circulation">Circulation</option>
 													<option value="reserved">Reserved</option>
 													<option value="filipiniana">Filipiniana</option>
@@ -234,7 +234,7 @@
 									</fieldset>
 								</div>
 
-								<div v-else key="more" class="space-y-4">
+								<div v-else-if="step === 3" key="more" class="space-y-4">
 									<p class="text-[13px] leading-relaxed text-stone-500">
 										Publication and acquisition records. Skip anything you don't have.</p>
 									<div class="grid gap-3 sm:grid-cols-2">
@@ -282,6 +282,11 @@
 									</div>
 								</div>
 							</Transition>
+
+							<!-- Step 4 stays mounted while the window is open (shown, not re-created), so photos picked
+								 there survive going back to another step. Re-created per open via editorKey. -->
+							<LibrarianBookPagesEditor v-if="open" v-show="step === 4" :key="editorKey" ref="pagesEditor"
+								:pages="book?.pages ?? []" />
 						</div>
 					</div>
 
@@ -347,7 +352,7 @@ const form = reactive({
 	publicationYear: '' as string | number,
 	subjectName: '',
 	callNumber: '',
-	areasOfLibrary: 'circulation' as LibraryArea,
+	areaOfLibrary: 'circulation' as LibraryArea,
 	shelfLocation: '',
 	coverImageURL: '',
 	publisher: '',
@@ -365,6 +370,7 @@ const stepList = [
 	{ n: 1, label: 'Book details', optional: false, firstField: 'bookTitle' },
 	{ n: 2, label: 'Shelving & copies', optional: false, firstField: 'bookCategory' },
 	{ n: 3, label: 'More details', optional: true, firstField: 'bookPublisher' },
+	{ n: 4, label: 'Page photos', optional: true, firstField: null },
 ] as const
 const lastStep = stepList.length
 const step = ref(1)
@@ -390,6 +396,8 @@ function blankAuthor() {
 }
 
 const authors = ref([blankAuthor()])
+const pagesEditor = ref<{ apply: (bookID: number) => Promise<{ failed: number }> } | null>(null)
+const editorKey = ref(0)
 const quantity = ref(1)
 const submitting = ref(false)
 const coverLoadFailed = ref(false)
@@ -443,7 +451,7 @@ function resetForm() {
 	form.publicationYear = ''
 	form.subjectName = ''
 	form.callNumber = ''
-	form.areasOfLibrary = 'circulation'
+	form.areaOfLibrary = 'circulation'
 	form.shelfLocation = ''
 	form.coverImageURL = ''
 	form.publisher = ''
@@ -471,7 +479,7 @@ function fillFromBook(book: BookDetail) {
 	form.publicationYear = book.publicationYear ?? ''
 	form.subjectName = book.subject?.name ?? ''
 	form.callNumber = book.callNumber ?? ''
-	form.areasOfLibrary = book.areasOfLibrary ?? 'circulation'
+	form.areaOfLibrary = book.areaOfLibrary ?? 'circulation'
 	form.shelfLocation = book.shelfLocation ?? ''
 	form.coverImageURL = book.coverImageURL ?? ''
 	form.publisher = book.publisher ?? ''
@@ -490,6 +498,7 @@ function fillFromBook(book: BookDetail) {
 
 watch(() => props.open, (isOpen) => {
 	if (isOpen) {
+		editorKey.value++
 		resetForm()
 		if (props.book) fillFromBook(props.book)
 		nextTick(focusStep)
@@ -501,7 +510,7 @@ function handleClose() {
 	emit('close')
 }
 
-/** Checks one step's required fields and shows their messages. Step 3 is all optional. */
+/** Checks one step's required fields and shows their messages. Steps 3 and 4 are all optional. */
 function checkStep(n: number): boolean {
 	if (n === 1) {
 		errors.title = form.title.trim() ? '' : 'Title is required.'
@@ -550,7 +559,7 @@ async function handleSubmit() {
 		isbn: form.isbn.trim() || null,
 		publicationYear: form.publicationYear ? Number(form.publicationYear) : null,
 		callNumber: form.callNumber.trim() || null,
-		areasOfLibrary: form.areasOfLibrary,
+		areaOfLibrary: form.areaOfLibrary,
 		shelfLocation: form.shelfLocation.trim() || null,
 		coverImageURL: form.coverImageURL.trim() || null,
 		quantity: quantity.value,
@@ -567,17 +576,27 @@ async function handleSubmit() {
 	const failTitle = isEdit.value ? 'Could not save changes' : 'Could not add book'
 
 	try {
+		let bookID: number
 		if (props.book) {
 			// A blank call number means "keep the one it has"; the server won't take an empty one.
 			const { callNumber, ...changes } = payload
 			await librarianService.updateBook(props.book.bookID, callNumber ? payload : changes)
+			bookID = props.book.bookID
+		} else {
+			bookID = (await librarianService.createBook(payload)).book.bookID
+		}
+
+		// Page photos go once the book exists (a new one only has an ID now).
+		const { failed } = (await pagesEditor.value?.apply(bookID)) ?? { failed: 0 }
+
+		if (props.book) {
 			alert.success('Book updated', `Changes to "${payload.title}" are saved.`)
 			emit('updated')
 		} else {
-			await librarianService.createBook(payload)
 			alert.success('Book added', `"${payload.title}" is now in the catalog.`)
 			emit('created')
 		}
+		if (failed) alert.error('Some page photos didn\'t save', 'Open the book again to check its photos and add any that are missing.')
 		emit('close')
 	} catch (error: any) {
 		const serverErrors = error?.data?.errors

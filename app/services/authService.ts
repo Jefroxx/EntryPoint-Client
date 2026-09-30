@@ -1,4 +1,4 @@
-import { BaseService } from "../BaseService";
+import { BaseService } from "./BaseService";
 import { SESSION_COOKIES, areaFromPath, type Area } from "~/utils/session";
 
 export interface LoginUser {

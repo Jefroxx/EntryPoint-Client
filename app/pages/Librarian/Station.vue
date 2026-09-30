@@ -1,12 +1,12 @@
 <template>
-	<div class="min-h-dvh bg-amber-50">
+	<div class="min-h-dvh bg-parchment">
 		<header class="sticky top-0 z-10 border-b border-stone-200 bg-white/90 backdrop-blur">
 			<div class="mx-auto flex max-w-[1280px] flex-wrap items-center gap-x-5 gap-y-2 px-4 py-3 md:px-6">
 				<div class="flex items-center gap-3">
 					<img src="~/assets/css/logo/EntryPointLogo.png" alt="EntryPoint" class="h-7 w-auto" />
 					<span class="h-6 w-px bg-stone-200" />
 					<div>
-						<p class="dashboard-heading text-[17px] font-bold leading-tight text-amber-900">Attendance station</p>
+						<p class="dashboard-heading text-[17px] font-bold leading-tight text-crimson">Attendance station</p>
 						<p class="text-[12.5px] text-stone-500">{{ today }}</p>
 					</div>
 				</div>

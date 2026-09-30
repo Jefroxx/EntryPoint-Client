@@ -1,8 +1,8 @@
 <template>
     <div>
         <div class="mb-6">
-            <h1 class="dashboard-heading text-3xl font-bold text-amber-900">Circulation</h1>
-            <p class="dashboard-heading mt-1 text-amber-900">Manage reservations, borrowing, returns and
+            <h1 class="dashboard-heading text-3xl font-bold text-crimson">Circulation</h1>
+            <p class="dashboard-heading mt-1 text-crimson">Manage reservations, borrowing, returns and
                 penalties.</p>
         </div>
 

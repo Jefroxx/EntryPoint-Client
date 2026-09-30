@@ -1,7 +1,7 @@
 <template>
 	<div>
 		<div class="st-in mb-5">
-			<h1 class="dashboard-heading text-3xl font-bold text-amber-900">Facilities</h1>
+			<h1 class="dashboard-heading text-3xl font-bold text-crimson">Facilities</h1>
 			<p class="mt-1 text-[14px] text-stone-500">Computers, rooms and study spaces, live, so you know before you walk over.</p>
 		</div>
 

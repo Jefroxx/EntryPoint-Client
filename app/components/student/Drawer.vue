@@ -10,16 +10,16 @@
 			leave-active-class="transition-transform duration-[220ms] ease-out" leave-to-class="translate-x-full"
 			@after-enter="focusPanel">
 			<aside v-if="open" ref="panel" role="dialog" aria-modal="true" :aria-label="title" tabindex="-1"
-				class="student-app fixed inset-y-0 right-0 z-[100] flex w-full touch-pan-y flex-col bg-[#fffbeb] shadow-[-20px_0_50px_-30px_rgba(0,0,0,.5)] outline-none md:w-[460px] md:border-l md:border-stone-200"
+				class="student-app fixed inset-y-0 right-0 z-[100] flex w-full touch-pan-y flex-col bg-parchment shadow-[-20px_0_50px_-30px_rgba(0,0,0,.5)] outline-none md:w-[460px] md:border-l md:border-stone-200"
 				@pointerdown="onPointerDown" @pointermove="onPointerMove" @pointerup="onPointerUp" @pointercancel="onPointerUp">
 				<header
-					class="flex shrink-0 items-center justify-between gap-2 border-b border-stone-200/80 bg-[#fffbeb]/85 px-3 pb-2 pt-[calc(0.5rem+env(safe-area-inset-top,0px))] backdrop-blur-xl md:px-5 md:py-3.5">
+					class="flex shrink-0 items-center justify-between gap-2 border-b border-stone-200/80 bg-parchment/85 px-3 pb-2 pt-[calc(0.5rem+env(safe-area-inset-top,0px))] backdrop-blur-xl md:px-5 md:py-3.5">
 					<button type="button"
 						class="flex h-10 items-center gap-0.5 rounded-xl pr-2 text-[15px] font-medium text-accent-500 transition-[transform,opacity] duration-150 ease-out active:scale-95 active:opacity-70 md:hidden"
 						@click="emit('close')">
 						<Icon name="i-tabler-chevron-left" class="h-5 w-5" />Back
 					</button>
-					<h2 class="dashboard-heading truncate text-[15px] font-semibold text-stone-900 md:text-[17px] md:font-bold md:text-amber-900">{{ title }}</h2>
+					<h2 class="dashboard-heading truncate text-[15px] font-semibold text-stone-900 md:text-[17px] md:font-bold md:text-crimson">{{ title }}</h2>
 					<button type="button" aria-label="Close"
 						class="hidden h-9 w-9 items-center justify-center rounded-xl text-stone-500 transition-[transform,background-color] duration-150 ease-out hover:bg-stone-100 active:scale-90 md:flex"
 						@click="emit('close')">

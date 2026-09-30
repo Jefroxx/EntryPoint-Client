@@ -55,7 +55,7 @@
 		<div class="min-w-0 flex-1">
 		<!-- Wide screens: search and the account controls sit above the page -->
 		<header
-			class="sticky top-0 z-30 hidden h-[68px] items-center gap-4 border-b border-stone-200 bg-amber-50/85 px-6 backdrop-blur-sm md:flex lg:px-8">
+			class="sticky top-0 z-30 hidden h-[68px] items-center gap-4 border-b border-stone-200 bg-parchment/85 px-6 backdrop-blur-sm md:flex lg:px-8">
 			<!-- Tablets are always on the icon rail, so the toggle only exists where there's a full sidebar to fold. -->
 			<button type="button" aria-controls="student-sidebar" :aria-expanded="sidebarOpen"
 				:aria-label="sidebarOpen ? 'Collapse sidebar to icons' : 'Expand sidebar'" :title="sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'"
@@ -90,7 +90,7 @@
 					@click="drawer.open('cart')">
 					<StudentCartIcon class="h-[26px] w-[26px]" />
 					<span v-if="cart.length" :key="cart.length"
-						class="heart-pop absolute -right-1.5 -top-1.5 box-content flex h-[18px] min-w-[18px] items-center justify-center rounded-full border-2 border-amber-50 bg-accent-500 px-1 text-[11px] font-bold leading-none text-white tabular-nums">{{ cart.length }}</span>
+						class="heart-pop absolute -right-1.5 -top-1.5 box-content flex h-[18px] min-w-[18px] items-center justify-center rounded-full border-2 border-parchment bg-accent-500 px-1 text-[11px] font-bold leading-none text-white tabular-nums">{{ cart.length }}</span>
 				</button>
 				<StudentAccountMenu class="ml-1" />
 			</div>
@@ -131,11 +131,15 @@
 			</div>
 		</header>
 
-		<main
-			class="mx-auto w-full max-w-[1120px] px-4 pb-[calc(6.5rem+env(safe-area-inset-bottom,0px))] pt-[calc(3.5rem+env(safe-area-inset-top,0px))] md:px-6 md:pb-20 md:pt-8 lg:px-8"
-			:class="route.meta.wide ? 'xl:max-w-[1400px]' : ''">
-			<slot />
-		</main>
+		<!-- The page loader covers only the page area: the sidebar, top bar and phone tab bar stay above it. -->
+		<div class="relative min-h-dvh md:min-h-[calc(100dvh-68px)]">
+			<main
+				class="mx-auto w-full max-w-[1120px] px-4 pb-[calc(6.5rem+env(safe-area-inset-bottom,0px))] pt-[calc(3.5rem+env(safe-area-inset-top,0px))] md:px-6 md:pb-20 md:pt-8 lg:px-8"
+				:class="route.meta.wide ? 'xl:max-w-[1400px]' : ''">
+				<slot />
+			</main>
+			<AppLoader :show="loader.active" contained />
+		</div>
 		</div>
 
 		<!-- Phones: bottom tab bar (a translucent material; content scrolls beneath it) -->
@@ -176,6 +180,7 @@
 
 <script setup lang="ts">
 const route = useRoute()
+const loader = usePageLoader()
 const router = useRouter()
 const drawer = useDrawer()
 const { cart, wishlist, attention, points, refreshShell, refreshProfile } = useStudent()
@@ -309,19 +314,19 @@ watch(() => route.path, () => { void refreshProfile() })
 <style>
 /* The phone bar's Library ID button. */
 .id-fab {
-	background: radial-gradient(120% 120% at 30% 20%, var(--color-accent-400), var(--color-accent-500) 55%, #7a3f18);
+	background: radial-gradient(120% 120% at 30% 20%, var(--color-accent-400), var(--color-accent-500) 55%, var(--color-accent-700));
 	box-shadow:
 		0 0 0 4px #fff,
-		0 0 0 8px rgb(230 199 163 / .55),
-		0 12px 24px -8px rgb(154 83 35 / .8);
+		0 0 0 8px rgb(221 200 189 / .55),
+		0 12px 24px -8px rgb(83 44 46 / .8);
 }
 
 .id-fab.is-active {
-	background: radial-gradient(120% 120% at 30% 20%, var(--color-accent-500), #7a3f18);
+	background: radial-gradient(120% 120% at 30% 20%, var(--color-accent-500), var(--color-accent-700));
 	box-shadow:
 		0 0 0 4px #fff,
-		0 0 0 8px rgb(192 122 62 / .5),
-		0 12px 26px -8px rgb(154 83 35 / .9);
+		0 0 0 8px rgb(133 94 86 / .5),
+		0 12px 26px -8px rgb(83 44 46 / .9);
 }
 
 /* Folding the sidebar animates its width; the content column beside it grows into the space. */

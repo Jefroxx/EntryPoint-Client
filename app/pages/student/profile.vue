@@ -7,7 +7,7 @@
 					{{ initials }}
 				</div>
 				<div class="min-w-0">
-					<h1 class="dashboard-heading truncate text-[26px] font-extrabold leading-tight text-amber-900">{{ profile?.fullName ?? `${firstName} ${lastName}` }}</h1>
+					<h1 class="dashboard-heading truncate text-[26px] font-extrabold leading-tight text-crimson">{{ profile?.fullName ?? `${firstName} ${lastName}` }}</h1>
 					<p class="font-data mt-0.5 truncate text-[13px] text-stone-500">
 						{{ profile?.studentIDNumber }}{{ profile?.academicProgram ? ` · ${profile.academicProgram}` : '' }}
 					</p>
