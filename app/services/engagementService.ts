@@ -23,6 +23,7 @@ export interface MarketItemRecord {
   type: string | null;
   pointCost: number;
   stock: number;
+  photoURL: string | null;
   redemptions_count: number;
 }
 
@@ -31,6 +32,12 @@ export interface MarketItemPayload {
   type?: string | null;
   pointCost: number;
   stock: number;
+}
+
+/** What to do with an item's photo on save: upload a new one, remove the current one, or leave it. */
+export interface MarketItemPhotoChange {
+  blob: Blob | null;
+  remove: boolean;
 }
 
 export type FulfillmentStatus = "Pending" | "Fulfilled" | "Cancelled";
@@ -67,7 +74,18 @@ class EngagementServiceClass extends BaseService {
   }
 
   createMarketItem(payload: MarketItemPayload) {
-    return this.apiRequest<{ message: string }>("/librarian/market-items", { method: "POST", body: payload });
+    return this.apiRequest<{ message: string; item: Omit<MarketItemRecord, "redemptions_count"> }>("/librarian/market-items", { method: "POST", body: payload });
+  }
+
+  /** Sets or replaces the item's photo. Compress it first (compressPagePhoto). */
+  uploadMarketItemPhoto(itemID: number, photo: Blob) {
+    const body = new FormData();
+    body.append("photo", photo, "item.jpg");
+    return this.apiRequest<{ message: string }>(`/librarian/market-items/${itemID}/photo`, { method: "POST", body });
+  }
+
+  deleteMarketItemPhoto(itemID: number) {
+    return this.apiRequest<{ message: string }>(`/librarian/market-items/${itemID}/photo`, { method: "DELETE" });
   }
 
   updateMarketItem(itemID: number, payload: Partial<MarketItemPayload>) {

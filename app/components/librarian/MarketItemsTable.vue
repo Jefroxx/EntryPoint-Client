@@ -4,7 +4,15 @@
 		<tr v-for="(item, index) in items" :key="item.itemID"
 			class="row-fade-in border-b border-stone-100 transition-colors duration-150 last:border-0 hover:bg-accent-50"
 			:style="{ animationDelay: `${index * 40}ms` }">
-			<td class="px-4 py-3 text-[15px] font-semibold text-stone-900">{{ item.name }}</td>
+			<td class="px-4 py-3">
+				<div class="flex items-center gap-3">
+					<img v-if="item.photoURL" :src="item.photoURL" alt="" loading="lazy" class="h-10 w-10 shrink-0 rounded-lg object-cover" />
+					<div v-else class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-stone-100 text-stone-400">
+						<Icon name="i-tabler-gift" class="h-5 w-5" />
+					</div>
+					<span class="text-[15px] font-semibold text-stone-900">{{ item.name }}</span>
+				</div>
+			</td>
 			<td class="px-4 py-3 text-[14px] text-stone-600">{{ item.type ?? '—' }}</td>
 			<td class="font-data px-4 py-3 text-[13.5px] text-stone-500">{{ item.pointCost }} pts</td>
 			<td class="px-4 py-3">

@@ -27,11 +27,11 @@ const MAX_SIDE = 1800
 /**
  * Shrinks a phone photo (often 3–5 MB, 4000 px) to a JPEG around a few hundred KB before it's uploaded.
  * The server has no image library, so this is the only resize. EXIF rotation is applied, so a page shot
- * sideways isn't stored sideways.
+ * sideways isn't stored sideways. Also used for market item photos, at a smaller `maxSide`.
  */
-export async function compressPagePhoto(file: File): Promise<Blob> {
+export async function compressPagePhoto(file: File, maxSide = MAX_SIDE): Promise<Blob> {
   const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' })
-  const scale = Math.min(1, MAX_SIDE / Math.max(bitmap.width, bitmap.height))
+  const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height))
   const width = Math.round(bitmap.width * scale)
   const height = Math.round(bitmap.height * scale)
 
