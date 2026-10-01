@@ -125,7 +125,8 @@ const COPY_STATUS: Record<string, { label: string; tone: 'success' | 'warning' |
 
 const AREAS: Record<string, string> = LIBRARY_AREAS
 
-const onShelf = computed(() => props.book?.copies.filter((c) => c.status === 'available').length ?? 0)
+// Copies held for an accepted reservation aren't counted as available.
+const onShelf = computed(() => Math.max(0, (props.book?.copies.filter((c) => c.status === 'available').length ?? 0) - (props.book?.heldCopies ?? 0)))
 
 /** The core catalog fields always show; the optional ones only when they've been filled in. */
 const fields = computed(() => {

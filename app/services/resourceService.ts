@@ -22,6 +22,8 @@ export interface ResourceRecord {
   resourceType: string;
   name: string;
   status: ResourceStatus;
+  /** The code on the facility's printed label (F-000012); the scan station reads it to start or end a session. */
+  barcodeValue: string;
   active_usage: UsageLogRecord | null;
 }
 

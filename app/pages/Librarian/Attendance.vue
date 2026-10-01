@@ -24,7 +24,7 @@
             </span>
             <div class="min-w-0 flex-1">
                 <p class="flex items-center gap-2 text-[16px] font-bold text-stone-900">
-                    {{ stationOpen ? 'Attendance station is running' : 'Start taking attendance' }}
+                    {{ stationOpen ? 'Scan station is running' : 'Start the scanner' }}
                     <span v-if="stationOpen" class="relative flex h-2.5 w-2.5">
                         <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-60" />
                         <span class="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-600" />
@@ -33,7 +33,7 @@
                 <p class="text-[13.5px] leading-snug text-stone-500">
                     {{ stationOpen
                         ? 'Scans from the station tab show up here straight away.'
-                        : 'Opens the scanner in its own tab using the webcam or a phone camera. Students hold up the barcode on their digital ID.' }}
+                        : 'Opens the scanner in its own tab using the webcam or a phone camera. It reads student IDs for attendance, and also borrowing receipts, reservation slips and facility labels.' }}
                 </p>
             </div>
             <ButtonsButton :variant="stationOpen ? 'ghost' : 'primary'" @click="openStation">

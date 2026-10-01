@@ -211,7 +211,15 @@
 										</div>
 									</fieldset>
 
-									<fieldset>
+									<fieldset v-if="isEdit">
+										<legend class="mb-2.5 text-[12px] font-bold uppercase tracking-wide text-stone-400">Copies</legend>
+										<!-- Copies are added and removed from the Book Catalog so every change lands in the stock log. -->
+										<p class="text-[14px] text-stone-700"><b class="tabular-nums text-stone-900">{{ originalQuantity }}</b> {{ originalQuantity === 1 ? 'copy' : 'copies' }} in the catalog.</p>
+										<p class="mt-1 text-[12.5px] leading-snug text-stone-500">
+											To add or remove copies, use <b>Add copy</b> and <b>Remove copy</b> in the Book Catalog, so the change is recorded in the stock log.
+										</p>
+									</fieldset>
+									<fieldset v-else>
 										<legend class="mb-2.5 text-[12px] font-bold uppercase tracking-wide text-stone-400">Copies</legend>
 										<div class="flex flex-wrap items-center gap-3">
 											<div class="flex w-fit overflow-hidden rounded-[10px] border border-stone-200">
@@ -227,10 +235,6 @@
 											</div>
 											<span class="text-[13px] text-stone-500">{{ quantity === 1 ? 'copy' : 'copies' }} on the shelf</span>
 										</div>
-										<!-- Lowering it retires copies that are on the shelf; borrowed ones can't be retired. -->
-										<p v-if="isEdit && quantity < originalQuantity" class="mt-2 text-[12.5px] leading-snug text-amber-700">
-											{{ originalQuantity - quantity }} {{ originalQuantity - quantity === 1 ? 'copy' : 'copies' }} on the shelf will be retired.
-										</p>
 									</fieldset>
 								</div>
 
@@ -337,8 +341,8 @@ const emit = defineEmits<{
 }>()
 
 const isEdit = computed(() => !!props.book)
-// Editing can take a book down to 0 copies (all retired); a new book needs at least one.
-const minQuantity = computed(() => (isEdit.value ? 0 : 1))
+// A new book needs at least one copy. (Editing doesn't change the count: copies are added and removed from the Book Catalog.)
+const minQuantity = computed(() => 1)
 const originalQuantity = computed(() => props.book?.copies.length ?? 0)
 
 const inputClass =
@@ -579,8 +583,9 @@ async function handleSubmit() {
 		let bookID: number
 		if (props.book) {
 			// A blank call number means "keep the one it has"; the server won't take an empty one.
-			const { callNumber, ...changes } = payload
-			await librarianService.updateBook(props.book.bookID, callNumber ? payload : changes)
+			// The copy count isn't edited here (copies are added and removed from the Book Catalog), so it isn't sent.
+			const { callNumber, quantity: _copies, ...changes } = payload
+			await librarianService.updateBook(props.book.bookID, callNumber ? { ...changes, callNumber } : changes)
 			bookID = props.book.bookID
 		} else {
 			bookID = (await librarianService.createBook(payload)).book.bookID

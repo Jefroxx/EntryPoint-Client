@@ -45,7 +45,7 @@
 							<p class="text-[14px] font-semibold leading-tight text-stone-900">{{ row.book.title }}</p>
 							<p class="mt-0.5 truncate text-[12.5px] text-stone-400">{{ authorLine(briefOf(row.book)) }}</p>
 							<div class="mt-1.5">
-								<StudentAvailability :available="copyCounts(row.book.copies).available" :total="copyCounts(row.book.copies).total" />
+								<StudentAvailability :available="availableOf(row)" :total="copyCounts(row.book.copies).total" />
 							</div>
 						</div>
 						<ButtonsButton variant="icon" aria-label="Remove from cart" @click="removeFromCart(row)">
@@ -71,16 +71,34 @@
 
 		<template #footer>
 			<ButtonsButton v-if="done" class="!h-[46px] w-full !text-[15px]" @click="viewReservations">View reservations</ButtonsButton>
-			<ButtonsButton v-else class="!h-[46px] w-full !text-[15px]" :disabled="!cart.length || over || reserving" @click="reserve">
+			<ButtonsButton v-else class="!h-[46px] w-full !text-[15px]" :disabled="!cart.length || over || reserving" @click="onReserveClick">
 				<span v-if="reserving" class="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
 				{{ reserving ? 'Reserving…' : `Reserve ${cart.length || ''} book${cart.length === 1 ? '' : 's'}` }}
 			</ButtonsButton>
 		</template>
 	</StudentDrawer>
+
+	<!-- Shown when the cart holds a book with no copy free right now: reserving still works, but they'd have to wait. -->
+	<StudentSheet :open="confirmWait" title="No copy available right now" @close="confirmWait = false">
+		<p>{{ soldOut.length === 1 ? 'This book has' : 'These books have' }} no copy available at the moment:</p>
+		<ul class="mt-2 space-y-1.5">
+			<li v-for="row in soldOut" :key="row.wishlistID" class="rounded-xl bg-stone-50 px-3 py-2">
+				<b class="text-stone-900">{{ row.book.title }}</b>
+				<span class="block text-[12.5px] text-stone-500">
+					{{ (row.book.queueLength ?? 0) === 0 ? "No one is waiting yet, so you'd be first in line." : `${row.book.queueLength} waiting already. You'd be #${(row.book.queueLength ?? 0) + 1}.` }}
+				</span>
+			</li>
+		</ul>
+		<p class="mt-3">You'll join the queue and we'll notify you when a copy is ready. Are you willing to wait?</p>
+		<template #actions>
+			<ButtonsButton class="!h-[46px] !text-[15px]" @click="confirmAndReserve">Yes, I'll wait</ButtonsButton>
+			<ButtonsButton variant="ghost" class="!h-[46px] !text-[15px]" @click="confirmWait = false">Not now</ButtonsButton>
+		</template>
+	</StudentSheet>
 </template>
 
 <script setup lang="ts">
-import { studentService, briefOf } from '~/services/studentService'
+import { studentService, briefOf, type WishlistRow } from '~/services/studentService'
 import { useAlert } from '~/api/alert/useAlert'
 
 const drawer = useDrawer()
@@ -91,10 +109,33 @@ const open = computed(() => drawer.active.value?.kind === 'cart')
 const over = computed(() => cart.value.length > slotsLeft.value)
 
 const reserving = ref(false)
+const confirmWait = ref(false)
+
+// Copies free to promise right now. Falls back to the raw shelf count if the server didn't say.
+const availableOf = (row: WishlistRow) => row.book.availableCopies ?? copyCounts(row.book.copies).available
+const soldOut = computed(() => cart.value.filter((row) => availableOf(row) === 0))
+
+// Reserving a book nobody can lend right now means joining a queue, so ask first.
+function onReserveClick() {
+	if (!cart.value.length || over.value || reserving.value) return
+	if (soldOut.value.length) confirmWait.value = true
+	else reserve()
+}
+
+function confirmAndReserve() {
+	confirmWait.value = false
+	reserve()
+}
 const done = ref<{ title: string; queue: number }[] | null>(null)
 
 // A fresh cart every time it's opened; the confirmation is only for the moment it happens.
-watch(open, (isOpen) => { if (isOpen) done.value = null })
+watch(open, (isOpen) => {
+	if (!isOpen) return
+	done.value = null
+	confirmWait.value = false
+	// Fresh availability, so the warning reflects the shelf as it is now.
+	refreshShell()
+})
 
 async function reserve() {
 	if (!cart.value.length || over.value || reserving.value) return

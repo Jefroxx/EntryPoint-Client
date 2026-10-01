@@ -6,7 +6,7 @@
 					<img src="~/assets/css/logo/EntryPointLogo.png" alt="EntryPoint" class="h-7 w-auto" />
 					<span class="h-6 w-px bg-stone-200" />
 					<div>
-						<p class="dashboard-heading text-[17px] font-bold leading-tight text-crimson">Attendance station</p>
+						<p class="dashboard-heading text-[17px] font-bold leading-tight text-crimson">Scan station</p>
 						<p class="text-[12.5px] text-stone-500">{{ today }}</p>
 					</div>
 				</div>
@@ -35,20 +35,31 @@
 		</header>
 
 		<main class="mx-auto max-w-[1280px] p-4 md:p-6">
-			<LibrarianScanStation @scanned="onScanned" />
+			<LibrarianScanStation @scanned="onScanned" @check-loan="openFinish" @open-checkout="openCheckout" />
 		</main>
+
+		<!-- A reservation slip was scanned: the checkout opens with the student and book filled in. -->
+		<LibrarianCheckoutModal :open="isCheckoutOpen" :initial-code="checkoutCode" @close="isCheckoutOpen = false" @created="onScanned" />
+
+		<!-- A borrowing receipt was scanned: check the book, then finish the return. -->
+		<LibrarianFinishReturnModal :open="isFinishOpen" :summary="finishSummary" :busy="finishBusy"
+			@close="isFinishOpen = false" @submit="saveFinish" />
+
+		<AlertToast />
 	</div>
 </template>
 
 <script setup lang="ts">
 import { librarianService } from '~/services/librarianService'
+import { circulationService } from '~/services/circulationService'
+import AlertToast from '~/api/alert/AlertToast.vue'
 
 definePageMeta({
 	middleware: 'librarian',
 	layout: false,
 })
 
-useHead({ title: 'Attendance station' })
+useHead({ title: 'Scan station' })
 
 const { data: stats, execute: refetchStats } = useLiveAsyncData('station-stats', () => librarianService.fetchAttendanceStats(), { lazy: true })
 
@@ -60,6 +71,39 @@ const { post } = useStationChannel((message) => {
 function onScanned() {
 	void refetchStats()
 	post({ type: 'scanned' })
+}
+
+const { perform } = useAction()
+
+/* ---------- reservation slip: open the checkout ---------- */
+const isCheckoutOpen = ref(false)
+const checkoutCode = ref('')
+
+function openCheckout(code: string) {
+	checkoutCode.value = code
+	isCheckoutOpen.value = true
+}
+
+/* ---------- borrowing receipt: check the book, then finish the return ---------- */
+const isFinishOpen = ref(false)
+const finishBusy = ref(false)
+const finishLoanID = ref<number | null>(null)
+const finishSummary = ref<{ bookTitle: string; accessionNumber: number; studentName: string } | null>(null)
+
+function openFinish(loan: { loanID: number; bookTitle: string; accessionNumber: number; studentName: string }) {
+	finishLoanID.value = loan.loanID
+	finishSummary.value = { bookTitle: loan.bookTitle, accessionNumber: loan.accessionNumber, studentName: loan.studentName }
+	isFinishOpen.value = true
+}
+
+async function saveFinish(payload: { condition: 'good' | 'damaged'; note: string | undefined }) {
+	if (finishLoanID.value == null) return
+	const loanID = finishLoanID.value
+	finishBusy.value = true
+	const ok = await perform(() => circulationService.finishReturn(loanID, payload),
+		payload.condition === 'damaged' ? 'Return finished, marked damaged' : 'Return finished', 'Could not finish the return')
+	finishBusy.value = false
+	if (ok) isFinishOpen.value = false
 }
 
 /* ---------- clock ---------- */

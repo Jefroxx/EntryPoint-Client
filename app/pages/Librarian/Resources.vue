@@ -42,7 +42,7 @@
             <div v-if="filteredResources.length" class="relative grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
                 <LibrarianResourceCard v-for="(resource, index) in filteredResources" :key="resource.resID"
                     :resource="resource" :index="index" :now-ms="nowMs" @start="openStart" @end="handleEnd"
-                    @edit="openForm" @toggle="handleToggle" @delete="askDelete" />
+                    @edit="openForm" @label="openLabel" @toggle="handleToggle" @delete="askDelete" />
             </div>
             <div v-else
                 class="flex min-h-[220px] items-center justify-center rounded-2xl border border-dashed border-stone-200 bg-white">
@@ -62,9 +62,22 @@
                     <option value="active">Active only</option>
                 </select>
 
+                <select v-model="logTypeFilter" aria-label="Filter by resource type"
+                    class="h-[42px] rounded-xl border border-stone-200 bg-white px-3 text-[14px] text-stone-500 transition-colors hover:bg-stone-50">
+                    <option value="">All resource types</option>
+                    <option v-for="type in resourceTypes" :key="type" :value="type">{{ type }}</option>
+                </select>
+
+                <select v-model="logResourceFilter" aria-label="Filter by resource"
+                    class="h-[42px] rounded-xl border border-stone-200 bg-white px-3 text-[14px] text-stone-500 transition-colors hover:bg-stone-50">
+                    <option :value="0">All resources</option>
+                    <option v-for="r in logResourceOptions" :key="r.resID" :value="r.resID">{{ r.name }}</option>
+                </select>
+
                 <div class="flex-1"></div>
 
-                <LibrarianResetFiltersButton @click="logSearch = ''; logFilter = 'all'" />
+                <LibrarianResetFiltersButton
+                    @click="logSearch = ''; logFilter = 'all'; logTypeFilter = ''; logResourceFilter = 0" />
             </div>
 
             <LibrarianUsageLogTable :logs="pagedLogs" :loading="logsPending" :now-ms="nowMs" />
@@ -73,6 +86,8 @@
                 :page="logPage" :last-page="logTotalPages" @change="logPage = $event" />
         </template>
     
+
+        <LibrarianFacilityLabelModal :open="isLabelOpen" :resource="labelResource" @close="isLabelOpen = false" />
 
         <LibrarianResourceFormModal :open="isFormOpen" :resource="editing" :busy="busy" @close="isFormOpen = false"
             @submit="handleSave" />
@@ -134,13 +149,24 @@ const { data: logsResponse, pending: logsPending, execute: refetchLogs } =
 const logs = computed(() => logsResponse.value?.usageLogs ?? [])
 const logSearch = ref('')
 const logFilter = ref<'all' | 'active'>('all')
+const logTypeFilter = ref('')
+const logResourceFilter = ref(0)
 const logPage = ref(1)
 const LOGS_PER_PAGE = 10
+
+// The resource dropdown only lists resources of the chosen type.
+const logResourceOptions = computed(() =>
+    resources.value
+        .filter((r) => !logTypeFilter.value || r.resourceType === logTypeFilter.value)
+        .sort((a, b) => a.name.localeCompare(b.name)),
+)
 
 const filteredLogs = computed(() => {
     const term = logSearch.value.trim().toLowerCase()
     return logs.value.filter((log) => {
         if (logFilter.value === 'active' && log.endTime) return false
+        if (logTypeFilter.value && log.resource?.resourceType !== logTypeFilter.value) return false
+        if (logResourceFilter.value && log.resID !== logResourceFilter.value) return false
         if (!term) return true
         return (
             personName(log.student?.user).toLowerCase().includes(term) ||
@@ -154,11 +180,25 @@ const pagedLogs = computed(() => {
     const start = (logPage.value - 1) * LOGS_PER_PAGE
     return filteredLogs.value.slice(start, start + LOGS_PER_PAGE)
 })
-watch([logSearch, logFilter], () => { logPage.value = 1 })
+watch(logTypeFilter, () => {
+    if (logResourceFilter.value && !logResourceOptions.value.some((r) => r.resID === logResourceFilter.value)) {
+        logResourceFilter.value = 0
+    }
+})
+watch([logSearch, logFilter, logTypeFilter, logResourceFilter], () => { logPage.value = 1 })
 
 // ---- Actions ----
 const busy = ref(false)
 const refreshAll = () => [refetchResources, refetchLogs]
+
+// A facility's printable barcode label: scanning it at the station starts or ends a session.
+const isLabelOpen = ref(false)
+const labelResource = ref<ResourceRecord | null>(null)
+
+function openLabel(resource: ResourceRecord) {
+    labelResource.value = resource
+    isLabelOpen.value = true
+}
 
 const isFormOpen = ref(false)
 const editing = ref<ResourceRecord | null>(null)

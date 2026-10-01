@@ -31,6 +31,19 @@
 					</div>
 
 					<div v-else class="space-y-4 px-6 py-5">
+						<form autocomplete="off" @submit.prevent="handlePickupCode">
+							<label for="checkout-pickup" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">Reservation pickup code</label>
+							<div class="flex gap-2">
+								<input id="checkout-pickup" v-model="pickupCode" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false"
+									placeholder="Scan the student's slip, or type R-000123" :disabled="lookingUp"
+									class="font-data h-11 min-w-0 flex-1 rounded-[10px] border bg-white px-3 text-[13.5px] text-stone-900 outline-none focus:border-accent-500 focus:ring-2 focus:ring-accent-200 disabled:opacity-70"
+									:class="errors.pickup ? 'border-red-400' : 'border-stone-200'" @input="errors.pickup = ''">
+								<ButtonsButton type="submit" variant="ghost" :disabled="lookingUp || !pickupCode.trim()">Fill in</ButtonsButton>
+							</div>
+							<p v-if="errors.pickup" class="mt-1 text-[12.5px] text-red-500">{{ errors.pickup }}</p>
+							<p v-else-if="reservation" class="mt-1 text-[12.5px] text-emerald-600">Reservation {{ reservation.pickupCode }} loaded. Check the details, then check out.</p>
+						</form>
+
 						<div>
 							<label for="checkout-student" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">Student</label>
 							<LibrarianSearchSelect v-model="student" input-id="checkout-student" placeholder="Search name or student ID"
@@ -84,7 +97,7 @@ import { librarianService, type StudentRecord, type CatalogBook } from '~/servic
 import { circulationService, type LoanReceipt as LoanReceiptData } from '~/services/circulationService'
 import { useAlert } from '~/api/alert/useAlert'
 
-const props = defineProps<{ open: boolean }>()
+const props = defineProps<{ open: boolean; /** A pickup code the scanner already read: looked up as soon as the window opens. */ initialCode?: string }>()
 
 const emit = defineEmits<{
 	(e: 'close'): void
@@ -97,7 +110,11 @@ const student = ref<StudentRecord | null>(null)
 const book = ref<CatalogBook | null>(null)
 const copyID = ref<number | null>(null)
 const submitting = ref(false)
-const errors = reactive({ student: '', book: '' })
+const errors = reactive({ student: '', book: '', pickup: '' })
+// A pickup slip scanned (or typed) at the desk: fills the form, and the checkout then fulfils that reservation.
+const pickupCode = ref('')
+const lookingUp = ref(false)
+const reservation = ref<{ reservationID: number; studentID: number; bookID: number; pickupCode: string } | null>(null)
 // Set once the checkout goes through; the window then shows the receipt instead of the form.
 const receipt = ref<LoanReceiptData | null>(null)
 const receiptView = ref<{ print: () => void } | null>(null)
@@ -116,9 +133,50 @@ watch(() => props.open, (isOpen) => {
 	student.value = null
 	book.value = null
 	copyID.value = null
+	pickupCode.value = ''
+	reservation.value = null
 	errors.student = ''
 	errors.book = ''
+	errors.pickup = ''
+
+	if (props.initialCode) {
+		pickupCode.value = props.initialCode
+		void handlePickupCode()
+	}
 })
+
+async function handlePickupCode() {
+	const code = pickupCode.value.trim()
+	if (!code) return
+
+	lookingUp.value = true
+	errors.pickup = ''
+	try {
+		const { reservation: found } = await circulationService.lookupReservation(code)
+
+		const studentNumber = found.student?.studentIDNumber
+		const [students, books] = await Promise.all([
+			librarianService.fetchStudents({ search: studentNumber, status: 'approved', perPage: 10 }),
+			librarianService.fetchBooks({ search: found.book?.title, perPage: 20 }),
+		])
+		const matchedStudent = students.data.find((s) => s.studentID === found.studentID)
+		const matchedBook = books.data.find((b) => b.bookID === found.bookID)
+		if (!matchedStudent || !matchedBook) {
+			errors.pickup = "Found the reservation, but couldn't load the student or book. Choose them below."
+			return
+		}
+
+		student.value = matchedStudent
+		book.value = matchedBook
+		reservation.value = { reservationID: found.reservationID, studentID: found.studentID, bookID: found.bookID, pickupCode: found.pickupCode ?? code }
+		pickupCode.value = ''
+	} catch (error: any) {
+		reservation.value = null
+		errors.pickup = error?.data?.errors?.code?.[0] ?? error?.data?.message ?? 'Could not look up that code.'
+	} finally {
+		lookingUp.value = false
+	}
+}
 
 async function searchStudents(query: string) {
 	const result = await librarianService.fetchStudents({ search: query || undefined, status: 'approved', perPage: 6 })
@@ -134,7 +192,7 @@ const studentLabel = (s: StudentRecord) => (s.user ? `${s.user.firstName} ${s.us
 const studentSublabel = (s: StudentRecord) => `${s.studentIDNumber} · ${s.academicProgram ?? '—'}`
 const bookLabel = (b: CatalogBook) => b.title
 const bookSublabel = (b: CatalogBook) => {
-	const available = b.copies.filter((c) => c.status === 'available').length
+	const available = Math.max(0, b.copies.filter((c) => c.status === 'available').length - (b.heldCopies ?? 0))
 	return `${b.authors.map((a) => a.name).join(', ') || 'Unknown author'} · ${available} available`
 }
 
@@ -154,7 +212,15 @@ async function handleSubmit() {
 
 	submitting.value = true
 	try {
-		const response = await circulationService.checkoutBook({ studentID: student.value.studentID, copyID: copyID.value })
+		// Only fulfil the reservation if the form still matches it (the librarian may have changed the student or book).
+		const fulfils = reservation.value
+			&& reservation.value.studentID === student.value.studentID
+			&& reservation.value.bookID === book.value.bookID
+		const response = await circulationService.checkoutBook({
+			studentID: student.value.studentID,
+			copyID: copyID.value,
+			...(fulfils ? { reservationID: reservation.value!.reservationID } : {}),
+		})
 		alert.success('Book checked out', `"${book.value.title}" was lent to ${studentLabel(student.value)}.`)
 		emit('created')
 		receipt.value = response.receipt

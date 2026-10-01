@@ -10,13 +10,15 @@
 
         <!-- Active loans -->
         <template v-if="activeTab === 'loans'">
-            <div class="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div class="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-4">
                 <LibrarianCatalogStatTile label="Active Loans" :value="loanStats?.active ?? '—'"
                     icon="i-tabler-book" tone="accent" />
                 <LibrarianCatalogStatTile label="Due Soon" :value="loanStats?.dueSoon ?? '—'"
                     icon="i-tabler-clock" tone="warning" />
                 <LibrarianCatalogStatTile label="Overdue" :value="loanStats?.overdue ?? '—'"
                     icon="i-tabler-alert-circle" tone="danger" />
+                <LibrarianCatalogStatTile label="To Check" :value="loanStats?.received ?? '—'"
+                    icon="i-tabler-checklist" tone="success" />
             </div>
 
             <div class="mb-4 flex flex-wrap items-center gap-2">
@@ -26,6 +28,7 @@
                     class="h-[42px] rounded-xl border border-stone-200 bg-white px-3 text-[14px] text-stone-500 transition-colors hover:bg-stone-50">
                     <option value="active">Active loans</option>
                     <option value="overdue">Overdue only</option>
+                    <option value="received">Handed in, to check</option>
                     <option value="returned">Returned</option>
                 </select>
 
@@ -37,7 +40,7 @@
                 </ButtonsButton>
             </div>
 
-            <LibrarianLoansTable :loans="loans?.data ?? []" :loading="loansPending" @return="handleReturn" />
+            <LibrarianLoansTable :loans="loans?.data ?? []" :loading="loansPending" @return="handleReturn" @finish="openFinishReturn" />
 
             <LibrarianPagination v-if="loans" :shown="loans.data.length" :total="loans.total" noun="loans"
                 :page="loans.current_page" :last-page="loans.last_page" @change="goToLoanPage" />
@@ -129,6 +132,9 @@
 
         <LibrarianCheckoutModal :open="isCheckoutOpen" @close="isCheckoutOpen = false" @created="handleCheckoutCreated" />
 
+        <LibrarianFinishReturnModal :open="isFinishOpen" :summary="finishSummary" :busy="finishBusy"
+            @close="isFinishOpen = false" @submit="saveFinishReturn" />
+
         <AlertToast />
     
     </div>
@@ -175,7 +181,7 @@ function debounced(fn: () => void, ms = 300) {
 
 // ---- Active loans ----
 const loanSearch = ref('')
-const loanStatus = ref<'active' | 'overdue' | 'returned'>('active')
+const loanStatus = ref<'active' | 'overdue' | 'received' | 'returned'>('active')
 const loanPage = ref(1)
 
 const { data: loanStats, execute: refetchLoanStats } =
@@ -300,7 +306,7 @@ function goToPenaltyPage(next: number) {
 
 // ---- Tabs ----
 const tabs = computed(() => [
-    { label: 'Active Loans', value: 'loans' },
+    { label: 'Active Loans', value: 'loans', badge: loanStats.value?.received || undefined },
     { label: 'Reservations', value: 'reservations', badge: reservationStats.value.waiting },
     { label: 'Self-Return Reports', value: 'selfreturn', badge: selfReturns.value.length },
     { label: 'Penalties', value: 'penalties' },
@@ -313,6 +319,35 @@ const refreshLoanData = () => [refetchLoans, refetchLoanStats, refetchPenalties,
 
 function handleReturn(loan: LoanRecord) {
     return perform(() => circulationService.returnLoan(loan.loanID), 'Book returned', 'Could not return book', refreshLoanData())
+}
+
+// A book handed in (its receipt barcode was scanned) waits here until the librarian has checked it.
+const isFinishOpen = ref(false)
+const finishingLoan = ref<LoanRecord | null>(null)
+const finishBusy = ref(false)
+const finishSummary = computed(() => {
+    const loan = finishingLoan.value
+    if (!loan) return null
+    return {
+        bookTitle: loan.copy?.book?.title ?? 'Book',
+        accessionNumber: loan.copy?.accessionNumber ?? 0,
+        studentName: loan.student?.user ? `${loan.student.user.firstName} ${loan.student.user.lastName}` : 'The student',
+    }
+})
+
+function openFinishReturn(loan: LoanRecord) {
+    finishingLoan.value = loan
+    isFinishOpen.value = true
+}
+
+async function saveFinishReturn(payload: { condition: 'good' | 'damaged'; note: string | undefined }) {
+    const loan = finishingLoan.value
+    if (!loan) return
+    finishBusy.value = true
+    const ok = await perform(() => circulationService.finishReturn(loan.loanID, payload),
+        payload.condition === 'damaged' ? 'Return finished, marked damaged' : 'Return finished', 'Could not finish the return', refreshLoanData())
+    finishBusy.value = false
+    if (ok) isFinishOpen.value = false
 }
 
 function handleAcceptReservation(reservation: ReservationRecord) {

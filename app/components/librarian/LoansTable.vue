@@ -19,6 +19,11 @@
 				<div v-if="loan.status === 'Active'" class="flex justify-end">
 					<ButtonsButton variant="primary" size="sm" @click="emit('return', loan)">Return</ButtonsButton>
 				</div>
+				<div v-else-if="loan.status === 'Received'" class="flex justify-end">
+					<ButtonsButton variant="primary" size="sm" @click="emit('finish', loan)">
+						<Icon name="i-tabler-checklist" class="h-3.5 w-3.5" />Check book
+					</ButtonsButton>
+				</div>
 			</td>
 		</tr>
 	</LibrarianTableShell>
@@ -32,10 +37,11 @@ defineProps<{
 	loading: boolean
 }>()
 
-const emit = defineEmits<{ (e: 'return', loan: LoanRecord): void }>()
+const emit = defineEmits<{ (e: 'return' | 'finish', loan: LoanRecord): void }>()
 
 function pill(loan: LoanRecord): { label: string; tone: 'info' | 'warning' | 'danger' | 'neutral' } {
 	if (loan.status === 'Returned') return { label: 'Returned', tone: 'neutral' }
+	if (loan.status === 'Received') return { label: 'Received · to check', tone: 'warning' }
 
 	const due = new Date(loan.dueDate).getTime()
 	const now = Date.now()
