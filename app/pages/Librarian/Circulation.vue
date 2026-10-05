@@ -26,6 +26,7 @@
 
                 <select v-model="loanStatus"
                     class="h-[42px] rounded-xl border border-stone-200 bg-white px-3 text-[14px] text-stone-500 transition-colors hover:bg-stone-50">
+                    <option value="">All loans</option>
                     <option value="active">Active loans</option>
                     <option value="overdue">Overdue only</option>
                     <option value="received">Handed in, to check</option>
@@ -34,8 +35,8 @@
 
                 <div class="flex-1"></div>
 
-                <LibrarianResetFiltersButton @click="loanSearch = ''; loanStatus = 'active'" />
-                <ButtonsButton variant="primary" @click="isCheckoutOpen = true">
+                <LibrarianResetFiltersButton @click="loanSearch = ''; loanStatus = ''" />
+                <ButtonsButton variant="primary" @click="checkoutCode = undefined; isCheckoutOpen = true">
                     <Icon name="i-tabler-plus" class="h-3.5 w-3.5" />Checkout Book
                 </ButtonsButton>
             </div>
@@ -63,6 +64,7 @@
                 <select v-model="reservationStatus"
                     class="h-[42px] rounded-xl border border-stone-200 bg-white px-3 text-[14px] text-stone-500 transition-colors hover:bg-stone-50">
                     <option value="">All statuses</option>
+                    <option value="open">Waiting &amp; accepted</option>
                     <option value="Waiting">Waiting</option>
                     <option value="Accepted">Accepted</option>
                     <option value="Rejected">Rejected</option>
@@ -71,12 +73,12 @@
 
                 <div class="flex-1"></div>
 
-                <LibrarianResetFiltersButton @click="reservationSearch = ''; reservationStatus = 'Waiting'" />
+                <LibrarianResetFiltersButton @click="reservationSearch = ''; reservationStatus = 'open'" />
             </div>
 
             <LibrarianReservationsTable :reservations="pagedReservations" :queue-positions="queuePositions"
                 :loading="reservationsPending" @accept="handleAcceptReservation"
-                @reject="handleRejectReservation" />
+                @reject="handleRejectReservation" @checkout="handleCheckoutReservation" />
 
             <LibrarianPagination :shown="pagedReservations.length" :total="filteredReservations.length"
                 noun="reservations" :page="reservationPage" :last-page="reservationTotalPages"
@@ -130,7 +132,7 @@
         </template>
     
 
-        <LibrarianCheckoutModal :open="isCheckoutOpen" @close="isCheckoutOpen = false" @created="handleCheckoutCreated" />
+        <LibrarianCheckoutModal :open="isCheckoutOpen" :initial-code="checkoutCode" @close="isCheckoutOpen = false" @created="handleCheckoutCreated" />
 
         <LibrarianFinishReturnModal :open="isFinishOpen" :summary="finishSummary" :busy="finishBusy"
             @close="isFinishOpen = false" @submit="saveFinishReturn" />
@@ -162,6 +164,8 @@ useHead({ title: 'Circulation' })
 const route = useRoute()
 const activeTab = ref(['loans', 'reservations', 'selfreturn', 'penalties'].includes(String(route.query.tab)) ? String(route.query.tab) : 'loans')
 const isCheckoutOpen = ref(false)
+// The pickup code of the accepted reservation being checked out; empty for a plain checkout.
+const checkoutCode = ref<string | undefined>(undefined)
 
 // Dashboard quick action: /librarian/circulation?new=checkout opens the checkout form straight away.
 onMounted(() => {
@@ -181,7 +185,7 @@ function debounced(fn: () => void, ms = 300) {
 
 // ---- Active loans ----
 const loanSearch = ref('')
-const loanStatus = ref<'active' | 'overdue' | 'received' | 'returned'>('active')
+const loanStatus = ref<'' | 'active' | 'overdue' | 'received' | 'returned'>('')
 const loanPage = ref(1)
 
 const { data: loanStats, execute: refetchLoanStats } =
@@ -191,7 +195,7 @@ const { data: loans, pending: loansPending, execute: refetchLoans } = useLiveAsy
     'circ-loans',
     () => circulationService.fetchLoans({
         search: loanSearch.value || undefined,
-        status: loanStatus.value,
+        status: loanStatus.value || undefined,
         page: loanPage.value,
         perPage: 10,
     }),
@@ -218,7 +222,8 @@ const { data: reservationsResponse, pending: reservationsPending, execute: refet
 
 const reservations = computed(() => reservationsResponse.value?.reservations ?? [])
 const reservationSearch = ref('')
-const reservationStatus = ref<'' | ReservationStatus>('Waiting')
+// 'open' = still to be dealt with: waiting for a decision, or accepted and waiting for pickup.
+const reservationStatus = ref<'' | 'open' | ReservationStatus>('open')
 const reservationPage = ref(1)
 const RESERVATIONS_PER_PAGE = 10
 
@@ -244,7 +249,9 @@ const queuePositions = computed(() => {
 const filteredReservations = computed(() => {
     const term = reservationSearch.value.trim().toLowerCase()
     return reservations.value.filter((r) => {
-        if (reservationStatus.value && r.status !== reservationStatus.value) return false
+        if (reservationStatus.value === 'open') {
+            if (r.status !== 'Waiting' && r.status !== 'Accepted') return false
+        } else if (reservationStatus.value && r.status !== reservationStatus.value) return false
         if (!term) return true
         return (
             personName(r.student?.user).toLowerCase().includes(term) ||
@@ -318,7 +325,7 @@ const { perform } = useAction()
 const refreshLoanData = () => [refetchLoans, refetchLoanStats, refetchPenalties, refetchPenaltyStats]
 
 function handleReturn(loan: LoanRecord) {
-    return perform(() => circulationService.returnLoan(loan.loanID), 'Book returned', 'Could not return book', refreshLoanData())
+    return perform(() => circulationService.returnLoan(loan.uuid), 'Book returned', 'Could not return book', refreshLoanData())
 }
 
 // A book handed in (its receipt barcode was scanned) waits here until the librarian has checked it.
@@ -344,33 +351,39 @@ async function saveFinishReturn(payload: { condition: 'good' | 'damaged'; note: 
     const loan = finishingLoan.value
     if (!loan) return
     finishBusy.value = true
-    const ok = await perform(() => circulationService.finishReturn(loan.loanID, payload),
+    const ok = await perform(() => circulationService.finishReturn(loan.uuid, payload),
         payload.condition === 'damaged' ? 'Return finished, marked damaged' : 'Return finished', 'Could not finish the return', refreshLoanData())
     finishBusy.value = false
     if (ok) isFinishOpen.value = false
 }
 
 function handleAcceptReservation(reservation: ReservationRecord) {
-    return perform(() => circulationService.acceptReservation(reservation.reservationID), 'Reservation accepted', 'Could not accept reservation', [refetchReservations])
+    return perform(() => circulationService.acceptReservation(reservation.uuid), 'Reservation accepted', 'Could not accept reservation', [refetchReservations])
+}
+
+// Same path as scanning the student's slip: the checkout opens with the student and book filled in.
+function handleCheckoutReservation(reservation: ReservationRecord) {
+    checkoutCode.value = reservation.pickupCode
+    isCheckoutOpen.value = true
 }
 
 function handleRejectReservation(reservation: ReservationRecord) {
-    return perform(() => circulationService.rejectReservation(reservation.reservationID), 'Reservation rejected', 'Could not reject reservation', [refetchReservations])
+    return perform(() => circulationService.rejectReservation(reservation.uuid), 'Reservation rejected', 'Could not reject reservation', [refetchReservations])
 }
 
 function handleVerifySelfReturn(report: SelfReturnReportRecord) {
-    return perform(() => circulationService.verifySelfReturn(report.reportID), 'Return verified', 'Could not verify return', [refetchSelfReturns, ...refreshLoanData()])
+    return perform(() => circulationService.verifySelfReturn(report.uuid), 'Return verified', 'Could not verify return', [refetchSelfReturns, ...refreshLoanData()])
 }
 
 function handleRejectSelfReturn(report: SelfReturnReportRecord) {
-    return perform(() => circulationService.rejectSelfReturn(report.reportID), 'Report rejected', 'Could not reject report', [refetchSelfReturns])
+    return perform(() => circulationService.rejectSelfReturn(report.uuid), 'Report rejected', 'Could not reject report', [refetchSelfReturns])
 }
 
 function handleSettle(penalty: PenaltyRecord) {
-    return perform(() => circulationService.settlePenalty(penalty.penaltyID), 'Fine settled', 'Could not settle fine', [refetchPenalties, refetchPenaltyStats])
+    return perform(() => circulationService.settlePenalty(penalty.uuid), 'Fine settled', 'Could not settle fine', [refetchPenalties, refetchPenaltyStats])
 }
 
 async function handleCheckoutCreated() {
-    await Promise.all([refetchLoans(), refetchLoanStats()])
+    await Promise.all([refetchLoans(), refetchLoanStats(), refetchReservations()])
 }
 </script>

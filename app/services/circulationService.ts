@@ -9,6 +9,7 @@ interface PersonRef {
 
 export interface LoanRecord {
   loanID: number;
+  uuid: string;
   checkoutDate: string;
   dueDate: string;
   returnDate: string | null;
@@ -42,6 +43,7 @@ export type ReservationStatus = "Waiting" | "Accepted" | "Rejected" | "Fulfilled
 
 export interface ReservationRecord {
   reservationID: number;
+  uuid: string;
   status: ReservationStatus;
   reservedAt: string;
   pickupCode?: string;
@@ -53,6 +55,7 @@ export interface ReservationRecord {
 
 export interface SelfReturnReportRecord {
   reportID: number;
+  uuid: string;
   reportedAt: string;
   verificationStatus: "Pending" | "Verified" | "Rejected";
   loan: LoanRecord | null;
@@ -60,6 +63,7 @@ export interface SelfReturnReportRecord {
 
 export interface PenaltyRecord {
   penaltyID: number;
+  uuid: string;
   amount: string;
   computedAt: string;
   settledAt: string | null;
@@ -135,17 +139,17 @@ class CirculationServiceClass extends BaseService {
   }
 
   /** A loan's checkout receipt again, for a reprint. */
-  fetchReceipt(loanID: number) {
-    return this.request<{ receipt: LoanReceipt }>(`/librarian/loans/${loanID}/receipt`);
+  fetchReceipt(loanUuid: string) {
+    return this.request<{ receipt: LoanReceipt }>(`/librarian/loans/${loanUuid}/receipt`);
   }
 
   /** After checking a received book: back on the shelf if it's fine, marked damaged if it isn't. */
-  finishReturn(loanID: number, payload: { condition: "good" | "damaged"; note?: string }) {
-    return this.request<{ message: string; loan: LoanRecord }>(`/librarian/loans/${loanID}/finish-return`, { method: "POST", body: payload });
+  finishReturn(loanUuid: string, payload: { condition: "good" | "damaged"; note?: string }) {
+    return this.request<{ message: string; loan: LoanRecord }>(`/librarian/loans/${loanUuid}/finish-return`, { method: "POST", body: payload });
   }
 
-  returnLoan(loanID: number) {
-    return this.request<{ message: string; loan: LoanRecord }>(`/librarian/loans/${loanID}/return`, { method: "POST" });
+  returnLoan(loanUuid: string) {
+    return this.request<{ message: string; loan: LoanRecord }>(`/librarian/loans/${loanUuid}/return`, { method: "POST" });
   }
 
   fetchReservations(status?: ReservationStatus) {
@@ -154,24 +158,24 @@ class CirculationServiceClass extends BaseService {
     });
   }
 
-  acceptReservation(reservationID: number) {
-    return this.request<{ message: string }>(`/librarian/reservations/${reservationID}/accept`, { method: "POST" });
+  acceptReservation(reservationUuid: string) {
+    return this.request<{ message: string }>(`/librarian/reservations/${reservationUuid}/accept`, { method: "POST" });
   }
 
-  rejectReservation(reservationID: number) {
-    return this.request<{ message: string }>(`/librarian/reservations/${reservationID}/reject`, { method: "POST" });
+  rejectReservation(reservationUuid: string) {
+    return this.request<{ message: string }>(`/librarian/reservations/${reservationUuid}/reject`, { method: "POST" });
   }
 
   fetchSelfReturnReports() {
     return this.request<{ reports: SelfReturnReportRecord[] }>("/librarian/self-return-reports");
   }
 
-  verifySelfReturn(reportID: number) {
-    return this.request<{ message: string }>(`/librarian/self-return-reports/${reportID}/verify`, { method: "POST" });
+  verifySelfReturn(reportUuid: string) {
+    return this.request<{ message: string }>(`/librarian/self-return-reports/${reportUuid}/verify`, { method: "POST" });
   }
 
-  rejectSelfReturn(reportID: number) {
-    return this.request<{ message: string }>(`/librarian/self-return-reports/${reportID}/reject`, { method: "POST" });
+  rejectSelfReturn(reportUuid: string) {
+    return this.request<{ message: string }>(`/librarian/self-return-reports/${reportUuid}/reject`, { method: "POST" });
   }
 
   fetchPenalties(params: { search?: string; status?: "Unpaid" | "Paid"; page?: number; perPage?: number } = {}) {
@@ -182,8 +186,8 @@ class CirculationServiceClass extends BaseService {
     return this.request<PenaltyStats>("/librarian/penalties/stats");
   }
 
-  settlePenalty(penaltyID: number) {
-    return this.request<{ message: string }>(`/librarian/penalties/${penaltyID}/settle`, { method: "POST" });
+  settlePenalty(penaltyUuid: string) {
+    return this.request<{ message: string }>(`/librarian/penalties/${penaltyUuid}/settle`, { method: "POST" });
   }
 }
 

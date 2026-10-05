@@ -13,8 +13,8 @@
 					</tr>
 				</thead>
 				<tbody>
-					<tr v-for="(log, index) in logs" :key="log.logID"
-						class="row-enter border-b border-stone-100 opacity-0 transition-colors duration-150 last:border-0 hover:bg-accent-50"
+					<tr v-for="(log, index) in logs" :key="log.logID" tabindex="0" @click="selected = log" @keydown.enter.self="selected = log"
+						class="row-enter cursor-pointer border-b border-stone-100 opacity-0 transition-colors duration-150 last:border-0 hover:bg-accent-50"
 						:style="{ animationDelay: `${index * 40}ms` }">
 						<td class="px-4 py-3">
 							<div class="flex items-center gap-3">
@@ -48,6 +48,11 @@
 		</div>
 
 		<LibrarianLoadingOverlay :loading="loading" />
+
+		<LibrarianRecordDrawer :open="!!selected" heading="Visit details" :title="selected ? studentName(selected) : ''"
+			:subtitle="selected?.student?.studentIDNumber"
+			:status="selected ? (selected.exitTime ? { label: 'Checked out', tone: 'neutral' } : { label: 'In library', tone: 'success' }) : undefined"
+			:fields="fields" @close="selected = null" />
 	</div>
 </template>
 
@@ -58,6 +63,20 @@ const props = defineProps<{
 	logs: AttendanceLog[]
 	loading: boolean
 }>()
+
+const selected = ref<AttendanceLog | null>(null)
+
+const fields = computed(() => {
+	const log = selected.value
+	if (!log) return []
+	return [
+		{ label: 'Program', value: log.student?.academicProgram, wide: true },
+		{ label: 'Entered', value: formatDateTime(log.entryTime), wide: true },
+		{ label: 'Left', value: log.exitTime ? formatDateTime(log.exitTime) : null, wide: true },
+		{ label: 'Time in library', value: log.exitTime ? duration(log) : 'Still inside' },
+		{ label: 'Log ID', value: log.logID, mono: true },
+	]
+})
 
 function studentName(log: AttendanceLog): string {
 	const user = log.student?.user

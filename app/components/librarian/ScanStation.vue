@@ -157,7 +157,7 @@ import type { ScanRegion } from '~/composables/useCameraScanner'
 const emit = defineEmits<{
 	(e: 'scanned'): void
 	/** A borrowing receipt was scanned: the book is in the librarian's hands and needs checking. */
-	(e: 'check-loan', loan: { loanID: number; bookTitle: string; accessionNumber: number; studentName: string }): void
+	(e: 'check-loan', loan: { loanUuid: string; bookTitle: string; accessionNumber: number; studentName: string }): void
 	/** A reservation slip was scanned: open the checkout for it. */
 	(e: 'open-checkout', code: string): void
 }>()
@@ -312,7 +312,7 @@ function fromResult(res: ScanResult): ResultView {
 			return {
 				key, tone: 'warn', icon: 'i-tabler-book-download', verdict: 'Book received', name: l.studentName, sid: l.studentIDNumber,
 				message: l.bookTitle, notes, sub: `Received · ${l.bookTitle}`,
-				action: { label: 'Check the book now', icon: 'i-tabler-checklist', run: () => emit('check-loan', { loanID: l.loanID, bookTitle: l.bookTitle, accessionNumber: l.accessionNumber, studentName: l.studentName }) },
+				action: { label: 'Check the book now', icon: 'i-tabler-checklist', run: () => emit('check-loan', { loanUuid: l.uuid, bookTitle: l.bookTitle, accessionNumber: l.accessionNumber, studentName: l.studentName }) },
 			}
 		}
 

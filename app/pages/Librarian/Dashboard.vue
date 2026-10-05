@@ -1,20 +1,21 @@
 <template>
     <div class="dash">
         <!-- Greeting: the date is just stated; there's nothing to pick on a live dashboard. -->
-        <header class="mb-5">
-            <h1 class="dashboard-heading text-3xl font-bold text-crimson">{{ greeting }}, {{ name }}</h1>
-            <p class="mt-1 text-[14.5px] text-stone-500">
-                {{ todayLabel }}<template v-if="today">
-                    <span class="mx-1.5 text-stone-300">·</span>
-                    <span class="text-stone-700"><b class="font-semibold tabular-nums">{{ today.inLibrary }}</b> {{ today.inLibrary === 1 ? 'student is' : 'students are' }} in the library right now</span>
-                </template>
-            </p>
-        </header>
+        <header class="mb-5 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div class="min-w-0">
+                <h1 class="dashboard-heading text-3xl font-bold text-crimson">{{ greeting }}, {{ name }}</h1>
+                <p class="mt-1 text-[14.5px] text-stone-500">
+                    {{ todayLabel }}<template v-if="today">
+                        <span class="mx-1.5 text-stone-300">·</span>
+                        <span class="text-stone-700"><b class="font-semibold tabular-nums">{{ today.inLibrary }}</b> {{ today.inLibrary === 1 ? 'student is' : 'students are' }} in the library right now</span>
+                    </template>
+                </p>
+            </div>
 
-        <!-- Quick actions: attendance leads, the rest are the desk's everyday jobs. -->
-        <section aria-label="Quick actions" class="mb-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-[1.35fr_1fr_1fr_1fr]">
+            <!-- The scanner is the desk's one standing tool, so it sits on its own up here instead of
+                 being the odd one out in the row of quick actions below. -->
             <button type="button"
-                class="group flex items-center gap-3.5 rounded-2xl p-4 text-left transition-[transform,background-color,box-shadow] duration-150 ease-out active:scale-[.98] sm:col-span-2 xl:col-span-1"
+                class="group flex shrink-0 items-center gap-3.5 rounded-2xl p-4 text-left transition-[transform,background-color,box-shadow] duration-150 ease-out active:scale-[.98] md:min-w-[22rem]"
                 :class="stationOpen
                     ? 'border border-emerald-200 bg-emerald-50 hover:bg-emerald-100/70'
                     : 'bg-accent-500 text-white shadow-[0_8px_20px_-10px_rgba(83,44,46,.7)] hover:bg-accent-600'"
@@ -39,7 +40,10 @@
                     class="h-4 w-4 shrink-0 transition-transform duration-150 ease-out group-hover:translate-x-0.5"
                     :class="stationOpen ? 'text-emerald-700' : 'text-white/80'" />
             </button>
+        </header>
 
+        <!-- Quick actions: four even cards, so the row never ends up lopsided. -->
+        <section aria-label="Quick actions" class="mb-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <NuxtLink v-for="action in actions" :key="action.label" :to="action.to"
                 class="group flex items-center gap-3 rounded-2xl border border-stone-200 bg-white p-4 transition-[transform,border-color,box-shadow] duration-150 ease-out hover:border-accent-200 hover:shadow-card active:scale-[.98]">
                 <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent-50 text-accent-600 transition-colors duration-150 group-hover:bg-accent-100">
@@ -348,6 +352,7 @@ onMounted(() => post({ type: 'ping' }))
 /* ---------- quick actions ---------- */
 const actions = computed(() => [
     { label: 'Check out a book', hint: 'Lend a copy to a student', icon: 'i-tabler-book-upload', to: '/librarian/circulation?new=checkout', badge: 0 },
+    { label: 'Return a book', hint: 'Check a copy back in', icon: 'i-tabler-book-download', to: '/librarian/circulation', badge: 0 },
     { label: 'Add a book', hint: 'Catalog a new title', icon: 'i-tabler-book-2', to: '/librarian/library?new=book', badge: 0 },
     {
         label: 'Approve students', hint: today.value?.attention.registrations ? 'Registrations are waiting' : 'No one waiting',

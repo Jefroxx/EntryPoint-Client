@@ -13,8 +13,8 @@
 					</tr>
 				</thead>
 				<tbody>
-					<tr v-for="(copy, index) in copies" :key="copy.copyID"
-						class="row-fade-in group border-b border-stone-100 text-[14px] text-stone-600 last:border-0"
+					<tr v-for="(copy, index) in copies" :key="copy.copyID" tabindex="0" @click="emit('view', copy)" @keydown.enter.self="emit('view', copy)"
+						class="row-fade-in group cursor-pointer border-b border-stone-100 text-[14px] text-stone-600 last:border-0"
 						:style="{ animationDelay: `${index * 30}ms` }">
 						<!-- Pinned columns carry their own background so scrolled cells don't show through. -->
 						<td class="font-data sticky left-0 z-[1] bg-white px-4 py-3 text-[14px] font-bold text-stone-900 group-hover:bg-accent-50">
@@ -47,7 +47,7 @@
 						<td class="whitespace-nowrap px-4 py-3 tabular-nums group-hover:bg-accent-50">{{ copy.book.cost != null ? formatPeso(copy.book.cost) : '—' }}</td>
 						<td class="whitespace-nowrap px-4 py-3 group-hover:bg-accent-50">{{ copy.book.shelfLocation || '—' }}</td>
 						<td class="font-data whitespace-nowrap px-4 py-3 text-[12.5px] text-stone-400 group-hover:bg-accent-50">{{ copy.barcodeValue || '—' }}</td>
-						<td class="px-4 py-3 group-hover:bg-accent-50">
+						<td class="px-4 py-3 group-hover:bg-accent-50" @click.stop>
 							<div class="flex items-center justify-end gap-1">
 								<ButtonsButton variant="icon" size="sm" :aria-label="`Add another copy of ${copy.book.title}`"
 									title="Add a copy of this book" class="!text-emerald-600 hover:!bg-emerald-50" @click="emit('add-copy', copy)">

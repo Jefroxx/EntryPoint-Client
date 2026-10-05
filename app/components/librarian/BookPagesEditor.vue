@@ -70,13 +70,15 @@ interface Item {
 	url: string
 	/** Set once it exists on the server. */
 	pageID?: number
+	uuid?: string
 	/** A new photo, compressed and waiting to be uploaded. */
 	blob?: Blob
 }
 
 let keySeq = 0
-const items = ref<Item[]>(props.pages.map((p) => ({ key: ++keySeq, section: p.section, url: p.url, pageID: p.pageID })))
-const removed = ref<number[]>([])
+const items = ref<Item[]>(props.pages.map((p) => ({ key: ++keySeq, section: p.section, url: p.url, pageID: p.pageID, uuid: p.uuid })))
+// uuids, which is what the delete endpoint takes
+const removed = ref<string[]>([])
 const reordered = ref(new Set<BookPageSection>())
 const preparing = ref<BookPageSection | null>(null)
 const notice = reactive<Partial<Record<BookPageSection, string>>>({})
@@ -123,7 +125,7 @@ function move(item: Item, delta: number) {
 
 function remove(item: Item) {
 	items.value = items.value.filter((i) => i !== item)
-	if (item.pageID) removed.value.push(item.pageID)
+	if (item.uuid) removed.value.push(item.uuid)
 	if (item.blob) URL.revokeObjectURL(item.url)
 }
 
@@ -132,11 +134,11 @@ function remove(item: Item) {
  * then a reorder wherever the order differs from "existing first, new after". Keeps going past a failure
  * and reports how many steps didn't go through.
  */
-async function apply(bookID: number): Promise<{ failed: number }> {
+async function apply(bookUuid: string): Promise<{ failed: number }> {
 	let failed = 0
 
-	for (const pageID of removed.value) {
-		try { await librarianService.deleteBookPage(pageID) } catch { failed++ }
+	for (const pageUuid of removed.value) {
+		try { await librarianService.deleteBookPage(pageUuid) } catch { failed++ }
 	}
 
 	for (const { key: section } of BOOK_PAGE_SECTIONS) {
@@ -145,8 +147,8 @@ async function apply(bookID: number): Promise<{ failed: number }> {
 
 		if (fresh.length) {
 			try {
-				const { pages } = await librarianService.uploadBookPages(bookID, section, fresh.map((i) => i.blob!))
-				fresh.forEach((item, n) => { item.pageID = pages[n]?.pageID })
+				const { pages } = await librarianService.uploadBookPages(bookUuid, section, fresh.map((i) => i.blob!))
+				fresh.forEach((item, n) => { item.pageID = pages[n]?.pageID; item.uuid = pages[n]?.uuid })
 			} catch {
 				failed++
 				continue
@@ -158,7 +160,7 @@ async function apply(bookID: number): Promise<{ failed: number }> {
 		const firstNew = list.findIndex((i) => i.blob)
 		const newBeforeOld = firstNew >= 0 && list.slice(firstNew).some((i) => !i.blob)
 		if ((reordered.value.has(section) || newBeforeOld) && list.length > 1 && list.every((i) => i.pageID)) {
-			try { await librarianService.reorderBookPages(bookID, section, list.map((i) => i.pageID!)) } catch { failed++ }
+			try { await librarianService.reorderBookPages(bookUuid, section, list.map((i) => i.pageID!)) } catch { failed++ }
 		}
 	}
 

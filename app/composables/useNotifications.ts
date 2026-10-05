@@ -30,7 +30,7 @@ export function useNotifications() {
 
     notification.isRead = true
     try {
-      await notificationService.markRead(notification.notificationID)
+      await notificationService.markRead(notification.uuid)
     } catch (error) {
       notification.isRead = false
       throw error

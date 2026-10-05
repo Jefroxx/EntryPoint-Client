@@ -4,6 +4,7 @@ export type BookPageSection = 'table_of_contents' | 'appendix' | 'bibliography' 
 
 export interface BookPagePhoto {
   pageID: number
+  uuid: string
   section: BookPageSection
   position: number
   url: string

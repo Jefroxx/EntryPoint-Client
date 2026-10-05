@@ -7,6 +7,7 @@ import type { Area } from "~/utils/session";
 
 export interface BookBrief {
   bookID: number;
+  uuid: string;
   title: string;
   coverImageURL: string | null;
   subject: { subjectID: number; name: string } | null;
@@ -71,6 +72,7 @@ export type LoanStatus = "Active" | "Reported" | "Received" | "Returned";
 
 export interface LoanRow {
   loanID: number;
+  uuid: string;
   status: LoanStatus;
   checkoutDate: string;
   dueDate: string;
@@ -111,6 +113,7 @@ export interface RedemptionRow {
 /** Wishlist rows come back as raw Eloquent models (authors are objects). */
 interface RawBook {
   bookID: number;
+  uuid: string;
   title: string;
   coverImageURL?: string | null;
   subject?: { subjectID: number; name: string } | null;
@@ -124,6 +127,7 @@ interface RawBook {
 
 export interface WishlistRow {
   wishlistID: number;
+  uuid: string;
   bookID: number;
   inCart: boolean;
   /** Hearted. A row can be in the cart without being hearted. */
@@ -136,6 +140,7 @@ export type ReservationStatus = "Waiting" | "Accepted" | "Rejected" | "Fulfilled
 
 export interface ReservationRow {
   reservationID: number;
+  uuid: string;
   bookID: number;
   status: ReservationStatus;
   reservedAt: string;
@@ -178,6 +183,7 @@ export interface HallOfFame {
 
 export interface AchievementRow {
   achievementID: number;
+  uuid: string;
   name: string;
   pointsReward: number;
   criteria: { metric: "knowledgeScore" | "visitStreak"; threshold: number } | null;
@@ -188,6 +194,7 @@ export interface AchievementRow {
 
 export interface MarketItem {
   itemID: number;
+  uuid: string;
   name: string;
   type: string | null;
   photoURL: string | null;
@@ -199,6 +206,7 @@ export interface MarketItem {
 
 export interface MarketCartLine {
   cartItemID: number;
+  uuid: string;
   itemID: number;
   quantity: number;
   item: { itemID: number; name: string; type: string | null; photoURL: string | null; pointCost: number; stock: number };
@@ -266,8 +274,8 @@ class StudentServiceClass extends BaseService {
   }
 
   /** The checkout receipt for one of the student's own loans: a digital copy if the paper one is lost. */
-  loanReceipt(loanID: number) {
-    return this.apiRequest<{ receipt: LoanReceipt }>(`/student/loans/${loanID}/receipt`);
+  loanReceipt(loanUuid: string) {
+    return this.apiRequest<{ receipt: LoanReceipt }>(`/student/loans/${loanUuid}/receipt`);
   }
 
   penalties() {
@@ -299,9 +307,9 @@ class StudentServiceClass extends BaseService {
     });
   }
 
-  catalogBook(bookID: number) {
+  catalogBook(bookUuid: string) {
     // One book in full: also its page photos, for "Look inside".
-    return this.apiRequest<{ book: CatalogBook & { pages: BookPagePhoto[] } }>(`/student/catalog/${bookID}`);
+    return this.apiRequest<{ book: CatalogBook & { pages: BookPagePhoto[] } }>(`/student/catalog/${bookUuid}`);
   }
 
   subjects() {
@@ -316,16 +324,16 @@ class StudentServiceClass extends BaseService {
     return this.apiRequest<{ message: string }>("/student/wishlist", { method: "POST", body: { bookID } });
   }
 
-  removeFromWishlist(wishlistID: number) {
-    return this.apiRequest<{ message: string }>(`/student/wishlist/${wishlistID}`, { method: "DELETE" });
+  removeFromWishlist(wishlistUuid: string) {
+    return this.apiRequest<{ message: string }>(`/student/wishlist/${wishlistUuid}`, { method: "DELETE" });
   }
 
   addToCart(bookID: number) {
     return this.apiRequest<{ message: string }>("/student/cart", { method: "POST", body: { bookID } });
   }
 
-  removeFromCart(wishlistID: number) {
-    return this.apiRequest<{ message: string }>(`/student/cart/${wishlistID}`, { method: "DELETE" });
+  removeFromCart(wishlistUuid: string) {
+    return this.apiRequest<{ message: string }>(`/student/cart/${wishlistUuid}`, { method: "DELETE" });
   }
 
   reservations() {
@@ -339,20 +347,20 @@ class StudentServiceClass extends BaseService {
     );
   }
 
-  cancelReservation(reservationID: number) {
-    return this.apiRequest<{ message: string }>(`/student/reservations/${reservationID}`, { method: "DELETE" });
+  cancelReservation(reservationUuid: string) {
+    return this.apiRequest<{ message: string }>(`/student/reservations/${reservationUuid}`, { method: "DELETE" });
   }
 
-  selfReturn(loanID: number) {
-    return this.apiRequest<{ message: string }>(`/student/loans/${loanID}/self-return`, { method: "POST" });
+  selfReturn(loanUuid: string) {
+    return this.apiRequest<{ message: string }>(`/student/loans/${loanUuid}/self-return`, { method: "POST" });
   }
 
   achievements() {
     return this.apiRequest<{ achievements: AchievementRow[] }>("/student/achievements");
   }
 
-  redeemAchievement(achievementID: number) {
-    return this.apiRequest<{ message: string }>(`/student/achievements/${achievementID}/redeem`, { method: "POST" });
+  redeemAchievement(achievementUuid: string) {
+    return this.apiRequest<{ message: string }>(`/student/achievements/${achievementUuid}/redeem`, { method: "POST" });
   }
 
   marketItems() {
@@ -367,12 +375,12 @@ class StudentServiceClass extends BaseService {
     return this.apiRequest<{ message: string }>("/student/market-cart", { method: "POST", body: { itemID, quantity } });
   }
 
-  updateMarketCartLine(cartItemID: number, quantity: number) {
-    return this.apiRequest<{ message: string }>(`/student/market-cart/${cartItemID}`, { method: "PATCH", body: { quantity } });
+  updateMarketCartLine(cartItemUuid: string, quantity: number) {
+    return this.apiRequest<{ message: string }>(`/student/market-cart/${cartItemUuid}`, { method: "PATCH", body: { quantity } });
   }
 
-  removeMarketCartLine(cartItemID: number) {
-    return this.apiRequest<{ message: string }>(`/student/market-cart/${cartItemID}`, { method: "DELETE" });
+  removeMarketCartLine(cartItemUuid: string) {
+    return this.apiRequest<{ message: string }>(`/student/market-cart/${cartItemUuid}`, { method: "DELETE" });
   }
 
   checkoutMarketCart() {

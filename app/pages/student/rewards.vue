@@ -208,8 +208,8 @@ async function step(item: Pick<MarketItem, 'itemID' | 'stock' | 'pointCost'>, de
 
 	try {
 		if (!line) await studentService.addToMarketCart(item.itemID, 1)
-		else if (next <= 0) await studentService.removeMarketCartLine(line.cartItemID)
-		else await studentService.updateMarketCartLine(line.cartItemID, next)
+		else if (next <= 0) await studentService.removeMarketCartLine(line.uuid)
+		else await studentService.updateMarketCartLine(line.uuid, next)
 		await reloadCart()
 	} catch (error: any) {
 		alert.error('Could not update your selection', apiErrorMessage(error))

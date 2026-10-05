@@ -330,7 +330,7 @@ const earnedCount = computed(() => (data.value?.achievements ?? []).filter((a) =
 const redeeming = ref<number | null>(null)
 async function redeem(a: AchievementRow) {
 	redeeming.value = a.achievementID
-	const ok = await perform(() => studentService.redeemAchievement(a.achievementID), `+${a.pointsReward} points · ${a.name}`, 'Could not claim it', [refreshProfile])
+	const ok = await perform(() => studentService.redeemAchievement(a.uuid), `+${a.pointsReward} points · ${a.name}`, 'Could not claim it', [refreshProfile])
 	redeeming.value = null
 	if (ok) bumpData()
 }

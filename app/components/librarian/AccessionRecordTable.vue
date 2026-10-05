@@ -14,8 +14,8 @@
 					</tr>
 				</thead>
 				<tbody>
-					<tr v-for="(book, index) in books" :key="book.bookID"
-						class="row-enter border-b border-stone-100 opacity-0 transition-colors duration-150 last:border-0 hover:bg-accent-50"
+					<tr v-for="(book, index) in books" :key="book.bookID" tabindex="0" @click="emit('view', book)" @keydown.enter.self="emit('view', book)"
+						class="row-enter cursor-pointer border-b border-stone-100 opacity-0 transition-colors duration-150 last:border-0 hover:bg-accent-50"
 						:style="{ animationDelay: `${index * 40}ms` }">
 						<td class="px-4 py-3">
 							<div class="flex items-center gap-3">
@@ -52,7 +52,7 @@
 								<li v-if="book.copies.length > COLLAPSED_COUNT">
 									<button type="button"
 										class="rounded-md px-1.5 py-0.5 text-[12.5px] font-semibold text-accent-600 hover:bg-accent-50 hover:underline"
-										@click="toggleExpanded(book.bookID)">
+										@click.stop="toggleExpanded(book.bookID)">
 										{{ expanded.has(book.bookID) ? 'Show less' : `+${book.copies.length - COLLAPSED_COUNT} more` }}
 									</button>
 								</li>
@@ -65,7 +65,7 @@
 							</span>
 							<span class="text-stone-400"> / {{ book.copies.length }}</span>
 						</td>
-						<td class="px-4 py-3">
+						<td class="px-4 py-3" @click.stop>
 							<div class="flex items-center justify-end gap-1">
 								<ButtonsButton variant="icon" size="sm" :aria-label="`Edit ${book.title}`" @click="emit('edit', book)">
 									<Icon name="i-tabler-pencil" class="h-[15px] w-[15px]" />

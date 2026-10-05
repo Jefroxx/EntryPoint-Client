@@ -18,6 +18,7 @@ export function dueTone(daysLeft: number): 'bad' | 'warn' | 'good' {
 
 /** "3 of 4 available" / "All out · 2 in queue" */
 export function availabilityLabel(available: number, total: number, queue: number): string {
+  if (total === 0) return 'No copies available'
   if (available > 0) return `${available} of ${total} available`
   return queue > 0 ? `All out · ${queue} in queue` : 'All copies out'
 }

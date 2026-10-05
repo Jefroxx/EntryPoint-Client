@@ -14,8 +14,8 @@
 					</tr>
 				</thead>
 				<tbody>
-					<tr v-for="(suggestion, index) in suggestions" :key="suggestion.suggestionID"
-						class="row-enter border-b border-stone-100 opacity-0 transition-colors duration-150 last:border-0 hover:bg-accent-50"
+					<tr v-for="(suggestion, index) in suggestions" :key="suggestion.suggestionID" tabindex="0" @click="emit('review', suggestion)" @keydown.enter.self="emit('review', suggestion)"
+						class="row-enter cursor-pointer border-b border-stone-100 opacity-0 transition-colors duration-150 last:border-0 hover:bg-accent-50"
 						:style="{ animationDelay: `${index * 40}ms` }">
 						<td class="px-4 py-3">
 							<div class="flex items-center gap-3">
@@ -40,7 +40,7 @@
 						<td class="px-4 py-3">
 							<LibrarianRequestStatusPill :status="suggestion.status" />
 						</td>
-						<td class="px-4 py-3">
+						<td class="px-4 py-3" @click.stop>
 							<div class="flex items-center justify-end gap-1.5">
 								<ButtonsButton variant="primary" size="sm" @click="emit('review', suggestion)">
 									Review

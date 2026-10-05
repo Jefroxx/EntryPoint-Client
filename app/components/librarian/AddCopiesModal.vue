@@ -41,13 +41,13 @@ import { librarianService, type CatalogBook } from '~/services/librarianService'
 const props = defineProps<{
 	open: boolean
 	/** Set when opened from a catalog row; otherwise the librarian searches for the book. */
-	book: { bookID: number; title: string } | null
+	book: { bookUuid: string; title: string } | null
 	busy?: boolean
 }>()
 
 const emit = defineEmits<{
 	(e: 'close'): void
-	(e: 'submit', payload: { bookID: number; title: string; quantity: number; note: string | undefined }): void
+	(e: 'submit', payload: { bookUuid: string; title: string; quantity: number; note: string | undefined }): void
 }>()
 
 const picked = ref<CatalogBook | null>(null)
@@ -76,13 +76,13 @@ const bookSublabel = (b: CatalogBook) =>
 	`${b.authors.map((a) => a.name).join(', ') || 'Unknown author'} · ${b.copies.length} ${b.copies.length === 1 ? 'copy' : 'copies'}`
 
 function submit() {
-	const target = props.book ?? (picked.value ? { bookID: picked.value.bookID, title: picked.value.title } : null)
+	const target = props.book ?? (picked.value ? { bookUuid: picked.value.uuid, title: picked.value.title } : null)
 	errors.book = target ? '' : 'Choose a book.'
 
 	const n = Number(quantity.value)
 	errors.quantity = Number.isInteger(n) && n >= 1 && n <= 50 ? '' : 'Enter a whole number from 1 to 50.'
 	if (!target || errors.quantity) return
 
-	emit('submit', { bookID: target.bookID, title: target.title, quantity: n, note: note.value.trim() || undefined })
+	emit('submit', { bookUuid: target.bookUuid, title: target.title, quantity: n, note: note.value.trim() || undefined })
 }
 </script>

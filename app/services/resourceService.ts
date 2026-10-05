@@ -9,6 +9,7 @@ interface UserRef {
 
 export interface UsageLogRecord {
   usageID: number;
+  uuid: string;
   resID: number;
   studentID: number;
   startTime: string;
@@ -19,6 +20,7 @@ export interface UsageLogRecord {
 
 export interface ResourceRecord {
   resID: number;
+  uuid: string;
   resourceType: string;
   name: string;
   status: ResourceStatus;
@@ -36,12 +38,12 @@ class ResourceServiceClass extends BaseService {
     return this.apiRequest<{ message: string; resource: ResourceRecord }>("/librarian/resources", { method: "POST", body: payload });
   }
 
-  updateResource(resID: number, payload: { resourceType?: string; name?: string; status?: "Available" | "Unavailable" }) {
-    return this.apiRequest<{ message: string; resource: ResourceRecord }>(`/librarian/resources/${resID}`, { method: "PATCH", body: payload });
+  updateResource(resUuid: string, payload: { resourceType?: string; name?: string; status?: "Available" | "Unavailable" }) {
+    return this.apiRequest<{ message: string; resource: ResourceRecord }>(`/librarian/resources/${resUuid}`, { method: "PATCH", body: payload });
   }
 
-  deleteResource(resID: number) {
-    return this.apiRequest<{ message: string }>(`/librarian/resources/${resID}`, { method: "DELETE" });
+  deleteResource(resUuid: string) {
+    return this.apiRequest<{ message: string }>(`/librarian/resources/${resUuid}`, { method: "DELETE" });
   }
 
   fetchUsageLogs() {
@@ -52,8 +54,8 @@ class ResourceServiceClass extends BaseService {
     return this.apiRequest<{ message: string }>("/librarian/resource-usage-logs", { method: "POST", body: payload });
   }
 
-  endSession(usageID: number) {
-    return this.apiRequest<{ message: string }>(`/librarian/resource-usage-logs/${usageID}/end`, { method: "POST" });
+  endSession(usageUuid: string) {
+    return this.apiRequest<{ message: string }>(`/librarian/resource-usage-logs/${usageUuid}/end`, { method: "POST" });
   }
 }
 

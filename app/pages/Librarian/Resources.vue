@@ -212,7 +212,7 @@ async function handleSave(payload: { name: string; resourceType: string }) {
     busy.value = true
     const target = editing.value
     const ok = await perform(
-        () => target ? resourceService.updateResource(target.resID, payload) : resourceService.createResource(payload),
+        () => target ? resourceService.updateResource(target.uuid, payload) : resourceService.createResource(payload),
         target ? 'Resource updated' : 'Resource added',
         'Could not save resource',
         [refetchResources],
@@ -240,12 +240,12 @@ async function handleStart(studentID: number) {
 
 function handleEnd(resource: ResourceRecord) {
     if (!resource.active_usage) return
-    return perform(() => resourceService.endSession(resource.active_usage!.usageID), 'Session ended', 'Could not end session', refreshAll())
+    return perform(() => resourceService.endSession(resource.active_usage!.uuid), 'Session ended', 'Could not end session', refreshAll())
 }
 
 function handleToggle(resource: ResourceRecord) {
     const next = resource.status === 'Unavailable' ? 'Available' : 'Unavailable'
-    return perform(() => resourceService.updateResource(resource.resID, { status: next }), `Marked ${next.toLowerCase()}`, 'Could not update resource', [refetchResources])
+    return perform(() => resourceService.updateResource(resource.uuid, { status: next }), `Marked ${next.toLowerCase()}`, 'Could not update resource', [refetchResources])
 }
 
 const deleteTarget = ref<ResourceRecord | null>(null)
@@ -257,9 +257,9 @@ const askDelete = (resource: ResourceRecord) => {
 
 async function handleDelete() {
     if (!deleteTarget.value) return
-    const resID = deleteTarget.value.resID
+    const resUuid = deleteTarget.value.uuid
     busy.value = true
-    const ok = await perform(() => resourceService.deleteResource(resID), 'Resource deleted', 'Could not delete resource', [refetchResources])
+    const ok = await perform(() => resourceService.deleteResource(resUuid), 'Resource deleted', 'Could not delete resource', [refetchResources])
     busy.value = false
     if (ok) deleteOpen.value = false
 }

@@ -289,7 +289,7 @@ async function openReceipt(loan: LoanRow) {
 	receiptError.value = ''
 	receiptLoading.value = true
 	try {
-		const response = await studentService.loanReceipt(loan.loanID)
+		const response = await studentService.loanReceipt(loan.uuid)
 		if (receiptFor.value?.loanID === loan.loanID) receipt.value = response.receipt
 	} catch (error) {
 		receiptError.value = apiErrorMessage(error, "Couldn't load this receipt. Please try again.")
@@ -318,7 +318,7 @@ async function confirmCancel() {
 	const target = cancelling.value
 	cancelBusy.value = true
 
-	const ok = await perform(() => studentService.cancelReservation(target.reservationID), 'Reservation cancelled', 'Could not cancel it', [refreshProfile])
+	const ok = await perform(() => studentService.cancelReservation(target.uuid), 'Reservation cancelled', 'Could not cancel it', [refreshProfile])
 	cancelBusy.value = false
 
 	if (ok) {

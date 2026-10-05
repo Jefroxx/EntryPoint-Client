@@ -4,6 +4,7 @@ export type AchievementMetric = "knowledgeScore" | "visitStreak";
 
 export interface AchievementRecord {
   achievementID: number;
+  uuid: string;
   name: string;
   criteriaJSON: { metric: AchievementMetric; threshold: number };
   pointsReward: number;
@@ -19,6 +20,7 @@ export interface AchievementPayload {
 
 export interface MarketItemRecord {
   itemID: number;
+  uuid: string;
   name: string;
   type: string | null;
   pointCost: number;
@@ -44,6 +46,7 @@ export type FulfillmentStatus = "Pending" | "Fulfilled" | "Cancelled";
 
 export interface RedemptionRecord {
   redemptionID: number;
+  uuid: string;
   quantity: number;
   pointsSpent: number;
   fulfillmentStatus: FulfillmentStatus;
@@ -61,12 +64,12 @@ class EngagementServiceClass extends BaseService {
     return this.apiRequest<{ message: string }>("/librarian/achievements", { method: "POST", body: payload });
   }
 
-  updateAchievement(achievementID: number, payload: Partial<AchievementPayload>) {
-    return this.apiRequest<{ message: string }>(`/librarian/achievements/${achievementID}`, { method: "PATCH", body: payload });
+  updateAchievement(achievementUuid: string, payload: Partial<AchievementPayload>) {
+    return this.apiRequest<{ message: string }>(`/librarian/achievements/${achievementUuid}`, { method: "PATCH", body: payload });
   }
 
-  deleteAchievement(achievementID: number) {
-    return this.apiRequest<{ message: string }>(`/librarian/achievements/${achievementID}`, { method: "DELETE" });
+  deleteAchievement(achievementUuid: string) {
+    return this.apiRequest<{ message: string }>(`/librarian/achievements/${achievementUuid}`, { method: "DELETE" });
   }
 
   fetchMarketItems() {
@@ -78,34 +81,34 @@ class EngagementServiceClass extends BaseService {
   }
 
   /** Sets or replaces the item's photo. Compress it first (compressPagePhoto). */
-  uploadMarketItemPhoto(itemID: number, photo: Blob) {
+  uploadMarketItemPhoto(itemUuid: string, photo: Blob) {
     const body = new FormData();
     body.append("photo", photo, "item.jpg");
-    return this.apiRequest<{ message: string }>(`/librarian/market-items/${itemID}/photo`, { method: "POST", body });
+    return this.apiRequest<{ message: string }>(`/librarian/market-items/${itemUuid}/photo`, { method: "POST", body });
   }
 
-  deleteMarketItemPhoto(itemID: number) {
-    return this.apiRequest<{ message: string }>(`/librarian/market-items/${itemID}/photo`, { method: "DELETE" });
+  deleteMarketItemPhoto(itemUuid: string) {
+    return this.apiRequest<{ message: string }>(`/librarian/market-items/${itemUuid}/photo`, { method: "DELETE" });
   }
 
-  updateMarketItem(itemID: number, payload: Partial<MarketItemPayload>) {
-    return this.apiRequest<{ message: string }>(`/librarian/market-items/${itemID}`, { method: "PATCH", body: payload });
+  updateMarketItem(itemUuid: string, payload: Partial<MarketItemPayload>) {
+    return this.apiRequest<{ message: string }>(`/librarian/market-items/${itemUuid}`, { method: "PATCH", body: payload });
   }
 
-  deleteMarketItem(itemID: number) {
-    return this.apiRequest<{ message: string }>(`/librarian/market-items/${itemID}`, { method: "DELETE" });
+  deleteMarketItem(itemUuid: string) {
+    return this.apiRequest<{ message: string }>(`/librarian/market-items/${itemUuid}`, { method: "DELETE" });
   }
 
   fetchRedemptions() {
     return this.apiRequest<{ redemptions: RedemptionRecord[] }>("/librarian/point-redemptions");
   }
 
-  fulfillRedemption(redemptionID: number) {
-    return this.apiRequest<{ message: string }>(`/librarian/point-redemptions/${redemptionID}/fulfill`, { method: "POST" });
+  fulfillRedemption(redemptionUuid: string) {
+    return this.apiRequest<{ message: string }>(`/librarian/point-redemptions/${redemptionUuid}/fulfill`, { method: "POST" });
   }
 
-  cancelRedemption(redemptionID: number) {
-    return this.apiRequest<{ message: string }>(`/librarian/point-redemptions/${redemptionID}/cancel`, { method: "POST" });
+  cancelRedemption(redemptionUuid: string) {
+    return this.apiRequest<{ message: string }>(`/librarian/point-redemptions/${redemptionUuid}/cancel`, { method: "POST" });
   }
 }
 

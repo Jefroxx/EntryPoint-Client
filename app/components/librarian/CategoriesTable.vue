@@ -1,8 +1,8 @@
 <template>
 	<LibrarianTableShell :columns="['Category', 'Dewey code', 'Books', '']" :loading="loading" :empty="subjects.length === 0"
 		empty-text="No categories match your search." min-width="640px">
-		<tr v-for="(subject, index) in subjects" :key="subject.subjectID"
-			class="row-fade-in border-b border-stone-100 transition-colors duration-150 last:border-0 hover:bg-accent-50"
+		<tr v-for="(subject, index) in subjects" :key="subject.subjectID" tabindex="0" @click="selected = subject" @keydown.enter.self="selected = subject"
+			class="row-fade-in cursor-pointer border-b border-stone-100 transition-colors duration-150 last:border-0 hover:bg-accent-50"
 			:style="{ animationDelay: `${index * 35}ms` }">
 			<td class="px-4 py-3">
 				<div class="flex items-center gap-2.5 text-[15px] font-semibold text-stone-900">
@@ -20,7 +20,7 @@
 					</div>
 				</div>
 			</td>
-			<td class="px-4 py-3">
+			<td class="px-4 py-3" @click.stop>
 				<div class="flex items-center justify-end gap-1.5">
 					<ButtonsButton variant="ghost" size="sm" @click="emit('edit', subject)">Edit</ButtonsButton>
 					<ButtonsButton variant="danger" size="sm" :disabled="subject.books_count > 0"
@@ -31,6 +31,10 @@
 				</div>
 			</td>
 		</tr>
+	<!-- Teleports to <body>; it lives in the slot only so the table keeps a single root element. -->
+		<LibrarianRecordDrawer :open="!!selected" heading="Category details" :title="selected?.name ?? ''"
+			:subtitle="selected?.classificationCode ? `Dewey ${selected.classificationCode}` : undefined"
+			:fields="fields" @close="selected = null" />
 	</LibrarianTableShell>
 </template>
 
@@ -48,4 +52,16 @@ const emit = defineEmits<{
 }>()
 
 const maxBooks = computed(() => Math.max(0, ...props.subjects.map((s) => s.books_count)))
+const selected = ref<SubjectRecord | null>(null)
+
+const fields = computed(() => {
+	const s = selected.value
+	if (!s) return []
+	return [
+		{ label: 'Dewey code', value: s.classificationCode, mono: true },
+		{ label: 'Books', value: s.books_count },
+		{ label: 'Category ID', value: s.subjectID, mono: true },
+		{ label: 'Can be deleted?', value: s.books_count > 0 ? `No, ${s.books_count} book${s.books_count > 1 ? 's' : ''} still use it` : 'Yes, nothing uses it', wide: true },
+	]
+})
 </script>

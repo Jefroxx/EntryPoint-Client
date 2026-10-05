@@ -137,7 +137,7 @@ function openDrawer(student: StudentRecord) {
 
 async function handleApprove(student: StudentRecord) {
     try {
-        await librarianService.approveStudent(student.studentID)
+        await librarianService.approveStudent(student.uuid)
         isDrawerOpen.value = false
         alert.success('Student approved', `${student.user?.firstName ?? 'Student'} can now log in.`)
         await Promise.all([refetchStudents(), refetchStats()])
@@ -148,7 +148,7 @@ async function handleApprove(student: StudentRecord) {
 
 async function handleReject(student: StudentRecord) {
     try {
-        await librarianService.rejectStudent(student.studentID)
+        await librarianService.rejectStudent(student.uuid)
         isDrawerOpen.value = false
         alert.success('Student rejected', `${student.user?.firstName ?? 'Student'}'s registration was rejected.`)
         await Promise.all([refetchStudents(), refetchStats()])

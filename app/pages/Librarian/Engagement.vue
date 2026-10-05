@@ -166,7 +166,7 @@ async function saveAchievement(payload: AchievementPayload) {
     busy.value = true
     const target = editingAchievement.value
     const ok = await perform(
-        () => target ? engagementService.updateAchievement(target.achievementID, payload) : engagementService.createAchievement(payload),
+        () => target ? engagementService.updateAchievement(target.uuid, payload) : engagementService.createAchievement(payload),
         target ? 'Achievement updated' : 'Achievement added',
         'Could not save achievement',
         [refetchAchievements],
@@ -197,20 +197,20 @@ async function saveItem(payload: MarketItemPayload, photo: MarketItemPhotoChange
     const target = editingItem.value
     const ok = await perform(
         async () => {
-            let itemID = target?.itemID
+            let itemUuid = target?.uuid
             let result: { message?: string }
             if (target) {
-                result = await engagementService.updateMarketItem(target.itemID, payload)
+                result = await engagementService.updateMarketItem(target.uuid, payload)
             } else {
                 const created = await engagementService.createMarketItem(payload)
-                itemID = created.item.itemID
+                itemUuid = created.item.uuid
                 // If the photo upload below fails, the window stays open on the item that now exists,
                 // so trying again edits it instead of adding a duplicate.
                 editingItem.value = { ...created.item, redemptions_count: 0 }
                 result = created
             }
-            if (photo.blob) await engagementService.uploadMarketItemPhoto(itemID!, photo.blob)
-            else if (photo.remove) await engagementService.deleteMarketItemPhoto(itemID!)
+            if (photo.blob) await engagementService.uploadMarketItemPhoto(itemUuid!, photo.blob)
+            else if (photo.remove) await engagementService.deleteMarketItemPhoto(itemUuid!)
             return result
         },
         target ? 'Item updated' : 'Item added',
@@ -244,7 +244,7 @@ const pagedRedemptions = computed(() => {
 watch([redemptionSearch, redemptionStatus], () => { redemptionPage.value = 1 })
 
 function handleFulfill(redemption: RedemptionRecord) {
-    return perform(() => engagementService.fulfillRedemption(redemption.redemptionID), 'Redemption fulfilled', 'Could not fulfill redemption', [refetchRedemptions])
+    return perform(() => engagementService.fulfillRedemption(redemption.uuid), 'Redemption fulfilled', 'Could not fulfill redemption', [refetchRedemptions])
 }
 
 // ---- Confirmations (delete / cancel) ----
@@ -270,7 +270,7 @@ function askDeleteAchievement(achievement: AchievementRecord) {
         'Delete achievement?',
         `“${achievement.name}” will be removed, along with every student's progress toward it. This can't be undone.`,
         'Delete',
-        () => perform(() => engagementService.deleteAchievement(achievement.achievementID), 'Achievement deleted', 'Could not delete achievement', [refetchAchievements]),
+        () => perform(() => engagementService.deleteAchievement(achievement.uuid), 'Achievement deleted', 'Could not delete achievement', [refetchAchievements]),
     )
 }
 
@@ -279,7 +279,7 @@ function askDeleteItem(item: MarketItemRecord) {
         'Delete item?',
         `“${item.name}” will be removed from the rewards market.`,
         'Delete',
-        () => perform(() => engagementService.deleteMarketItem(item.itemID), 'Item deleted', 'Could not delete item', [refetchItems]),
+        () => perform(() => engagementService.deleteMarketItem(item.uuid), 'Item deleted', 'Could not delete item', [refetchItems]),
     )
 }
 
@@ -288,7 +288,7 @@ function askCancelRedemption(redemption: RedemptionRecord) {
         'Cancel redemption?',
         `${personName(redemption.student?.user)} gets ${redemption.pointsSpent} points back and “${redemption.item?.name ?? 'the item'}” is restocked.`,
         'Cancel redemption',
-        () => perform(() => engagementService.cancelRedemption(redemption.redemptionID), 'Redemption cancelled', 'Could not cancel redemption', [refetchRedemptions, refetchItems]),
+        () => perform(() => engagementService.cancelRedemption(redemption.uuid), 'Redemption cancelled', 'Could not cancel redemption', [refetchRedemptions, refetchItems]),
     )
 }
 </script>

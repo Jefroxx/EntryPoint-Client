@@ -356,19 +356,19 @@ onBeforeUnmount(() => mq?.removeEventListener('change', syncWide))
 
 function pick(book: CatalogBook) {
 	if (wideScreen.value) selectedId.value = book.bookID
-	else void drawer.open('book', book.bookID)
+	else void drawer.open('book', book.uuid)
 }
 
 // "Look inside" photos for the panel's book. The shelf lists don't include them, so they're fetched once
 // per book the panel shows (only on wide screens, where the panel exists) and remembered for this visit.
-const pagesByBook = ref(new Map<number, BookPagePhoto[]>())
-const selectedPages = computed(() => (selected.value ? pagesByBook.value.get(selected.value.bookID) ?? [] : []))
+const pagesByBook = ref(new Map<string, BookPagePhoto[]>())
+const selectedPages = computed(() => (selected.value ? pagesByBook.value.get(selected.value.uuid) ?? [] : []))
 
-watch([() => selected.value?.bookID, wideScreen], async ([bookID, wide]) => {
-	if (!bookID || !wide || pagesByBook.value.has(bookID)) return
+watch([() => selected.value?.uuid, wideScreen], async ([bookUuid, wide]) => {
+	if (!bookUuid || !wide || pagesByBook.value.has(bookUuid)) return
 	try {
-		const { book } = await studentService.catalogBook(bookID)
-		pagesByBook.value = new Map(pagesByBook.value).set(bookID, book.pages ?? [])
+		const { book } = await studentService.catalogBook(bookUuid)
+		pagesByBook.value = new Map(pagesByBook.value).set(bookUuid, book.pages ?? [])
 	} catch {
 		// No photos is a fine fallback; the rest of the panel doesn't depend on them.
 	}

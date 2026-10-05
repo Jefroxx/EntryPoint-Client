@@ -81,6 +81,7 @@ export interface LibraryStats {
 
 export interface StudentRecord {
   studentID: number;
+  uuid: string;
   studentIDNumber: string;
   academicProgram: string | null;
   registrationStatus: "pending" | "approved" | "rejected";
@@ -107,6 +108,7 @@ export interface StudentStats {
 export interface BookSuggestion {
   suggestionID: number;
   uuid: string;
+  uuid: string;
   title: string;
   author: string | null;
   reason: string | null;
@@ -127,12 +129,14 @@ export interface BookAuthor {
 
 export interface BookCopySummary {
   copyID: number;
+  uuid: string;
   accessionNumber: number;
   status: string;
 }
 
 export interface CatalogBook {
   bookID: number;
+  uuid: string;
   title: string;
   isbn: string | null;
   callNumber: string;
@@ -147,6 +151,7 @@ export interface CatalogBook {
 /** GET /librarian/books/{id}: every stored field, for View details and Edit book. */
 export interface BookDetail {
   bookID: number;
+  uuid: string;
   title: string;
   isbn: string | null;
   callNumber: string;
@@ -189,11 +194,13 @@ export type CopyStatus = "available" | "borrowed" | "lost" | "damaged";
 /** GET /librarian/copies: one Book Catalog row, a single copy with its book's fuller record. */
 export interface CopyCatalogRow {
   copyID: number;
+  uuid: string;
   accessionNumber: number;
   barcodeValue: string | null;
   status: CopyStatus;
   book: {
     bookID: number;
+    uuid: string;
     title: string;
     isbn: string | null;
     callNumber: string;
@@ -295,6 +302,7 @@ export type ScanResult =
       message: string;
       loan: {
         loanID: number;
+        uuid: string;
         receiptNumber: string;
         bookTitle: string;
         accessionNumber: number;
@@ -311,6 +319,7 @@ export type ScanResult =
       message: string;
       reservation: {
         reservationID: number;
+        uuid: string;
         pickupCode: string;
         studentID: number;
         bookID: number;
@@ -508,21 +517,21 @@ class LibrarianServiceClass extends BaseService {
   }
 
   /** One copy's status. Borrowed copies change only through check-in; "retired" removes the copy. */
-  updateCopy(copyID: number, payload: { status: Exclude<CopyStatus, "borrowed"> | "retired" }) {
+  updateCopy(copyUuid: string, payload: { status: Exclude<CopyStatus, "borrowed"> | "retired" }) {
     return this.apiRequest<{ message: string; copy: { copyID: number; accessionNumber: number; status: string } }>(
-      `/librarian/copies/${copyID}`, { method: "PATCH", body: payload });
+      `/librarian/copies/${copyUuid}`, { method: "PATCH", body: payload });
   }
 
   /** More copies of a book that is already in the catalog; each is logged in the stock log. */
-  addCopies(bookID: number, payload: { quantity: number; note?: string }) {
+  addCopies(bookUuid: string, payload: { quantity: number; note?: string }) {
     return this.apiRequest<{ message: string; copies: { copyID: number; accessionNumber: number; status: string }[] }>(
-      `/librarian/books/${bookID}/copies`, { method: "POST", body: payload });
+      `/librarian/books/${bookUuid}/copies`, { method: "POST", body: payload });
   }
 
   /** Takes one copy out of the catalog, recording why. */
-  removeCopy(copyID: number, payload: { reason: RemoveReason; note?: string }) {
+  removeCopy(copyUuid: string, payload: { reason: RemoveReason; note?: string }) {
     return this.apiRequest<{ message: string; copy: { copyID: number; accessionNumber: number; status: string } }>(
-      `/librarian/copies/${copyID}/remove`, { method: "POST", body: payload });
+      `/librarian/copies/${copyUuid}/remove`, { method: "POST", body: payload });
   }
 
   /** The stock log: every copy added or removed, newest first. */
@@ -583,33 +592,33 @@ class LibrarianServiceClass extends BaseService {
     });
   }
 
-  fetchBook(bookID: number) {
-    return this.apiRequest<{ book: BookDetail }>(`/librarian/books/${bookID}`);
+  fetchBook(bookUuid: string) {
+    return this.apiRequest<{ book: BookDetail }>(`/librarian/books/${bookUuid}`);
   }
 
   /** Adds photos to the end of a section, in the order given. Photos are compressed first (compressPagePhoto). */
-  uploadBookPages(bookID: number, section: BookPageSection, photos: Blob[]) {
+  uploadBookPages(bookUuid: string, section: BookPageSection, photos: Blob[]) {
     const body = new FormData();
     body.append("section", section);
     photos.forEach((photo, i) => body.append("photos[]", photo, `page-${i + 1}.jpg`));
-    return this.apiRequest<{ message: string; pages: BookPagePhoto[] }>(`/librarian/books/${bookID}/pages`, { method: "POST", body });
+    return this.apiRequest<{ message: string; pages: BookPagePhoto[] }>(`/librarian/books/${bookUuid}/pages`, { method: "POST", body });
   }
 
-  reorderBookPages(bookID: number, section: BookPageSection, pageIDs: number[]) {
-    return this.apiRequest<{ message: string }>(`/librarian/books/${bookID}/pages/order`, { method: "PUT", body: { section, pageIDs } });
+  reorderBookPages(bookUuid: string, section: BookPageSection, pageIDs: number[]) {
+    return this.apiRequest<{ message: string }>(`/librarian/books/${bookUuid}/pages/order`, { method: "PUT", body: { section, pageIDs } });
   }
 
-  deleteBookPage(pageID: number) {
-    return this.apiRequest<{ message: string }>(`/librarian/book-pages/${pageID}`, { method: "DELETE" });
+  deleteBookPage(pageUuid: string) {
+    return this.apiRequest<{ message: string }>(`/librarian/book-pages/${pageUuid}`, { method: "DELETE" });
   }
 
   /** Same fields as createBook; `quantity` here is the new number of copies (0 retires them all). */
-  updateBook(bookID: number, payload: Partial<NewBookPayload> & { quantity?: number }) {
-    return this.apiRequest<{ message: string }>(`/librarian/books/${bookID}`, { method: "PATCH", body: payload });
+  updateBook(bookUuid: string, payload: Partial<NewBookPayload> & { quantity?: number }) {
+    return this.apiRequest<{ message: string }>(`/librarian/books/${bookUuid}`, { method: "PATCH", body: payload });
   }
 
-  deleteBook(bookID: number) {
-    return this.apiRequest<{ message: string }>(`/librarian/books/${bookID}`, { method: "DELETE" });
+  deleteBook(bookUuid: string) {
+    return this.apiRequest<{ message: string }>(`/librarian/books/${bookUuid}`, { method: "DELETE" });
   }
 
   fetchBookSuggestions() {
@@ -625,11 +634,11 @@ class LibrarianServiceClass extends BaseService {
     });
   }
 
-  approveBookSuggestion(suggestionID: number) {
+  approveBookSuggestion(suggestionUuid: string) {
     const runtimeConfig = useRuntimeConfig();
 
     return $fetch<{ message: string; suggestion: BookSuggestion }>(
-      `/librarian/book-suggestions/${suggestionID}/approve`,
+      `/librarian/book-suggestions/${suggestionUuid}/approve`,
       {
         baseURL: runtimeConfig.public.apiBaseURL,
         method: "POST",
@@ -641,11 +650,11 @@ class LibrarianServiceClass extends BaseService {
     );
   }
 
-  rejectBookSuggestion(suggestionID: number) {
+  rejectBookSuggestion(suggestionUuid: string) {
     const runtimeConfig = useRuntimeConfig();
 
     return $fetch<{ message: string; suggestion: BookSuggestion }>(
-      `/librarian/book-suggestions/${suggestionID}/reject`,
+      `/librarian/book-suggestions/${suggestionUuid}/reject`,
       {
         baseURL: runtimeConfig.public.apiBaseURL,
         method: "POST",
@@ -684,10 +693,10 @@ class LibrarianServiceClass extends BaseService {
     });
   }
 
-  approveStudent(studentID: number) {
+  approveStudent(studentUuid: string) {
     const runtimeConfig = useRuntimeConfig();
 
-    return $fetch<{ message: string; student: StudentRecord }>(`/librarian/students/${studentID}/approve`, {
+    return $fetch<{ message: string; student: StudentRecord }>(`/librarian/students/${studentUuid}/approve`, {
       baseURL: runtimeConfig.public.apiBaseURL,
       method: "POST",
       headers: {
@@ -697,10 +706,10 @@ class LibrarianServiceClass extends BaseService {
     });
   }
 
-  rejectStudent(studentID: number) {
+  rejectStudent(studentUuid: string) {
     const runtimeConfig = useRuntimeConfig();
 
-    return $fetch<{ message: string; student: StudentRecord }>(`/librarian/students/${studentID}/reject`, {
+    return $fetch<{ message: string; student: StudentRecord }>(`/librarian/students/${studentUuid}/reject`, {
       baseURL: runtimeConfig.public.apiBaseURL,
       method: "POST",
       headers: {

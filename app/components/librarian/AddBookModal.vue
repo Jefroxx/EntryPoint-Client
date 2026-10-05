@@ -400,7 +400,7 @@ function blankAuthor() {
 }
 
 const authors = ref([blankAuthor()])
-const pagesEditor = ref<{ apply: (bookID: number) => Promise<{ failed: number }> } | null>(null)
+const pagesEditor = ref<{ apply: (bookUuid: string) => Promise<{ failed: number }> } | null>(null)
 const editorKey = ref(0)
 const quantity = ref(1)
 const submitting = ref(false)
@@ -580,19 +580,19 @@ async function handleSubmit() {
 	const failTitle = isEdit.value ? 'Could not save changes' : 'Could not add book'
 
 	try {
-		let bookID: number
+		let bookUuid: string
 		if (props.book) {
 			// A blank call number means "keep the one it has"; the server won't take an empty one.
 			// The copy count isn't edited here (copies are added and removed from the Book Catalog), so it isn't sent.
 			const { callNumber, quantity: _copies, ...changes } = payload
-			await librarianService.updateBook(props.book.bookID, callNumber ? { ...changes, callNumber } : changes)
-			bookID = props.book.bookID
+			await librarianService.updateBook(props.book.uuid, callNumber ? { ...changes, callNumber } : changes)
+			bookUuid = props.book.uuid
 		} else {
-			bookID = (await librarianService.createBook(payload)).book.bookID
+			bookUuid = (await librarianService.createBook(payload)).book.uuid
 		}
 
 		// Page photos go once the book exists (a new one only has an ID now).
-		const { failed } = (await pagesEditor.value?.apply(bookID)) ?? { failed: 0 }
+		const { failed } = (await pagesEditor.value?.apply(bookUuid)) ?? { failed: 0 }
 
 		if (props.book) {
 			alert.success('Book updated', `Changes to "${payload.title}" are saved.`)

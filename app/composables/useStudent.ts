@@ -59,7 +59,7 @@ export function useStudent() {
 
     try {
       // The server keeps a cart-only row when hearting it, and keeps the cart when un-hearting.
-      if (existing && !next) await studentService.removeFromWishlist(existing.wishlistID)
+      if (existing && !next) await studentService.removeFromWishlist(existing.uuid)
       else if (!existing && next) await studentService.addToWishlist(bookID)
       await Promise.all([refreshWishlist(), refreshProfile()])
       alert.success(next ? 'Saved to wishlist' : 'Removed from wishlist')
@@ -96,7 +96,7 @@ export function useStudent() {
 
   async function removeFromCart(row: WishlistRow): Promise<boolean> {
     try {
-      await studentService.removeFromCart(row.wishlistID)
+      await studentService.removeFromCart(row.uuid)
       await Promise.all([refreshWishlist(), refreshProfile()])
       return true
     } catch (error: any) {
@@ -107,7 +107,7 @@ export function useStudent() {
 
   async function removeWishlistRow(row: WishlistRow): Promise<boolean> {
     try {
-      await studentService.removeFromWishlist(row.wishlistID)
+      await studentService.removeFromWishlist(row.uuid)
       await Promise.all([refreshWishlist(), refreshProfile()])
       alert.success('Removed from wishlist')
       return true

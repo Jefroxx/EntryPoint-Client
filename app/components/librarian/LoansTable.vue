@@ -1,8 +1,9 @@
 <template>
 	<LibrarianTableShell :columns="['Student', 'Book', 'Checkout Date', 'Due Date', 'Status', '']" :loading="loading"
 		:empty="loans.length === 0" empty-text="No loans match your filters.">
-		<tr v-for="(loan, index) in loans" :key="loan.loanID"
-			class="row-fade-in border-b border-stone-100 transition-colors duration-150 last:border-0 hover:bg-accent-50"
+		<tr v-for="(loan, index) in loans" :key="loan.loanID" tabindex="0"
+			class="row-fade-in cursor-pointer border-b border-stone-100 transition-colors duration-150 last:border-0 hover:bg-accent-50"
+			@click="selected = loan" @keydown.enter.self="selected = loan"
 			:style="{ animationDelay: `${index * 40}ms` }">
 			<td class="px-4 py-3">
 				<LibrarianPersonCell :name="personName(loan.student?.user)" :sub="loan.student?.studentIDNumber" />
@@ -15,7 +16,7 @@
 			<td class="px-4 py-3">
 				<LibrarianStatusPill v-bind="pill(loan)" />
 			</td>
-			<td class="px-4 py-3">
+			<td class="px-4 py-3" @click.stop>
 				<div v-if="loan.status === 'Active'" class="flex justify-end">
 					<ButtonsButton variant="primary" size="sm" @click="emit('return', loan)">Return</ButtonsButton>
 				</div>
@@ -26,6 +27,11 @@
 				</div>
 			</td>
 		</tr>
+
+		<!-- Teleports to <body>; it lives in the slot only so the table keeps a single root element. -->
+		<LibrarianRecordDrawer :open="!!selected" heading="Loan details" :title="selected?.copy?.book?.title ?? 'Removed book'"
+			:subtitle="selected ? `Loan #${selected.loanID}` : ''" :status="selected ? pill(selected) : undefined"
+			:fields="loanFields" @close="selected = null" />
 	</LibrarianTableShell>
 </template>
 
@@ -38,6 +44,30 @@ defineProps<{
 }>()
 
 const emit = defineEmits<{ (e: 'return' | 'finish', loan: LoanRecord): void }>()
+
+const selected = ref<LoanRecord | null>(null)
+
+const loanFields = computed(() => {
+	const loan = selected.value
+	if (!loan) return []
+	const student = loan.student
+	return [
+		{ label: 'Student', value: personName(student?.user), wide: true },
+		{ label: 'Student ID', value: student?.studentIDNumber, mono: true },
+		{ label: 'Program', value: student?.academicProgram },
+		{ label: 'Accession no.', value: loan.copy?.accessionNumber, mono: true },
+		{ label: 'Copy ID', value: loan.copy?.copyID, mono: true },
+		{ label: 'Checked out', value: formatDateTime(loan.checkoutDate) },
+		{ label: 'Due', value: formatDateTime(loan.dueDate) },
+		{ label: 'Returned', value: loan.returnDate ? formatDateTime(loan.returnDate) : null },
+		{ label: 'Loan length', value: dayCount(loan.checkoutDate, loan.dueDate) },
+	]
+})
+
+function dayCount(from: string, to: string): string {
+	const days = Math.round((new Date(to).getTime() - new Date(from).getTime()) / 86_400_000)
+	return `${days} day${days === 1 ? '' : 's'}`
+}
 
 function pill(loan: LoanRecord): { label: string; tone: 'info' | 'warning' | 'danger' | 'neutral' } {
 	if (loan.status === 'Returned') return { label: 'Returned', tone: 'neutral' }
