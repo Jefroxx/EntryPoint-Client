@@ -18,7 +18,7 @@ export function useStationChannel(onMessage?: (message: StationMessage) => void)
 
   onMounted(() => {
     if (!('BroadcastChannel' in window)) return
-    channel = new BroadcastChannel('entrypoint-attendance-station')
+    channel = new BroadcastChannel('entrypoint-scan-station')
     channel.onmessage = (event: MessageEvent<StationMessage>) => onMessage?.(event.data)
   })
 
@@ -32,7 +32,7 @@ export function useStationChannel(onMessage?: (message: StationMessage) => void)
 }
 
 const STATION_URL = '/librarian/station'
-const STATION_WINDOW = 'entrypoint-attendance-station'
+const STATION_WINDOW = 'entrypoint-scan-station'
 
 /**
  * Opens the scan station in its own tab, or brings back the one already open. Opening by window

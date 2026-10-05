@@ -78,6 +78,13 @@
         </template>
 
         <template v-else-if="activeTab === 'catalog'">
+            <!-- Copies: one row each, with add / remove buttons. Stock log: when copies were added or removed. -->
+            <LibrarianSegmentedTabs v-model="catalogView" class="mb-4" :tabs="[
+                { label: 'Copies', value: 'copies' },
+                { label: 'Stock Log', value: 'log' },
+            ]" />
+
+            <template v-if="catalogView === 'copies'">
             <div class="mb-4 flex flex-wrap items-center gap-2">
                 <div
                     class="flex h-[42px] min-w-[200px] max-w-[320px] flex-1 items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 transition-shadow focus-within:ring-2 focus-within:ring-accent-200">
@@ -111,6 +118,9 @@
                 <div class="flex-1"></div>
 
                 <LibrarianResetFiltersButton @click="clearCopyFilters" />
+                <ButtonsButton variant="ghost" @click="openAddCopies()">
+                    <Icon name="i-tabler-copy-plus" class="h-3.5 w-3.5" />Add Book Copy
+                </ButtonsButton>
                 <ButtonsButton variant="primary" @click="openAddBook">
                     <Icon name="i-tabler-plus" class="h-3.5 w-3.5" />Add New Book
                 </ButtonsButton>
@@ -118,7 +128,7 @@
 
             <LibrarianBookCatalogTable :copies="copies?.data ?? []" :loading="copiesPending" :filtered="hasCopyFilters"
                 @view="(copy) => openBookDetail(copy.book)" @edit-book="(copy) => openEditBook(copy.book)"
-                @edit-copy="openEditCopy" />
+                @edit-copy="openEditCopy" @add-copy="openAddCopies" @remove-copy="openRemoveCopy" />
 
             <div v-if="copies" class="mt-3 flex items-center justify-between text-[13.5px] text-stone-400">
                 <span>Showing {{ copies.data.length }} of {{ copies.total }} copies</span>
@@ -135,6 +145,47 @@
                     Next<Icon name="i-tabler-chevron-right" class="h-3.5 w-3.5" />
                 </ButtonsButton>
             </div>
+            </template>
+
+            <template v-else>
+                <div class="mb-4 flex flex-wrap items-center gap-2">
+                    <LibrarianSearchInput id="stock-search" v-model="stockSearch"
+                        placeholder="Search title, accession no., reason or librarian" />
+
+                    <select v-model="stockAction" aria-label="Filter by action"
+                        class="h-[42px] rounded-xl border bg-white px-3 text-[14px] outline-none transition-colors hover:bg-stone-50 focus:ring-2 focus:ring-accent-200"
+                        :class="stockAction ? 'border-accent-300 text-stone-800' : 'border-stone-200 text-stone-500'">
+                        <option value="">Added and removed</option>
+                        <option value="added">Added only</option>
+                        <option value="removed">Removed only</option>
+                    </select>
+
+                    <div class="flex-1"></div>
+
+                    <LibrarianResetFiltersButton @click="stockSearch = ''; stockAction = ''" />
+                    <ButtonsButton variant="primary" @click="openAddCopies()">
+                        <Icon name="i-tabler-copy-plus" class="h-3.5 w-3.5" />Add Book Copy
+                    </ButtonsButton>
+                </div>
+
+                <LibrarianStockLogTable :logs="stockLogs?.data ?? []" :loading="stockPending" :filtered="hasStockFilters" />
+
+                <div v-if="stockLogs" class="mt-3 flex items-center justify-between text-[13.5px] text-stone-400">
+                    <span>Showing {{ stockLogs.data.length }} of {{ stockLogs.total }} entries</span>
+                    <span>Page {{ stockLogs.current_page }} of {{ stockLogs.last_page }}</span>
+                </div>
+
+                <div v-if="stockLogs && stockLogs.last_page > 1" class="mt-3 flex items-center justify-center gap-2">
+                    <ButtonsButton variant="ghost" size="sm" :disabled="stockLogs.current_page <= 1"
+                        @click="goToStockPage(stockLogs.current_page - 1)">
+                        <Icon name="i-tabler-chevron-left" class="h-3.5 w-3.5" />Previous
+                    </ButtonsButton>
+                    <ButtonsButton variant="ghost" size="sm" :disabled="stockLogs.current_page >= stockLogs.last_page"
+                        @click="goToStockPage(stockLogs.current_page + 1)">
+                        Next<Icon name="i-tabler-chevron-right" class="h-3.5 w-3.5" />
+                    </ButtonsButton>
+                </div>
+            </template>
         </template>
 
         <template v-else-if="activeTab === 'requests'">
@@ -227,6 +278,12 @@
         <LibrarianAddBookModal :open="isAddModalOpen" :categories="bookCategories" :book="editingBook"
             @close="isAddModalOpen = false" @created="handleBookCreated" @updated="handleBookUpdated" />
 
+        <LibrarianAddCopiesModal :open="isAddCopiesOpen" :book="addCopiesBook" :busy="stockBusy"
+            @close="isAddCopiesOpen = false" @submit="saveAddCopies" />
+
+        <LibrarianRemoveCopyModal :open="isRemoveCopyOpen" :copy="removingCopy" :busy="stockBusy"
+            @close="isRemoveCopyOpen = false" @submit="saveRemoveCopy" />
+
         <LibrarianEditCopyModal :open="isEditCopyOpen" :copy="editingCopy" :busy="copyBusy"
             @close="isEditCopyOpen = false" @submit="saveCopyStatus" />
 
@@ -251,7 +308,7 @@
 </template>
 
 <script setup lang="ts">
-import { LIBRARY_AREAS, librarianService, type BookAvailabilityFilter, type BookDetail, type BookSuggestion, type CatalogBook, type CopyCatalogRow, type CopyStatus, type LibraryArea } from '~/services/librarianService'
+import { LIBRARY_AREAS, librarianService, type BookAvailabilityFilter, type BookDetail, type BookSuggestion, type CatalogBook, type CopyCatalogRow, type CopyStatus, type LibraryArea, type RemoveReason } from '~/services/librarianService'
 import { subjectService, type SubjectRecord } from '~/services/subjectService'
 import AlertToast from '~/api/alert/AlertToast.vue'
 import { useAlert } from '~/api/alert/useAlert'
@@ -372,13 +429,85 @@ async function saveCopyStatus(status: Exclude<CopyStatus, 'borrowed'> | 'retired
     copyBusy.value = true
     const ok = await perform(() => librarianService.updateCopy(copy.copyID, { status }),
         status === 'retired' ? `Accession no. ${copy.accessionNumber} removed` : `Accession no. ${copy.accessionNumber} updated`,
-        'Could not update this copy', [refetchCopies, refetchBooks, refetchStats])
+        'Could not update this copy', [refetchCopies, refetchBooks, refetchStats, refetchStockLogs])
     copyBusy.value = false
     if (ok) isEditCopyOpen.value = false
 }
 
 // ---- Categories / genres ----
 const { perform } = useAction()
+
+// ---- Stock management: add / remove copies, and the stock log ----
+const catalogView = ref<'copies' | 'log'>('copies')
+const stockSearch = ref('')
+const stockAction = ref<'' | 'added' | 'removed'>('')
+const stockPage = ref(1)
+const hasStockFilters = computed(() => !!(stockSearch.value.trim() || stockAction.value))
+
+const { data: stockLogs, pending: stockPending, execute: refetchStockLogs } =
+    useLiveAsyncData('library-stock-logs', () => librarianService.fetchStockLogs({
+        search: stockSearch.value.trim() || undefined,
+        action: stockAction.value || undefined,
+        page: stockPage.value,
+        perPage: 15,
+    }), { lazy: true })
+
+let stockSearchTimeout: ReturnType<typeof setTimeout>
+watch(stockSearch, () => {
+    clearTimeout(stockSearchTimeout)
+    stockSearchTimeout = setTimeout(() => {
+        stockPage.value = 1
+        refetchStockLogs()
+    }, 300)
+})
+watch(stockAction, () => {
+    stockPage.value = 1
+    refetchStockLogs()
+})
+
+function goToStockPage(next: number) {
+    if (next < 1 || (stockLogs.value && next > stockLogs.value.last_page)) return
+    stockPage.value = next
+    refetchStockLogs()
+}
+
+const stockBusy = ref(false)
+const refreshStock = [refetchCopies, refetchBooks, refetchStats, refetchStockLogs]
+
+// "Add Book Copy": from a catalog row the book is known; from the header button the librarian searches for it.
+const isAddCopiesOpen = ref(false)
+const addCopiesBook = ref<{ bookID: number; title: string } | null>(null)
+
+function openAddCopies(copy?: CopyCatalogRow) {
+    addCopiesBook.value = copy ? { bookID: copy.book.bookID, title: copy.book.title } : null
+    isAddCopiesOpen.value = true
+}
+
+async function saveAddCopies(payload: { bookID: number; title: string; quantity: number; note: string | undefined }) {
+    stockBusy.value = true
+    const ok = await perform(() => librarianService.addCopies(payload.bookID, { quantity: payload.quantity, note: payload.note }),
+        payload.quantity === 1 ? 'Copy added' : `${payload.quantity} copies added`, 'Could not add copies', refreshStock)
+    stockBusy.value = false
+    if (ok) isAddCopiesOpen.value = false
+}
+
+const isRemoveCopyOpen = ref(false)
+const removingCopy = ref<CopyCatalogRow | null>(null)
+
+function openRemoveCopy(copy: CopyCatalogRow) {
+    removingCopy.value = copy
+    isRemoveCopyOpen.value = true
+}
+
+async function saveRemoveCopy(payload: { reason: RemoveReason; note: string | undefined }) {
+    const copy = removingCopy.value
+    if (!copy) return
+    stockBusy.value = true
+    const ok = await perform(() => librarianService.removeCopy(copy.copyID, payload),
+        `Accession no. ${copy.accessionNumber} removed`, 'Could not remove this copy', refreshStock)
+    stockBusy.value = false
+    if (ok) isRemoveCopyOpen.value = false
+}
 
 const { data: subjectsResponse, pending: subjectsPending, execute: refetchSubjects } =
     useLiveAsyncData('library-subjects', () => subjectService.fetchSubjects(), { lazy: true })
@@ -440,7 +569,7 @@ const isAddModalOpen = ref(false)
 const bookCategories = computed(() => subjects.value.map((s) => s.name))
 
 async function handleBookCreated() {
-    await Promise.all([refetchBooks(), refetchCopies(), refetchStats(), refetchSubjects()])
+    await Promise.all([refetchBooks(), refetchCopies(), refetchStats(), refetchSubjects(), refetchStockLogs()])
 }
 
 // ---- View / edit / remove a book ----
@@ -502,7 +631,7 @@ async function openEditBook(book: Pick<CatalogBook, 'bookID'> | BookDetail) {
 
 async function handleBookUpdated() {
     const bookID = editingBook.value?.bookID
-    await Promise.all([refetchBooks(), refetchCopies(), refetchStats(), refetchSubjects(), bookID ? loadBookDetail(bookID) : null])
+    await Promise.all([refetchBooks(), refetchCopies(), refetchStats(), refetchSubjects(), refetchStockLogs(), bookID ? loadBookDetail(bookID) : null])
 }
 
 const removingBook = ref<{ bookID: number; title: string } | null>(null)
@@ -519,7 +648,7 @@ async function handleRemoveBook() {
     const { bookID } = removingBook.value
     removingBusy.value = true
     const ok = await perform(() => librarianService.deleteBook(bookID), 'Book removed', 'Could not remove book',
-        [refetchBooks, refetchCopies, refetchStats, refetchSubjects])
+        [refetchBooks, refetchCopies, refetchStats, refetchSubjects, refetchStockLogs])
     removingBusy.value = false
     if (ok) {
         isRemoveBookOpen.value = false

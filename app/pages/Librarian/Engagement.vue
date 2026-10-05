@@ -108,6 +108,7 @@ import {
     type AchievementRecord,
     type FulfillmentStatus,
     type MarketItemPayload,
+    type MarketItemPhotoChange,
     type MarketItemRecord,
     type RedemptionRecord,
 } from '~/services/engagementService'
@@ -191,11 +192,27 @@ function openItemForm(item: MarketItemRecord | null) {
     isItemOpen.value = true
 }
 
-async function saveItem(payload: MarketItemPayload) {
+async function saveItem(payload: MarketItemPayload, photo: MarketItemPhotoChange) {
     busy.value = true
     const target = editingItem.value
     const ok = await perform(
-        () => target ? engagementService.updateMarketItem(target.itemID, payload) : engagementService.createMarketItem(payload),
+        async () => {
+            let itemID = target?.itemID
+            let result: { message?: string }
+            if (target) {
+                result = await engagementService.updateMarketItem(target.itemID, payload)
+            } else {
+                const created = await engagementService.createMarketItem(payload)
+                itemID = created.item.itemID
+                // If the photo upload below fails, the window stays open on the item that now exists,
+                // so trying again edits it instead of adding a duplicate.
+                editingItem.value = { ...created.item, redemptions_count: 0 }
+                result = created
+            }
+            if (photo.blob) await engagementService.uploadMarketItemPhoto(itemID!, photo.blob)
+            else if (photo.remove) await engagementService.deleteMarketItemPhoto(itemID!)
+            return result
+        },
         target ? 'Item updated' : 'Item added',
         'Could not save item',
         [refetchItems],

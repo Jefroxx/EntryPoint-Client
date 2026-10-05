@@ -12,7 +12,7 @@
 			</div>
 			<LibrarianStatusPill :label="resource.status" :tone="statusTone" />
 
-			<LibrarianRowMenu :items="menuItems" @select="pick($event as 'edit' | 'toggle' | 'delete')" />
+			<LibrarianRowMenu :items="menuItems" @select="pick($event as 'edit' | 'label' | 'toggle' | 'delete')" />
 		</div>
 
 		<div class="flex min-h-[38px] items-center justify-between gap-2 border-t border-stone-100 pt-3 text-[13px] text-stone-500">
@@ -54,6 +54,7 @@ const emit = defineEmits<{
 	(e: 'end', resource: ResourceRecord): void
 	(e: 'edit', resource: ResourceRecord): void
 	(e: 'toggle', resource: ResourceRecord): void
+	(e: 'label', resource: ResourceRecord): void
 	(e: 'delete', resource: ResourceRecord): void
 }>()
 
@@ -61,6 +62,7 @@ const inUse = computed(() => props.resource.status === 'In Use')
 
 const menuItems = computed(() => [
 	{ key: 'edit', label: 'Edit', icon: 'i-tabler-pencil' },
+	{ key: 'label', label: 'Print barcode label', icon: 'i-tabler-barcode' },
 	{
 		key: 'toggle',
 		label: props.resource.status === 'Unavailable' ? 'Make available' : 'Mark unavailable',
@@ -70,8 +72,9 @@ const menuItems = computed(() => [
 	{ key: 'delete', label: 'Delete', icon: 'i-tabler-trash', tone: 'danger' as const, disabled: inUse.value, separator: true },
 ])
 
-function pick(action: 'edit' | 'toggle' | 'delete') {
+function pick(action: 'edit' | 'label' | 'toggle' | 'delete') {
 	if (action === 'edit') emit('edit', props.resource)
+	else if (action === 'label') emit('label', props.resource)
 	else if (action === 'toggle') emit('toggle', props.resource)
 	else emit('delete', props.resource)
 }

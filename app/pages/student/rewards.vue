@@ -43,8 +43,9 @@
 				<p v-if="!data.items.length" class="rounded-2xl bg-stone-100 px-4 py-6 text-center text-[13.5px] text-stone-500">Nothing is on the marketplace yet.</p>
 				<div v-else class="grid grid-cols-2 gap-2.5 md:grid-cols-[repeat(auto-fill,minmax(170px,1fr))] md:gap-3">
 					<article v-for="item in data.items" :key="item.itemID" class="flex flex-col rounded-2xl border border-stone-200 bg-white p-3" :class="!item.inStock ? 'opacity-60' : ''">
-						<div class="mb-2.5 flex h-20 items-center justify-center rounded-xl" :class="!item.inStock ? TONE_SOFT.neutral : TONE_SOFT[artTone(item.itemID)]">
-							<Icon :name="artIcon(item.type)" class="h-7 w-7" />
+						<img v-if="item.photoURL" :src="item.photoURL" alt="" loading="lazy" class="mb-2.5 h-28 w-full rounded-xl bg-stone-100 object-cover" />
+						<div v-else class="mb-2.5 flex h-28 items-center justify-center rounded-xl" :class="!item.inStock ? TONE_SOFT.neutral : TONE_SOFT[artTone(item.itemID)]">
+							<Icon :name="artIcon(item.type)" class="h-8 w-8" />
 						</div>
 						<p class="text-[13.5px] font-semibold leading-tight text-stone-900">{{ item.name }}</p>
 						<p class="mb-2.5 mt-0.5 text-[11.5px] text-stone-400">{{ item.type ?? 'Item' }}{{ item.inStock && item.stock < 5 ? ` · ${item.stock} left` : '' }}</p>
@@ -102,6 +103,7 @@
 						leave-active-class="absolute inset-x-0 transition-opacity duration-150 ease-out" leave-to-class="opacity-0"
 						move-class="transition-transform duration-200 ease-out">
 						<div v-for="line in cartLines" :key="line.cartItemID" class="flex items-center gap-3 border-b border-stone-100 bg-white px-5 py-3">
+							<img v-if="line.item.photoURL" :src="line.item.photoURL" alt="" class="h-10 w-10 shrink-0 rounded-lg object-cover" />
 							<div class="min-w-0 flex-1">
 								<p class="truncate text-[14px] font-medium text-stone-900">{{ line.item.name }}</p>
 								<p class="text-[12px] text-stone-500 tabular-nums">{{ line.item.pointCost ? `${line.item.pointCost * line.quantity} pts` : 'Free' }}</p>

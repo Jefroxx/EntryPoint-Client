@@ -142,7 +142,7 @@ function shownCopies(book: CatalogBook) {
 }
 
 function availableCopies(book: CatalogBook): number {
-	return book.copies.filter((c) => c.status === 'available').length
+	return Math.max(0, book.copies.filter((c) => c.status === 'available').length - (book.heldCopies ?? 0))
 }
 </script>
 

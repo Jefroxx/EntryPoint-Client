@@ -25,14 +25,14 @@
                 </span>
                 <span class="min-w-0 flex-1">
                     <span class="flex items-center gap-2 text-[15.5px] font-bold" :class="stationOpen ? 'text-emerald-900' : ''">
-                        {{ stationOpen ? 'Attendance is running' : 'Start attendance' }}
+                        {{ stationOpen ? 'Scanner is running' : 'Start scanner' }}
                         <span v-if="stationOpen" class="relative flex h-2 w-2">
                             <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-60" />
                             <span class="relative inline-flex h-2 w-2 rounded-full bg-emerald-600" />
                         </span>
                     </span>
                     <span class="block text-[13px]" :class="stationOpen ? 'text-emerald-800/80' : 'text-white/80'">
-                        {{ stationOpen ? 'Go to the scan station tab' : 'Opens the camera scanner in its own tab' }}
+                        {{ stationOpen ? 'Go to the scan station tab' : 'IDs, receipts, slips and facilities, in its own tab' }}
                     </span>
                 </span>
                 <Icon :name="stationOpen ? 'i-tabler-external-link' : 'i-tabler-arrow-right'"
@@ -336,7 +336,7 @@ const demoSlices = computed(() => {
     }))
 })
 
-/* ---------- attendance station ---------- */
+/* ---------- scan station ---------- */
 const stationOpen = ref(false)
 const { post } = useStationChannel((message) => {
     if (message.type === 'open') stationOpen.value = true

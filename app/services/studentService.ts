@@ -66,7 +66,8 @@ export interface ProfileResponse {
   stats: StudentStats;
 }
 
-export type LoanStatus = "Active" | "Reported" | "Returned";
+/** Received: the student handed it in and a librarian is checking it. */
+export type LoanStatus = "Active" | "Reported" | "Received" | "Returned";
 
 export interface LoanRow {
   loanID: number;
@@ -115,6 +116,10 @@ interface RawBook {
   subject?: { subjectID: number; name: string } | null;
   authors?: { name: string }[];
   copies?: { status: string }[];
+  /** Copies free to promise right now (on the shelf, not held for an accepted reservation). Wishlist/cart rows only. */
+  availableCopies?: number;
+  /** People already waiting in line for it. Wishlist/cart rows only. */
+  queueLength?: number;
 }
 
 export interface WishlistRow {
@@ -135,6 +140,8 @@ export interface ReservationRow {
   status: ReservationStatus;
   reservedAt: string;
   queuePosition: number | null;
+  /** The code on the pickup slip's barcode (R-000123); the desk scans it at checkout. */
+  pickupCode: string;
   book: RawBook;
 }
 
@@ -183,6 +190,7 @@ export interface MarketItem {
   itemID: number;
   name: string;
   type: string | null;
+  photoURL: string | null;
   pointCost: number;
   stock: number;
   inStock: boolean;
@@ -193,7 +201,7 @@ export interface MarketCartLine {
   cartItemID: number;
   itemID: number;
   quantity: number;
-  item: { itemID: number; name: string; type: string | null; pointCost: number; stock: number };
+  item: { itemID: number; name: string; type: string | null; photoURL: string | null; pointCost: number; stock: number };
 }
 
 export interface ResourceRow {

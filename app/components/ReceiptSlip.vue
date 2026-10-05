@@ -43,6 +43,15 @@
 			<p class="rs-num">{{ fineText }}</p>
 		</section>
 
+		<!-- Scanned at the desk when the book comes back: it tells the system this loan was handed in. -->
+		<section class="rs-scan">
+			<p class="rs-label">Scan to return this book</p>
+			<svg :viewBox="`0 0 ${barcode.width} 64`" preserveAspectRatio="none" role="img" :aria-label="`Barcode ${receipt.receiptNumber}`" class="rs-bars">
+				<rect v-for="([x, w], i) in barcode.bars" :key="i" :x="x" y="0" :width="w" height="64" fill="#000" />
+			</svg>
+			<p class="rs-num rs-code">{{ receipt.receiptNumber }}</p>
+		</section>
+
 		<footer class="rs-foot">
 			<p>Please keep this receipt until the book is returned.</p>
 			<p v-if="receipt.printedBy" class="rs-muted">Processed by {{ receipt.printedBy }}</p>
@@ -52,9 +61,12 @@
 
 <script setup lang="ts">
 import type { LoanReceipt } from '~/services/circulationService'
+import { code128 } from '~/utils/code128'
 import { LIBRARY_AREAS, type LibraryArea } from '~/services/librarianService'
 
 const props = defineProps<{ receipt: LoanReceipt }>()
+
+const barcode = computed(() => code128(props.receipt.receiptNumber))
 
 const dateTime = (iso: string) => new Date(iso).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })
 const dueDay = (iso: string) => new Date(iso).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
@@ -197,6 +209,26 @@ const fineText = computed(() => {
 
 .rs-due + .rs-block {
 	border-bottom: 1px dashed #a8a29e;
+}
+
+.rs-scan {
+	padding: 3mm 0;
+	text-align: center;
+	border-bottom: 1px dashed #a8a29e;
+}
+
+.rs-bars {
+	display: block;
+	width: 100%;
+	height: 13mm;
+	margin-top: 1.5mm;
+}
+
+.rs-slip .rs-code {
+	margin-top: 1.2mm;
+	font-size: 10pt;
+	font-weight: 700;
+	letter-spacing: .15em;
 }
 
 .rs-foot {

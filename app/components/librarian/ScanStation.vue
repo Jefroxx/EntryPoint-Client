@@ -76,23 +76,32 @@
 				<div class="relative min-w-0 flex-1">
 					<Icon name="i-tabler-keyboard" class="pointer-events-none absolute left-3.5 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-stone-400" />
 					<input v-model="code" type="text" inputmode="text" enterkeyhint="go" autocomplete="off" autocapitalize="off" spellcheck="false"
-						placeholder="Barcode won't read? Type the student number" aria-label="Type a student number" :disabled="busy"
+						placeholder="Barcode won't read? Type the code or student number" aria-label="Type a code" :disabled="busy"
 						class="h-11 w-full rounded-xl border border-stone-200 bg-stone-50 pl-11 pr-3 text-[15px] text-stone-900 outline-none transition-[border-color,box-shadow,background-color] duration-150 placeholder:text-stone-400 focus:border-accent-500 focus:bg-white focus:ring-2 focus:ring-accent-200 disabled:opacity-70">
 				</div>
-				<ButtonsButton type="submit" variant="ghost" :disabled="busy || !code.trim()">Check in / out</ButtonsButton>
+				<ButtonsButton type="submit" variant="ghost" :disabled="busy || !code.trim()">Scan</ButtonsButton>
 			</form>
 
 			<p class="mx-0.5 mt-2.5 text-[13px] leading-relaxed text-stone-400">{{ hint }}</p>
 		</section>
 
 		<div class="grid gap-4">
+			<!-- A facility was scanned: it waits here for the student's ID. -->
+			<div v-if="armed" class="flex items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3" role="status">
+				<Icon name="i-tabler-device-desktop" class="h-5 w-5 shrink-0 text-amber-700" />
+				<p class="min-w-0 flex-1 text-[14.5px] leading-snug text-amber-900">
+					<b>{{ armed.name }}</b> is ready. Scan the student's ID to start their session.
+				</p>
+				<ButtonsButton variant="ghost" size="sm" @click="disarm">Cancel</ButtonsButton>
+			</div>
+
 			<!-- Result -->
 			<div class="relative grid min-h-[260px] place-items-center overflow-hidden rounded-[20px] border p-6 text-center lg:min-h-[320px]"
 				:class="result ? TONES[result.tone].box : 'border-dashed border-stone-300 bg-white'" aria-live="polite">
 				<div v-if="!result" class="text-stone-400">
 					<Icon name="i-tabler-scan" class="mx-auto mb-2 h-12 w-12" />
 					<p class="text-[18px] font-semibold text-stone-600">Ready to scan</p>
-					<p class="text-[14.5px]">Students hold their ID up to the camera.</p>
+					<p class="text-[14.5px]">Student IDs, borrowing receipts, reservation slips and facility labels all scan here.</p>
 				</div>
 
 				<div v-else :key="result.key" class="st-swap w-full">
@@ -113,6 +122,9 @@
 					<div v-if="result.notes.length" class="mt-3 flex flex-wrap justify-center gap-x-4 gap-y-1 text-[14.5px] text-stone-600">
 						<span v-for="note in result.notes" :key="note.text" class="inline-flex items-center gap-1.5"><Icon :name="note.icon" class="h-4 w-4" />{{ note.text }}</span>
 					</div>
+					<ButtonsButton v-if="result.action" class="mt-4 !h-11" @click="result.action.run()">
+						<Icon :name="result.action.icon" class="h-4 w-4" />{{ result.action.label }}
+					</ButtonsButton>
 				</div>
 
 				<i v-if="result" :key="`bar-${result.key}`" class="scan-clear absolute bottom-0 left-0 block h-1 w-full origin-left opacity-40" :class="TONES[result.tone].bar" />
@@ -139,10 +151,16 @@
 </template>
 
 <script setup lang="ts">
-import { librarianService, type AttendanceScanResult } from '~/services/librarianService'
+import { librarianService, type AttendanceScanResult, type ScanResult } from '~/services/librarianService'
 import type { ScanRegion } from '~/composables/useCameraScanner'
 
-const emit = defineEmits<{ (e: 'scanned'): void }>()
+const emit = defineEmits<{
+	(e: 'scanned'): void
+	/** A borrowing receipt was scanned: the book is in the librarian's hands and needs checking. */
+	(e: 'check-loan', loan: { loanID: number; bookTitle: string; accessionNumber: number; studentName: string }): void
+	/** A reservation slip was scanned: open the checkout for it. */
+	(e: 'open-checkout', code: string): void
+}>()
 
 type Mode = 'webcam' | 'phone'
 type Via = Mode | 'typed'
@@ -162,7 +180,7 @@ const TONES: Record<Tone, { box: string; pill: string; bar: string; dot: string 
 	warn: { box: 'border-amber-200 bg-amber-50', pill: 'bg-amber-600 text-white', bar: 'bg-amber-600', dot: 'bg-amber-50 text-amber-700' },
 }
 
-interface ResultView { key: number; tone: Tone; icon: string; verdict: string; time?: string; name?: string; program?: string | null; sid?: string; message?: string; notes: { icon: string; text: string }[] }
+interface ResultView { key: number; tone: Tone; icon: string; verdict: string; time?: string; name?: string; program?: string | null; sid?: string; message?: string; notes: { icon: string; text: string }[]; sub?: string; action?: { label: string; icon: string; run: () => void } }
 interface FeedItem { key: number; tone: Tone; icon: string; title: string; sub: string; at: string; via: Via }
 
 const mode = ref<Mode>('webcam')
@@ -213,7 +231,7 @@ const camMessage = computed(() => {
 			? { title: 'The camera needs a secure connection', text: 'Open this site over https (or on localhost). Browsers block the camera on plain http.' }
 			: { title: "This browser can't read barcodes", text: 'Try Chrome or Edge.' }
 	}
-	return { title: 'Camera is off', text: mode.value === 'phone' ? 'Turn it on to scan IDs with this phone.' : 'Turn on the webcam to scan IDs by holding them up.' }
+	return { title: 'Camera is off', text: mode.value === 'phone' ? 'Turn it on to scan barcodes with this phone.' : 'Turn on the webcam to scan barcodes by holding them up.' }
 })
 
 const status = computed(() => {
@@ -224,7 +242,7 @@ const status = computed(() => {
 })
 
 const hint = computed(() => mode.value === 'webcam'
-	? 'Hold the barcode about 15–25 cm from the webcam. It reads on its own and pauses for a moment after each scan, so one ID is never counted twice.'
+	? 'Hold the barcode about 15–25 cm from the webcam. It reads on its own and pauses for a moment after each scan, so one code is never counted twice.'
 	: 'On a phone the camera fills the screen, the phone vibrates on a good read, and the screen stays awake. The torch helps in dim rooms.')
 
 /* ---------- scanning ---------- */
@@ -245,23 +263,89 @@ async function scan(raw: string, via: Via) {
 	busy.value = true
 
 	try {
-		const res = await librarianService.scanAttendance(value)
-		show(fromSuccess(res), res, via)
-		emit('scanned')
+		const res = await librarianService.scan(value, armed.value?.resID)
+		show(fromResult(res), via)
+		if (res.type === 'attendance' || res.type === 'facility_started' || res.type === 'facility_ended') emit('scanned')
 	} catch (error: any) {
 		const reachable = !!error?.response
 		const message = reachable
 			? (apiFieldErrors(error).barcodeValue || apiErrorMessage(error, 'Could not scan that.'))
 			: "Can't reach the server. Check the connection and try again."
 		const tone: Tone = /just scanned/i.test(message) ? 'warn' : 'err'
-		show({ key: ++seq, tone, icon: tone === 'warn' ? 'i-tabler-clock' : 'i-tabler-circle-x', verdict: tone === 'warn' ? 'Too soon' : 'Not checked in', message, notes: [] }, null, via)
+		show({ key: ++seq, tone, icon: tone === 'warn' ? 'i-tabler-clock' : 'i-tabler-circle-x', verdict: tone === 'warn' ? 'Too soon' : 'Not done', message, notes: [], sub: message }, via)
 	} finally {
 		busy.value = false
 		code.value = ''
 	}
 }
 
-function fromSuccess(res: AttendanceScanResult): ResultView {
+/* ---------- a facility waiting for a student ---------- */
+// Scanning a computer or study room's label arms it; the next student ID scanned starts their session on it.
+const armed = ref<{ resID: number; name: string } | null>(null)
+let armedTimer: ReturnType<typeof setTimeout> | undefined
+const ARMED_MS = 60_000
+
+function arm(facility: { resID: number; name: string }) {
+	armed.value = { resID: facility.resID, name: facility.name }
+	clearTimeout(armedTimer)
+	armedTimer = setTimeout(() => { armed.value = null }, ARMED_MS)
+}
+
+function disarm() {
+	armed.value = null
+	clearTimeout(armedTimer)
+}
+
+/** One result for every kind of scan: what to show, and the next step when there is one. */
+function fromResult(res: ScanResult): ResultView {
+	const key = ++seq
+
+	switch (res.type) {
+		case 'attendance':
+			disarm()
+			return fromAttendance(res)
+
+		case 'loan_received': {
+			const l = res.loan
+			const notes: ResultView['notes'] = [{ icon: 'i-tabler-checklist', text: 'Check the book for damage' }]
+			if (l.wasLate) notes.push({ icon: 'i-tabler-alert-circle', text: l.fineAmount > 0 ? `Late · fine ${formatPeso(l.fineAmount)}` : 'Returned late' })
+			return {
+				key, tone: 'warn', icon: 'i-tabler-book-download', verdict: 'Book received', name: l.studentName, sid: l.studentIDNumber,
+				message: l.bookTitle, notes, sub: `Received · ${l.bookTitle}`,
+				action: { label: 'Check the book now', icon: 'i-tabler-checklist', run: () => emit('check-loan', { loanID: l.loanID, bookTitle: l.bookTitle, accessionNumber: l.accessionNumber, studentName: l.studentName }) },
+			}
+		}
+
+		case 'reservation': {
+			const r = res.reservation
+			return {
+				key, tone: 'in', icon: 'i-tabler-bookmark', verdict: 'Reservation found', name: r.studentName, sid: r.studentIDNumber,
+				message: r.bookTitle, notes: [], sub: `Reservation · ${r.bookTitle}`,
+				action: { label: 'Open checkout', icon: 'i-tabler-arrow-right', run: () => emit('open-checkout', r.pickupCode) },
+			}
+		}
+
+		case 'facility':
+			arm(res.resource)
+			return { key, tone: 'warn', icon: 'i-tabler-device-desktop', verdict: res.resource.name, message: "Scan the student's ID to start their session.", notes: [], sub: `${res.resource.name} ready` }
+
+		case 'facility_started':
+			disarm()
+			return {
+				key, tone: 'in', icon: 'i-tabler-player-play', verdict: `${res.resource.name} started`, name: res.student.name, program: res.student.program,
+				sid: res.student.studentIDNumber, notes: [], sub: `Started ${res.resource.name}`,
+			}
+
+		case 'facility_ended':
+			disarm()
+			return {
+				key, tone: 'out', icon: 'i-tabler-player-stop', verdict: `${res.resource.name} free again`, name: res.student,
+				notes: [{ icon: 'i-tabler-clock', text: `Used for ${formatMinutes(res.minutes)}` }], sub: `Ended ${res.resource.name} · ${formatMinutes(res.minutes)}`,
+			}
+	}
+}
+
+function fromAttendance(res: AttendanceScanResult): ResultView {
 	const checkIn = res.action === 'check_in'
 	const notes: ResultView['notes'] = []
 
@@ -273,20 +357,22 @@ function fromSuccess(res: AttendanceScanResult): ResultView {
 		key: ++seq, tone: checkIn ? 'in' : 'out', icon: checkIn ? 'i-tabler-login' : 'i-tabler-logout', verdict: checkIn ? 'Checked in' : 'Checked out',
 		time: formatTime(checkIn ? res.log.entryTime : (res.log.exitTime ?? res.log.entryTime)),
 		name: res.student.name, program: res.student.program, sid: res.student.studentIDNumber, notes,
+		sub: checkIn ? 'Checked in' : `Checked out · ${formatMinutes(res.durationMinutes ?? 0)}`,
 	}
 }
 
 const formatMinutes = (m: number) => (m < 60 ? `${m}m` : `${Math.floor(m / 60)}h ${m % 60}m`)
 
-function show(view: ResultView, res: AttendanceScanResult | null, via: Via) {
+function show(view: ResultView, via: Via) {
 	result.value = view
 	clearTimeout(clearTimer)
-	clearTimer = setTimeout(() => { result.value = null }, 4000)
+	// A result with a next step (check the book, open the checkout) stays up long enough to use it.
+	clearTimer = setTimeout(() => { result.value = null }, view.action ? 20_000 : 4000)
 
 	feed.value = [{
-		key: view.key, tone: view.tone, icon: view.tone === 'in' ? 'i-tabler-login' : view.tone === 'out' ? 'i-tabler-logout' : view.tone === 'warn' ? 'i-tabler-clock' : 'i-tabler-circle-x',
-		title: view.name ?? 'Unknown scan',
-		sub: res ? (res.action === 'check_in' ? 'Checked in' : `Checked out · ${formatMinutes(res.durationMinutes ?? 0)}`) : (view.message ?? ''),
+		key: view.key, tone: view.tone, icon: view.icon,
+		title: view.name ?? view.verdict,
+		sub: view.sub ?? view.message ?? '',
 		at: clock(), via,
 	}, ...feed.value].slice(0, 8)
 
@@ -360,6 +446,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
 	stop()
 	clearTimeout(clearTimer)
+	clearTimeout(armedTimer)
 })
 </script>
 

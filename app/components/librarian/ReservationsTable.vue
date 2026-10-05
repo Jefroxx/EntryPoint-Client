@@ -23,7 +23,10 @@
 			</td>
 			<td class="px-4 py-3">
 				<div v-if="reservation.status === 'Waiting'" class="flex items-center justify-end gap-1.5">
-					<ButtonsButton variant="primary" size="sm" @click="emit('accept', reservation)">Accept</ButtonsButton>
+					<ButtonsButton variant="primary" size="sm" :disabled="!!reservation.acceptBlock"
+						:class="reservation.acceptBlock ? '!border-stone-200 !bg-stone-200 !text-stone-400 !opacity-100 !shadow-none hover:!bg-stone-200 active:!scale-100' : ''"
+						:title="reservation.acceptBlock ?? undefined"
+						@click="emit('accept', reservation)">Accept</ButtonsButton>
 					<ButtonsButton variant="danger" size="sm" @click="emit('reject', reservation)">Reject</ButtonsButton>
 				</div>
 			</td>

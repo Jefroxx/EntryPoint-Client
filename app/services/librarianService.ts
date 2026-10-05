@@ -140,6 +140,8 @@ export interface CatalogBook {
   subject: { subjectID: number; name: string } | null;
   authors: BookAuthor[];
   copies: BookCopySummary[];
+  /** Copies on the shelf that are promised to an accepted reservation. */
+  heldCopies?: number;
 }
 
 /** GET /librarian/books/{id}: every stored field, for View details and Edit book. */
@@ -164,6 +166,8 @@ export interface BookDetail {
   authors: (BookAuthor & { role: string | null })[];
   /** Retired copies are left out. */
   copies: (BookCopySummary & { barcodeValue: string })[];
+  /** Copies on the shelf that are promised to an accepted reservation. */
+  heldCopies?: number;
   loans: { total: number; active: number };
   createdAt: string | null;
   /** Page photos (table of contents, index…), in book order. */
@@ -207,6 +211,32 @@ export interface CopyCatalogRow {
     authors: string[];
   };
 }
+
+/** GET /librarian/stock-logs: one copy added to or removed from the catalog. */
+export interface StockLogRow {
+  logID: number;
+  bookID: number | null;
+  bookTitle: string;
+  copyID: number | null;
+  accessionNumber: string | null;
+  action: "added" | "removed";
+  reason: string | null;
+  note: string | null;
+  librarianName: string | null;
+  created_at: string;
+}
+
+export interface PaginatedStockLogs {
+  data: StockLogRow[];
+  current_page: number;
+  last_page: number;
+  total: number;
+  per_page: number;
+}
+
+/** Why a copy leaves the catalog (the server accepts exactly these). */
+export const REMOVE_REASONS = ["Lost", "Damaged", "Withdrawn", "Donated", "Other"] as const;
+export type RemoveReason = (typeof REMOVE_REASONS)[number];
 
 export interface PaginatedCopies {
   data: CopyCatalogRow[];
@@ -252,6 +282,51 @@ export interface AttendanceScanResult {
   durationMinutes: number | null;
   /** Visits from an earlier day that were closed automatically because the student never scanned out. */
   autoClosed: { logID: number; exitTime: string }[];
+}
+
+/**
+ * POST /librarian/scan: one endpoint for every barcode. The code says what it is, and `type` says what happened:
+ * a student ID (attendance), a borrowing receipt (book handed in), a reservation slip, or a facility's label.
+ */
+export type ScanResult =
+  | (AttendanceScanResult & { type: "attendance" })
+  | {
+      type: "loan_received";
+      message: string;
+      loan: {
+        loanID: number;
+        receiptNumber: string;
+        bookTitle: string;
+        accessionNumber: number;
+        studentName: string;
+        studentIDNumber: string;
+        dueDate: string | null;
+        returnDate: string | null;
+        wasLate: boolean;
+        fineAmount: number;
+      };
+    }
+  | {
+      type: "reservation";
+      message: string;
+      reservation: {
+        reservationID: number;
+        pickupCode: string;
+        studentID: number;
+        bookID: number;
+        studentName: string;
+        studentIDNumber: string;
+        bookTitle: string;
+      };
+    }
+  | { type: "facility"; message: string; resource: ScanFacility }
+  | { type: "facility_started"; message: string; resource: ScanFacility; student: { name: string; program: string | null; studentIDNumber: string } }
+  | { type: "facility_ended"; message: string; resource: ScanFacility; student: string; minutes: number };
+
+export interface ScanFacility {
+  resID: number;
+  name: string;
+  resourceType: string;
 }
 
 export interface NewBookAuthor {
@@ -438,6 +513,23 @@ class LibrarianServiceClass extends BaseService {
       `/librarian/copies/${copyID}`, { method: "PATCH", body: payload });
   }
 
+  /** More copies of a book that is already in the catalog; each is logged in the stock log. */
+  addCopies(bookID: number, payload: { quantity: number; note?: string }) {
+    return this.apiRequest<{ message: string; copies: { copyID: number; accessionNumber: number; status: string }[] }>(
+      `/librarian/books/${bookID}/copies`, { method: "POST", body: payload });
+  }
+
+  /** Takes one copy out of the catalog, recording why. */
+  removeCopy(copyID: number, payload: { reason: RemoveReason; note?: string }) {
+    return this.apiRequest<{ message: string; copy: { copyID: number; accessionNumber: number; status: string } }>(
+      `/librarian/copies/${copyID}/remove`, { method: "POST", body: payload });
+  }
+
+  /** The stock log: every copy added or removed, newest first. */
+  fetchStockLogs(params: { search?: string; action?: "added" | "removed"; bookID?: number; page?: number; perPage?: number } = {}) {
+    return this.apiRequest<PaginatedStockLogs>("/librarian/stock-logs", { query: params });
+  }
+
   fetchAttendanceLogs(params: { search?: string; date?: string; active?: boolean; page?: number; perPage?: number } = {}) {
     const runtimeConfig = useRuntimeConfig();
 
@@ -463,6 +555,11 @@ class LibrarianServiceClass extends BaseService {
         ...this.authHeaders(),
       },
     });
+  }
+
+  /** The universal scanner. `resID` is a facility scanned just before, waiting for the student's ID. */
+  scan(code: string, resID?: number) {
+    return this.apiRequest<ScanResult>("/librarian/scan", { method: "POST", body: { code, resID } });
   }
 
   scanAttendance(barcodeValue: string) {

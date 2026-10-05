@@ -49,9 +49,14 @@
 						<td class="font-data whitespace-nowrap px-4 py-3 text-[12.5px] text-stone-400 group-hover:bg-accent-50">{{ copy.barcodeValue || '—' }}</td>
 						<td class="px-4 py-3 group-hover:bg-accent-50">
 							<div class="flex items-center justify-end gap-1">
-								<ButtonsButton variant="icon" size="sm" :aria-label="`Edit accession no. ${copy.accessionNumber}`"
-									title="Edit this copy" @click="emit('edit-copy', copy)">
-									<Icon name="i-tabler-pencil" class="h-[15px] w-[15px]" />
+								<ButtonsButton variant="icon" size="sm" :aria-label="`Add another copy of ${copy.book.title}`"
+									title="Add a copy of this book" class="!text-emerald-600 hover:!bg-emerald-50" @click="emit('add-copy', copy)">
+									<Icon name="i-tabler-circle-plus" class="h-[18px] w-[18px]" />
+								</ButtonsButton>
+								<ButtonsButton variant="icon" size="sm" :aria-label="`Remove accession no. ${copy.accessionNumber}`"
+									:title="copy.status === 'borrowed' ? 'Out on loan: check it in first' : 'Remove this copy'"
+									class="!text-red-500 hover:!bg-red-50" @click="emit('remove-copy', copy)">
+									<Icon name="i-tabler-circle-minus" class="h-[18px] w-[18px]" />
 								</ButtonsButton>
 								<LibrarianRowMenu :items="COPY_MENU" :label="`More actions for accession no. ${copy.accessionNumber}`"
 									@select="(key: string) => onMenu(key, copy)" />
@@ -83,10 +88,11 @@ defineProps<{
 }>()
 
 const emit = defineEmits<{
-	(e: 'view' | 'edit-book' | 'edit-copy', copy: CopyCatalogRow): void
+	(e: 'view' | 'edit-book' | 'edit-copy' | 'add-copy' | 'remove-copy', copy: CopyCatalogRow): void
 }>()
 
-// The pencil edits this copy (status); the book's own fields are shared by every copy, so they're edited per book.
+// The row buttons add or remove a copy (logged in the stock log). The menu keeps the other edits: this copy's status
+// (damaged / lost), and the book's own fields, which every copy shares.
 const COPY_MENU = [
 	{ key: 'edit-copy', label: 'Edit this copy', icon: 'i-tabler-pencil' },
 	{ key: 'view', label: 'View book details', icon: 'i-tabler-eye' },

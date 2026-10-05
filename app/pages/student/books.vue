@@ -43,6 +43,7 @@
 							</div>
 							<div class="mt-3 flex gap-2 md:mt-0 md:flex-col md:items-end md:gap-1.5">
 								<p v-if="loan.status === 'Reported'" class="flex-1 text-[12.5px] text-stone-400 md:max-w-[150px] md:flex-none md:text-right">Reported. A librarian will verify it.</p>
+								<p v-else-if="loan.status === 'Received'" class="flex-1 text-[12.5px] text-stone-400 md:max-w-[150px] md:flex-none md:text-right">Handed in. A librarian is checking the book.</p>
 								<ButtonsButton v-else variant="ghost" size="sm" class="!h-10 flex-1 !border-accent-100 !bg-accent-100 !text-[14px] !text-accent-600 md:!h-8 md:w-[150px] md:flex-none md:!text-[13px]"
 									@click="returning = loan">
 									<Icon name="i-tabler-arrow-back-up" class="h-3.5 w-3.5" />I returned this
@@ -110,6 +111,10 @@
 							</p>
 							<ButtonsButton v-if="r.status === 'Waiting'" variant="danger" size="sm" class="mt-3 !h-10 w-full !text-[14px] md:mt-0 md:!h-8 md:w-auto md:!text-[13px]"
 								@click="cancelling = r">Cancel</ButtonsButton>
+							<ButtonsButton v-else variant="primary" size="sm" class="mt-3 !h-10 w-full !text-[14px] md:mt-0 md:!h-8 md:w-auto md:!text-[13px]"
+								@click="slipFor = r">
+								<Icon name="i-tabler-barcode" class="h-4 w-4" />Pickup slip
+							</ButtonsButton>
 						</div>
 					</TransitionGroup>
 
@@ -196,6 +201,19 @@
 			</template>
 		</StudentDrawer>
 
+		<!-- A digital copy of the reservation pickup slip: the barcode the desk scans to hand the book over. -->
+		<StudentDrawer :open="!!slipFor" title="Pickup slip" @close="slipFor = null">
+			<StudentPickupSlip v-if="slipShown" ref="slipView" :code="slipShown.pickupCode" :title="slipShown.book.title"
+				:author="authorLine(briefOf(slipShown.book))" :reserved-at="slipShown.reservedAt" />
+
+			<template #footer>
+				<p class="flex-1 text-[12.5px] leading-snug text-stone-500">Show this at the desk to collect your book.</p>
+				<ButtonsButton @click="slipView?.print()">
+					<Icon name="i-tabler-printer" class="h-4 w-4" />Save or print
+				</ButtonsButton>
+			</template>
+		</StudentDrawer>
+
 		<StudentSheet :open="!!cancelling" title="Cancel this reservation?" @close="cancelling = null">
 			You'll lose your place in line for <b class="text-stone-900">{{ (cancelling ?? lastCancelled)?.book.title }}</b>. You can reserve it again, but you'd join the back of the queue.
 			<template #actions>
@@ -243,11 +261,11 @@ const tabs = computed(() => [
 ])
 
 function loanTone(loan: LoanRow): StudentTone {
-	return loan.status === 'Reported' ? 'accent' : dueTone(loan.daysLeft)
+	return loan.status === 'Reported' || loan.status === 'Received' ? 'accent' : dueTone(loan.daysLeft)
 }
 
 function loanLabel(loan: LoanRow): string {
-	return loan.status === 'Reported' ? 'Awaiting librarian' : dueLabel(loan.daysLeft)
+	return loan.status === 'Reported' ? 'Awaiting librarian' : loan.status === 'Received' ? 'Being checked' : dueLabel(loan.daysLeft)
 }
 
 const glance = computed(() => [
@@ -281,6 +299,14 @@ async function openReceipt(loan: LoanRow) {
 }
 
 /* ---- return + cancel ---- */
+/* ---- reservation pickup slip ---- */
+const slipFor = ref<ReservationRow | null>(null)
+// Kept after the drawer closes so the slip doesn't blank out mid-transition.
+const lastSlip = ref<ReservationRow | null>(null)
+watch(slipFor, (r) => { if (r) lastSlip.value = r })
+const slipShown = computed(() => slipFor.value ?? lastSlip.value)
+const slipView = ref<{ print: () => void } | null>(null)
+
 const returning = ref<LoanRow | null>(null)
 const cancelling = ref<ReservationRow | null>(null)
 const lastCancelled = ref<ReservationRow | null>(null)

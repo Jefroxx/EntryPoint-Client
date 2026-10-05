@@ -1,7 +1,9 @@
 /** However fast a page is, the loader stays up for at least one quarter turn of the mark. */
 const MIN_VISIBLE_MS = 700
-/** A request that never settles must not trap the page behind the loader. */
-const MAX_VISIBLE_MS = 10_000
+/** A request that never settles must not trap the page behind the loader. Generous, so slow connections still finish behind it. */
+const MAX_VISIBLE_MS = 25_000
+/** Once the last request answers, wait this long before hiding: a request chained after it (or the table rendering) still counts. */
+const SETTLE_MS = 200
 
 /**
  * The full-screen loader's state (see AppLoader.vue in app.vue). It is up from first paint and from the
@@ -55,7 +57,7 @@ export function setupPageLoader() {
 	function tryHide() {
 		if (booting || loader.value.routing || loader.value.pending > 0) return
 		clearTimeout(hideTimer)
-		const wait = Math.max(0, MIN_VISIBLE_MS - (performance.now() - loader.value.since))
+		const wait = Math.max(SETTLE_MS, MIN_VISIBLE_MS - (performance.now() - loader.value.since))
 		hideTimer = setTimeout(() => {
 			if (loader.value.routing || loader.value.pending > 0) return
 			loader.value.active = false

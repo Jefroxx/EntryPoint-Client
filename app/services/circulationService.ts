@@ -12,7 +12,8 @@ export interface LoanRecord {
   checkoutDate: string;
   dueDate: string;
   returnDate: string | null;
-  status: "Active" | "Returned";
+  /** Received: handed in and in the librarian's hands, waiting to be checked for damage. */
+  status: "Active" | "Received" | "Returned";
   student: PersonRef | null;
   copy: {
     copyID: number;
@@ -33,6 +34,8 @@ export interface LoanStats {
   active: number;
   dueSoon: number;
   overdue: number;
+  /** Handed in, waiting for the librarian to check the book. */
+  received: number;
 }
 
 export type ReservationStatus = "Waiting" | "Accepted" | "Rejected" | "Fulfilled";
@@ -41,6 +44,9 @@ export interface ReservationRecord {
   reservationID: number;
   status: ReservationStatus;
   reservedAt: string;
+  pickupCode?: string;
+  /** Why Accept is unavailable right now (no free copy, or not first in line for the free copies); null if it can be accepted. */
+  acceptBlock?: string | null;
   student: PersonRef | null;
   book: { bookID: number; title: string } | null;
 }
@@ -109,12 +115,19 @@ class CirculationServiceClass extends BaseService {
     return this.apiRequest<T>(path, options);
   }
 
-  fetchLoans(params: { search?: string; status?: "active" | "overdue" | "returned"; page?: number; perPage?: number } = {}) {
+  fetchLoans(params: { search?: string; status?: "active" | "overdue" | "received" | "returned"; page?: number; perPage?: number } = {}) {
     return this.request<Paginated<LoanRecord>>("/librarian/loans", { query: params });
   }
 
   fetchLoanStats() {
     return this.request<LoanStats>("/librarian/loans/stats");
+  }
+
+  /** Resolves the code on a student's reservation pickup slip (R-000123) to its accepted reservation. */
+  lookupReservation(code: string) {
+    return this.request<{ reservation: ReservationRecord & { studentID: number; bookID: number } }>(
+      `/librarian/reservations/lookup/${encodeURIComponent(code.trim())}`,
+    );
   }
 
   checkoutBook(payload: CheckoutPayload) {
@@ -124,6 +137,11 @@ class CirculationServiceClass extends BaseService {
   /** A loan's checkout receipt again, for a reprint. */
   fetchReceipt(loanID: number) {
     return this.request<{ receipt: LoanReceipt }>(`/librarian/loans/${loanID}/receipt`);
+  }
+
+  /** After checking a received book: back on the shelf if it's fine, marked damaged if it isn't. */
+  finishReturn(loanID: number, payload: { condition: "good" | "damaged"; note?: string }) {
+    return this.request<{ message: string; loan: LoanRecord }>(`/librarian/loans/${loanID}/finish-return`, { method: "POST", body: payload });
   }
 
   returnLoan(loanID: number) {

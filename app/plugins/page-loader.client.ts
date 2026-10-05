@@ -10,6 +10,11 @@ export default defineNuxtPlugin(() => {
 	window.fetch = (input: RequestInfo | URL, init?: RequestInit) => {
 		const response = nativeFetch(input, init)
 		const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
-		return url.startsWith(apiBase) ? trackPageRequest(loader, response) : response
+		// Once the loader is down, requests pass through untouched.
+		if (!url.startsWith(apiBase) || !loader.value.active) return response
+		// fetch() resolves once the headers arrive; on a slow connection a table's JSON is still downloading
+		// then. Hold the loader until a copy of the body has been read to the end, so the data is really here.
+		trackPageRequest(loader, response.then(res => res.clone().arrayBuffer()).catch(() => {}))
+		return response
 	}
 })
