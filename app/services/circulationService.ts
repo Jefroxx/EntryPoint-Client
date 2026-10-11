@@ -23,6 +23,41 @@ export interface LoanRecord {
   } | null;
 }
 
+/** The "Return this book?" window: everything about the loan, plus the late fee returning it right now would charge. */
+export interface ReturnPreview {
+  /** Set when the window is for a student's self-return report. */
+  report?: { reportID: number; reportedAt: string } | null;
+  loan: { loanID: number; status: string; checkoutAt: string; dueAt: string; overdue: boolean };
+  book: {
+    title: string;
+    authors: string[];
+    isbn: string | null;
+    callNumber: string | null;
+    areaOfLibrary: string | null;
+    accessionNumber: number;
+    barcodeValue: string | null;
+  };
+  student: {
+    name: string;
+    studentIDNumber: string | null;
+    academicProgram: string | null;
+    email: string | null;
+    phoneNumber: string | null;
+    /** Fines from other loans that are still owed. */
+    unpaidFinesTotal: number;
+  };
+  /** hasRule is false when the collection has no fine rule: a late book is then not charged. */
+  fine: {
+    hasRule: boolean;
+    unitsLate: number;
+    rateUnit: "day" | "hour" | null;
+    rate: number | null;
+    amount: number;
+    /** The fine already written for this loan (by the hourly job), with whether it was paid; null if none yet. */
+    onRecord: { amount: number; paymentStatus: "Paid" | "Unpaid"; settledAt: string | null } | null;
+  };
+}
+
 export interface Paginated<T> {
   data: T[];
   current_page: number;
@@ -148,8 +183,15 @@ class CirculationServiceClass extends BaseService {
     return this.request<{ message: string; loan: LoanRecord }>(`/librarian/loans/${loanUuid}/finish-return`, { method: "POST", body: payload });
   }
 
-  returnLoan(loanUuid: string) {
-    return this.request<{ message: string; loan: LoanRecord }>(`/librarian/loans/${loanUuid}/return`, { method: "POST" });
+  /** What returning this loan would involve, shown for confirmation before anything changes. */
+  fetchReturnPreview(loanUuid: string) {
+    return this.request<{ preview: ReturnPreview }>(`/librarian/loans/${loanUuid}/return-preview`);
+  }
+
+  /** `finePaid`: the student paid the late fee at the desk, so the fine is settled with the return. */
+  returnLoan(loanUuid: string, payload: { finePaid?: boolean } = {}) {
+    return this.request<{ message: string; loan: LoanRecord; penalty: { amount: string; paymentStatus: "Paid" | "Unpaid" } | null }>(
+      `/librarian/loans/${loanUuid}/return`, { method: "POST", body: payload });
   }
 
   fetchReservations(status?: ReservationStatus) {
@@ -170,8 +212,15 @@ class CirculationServiceClass extends BaseService {
     return this.request<{ reports: SelfReturnReportRecord[] }>("/librarian/self-return-reports");
   }
 
-  verifySelfReturn(reportUuid: string) {
-    return this.request<{ message: string }>(`/librarian/self-return-reports/${reportUuid}/verify`, { method: "POST" });
+  /** What verifying or rejecting this report involves, shown for confirmation before anything changes. */
+  fetchSelfReturnPreview(reportUuid: string) {
+    return this.request<{ preview: ReturnPreview }>(`/librarian/self-return-reports/${reportUuid}/preview`);
+  }
+
+  /** `finePaid`: the student paid the late fee at the desk, so the fine is settled with the return. */
+  verifySelfReturn(reportUuid: string, payload: { finePaid?: boolean } = {}) {
+    return this.request<{ message: string; penalty: { amount: string; paymentStatus: "Paid" | "Unpaid" } | null }>(
+      `/librarian/self-return-reports/${reportUuid}/verify`, { method: "POST", body: payload });
   }
 
   rejectSelfReturn(reportUuid: string) {

@@ -41,7 +41,14 @@
 							</span>
 						</td>
 						<td class="px-4 py-3">
-							<div v-if="student.registrationStatus === 'pending'" class="flex items-center justify-end gap-1.5" @click.stop>
+							<div v-if="student.registrationStatus === 'rejected'" class="flex items-center justify-end" @click.stop>
+								<button type="button"
+									class="h-7 rounded-lg bg-emerald-600 px-2.5 text-[12.5px] font-bold text-white transition-all duration-150 hover:bg-emerald-700 active:scale-95"
+									@click="emit('reinstate', student)">
+									Reinstate
+								</button>
+							</div>
+							<div v-else-if="student.registrationStatus === 'pending'" class="flex items-center justify-end gap-1.5" @click.stop>
 								<button type="button"
 									class="h-7 rounded-lg bg-emerald-600 px-2.5 text-[12.5px] font-bold text-white transition-all duration-150 hover:bg-emerald-700 active:scale-95"
 									@click="emit('approve', student)">
@@ -57,7 +64,7 @@
 					</tr>
 
 					<tr v-if="!loading && students.length === 0">
-						<td colspan="7" class="py-10 text-center text-[15px] text-stone-400">No students match your search.</td>
+						<td colspan="7" class="py-10 text-center text-[15px] text-stone-400">{{ emptyText ?? 'No students match your search.' }}</td>
 					</tr>
 				</tbody>
 			</table>
@@ -73,12 +80,15 @@ import type { StudentRecord } from '~/services/librarianService'
 defineProps<{
 	students: StudentRecord[]
 	loading: boolean
+	/** Shown when the list is empty (it differs by tab). */
+	emptyText?: string
 }>()
 
 const emit = defineEmits<{
 	(e: 'view', student: StudentRecord): void
 	(e: 'approve', student: StudentRecord): void
 	(e: 'reject', student: StudentRecord): void
+	(e: 'reinstate', student: StudentRecord): void
 }>()
 
 function studentName(student: StudentRecord): string {

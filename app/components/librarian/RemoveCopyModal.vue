@@ -9,7 +9,7 @@
 
 		<div v-else class="space-y-4">
 			<fieldset class="space-y-2">
-				<legend class="mb-2 text-[13px] font-semibold text-stone-700">Why is it being removed?</legend>
+				<legend class="mb-2 text-[13px] font-semibold text-stone-700">Why is it being removed?<FieldRequired /></legend>
 				<label v-for="option in OPTIONS" :key="option.value"
 					class="flex cursor-pointer items-start gap-3 rounded-xl border px-4 py-3 transition-colors"
 					:class="reason === option.value ? 'border-red-300 bg-red-50' : 'border-stone-200 hover:bg-stone-50'">

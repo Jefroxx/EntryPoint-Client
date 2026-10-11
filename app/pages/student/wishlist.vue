@@ -52,7 +52,7 @@
 <script setup lang="ts">
 import { briefOf, type CatalogBook } from '~/services/studentService'
 
-definePageMeta({ layout: 'student', middleware: 'student', title: 'Wishlist', nav: 'wishlist', tab: 'me', wide: true })
+definePageMeta({ layout: 'student', middleware: 'student', title: 'Wishlist', nav: 'wishlist', tab: 'me', wide: true, back: '/student/me' })
 useHead({ title: 'Wishlist' })
 
 const CART_LIMIT = 3

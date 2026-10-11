@@ -186,7 +186,11 @@ export interface AchievementRow {
   uuid: string;
   name: string;
   pointsReward: number;
-  criteria: { metric: "knowledgeScore" | "visitStreak"; threshold: number } | null;
+  criteria: { metric: string; threshold: number } | null;
+  /** The goal in plain words, e.g. "Borrow 5 books". */
+  description: string;
+  /** Where the student is now, against the goal. */
+  progress: { current: number; target: number };
   status: "Locked" | "Unlocked" | "Redeemed";
   earnedAt: string | null;
   redeemedAt: string | null;

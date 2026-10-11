@@ -37,9 +37,11 @@ const emit = defineEmits<{
 	(e: 'delete', achievement: AchievementRecord): void
 }>()
 
+// The goal in plain words, as the server words it for students.
 function criteria(achievement: AchievementRecord): string {
+	if (achievement.description) return achievement.description
 	const { metric, threshold } = achievement.criteriaJSON
-	return metric === 'visitStreak' ? `Visit streak ≥ ${threshold} days` : `Knowledge score ≥ ${threshold}`
+	return `${metric} ≥ ${threshold}`
 }
 const selected = ref<AchievementRecord | null>(null)
 

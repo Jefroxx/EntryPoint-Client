@@ -15,8 +15,9 @@
 					</tr>
 				</thead>
 				<tbody>
-					<tr v-for="loan in loans" :key="`${loan.studentName}-${loan.bookTitle}`"
-						class="border-b border-stone-50 last:border-0">
+					<tr v-for="loan in loans" :key="`${loan.studentName}-${loan.bookTitle}`" tabindex="0"
+						class="cursor-pointer border-b border-stone-50 transition-colors duration-150 last:border-0 hover:bg-accent-50 focus-visible:bg-accent-50 focus-visible:outline-none"
+						@click="selected = loan" @keydown.enter.self="selected = loan">
 						<td class="py-3 pr-4">
 							<div class="flex items-center gap-2">
 								<LibrarianStudentAvatar :name="loan.studentName" />
@@ -37,6 +38,18 @@
 				</tbody>
 			</table>
 		</div>
+
+		<!-- Click a row for the whole loan. Teleports to <body>. -->
+		<LibrarianRecordDrawer :open="!!selected" heading="Overdue loan" :title="selected?.bookTitle ?? ''"
+			:subtitle="selected?.loanID ? `Loan #${selected.loanID}` : undefined"
+			:status="selected ? { label: `${selected.daysOverdue} day${selected.daysOverdue === 1 ? '' : 's'} overdue`, tone: 'danger' } : undefined"
+			:fields="fields" @close="selected = null">
+			<template #footer>
+				<NuxtLink to="/librarian/circulation" class="w-full">
+					<ButtonsButton variant="primary" class="w-full">Open in Circulation</ButtonsButton>
+				</NuxtLink>
+			</template>
+		</LibrarianRecordDrawer>
 	</div>
 </template>
 
@@ -46,4 +59,20 @@ import type { OverdueLoan } from '~/services/librarianService'
 defineProps<{
 	loans: OverdueLoan[]
 }>()
+
+const selected = ref<OverdueLoan | null>(null)
+
+const fields = computed(() => {
+	const loan = selected.value
+	if (!loan) return []
+	return [
+		{ label: 'Student', value: loan.studentName, wide: true },
+		{ label: 'Student ID', value: loan.studentIDNumber, mono: true },
+		{ label: 'Program', value: loan.academicProgram },
+		{ label: 'Accession no.', value: loan.accessionNumber, mono: true },
+		{ label: 'Checked out', value: loan.checkoutAt ? formatDateTime(loan.checkoutAt) : null },
+		{ label: 'Was due', value: loan.dueAt ? formatDateTime(loan.dueAt) : null },
+		{ label: 'Days overdue', value: loan.daysOverdue },
+	]
+})
 </script>

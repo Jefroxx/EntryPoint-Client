@@ -56,7 +56,7 @@ import { studentService } from '~/services/studentService'
 import { TONE_SOFT } from '~/utils/studentNotifications'
 import { useAlert } from '~/api/alert/useAlert'
 
-definePageMeta({ layout: 'student', middleware: 'student', title: 'Suggest a book', nav: 'home', tab: 'me' })
+definePageMeta({ layout: 'student', middleware: 'student', title: 'Suggest a book', nav: 'home', tab: 'me', back: '/student/me' })
 useHead({ title: 'Suggest a book' })
 
 const alert = useAlert()

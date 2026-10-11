@@ -1,12 +1,25 @@
 import { BaseService } from "./BaseService";
 
-export type AchievementMetric = "knowledgeScore" | "visitStreak";
+/** What an achievement can be about (knowledgeScore, visitStreak, booksBorrowed, …). The server owns the list. */
+export type AchievementMetric = string;
+
+/** One choice in "Unlocks when": its key, the sentence it reads as, and what its number counts. */
+export interface AchievementMetricInfo {
+  key: AchievementMetric;
+  label: string;
+  unit: string;
+  /** How a goal reads to students, with {n} for the number; `one` is the wording for exactly 1. */
+  goal?: string;
+  one?: string;
+}
 
 export interface AchievementRecord {
   achievementID: number;
   uuid: string;
   name: string;
   criteriaJSON: { metric: AchievementMetric; threshold: number };
+  /** The goal in plain words, e.g. "Borrow 5 books". */
+  description?: string;
   pointsReward: number;
   unlockedCount: number;
   redeemedCount: number;
@@ -51,13 +64,20 @@ export interface RedemptionRecord {
   pointsSpent: number;
   fulfillmentStatus: FulfillmentStatus;
   redeemedAt: string;
-  student: { studentID: number; user: { firstName: string; lastName: string } | null } | null;
-  item: { itemID: number; name: string } | null;
+  student: {
+    studentID: number;
+    studentIDNumber?: string;
+    academicProgram?: string | null;
+    /** The student's points balance now. */
+    knowledgeScore?: number;
+    user: { firstName: string; lastName: string; email?: string } | null;
+  } | null;
+  item: { itemID: number; name: string; type?: string | null; pointCost?: number; stock?: number } | null;
 }
 
 class EngagementServiceClass extends BaseService {
   fetchAchievements() {
-    return this.apiRequest<{ achievements: AchievementRecord[] }>("/librarian/achievements");
+    return this.apiRequest<{ achievements: AchievementRecord[]; metrics: AchievementMetricInfo[] }>("/librarian/achievements");
   }
 
   createAchievement(payload: AchievementPayload) {

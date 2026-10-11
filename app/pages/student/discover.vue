@@ -18,6 +18,22 @@
 				class="h-11 w-full rounded-[13px] border border-transparent bg-stone-100 pl-10 pr-3 text-[16px] outline-none transition-[border-color,box-shadow,background-color] duration-150 placeholder:text-stone-400 focus:border-accent-500 focus:bg-white focus:ring-[3px] focus:ring-accent-100">
 		</div>
 
+		<!-- Phones: the genre list, as a bottom sheet. -->
+		<StudentSheet :open="genreOpen" title="Genre" @close="genreOpen = false">
+			<div class="-mx-2 mt-1" role="group" aria-label="Filter by genre">
+				<button v-for="s in subjectOptions" :key="s.id" type="button" :aria-pressed="subjectID === s.id"
+					class="flex w-full items-center justify-between gap-3 rounded-xl px-3 py-3 text-left text-[15.5px] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-200"
+					:class="subjectID === s.id ? 'bg-accent-100 font-semibold text-accent-700' : 'text-stone-700 active:bg-stone-100'"
+					@click="pickGenre(s.id)">
+					<span class="flex min-w-0 items-center gap-2.5">
+						<Icon v-if="subjectID === s.id" name="i-tabler-check" class="h-[18px] w-[18px] shrink-0" aria-hidden="true" />
+						<span class="min-w-0 truncate">{{ s.name }}</span>
+					</span>
+					<span class="font-data shrink-0 text-[13px]" :class="subjectID === s.id ? 'text-accent-700/70' : 'text-stone-500'">{{ s.books }}</span>
+				</button>
+			</div>
+		</StudentSheet>
+
 		<!-- From xl up the filters are a panel on the right (nav on the left, books in the middle, filters beside them).
 			 Narrower screens have no room for it, so they get the chip toolbar instead. -->
 		<div class="xl:grid xl:grid-cols-[minmax(0,1fr)_240px] xl:items-start xl:gap-6">
@@ -27,7 +43,19 @@
 			:class="stuck ? 'border-b border-stone-200 bg-parchment/90 backdrop-blur-sm' : 'border-b border-transparent'"
 			style="animation-delay: 70ms">
 			<div class="flex items-center gap-3">
-				<div class="no-scrollbar flex min-w-0 flex-1 gap-2 overflow-x-auto [mask-image:linear-gradient(to_right,black_calc(100%-32px),transparent)] md:pr-8"
+				<!-- Phones: one Genre button that opens a list (a scrolling row of chips doesn't read as scrollable on a phone). -->
+				<button type="button" aria-haspopup="dialog" :aria-label="activeSubject ? `Genre: ${activeSubject}. Change genre` : 'Choose a genre'"
+					class="flex h-9 min-w-0 flex-1 items-center justify-between gap-2 rounded-xl px-3.5 text-[13.5px] font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-200 md:hidden"
+					:class="subjectID ? 'bg-accent-500 text-white' : 'bg-accent-50 text-accent-700'"
+					@click="genreOpen = true">
+					<span class="flex min-w-0 items-center gap-2">
+						<Icon name="i-tabler-category" class="h-4 w-4 shrink-0" aria-hidden="true" />
+						<span class="truncate">{{ activeSubject ?? 'Genre' }}</span>
+					</span>
+					<Icon name="i-tabler-chevron-down" class="h-4 w-4 shrink-0" aria-hidden="true" />
+				</button>
+
+				<div class="no-scrollbar hidden min-w-0 flex-1 gap-2 overflow-x-auto [mask-image:linear-gradient(to_right,black_calc(100%-32px),transparent)] md:flex md:pr-8"
 					role="group" aria-label="Filter by subject">
 					<button v-for="s in subjectOptions" :key="s.id" type="button" :aria-pressed="subjectID === s.id"
 						class="flex h-9 shrink-0 items-center gap-1.5 rounded-xl px-3.5 text-[13.5px] font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-200"
@@ -164,6 +192,13 @@ const hasFilters = computed(() => !!(q.value || subjectID.value || availableOnly
 
 function setParam(patch: Record<string, string | undefined>, keepPage = false) {
 	void router.replace({ query: { ...route.query, ...(keepPage ? {} : { page: undefined }), ...patch } })
+}
+
+// The phone's genre sheet: picking a genre applies it and closes the sheet.
+const genreOpen = ref(false)
+function pickGenre(id: number) {
+	setParam({ subject: id ? String(id) : undefined })
+	genreOpen.value = false
 }
 
 function reset() {

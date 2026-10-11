@@ -100,11 +100,18 @@
 		<header
 			class="fixed inset-x-0 top-0 z-40 border-b bg-white/90 pt-[env(safe-area-inset-top,0px)] backdrop-blur-sm transition-[border-color] duration-200 md:hidden"
 			:class="scrolled ? 'border-stone-200' : 'border-transparent'">
-			<div class="grid h-[52px] grid-cols-[1fr_auto_1fr] items-center px-3.5">
-				<NuxtLink to="/student/home" class="flex items-center leading-none" aria-label="EntryPoint home">
+			<!-- Logo | title (takes the room that is left, so it can never run into either side) | controls. -->
+			<div class="grid h-[52px] grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 px-3.5">
+				<!-- Pages opened from another page (Profile, Notifications, Wishlist…) name where Back goes: the logo gives way to it. -->
+				<button v-if="route.meta.back" type="button"
+					class="-ml-1.5 flex h-10 items-center gap-0.5 rounded-xl pl-1 pr-2.5 text-[15px] font-medium text-accent-500 transition-[transform,opacity] duration-150 ease-out active:scale-95 active:opacity-70"
+					@click="goBack">
+					<Icon name="i-tabler-chevron-left" class="h-5 w-5" aria-hidden="true" />Back
+				</button>
+				<NuxtLink v-else to="/student/home" class="flex items-center leading-none" aria-label="EntryPoint home">
 					<img src="~/assets/css/logo/EntryPointLogo.png" alt="EntryPoint" class="h-7 w-auto" />
 				</NuxtLink>
-				<p class="truncate text-center text-[15px] font-semibold text-stone-900 transition-[opacity,transform] duration-200 ease-out"
+				<p class="truncate px-1 text-center text-[15px] font-semibold text-stone-900 transition-[opacity,transform] duration-200 ease-out"
 					:class="scrolled ? 'translate-y-0 opacity-100' : 'translate-y-1 opacity-0'">{{ route.meta.title }}</p>
 				<div class="flex items-center justify-end">
 					<NuxtLink to="/student/rewards" :aria-label="`${points} knowledge points. Open rewards`"
@@ -243,6 +250,15 @@ function movePill() {
 }
 
 watch(() => route.path, () => void nextTick(movePill))
+
+/* ---- back (phones) ----
+   Goes back along the student's real path when they arrived from inside the app (so Notifications from the bell
+   returns to Home, and from Me returns to Me); a page opened directly falls back to the place it names. */
+function goBack() {
+	const previous: unknown = window.history.state?.back
+	if (typeof previous === 'string' && previous.toLowerCase().startsWith('/student')) router.back()
+	else void router.push(String(route.meta.back))
+}
 
 /* ---- collapsing title ---- */
 const scrolled = ref(false)

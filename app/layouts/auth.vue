@@ -10,6 +10,12 @@
 			 panel fills the rest and slides across when you move between sign-in and registration. -->
 		<div class="auth-shell relative z-10 mx-auto flex min-h-screen w-full max-w-[560px] flex-col px-4 pb-6 pt-10 sm:pt-14 lg:max-w-none lg:bg-white lg:p-0"
 			:data-panel="side">
+			<!-- The way back to the public page. Above the card on phones; on wide screens it sits at the top of the form column. -->
+			<NuxtLink to="/" class="auth-back mb-4 inline-flex items-center gap-2 self-start rounded-full px-3.5 py-2 text-[13.5px] font-semibold text-stone-600 transition-colors duration-200 hover:bg-accent-50 hover:text-accent-600 lg:mb-0">
+				<Icon name="i-tabler-arrow-left" class="h-4 w-4" aria-hidden="true" />
+				Back to home
+			</NuxtLink>
+
 			<!-- A card on phones; on wide screens it dissolves (display: contents) so each page's form lands in the grid. -->
 			<div class="auth-card grid overflow-hidden rounded-[28px] border border-stone-200 bg-white shadow-overlay lg:contents">
 				<slot />
@@ -29,10 +35,11 @@
 				<div class="sticky top-3 h-[calc(100vh-24px)] overflow-hidden rounded-[28px]">
 					<!-- The illustration: a glowing brand star over a library shelf, drawn in code. Decoration only. -->
 					<div class="auth-glow pointer-events-none absolute -right-24 -top-24 h-[560px] w-[560px] rounded-full" aria-hidden="true" />
-					<svg class="auth-star pointer-events-none absolute right-[8%] top-[9%] h-[clamp(140px,17vw,230px)] w-[clamp(140px,17vw,230px)] text-white/[.9]"
-						viewBox="0 0 100 100" aria-hidden="true">
-						<path fill="currentColor" :d="STAR" />
-					</svg>
+					<!-- Just the compass from the stacked logo (the wordmark is cropped off), tinted white so it reads on the brand colour.
+						 The PNG is 1040x840 with the compass in its top 578px, x 230-805: the box is that region, the image is offset into it. -->
+					<div class="auth-star pointer-events-none absolute right-[8%] top-[8%] aspect-[575/580] w-[clamp(130px,15vw,210px)] overflow-hidden" aria-hidden="true">
+						<img src="~/assets/css/logo/EntryPointLogoStacked.png" alt="" class="auth-emblem ml-[-40%] block h-auto w-[180.9%] max-w-none" />
+					</div>
 					<svg v-for="s in sparkles" :key="s.class" class="pointer-events-none absolute text-white" :class="s.class" viewBox="0 0 100 100" aria-hidden="true">
 						<path fill="currentColor" :d="STAR" />
 					</svg>
@@ -156,6 +163,37 @@ const copy = computed(() => panelCopy[variant.value])
 
 const year = new Date().getFullYear()
 
+
+// The guest middleware only runs on navigation. A sign-in page that was already open when another
+// tab signed in would otherwise stay put, so look at the cookies again whenever this tab is returned to.
+function leaveIfSignedIn() {
+	const has = (name: string) => document.cookie.split('; ').some((c) => c.startsWith(`${name}=`) && c.length > name.length + 1)
+
+	if (has(SESSION_COOKIES.librarian.token) && has(SESSION_COOKIES.librarian.role)) {
+		const role = document.cookie.split('; ').find((c) => c.startsWith(`${SESSION_COOKIES.librarian.role}=`))
+		if (role?.endsWith('=librarian')) return navigateTo(homeFor('librarian'))
+	}
+	if (has(SESSION_COOKIES.student.token)) return navigateTo(homeFor('student'))
+}
+
+function onReturn() {
+	if (document.visibilityState === 'visible') void leaveIfSignedIn()
+}
+
+onMounted(() => {
+	// Warm up the way back to the landing page, so its morph never waits on a download.
+	const warm = () => void preloadRouteComponents('/')
+	if ('requestIdleCallback' in window) window.requestIdleCallback(warm)
+	else setTimeout(warm, 1500)
+
+	window.addEventListener('focus', onReturn)
+	document.addEventListener('visibilitychange', onReturn)
+})
+onBeforeUnmount(() => {
+	window.removeEventListener('focus', onReturn)
+	document.removeEventListener('visibilitychange', onReturn)
+})
+
 // Phones: three oversized stars around the card, big and faint, each half out of frame.
 const backdropStars = [
 	{ class: '-left-24 -top-28 hidden h-[380px] w-[380px] rotate-12 opacity-[.07] md:block' },
@@ -269,6 +307,20 @@ const shelves = [
 		grid-column: 3;
 	}
 
+	/* Top of the form column, over the pane's own padding. */
+	.auth-back {
+		grid-row: 1;
+		grid-column: 1;
+		align-self: start;
+		justify-self: start;
+		margin: 1.75rem 0 0 2.25rem;
+		z-index: 20;
+	}
+
+	.auth-shell[data-panel='left'] .auth-back {
+		grid-column: 3;
+	}
+
 	.auth-panel {
 		position: absolute;
 		top: 12px;
@@ -310,9 +362,14 @@ const shelves = [
 	background: radial-gradient(closest-side, rgb(255 255 255 / .16), rgb(255 255 255 / .04) 60%, transparent);
 }
 
+/* The star turns, not the image inside it: the image is offset within a clipping box, so turning it would swing the compass out of view. */
 .auth-star {
 	filter: drop-shadow(0 10px 30px rgb(0 0 0 / .18));
 	transition: transform 1100ms var(--ease-out);
+}
+
+.auth-emblem {
+	filter: brightness(0) invert(1);
 }
 
 .auth-panel[data-side='left'] .auth-star {

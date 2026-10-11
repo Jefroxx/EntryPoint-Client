@@ -1,9 +1,9 @@
 <template>
 	<div>
-		<label :for="id" class="mb-1.5 block text-[12.5px] font-semibold text-stone-800">{{ label }}</label>
+		<label :for="id" class="mb-1.5 block text-[12.5px] font-semibold text-stone-800">{{ label }}<FieldRequired /></label>
 		<div class="relative">
 			<input :id="id" :value="modelValue" :type="visible ? 'text' : 'password'" :placeholder="placeholder"
-				:autocomplete="autocomplete"
+				:autocomplete="autocomplete" aria-required="true"
 				class="h-10 w-full rounded-[10px] border bg-white pl-3 pr-11 text-[13.5px] text-stone-900 outline-none transition-colors placeholder:text-stone-400 focus:border-accent-500 focus:ring-2 focus:ring-accent-200"
 				:class="error ? 'border-red-400 bg-red-50' : 'border-stone-200'" @input="onInput" />
 			<button type="button" :aria-label="visible ? 'Hide password' : 'Show password'" :aria-pressed="visible"

@@ -68,8 +68,12 @@ export function setupPageLoader() {
 	// Only a different page counts; a query change (a filter, a tab, pagination) stays on the page.
 	// Sign-in, register and librarian sign-in (the auth layout) only get the loader on first load; moving
 	// between them, or landing on one after signing out, swaps the form in place without it.
+	// "/" is the public landing page (or a redirect onward, which is its own navigation and gets the loader):
+	// it has nothing to wait for, and a loader would cover the morph back from the sign-in pages.
 	router.beforeEach((to, from) => {
-		if (to.path === from.path || to.meta.layout === 'auth') return
+		// Paths match regardless of capitals: the librarian pages live in a "Librarian" folder, and a query-only
+		// change can report /Librarian/… for what was /librarian/… (still the same page).
+		if (to.path.toLowerCase() === from.path.toLowerCase() || to.meta.layout === 'auth' || to.path === '/') return
 		loader.value.routing = true
 		show()
 	})

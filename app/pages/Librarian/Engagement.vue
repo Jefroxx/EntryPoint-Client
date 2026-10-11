@@ -81,7 +81,7 @@
             </div>
 
             <LibrarianRedemptionsTable :redemptions="pagedRedemptions" :loading="redemptionsPending"
-                @fulfill="handleFulfill" @cancel="askCancelRedemption" />
+                @fulfill="(r) => openRedemption(r, 'fulfill')" @cancel="(r) => openRedemption(r, 'cancel')" />
 
             <LibrarianPagination :shown="pagedRedemptions.length" :total="filteredRedemptions.length"
                 noun="redemptions" :page="redemptionPage" :last-page="redemptionTotalPages"
@@ -89,10 +89,12 @@
         </template>
     
 
-        <LibrarianAchievementFormModal :open="isAchievementOpen" :achievement="editingAchievement" :busy="busy"
+        <LibrarianAchievementFormModal :open="isAchievementOpen" :achievement="editingAchievement" :metrics="achievementMetrics" :busy="busy"
             @close="isAchievementOpen = false" @submit="saveAchievement" />
         <LibrarianMarketItemFormModal :open="isItemOpen" :item="editingItem" :busy="busy" @close="isItemOpen = false"
             @submit="saveItem" />
+        <LibrarianRedemptionReviewModal :open="isRedemptionOpen" :mode="redemptionMode" :redemption="redemptionTarget" :busy="redemptionBusy"
+            @close="isRedemptionOpen = false" @submit="confirmRedemption" />
         <LibrarianConfirmModal :open="confirmOpen" :title="confirmState.title" :message="confirmState.message"
             :confirm-label="confirmState.label" :loading="busy" @close="confirmOpen = false" @confirm="runConfirm" />
 
@@ -136,6 +138,7 @@ const { data: redemptionsResponse, pending: redemptionsPending, execute: refetch
     useLiveAsyncData('engagement-redemptions', () => engagementService.fetchRedemptions(), { lazy: true })
 
 const achievements = computed(() => achievementsResponse.value?.achievements ?? [])
+const achievementMetrics = computed(() => achievementsResponse.value?.metrics ?? [])
 const items = computed(() => itemsResponse.value?.items ?? [])
 const redemptions = computed(() => redemptionsResponse.value?.redemptions ?? [])
 
@@ -243,8 +246,28 @@ const pagedRedemptions = computed(() => {
 })
 watch([redemptionSearch, redemptionStatus], () => { redemptionPage.value = 1 })
 
-function handleFulfill(redemption: RedemptionRecord) {
-    return perform(() => engagementService.fulfillRedemption(redemption.uuid), 'Redemption fulfilled', 'Could not fulfill redemption', [refetchRedemptions])
+// Fulfilling and cancelling a redemption both ask first, in one window: the item, the student and the redemption,
+// then a last confirmation. Nothing changes until that final button.
+const isRedemptionOpen = ref(false)
+const redemptionMode = ref<'fulfill' | 'cancel'>('fulfill')
+const redemptionTarget = ref<RedemptionRecord | null>(null)
+const redemptionBusy = ref(false)
+
+function openRedemption(redemption: RedemptionRecord, mode: 'fulfill' | 'cancel') {
+    redemptionTarget.value = redemption
+    redemptionMode.value = mode
+    isRedemptionOpen.value = true
+}
+
+async function confirmRedemption() {
+    const redemption = redemptionTarget.value
+    if (!redemption) return
+    redemptionBusy.value = true
+    const ok = redemptionMode.value === 'fulfill'
+        ? await perform(() => engagementService.fulfillRedemption(redemption.uuid), 'Redemption fulfilled', 'Could not fulfill redemption', [refetchRedemptions])
+        : await perform(() => engagementService.cancelRedemption(redemption.uuid), 'Redemption cancelled', 'Could not cancel redemption', [refetchRedemptions, refetchItems])
+    redemptionBusy.value = false
+    if (ok) isRedemptionOpen.value = false
 }
 
 // ---- Confirmations (delete / cancel) ----
@@ -280,15 +303,6 @@ function askDeleteItem(item: MarketItemRecord) {
         `“${item.name}” will be removed from the rewards market.`,
         'Delete',
         () => perform(() => engagementService.deleteMarketItem(item.uuid), 'Item deleted', 'Could not delete item', [refetchItems]),
-    )
-}
-
-function askCancelRedemption(redemption: RedemptionRecord) {
-    ask(
-        'Cancel redemption?',
-        `${personName(redemption.student?.user)} gets ${redemption.pointsSpent} points back and “${redemption.item?.name ?? 'the item'}” is restocked.`,
-        'Cancel redemption',
-        () => perform(() => engagementService.cancelRedemption(redemption.uuid), 'Redemption cancelled', 'Could not cancel redemption', [refetchRedemptions, refetchItems]),
     )
 }
 </script>

@@ -17,8 +17,9 @@
 					</tr>
 				</thead>
 				<tbody>
-					<tr v-for="loan in loans" :key="`${loan.studentName}-${loan.bookTitle}-${loan.checkoutDate}`"
-						class="border-b border-stone-50 last:border-0">
+					<tr v-for="loan in loans" :key="`${loan.studentName}-${loan.bookTitle}-${loan.checkoutDate}`" tabindex="0"
+						class="cursor-pointer border-b border-stone-50 transition-colors duration-150 last:border-0 hover:bg-accent-50 focus-visible:bg-accent-50 focus-visible:outline-none"
+						@click="selected = loan" @keydown.enter.self="selected = loan">
 						<td class="py-3 pr-4">
 							<div class="flex items-center gap-2">
 								<LibrarianStudentAvatar :name="loan.studentName" />
@@ -41,6 +42,17 @@
 				</tbody>
 			</table>
 		</div>
+
+		<!-- Click a row for the whole loan. Teleports to <body>. -->
+		<LibrarianRecordDrawer :open="!!selected" heading="Loan details" :title="selected?.bookTitle ?? ''"
+			:subtitle="selected?.loanID ? `Loan #${selected.loanID}` : undefined" :status="selected ? pill(selected) : undefined"
+			:fields="fields" @close="selected = null">
+			<template #footer>
+				<NuxtLink to="/librarian/circulation" class="w-full">
+					<ButtonsButton variant="primary" class="w-full">Open in Circulation</ButtonsButton>
+				</NuxtLink>
+			</template>
+		</LibrarianRecordDrawer>
 	</div>
 </template>
 
@@ -50,6 +62,39 @@ import type { RecentLoan } from '~/services/librarianService'
 defineProps<{
 	loans: RecentLoan[]
 }>()
+
+const selected = ref<RecentLoan | null>(null)
+
+const fields = computed(() => {
+	const loan = selected.value
+	if (!loan) return []
+	return [
+		{ label: 'Student', value: loan.studentName, wide: true },
+		{ label: 'Student ID', value: loan.studentIDNumber, mono: true },
+		{ label: 'Program', value: loan.academicProgram },
+		{ label: 'Accession no.', value: loan.accessionNumber, mono: true },
+		{ label: 'Checked out', value: formatDateTime(loan.checkoutAt ?? loan.checkoutDate) },
+		{ label: 'Due', value: formatDateTime(loan.dueAt ?? loan.dueDate) },
+		{ label: 'Returned', value: loan.returnedAt ? formatDateTime(loan.returnedAt) : null },
+		{ label: 'Loan length', value: dayCount(loan.checkoutAt ?? loan.checkoutDate, loan.dueAt ?? loan.dueDate) },
+	]
+})
+
+function dayCount(from: string, to: string): string {
+	const days = Math.round((new Date(to).getTime() - new Date(from).getTime()) / 86_400_000)
+	return `${days} day${days === 1 ? '' : 's'}`
+}
+
+/** The same states and words as the Loans page, so a loan reads the same wherever it shows up. */
+function pill(loan: RecentLoan): { label: string; tone: 'info' | 'warning' | 'danger' | 'neutral' } {
+	switch (loan.status) {
+		case 'Returned': return { label: 'Returned', tone: 'neutral' }
+		case 'Received': return { label: 'Received · to check', tone: 'warning' }
+		case 'Due': return { label: 'Overdue', tone: 'danger' }
+		case 'Due Soon': return { label: 'Due Soon', tone: 'warning' }
+		default: return { label: 'Active', tone: 'info' }
+	}
+}
 
 function shortDate(value: string): string {
 	return new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })

@@ -483,9 +483,9 @@ function openAddCopies(copy?: CopyCatalogRow) {
     isAddCopiesOpen.value = true
 }
 
-async function saveAddCopies(payload: { bookUuid: string; title: string; quantity: number; note: string | undefined }) {
+async function saveAddCopies(payload: { bookUuid: string; title: string; quantity: number; sourceOfFund: string; cost: number; remarks: string | undefined }) {
     stockBusy.value = true
-    const ok = await perform(() => librarianService.addCopies(payload.bookUuid, { quantity: payload.quantity, note: payload.note }),
+    const ok = await perform(() => librarianService.addCopies(payload.bookUuid, { quantity: payload.quantity, sourceOfFund: payload.sourceOfFund, cost: payload.cost, remarks: payload.remarks }),
         payload.quantity === 1 ? 'Copy added' : `${payload.quantity} copies added`, 'Could not add copies', refreshStock)
     stockBusy.value = false
     if (ok) isAddCopiesOpen.value = false
@@ -613,8 +613,11 @@ function openAddBook() {
 onMounted(() => {
     if (route.query.new !== 'book') return
     openAddBook()
-    const { new: _, ...rest } = route.query
-    void navigateTo({ query: rest }, { replace: true })
+    // Done on the address bar alone, not through the router: a router navigation here interrupts the page change
+    // that is still finishing (the loading cover stayed up), and a query-only one rewrote the path to /Librarian/….
+    const url = new URL(window.location.href)
+    url.searchParams.delete('new')
+    window.history.replaceState(window.history.state, '', url)
 })
 
 /** From the table (a list row, so fetch the full record) or from the details drawer (already full). */

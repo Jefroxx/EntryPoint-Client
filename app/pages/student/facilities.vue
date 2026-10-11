@@ -111,7 +111,7 @@
 import { studentService } from '~/services/studentService'
 import { TONE_SOFT } from '~/utils/studentNotifications'
 
-definePageMeta({ layout: 'student', middleware: 'student', title: 'Facilities', nav: 'facilities', tab: 'home', wide: true })
+definePageMeta({ layout: 'student', middleware: 'student', title: 'Facilities', nav: 'facilities', tab: 'home', wide: true, back: '/student/home' })
 useHead({ title: 'Facilities' })
 
 const route = useRoute()

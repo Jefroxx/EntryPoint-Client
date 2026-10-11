@@ -32,7 +32,7 @@
 
 					<div v-else class="space-y-4 px-6 py-5">
 						<form autocomplete="off" @submit.prevent="handlePickupCode">
-							<label for="checkout-pickup" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">Reservation pickup code</label>
+							<label for="checkout-pickup" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">Reservation pickup code <span class="font-normal text-stone-400">(optional)</span></label>
 							<div class="flex gap-2">
 								<input id="checkout-pickup" v-model="pickupCode" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false"
 									placeholder="Scan the student's slip, or type R-000123" :disabled="lookingUp"
@@ -45,7 +45,7 @@
 						</form>
 
 						<div>
-							<label for="checkout-student" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">Student</label>
+							<label for="checkout-student" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">Student<FieldRequired /></label>
 							<LibrarianSearchSelect v-model="student" input-id="checkout-student" placeholder="Search name or student ID"
 								:fetcher="searchStudents" :get-label="studentLabel" :get-sublabel="studentSublabel"
 								:invalid="!!errors.student" />
@@ -53,7 +53,7 @@
 						</div>
 
 						<div>
-							<label for="checkout-book" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">Book</label>
+							<label for="checkout-book" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">Book<FieldRequired /></label>
 							<LibrarianSearchSelect v-model="book" input-id="checkout-book" placeholder="Search by title"
 								:fetcher="searchBooks" :get-label="bookLabel" :get-sublabel="bookSublabel"
 								:invalid="!!errors.book" />
@@ -61,7 +61,7 @@
 						</div>
 
 						<div v-if="book">
-							<label for="checkout-copy" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">Copy</label>
+							<label for="checkout-copy" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">Copy<FieldRequired /></label>
 							<select v-if="availableCopies.length" id="checkout-copy" v-model="copyID"
 								class="font-data h-11 w-full rounded-[10px] border border-stone-200 bg-white px-3 text-[13.5px] text-stone-900 outline-none focus:border-accent-500 focus:ring-2 focus:ring-accent-200">
 								<option v-for="copy in availableCopies" :key="copy.copyID" :value="copy.copyID">{{ copy.accessionNumber }}</option>
@@ -97,7 +97,13 @@ import { librarianService, type StudentRecord, type CatalogBook } from '~/servic
 import { circulationService, type LoanReceipt as LoanReceiptData } from '~/services/circulationService'
 import { useAlert } from '~/api/alert/useAlert'
 
-const props = defineProps<{ open: boolean; /** A pickup code the scanner already read: looked up as soon as the window opens. */ initialCode?: string }>()
+const props = defineProps<{
+	open: boolean
+	/** A pickup code the scanner already read: looked up as soon as the window opens. */
+	initialCode?: string
+	/** With a code that is found, check the book out straight away (the slip was scanned, so there is nothing left to fill in). */
+	autoCheckout?: boolean
+}>()
 
 const emit = defineEmits<{
 	(e: 'close'): void
@@ -141,7 +147,11 @@ watch(() => props.open, (isOpen) => {
 
 	if (props.initialCode) {
 		pickupCode.value = props.initialCode
-		void handlePickupCode()
+		void handlePickupCode().then(async () => {
+			if (!props.autoCheckout || !reservation.value || !student.value || !book.value) return
+			await nextTick() // the book's watcher picks the copy to lend
+			if (props.open && copyID.value) void handleSubmit()
+		})
 	}
 })
 

@@ -39,7 +39,13 @@
 				</div>
 			</div>
 
-			<div v-if="student?.registrationStatus === 'pending'" class="flex gap-2.5 border-t border-stone-100 px-5 py-4">
+			<div v-if="student?.registrationStatus === 'rejected'" class="flex gap-2.5 border-t border-stone-100 px-5 py-4">
+				<ButtonsButton variant="primary" class="flex-1" @click="emit('reinstate', student)">
+					Reinstate approval
+				</ButtonsButton>
+			</div>
+
+			<div v-else-if="student?.registrationStatus === 'pending'" class="flex gap-2.5 border-t border-stone-100 px-5 py-4">
 				<ButtonsButton variant="danger" class="flex-1" @click="emit('reject', student)">
 					Reject
 				</ButtonsButton>
@@ -63,6 +69,7 @@ const emit = defineEmits<{
 	(e: 'close'): void
 	(e: 'approve', student: StudentRecord): void
 	(e: 'reject', student: StudentRecord): void
+	(e: 'reinstate', student: StudentRecord): void
 }>()
 
 const studentName = computed(() => {

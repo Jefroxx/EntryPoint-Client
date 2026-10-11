@@ -4,7 +4,7 @@
 		 the Add/Edit Book window after the book itself saves) makes it so. Cancel therefore really cancels. -->
 	<div class="space-y-4">
 		<p class="text-[13.5px] leading-relaxed text-stone-500">
-			Photos of these pages let students look inside a book before they borrow it. Shoot each page straight on,
+			<span class="mr-1.5 inline-flex h-5 items-center rounded-full bg-stone-100 px-2 align-middle text-[11.5px] font-semibold text-stone-600">Optional</span>Photos of these pages let students look inside a book before they borrow it. Shoot each page straight on,
 			in good light. They're uploaded when you save.
 		</p>
 

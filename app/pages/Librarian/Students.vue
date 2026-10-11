@@ -6,9 +6,15 @@
         </div>
 
         <LibrarianSegmentedTabs v-model="activeTab" class="mb-5" :tabs="[
-            { label: 'All Students', value: 'all' },
-            { label: 'Pending Approval', value: 'pending' },
+            { label: 'Approved Students', value: 'approved' },
+            { label: 'Pending Approval', value: 'pending', badge: stats?.pending || undefined },
+            { label: 'Rejected', value: 'rejected' },
         ]" />
+
+        <p v-if="activeTab === 'rejected'" class="mb-4 flex items-start gap-2.5 rounded-xl bg-stone-100 px-4 py-3 text-[13.5px] text-stone-700">
+            <Icon name="i-tabler-info-circle" class="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+            These registrations were rejected, so these students can't log in. Reinstate a student to approve them again.
+        </p>
 
         <div class="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
             <LibrarianCatalogStatTile label="Total Students" :value="stats?.total ?? '—'"
@@ -40,8 +46,8 @@
             <LibrarianResetFiltersButton @click="search = ''; programFilter = ''" />
         </div>
 
-        <LibrarianStudentsTable :students="students?.data ?? []" :loading="studentsPending"
-            @view="openDrawer" @approve="handleApprove" @reject="handleReject" />
+        <LibrarianStudentsTable :students="students?.data ?? []" :loading="studentsPending" :empty-text="emptyText"
+            @view="openDrawer" @approve="handleApprove" @reject="handleReject" @reinstate="askReinstate" />
 
         <div v-if="students" class="mt-3 flex items-center justify-between text-[13.5px] text-stone-400">
             <span>Showing {{ students.data.length }} of {{ students.total }} students</span>
@@ -61,7 +67,10 @@
     
 
         <LibrarianStudentDetailDrawer :open="isDrawerOpen" :student="activeStudent" @close="isDrawerOpen = false"
-            @approve="handleApprove" @reject="handleReject" />
+            @approve="handleApprove" @reject="handleReject" @reinstate="askReinstate" />
+
+        <LibrarianStudentReviewModal :open="isReviewOpen" :mode="reviewMode" :student="reviewStudent" :busy="reviewBusy"
+            @close="isReviewOpen = false" @submit="confirmReview" />
 
         <AlertToast />
     
@@ -83,7 +92,15 @@ useHead({ title: 'Students' })
 const alert = useAlert()
 
 const route = useRoute()
-const activeTab = ref(route.query.tab === 'pending' ? 'pending' : 'all')
+// The list is split by status: approved students (the default), those waiting for approval, and rejected ones.
+type StudentTab = 'approved' | 'pending' | 'rejected'
+const activeTab = ref<StudentTab>(route.query.tab === 'pending' ? 'pending' : route.query.tab === 'rejected' ? 'rejected' : 'approved')
+
+const emptyText = computed(() => ({
+    approved: 'No approved students match your search.',
+    pending: 'No registrations are waiting for approval.',
+    rejected: 'No rejected registrations.',
+})[activeTab.value])
 const search = ref('')
 const programFilter = ref('')
 const page = ref(1)
@@ -95,7 +112,7 @@ const { data: students, pending: studentsPending, execute: refetchStudents } = u
     () => librarianService.fetchStudents({
         search: search.value || undefined,
         program: programFilter.value || undefined,
-        status: activeTab.value === 'pending' ? 'pending' : undefined,
+        status: activeTab.value,
         page: page.value,
         perPage: 10,
     }),
@@ -135,25 +152,47 @@ function openDrawer(student: StudentRecord) {
     isDrawerOpen.value = true
 }
 
-async function handleApprove(student: StudentRecord) {
-    try {
-        await librarianService.approveStudent(student.uuid)
-        isDrawerOpen.value = false
-        alert.success('Student approved', `${student.user?.firstName ?? 'Student'} can now log in.`)
-        await Promise.all([refetchStudents(), refetchStats()])
-    } catch (error: any) {
-        alert.error('Could not approve student', error?.data?.message || 'Please try again.')
-    }
+// Approving, rejecting and reinstating a student all ask first, in one window: the student's details, then a
+// last confirmation. Nothing changes until that final button.
+type ReviewMode = 'approve' | 'reject' | 'reinstate'
+const isReviewOpen = ref(false)
+const reviewMode = ref<ReviewMode>('approve')
+const reviewStudent = ref<StudentRecord | null>(null)
+const reviewBusy = ref(false)
+
+function openReview(student: StudentRecord, mode: ReviewMode) {
+    reviewStudent.value = student
+    reviewMode.value = mode
+    isReviewOpen.value = true
 }
 
-async function handleReject(student: StudentRecord) {
+const handleApprove = (student: StudentRecord) => openReview(student, 'approve')
+const handleReject = (student: StudentRecord) => openReview(student, 'reject')
+const askReinstate = (student: StudentRecord) => openReview(student, 'reinstate')
+
+async function confirmReview() {
+    const student = reviewStudent.value
+    if (!student) return
+    const mode = reviewMode.value
+    const name = student.user?.firstName ?? 'The student'
+
+    reviewBusy.value = true
     try {
-        await librarianService.rejectStudent(student.uuid)
+        if (mode === 'reject') await librarianService.rejectStudent(student.uuid)
+        else await librarianService.approveStudent(student.uuid)
+
+        isReviewOpen.value = false
         isDrawerOpen.value = false
-        alert.success('Student rejected', `${student.user?.firstName ?? 'Student'}'s registration was rejected.`)
+        if (mode === 'approve') alert.success('Student approved', `${name} can now log in.`)
+        else if (mode === 'reinstate') alert.success('Approval reinstated', `${name} can log in again.`)
+        else alert.success('Student rejected', `${name}'s registration was rejected.`)
         await Promise.all([refetchStudents(), refetchStats()])
     } catch (error: any) {
-        alert.error('Could not reject student', error?.data?.message || 'Please try again.')
+        isReviewOpen.value = false
+        const title = mode === 'reject' ? 'Could not reject student' : mode === 'reinstate' ? 'Could not reinstate the student' : 'Could not approve student'
+        alert.error(title, apiErrorMessage(error, 'Please try again.'))
+    } finally {
+        reviewBusy.value = false
     }
 }
 </script>

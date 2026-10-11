@@ -12,7 +12,7 @@
 				leave-active-class="transition-[transform,opacity] duration-150 ease-out"
 				leave-from-class="scale-100 translate-y-0 opacity-100" leave-to-class="scale-95 translate-y-1 opacity-0">
 				<div v-if="open" role="dialog" aria-modal="true" :aria-labelledby="titleId"
-					class="relative z-10 flex max-h-[min(680px,calc(100vh-48px))] w-full flex-col rounded-[22px] bg-white shadow-overlay"
+					class="relative z-10 flex w-full flex-col rounded-[22px] bg-white shadow-overlay"
 					:class="widthClass">
 					<div class="flex flex-shrink-0 items-start justify-between gap-3 border-b border-stone-100 px-6 py-5">
 						<div>
@@ -42,7 +42,7 @@ const props = withDefaults(defineProps<{
 	open: boolean
 	title: string
 	subtitle?: string
-	size?: 'sm' | 'md' | 'lg'
+	size?: 'sm' | 'md' | 'lg' | 'xl'
 	busy?: boolean
 }>(), {
 	size: 'md',
@@ -54,9 +54,11 @@ const emit = defineEmits<{ (e: 'close'): void }>()
 const titleId = useId()
 
 const widthClass = computed(() => ({
-	sm: 'max-w-[400px]',
-	md: 'max-w-[480px]',
-	lg: 'max-w-[560px]',
+	sm: 'max-w-[400px] max-h-[min(680px,calc(100vh-48px))]',
+	md: 'max-w-[480px] max-h-[min(680px,calc(100vh-48px))]',
+	lg: 'max-w-[560px] max-h-[min(680px,calc(100vh-48px))]',
+	// A wide, tall window for screens that show a lot at once (the return confirmation): up to the screen's own height.
+	xl: 'max-w-[940px] max-h-[calc(100vh-48px)]',
 }[props.size]))
 
 function requestClose() {

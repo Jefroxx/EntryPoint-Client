@@ -71,7 +71,9 @@ function setLinkRef(el: any, index: number) {
     linkRefs.value[index] = el
 }
 
-const activeIndex = computed(() => navLinks.findIndex((link) => route.path.startsWith(link.to)))
+// Ignoring capitals: the pages live in a "Librarian" folder, and the address can come back as /Librarian/… after
+// a query-only change, which would otherwise leave nothing highlighted.
+const activeIndex = computed(() => navLinks.findIndex((link) => route.path.toLowerCase().startsWith(link.to)))
 
 // The link you just pressed, before the route has finished changing. Following it
 // straight away makes the sidebar answer the press even when a page is slow to load.

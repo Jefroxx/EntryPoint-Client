@@ -43,7 +43,7 @@
 										<Icon v-else-if="s.n < step" name="i-tabler-check" class="h-3.5 w-3.5" />
 										<span v-else class="tabular-nums">{{ s.n }}.</span>
 										{{ s.label }}
-										<span v-if="s.optional" class="hidden font-normal text-stone-400 sm:inline">(optional)</span>
+										<span v-if="s.optional" class="font-normal text-stone-400">(optional)</span>
 									</span>
 								</button>
 							</li>
@@ -104,7 +104,7 @@
 								<div v-if="step === 1" key="details" class="space-y-4">
 									<div>
 										<label for="bookTitle"
-											class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">Title</label>
+											class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">Title<FieldRequired /></label>
 										<input id="bookTitle" v-model="form.title" type="text"
 											placeholder="e.g. The Origin of Species"
 											:class="[inputClass, errors.title ? 'border-red-400 bg-red-50' : 'border-stone-200']"
@@ -113,7 +113,7 @@
 									</div>
 
 									<div>
-										<label class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">Author(s)</label>
+										<label class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">Author(s)<FieldRequired /></label>
 										<div v-for="(author, index) in authors" :key="author.key"
 											class="mb-2 flex items-center gap-2">
 											<input v-model="author.name" type="text" placeholder="Author name"
@@ -142,18 +142,18 @@
 
 									<div class="grid gap-3 sm:grid-cols-2">
 										<div>
-											<label for="bookIsbn" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">
-												ISBN <span class="font-normal text-stone-400">(optional)</span>
-											</label>
-											<input id="bookIsbn" v-model="form.isbn" type="text" placeholder="978-0-000-00000-0"
-												:class="[inputClass, 'border-stone-200']" class="font-data !text-[13.5px]" />
+											<label for="bookIsbn" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">ISBN<FieldRequired /></label>
+											<input id="bookIsbn" v-model="form.isbn" type="text" placeholder="978-0-000-00000-0" maxlength="20"
+												:class="[inputClass, errors.isbn ? 'border-red-400 bg-red-50' : 'border-stone-200']" class="font-data !text-[13.5px]"
+												@input="errors.isbn = ''" />
+											<p v-if="errors.isbn" class="mt-1 text-[12.5px] text-red-500">{{ errors.isbn }}</p>
 										</div>
 										<div>
-											<label for="bookYear" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">
-												Publication year <span class="font-normal text-stone-400">(optional)</span>
-											</label>
+											<label for="bookYear" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">Publication year<FieldRequired /></label>
 											<input id="bookYear" v-model="form.publicationYear" type="number" placeholder="2024"
-												:class="[inputClass, 'border-stone-200']" />
+												:class="[inputClass, errors.publicationYear ? 'border-red-400 bg-red-50' : 'border-stone-200']"
+												@input="errors.publicationYear = ''" />
+											<p v-if="errors.publicationYear" class="mt-1 text-[12.5px] text-red-500">{{ errors.publicationYear }}</p>
 										</div>
 									</div>
 								</div>
@@ -164,7 +164,7 @@
 										<div class="grid gap-3 sm:grid-cols-2">
 											<div>
 												<label for="bookCategory" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">
-													Category / genre</label>
+													Category / genre<FieldRequired /></label>
 												<input id="bookCategory" v-model="form.subjectName" type="text"
 													list="category-options" placeholder="e.g. Science"
 													:class="[inputClass, errors.subjectName ? 'border-red-400 bg-red-50' : 'border-stone-200']"
@@ -190,7 +190,7 @@
 										<div class="grid gap-3 sm:grid-cols-2">
 											<div>
 												<label for="bookArea" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">
-													Area of the library</label>
+													Area of the library<FieldRequired /></label>
 												<select id="bookArea" v-model="form.areaOfLibrary" :class="[inputClass, 'border-stone-200']">
 													<option value="circulation">Circulation</option>
 													<option value="reserved">Reserved</option>
@@ -220,7 +220,7 @@
 										</p>
 									</fieldset>
 									<fieldset v-else>
-										<legend class="mb-2.5 text-[12px] font-bold uppercase tracking-wide text-stone-400">Copies</legend>
+										<legend class="mb-2.5 text-[12px] font-bold uppercase tracking-wide text-stone-400">Copies<FieldRequired /></legend>
 										<div class="flex flex-wrap items-center gap-3">
 											<div class="flex w-fit overflow-hidden rounded-[10px] border border-stone-200">
 												<button type="button" aria-label="Decrease quantity" :disabled="quantity <= minQuantity"
@@ -240,47 +240,52 @@
 
 								<div v-else-if="step === 3" key="more" class="space-y-4">
 									<p class="text-[13px] leading-relaxed text-stone-500">
-										Publication and acquisition records. Skip anything you don't have.</p>
+										Publication and acquisition records. Everything here is required except the remarks.
+										If a book has no edition or volume, enter <b class="text-stone-700">N/A</b>; if it was donated, the cost is <b class="text-stone-700">0</b>.</p>
 									<div class="grid gap-3 sm:grid-cols-2">
 										<div>
-											<label for="bookPublisher" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">Publisher</label>
-											<input id="bookPublisher" v-model="form.publisher" type="text" placeholder="e.g. McGraw-Hill"
-												:class="[inputClass, 'border-stone-200']" />
+											<label for="bookPublisher" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">Publisher<FieldRequired /></label>
+											<input id="bookPublisher" v-model="form.publisher" type="text" placeholder="e.g. McGraw-Hill" maxlength="255"
+											:class="[inputClass, errors.publisher ? 'border-red-400 bg-red-50' : 'border-stone-200']" @input="errors.publisher = ''" />
+											<p v-if="errors.publisher" class="mt-1 text-[12.5px] text-red-500">{{ errors.publisher }}</p>
 										</div>
 										<div>
-											<label for="bookEdition" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">Edition</label>
-											<input id="bookEdition" v-model="form.edition" type="text" placeholder="e.g. 7th ed."
-												:class="[inputClass, 'border-stone-200']" />
+											<label for="bookEdition" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">Edition<FieldRequired /></label>
+											<input id="bookEdition" v-model="form.edition" type="text" placeholder="e.g. 7th ed., or N/A" maxlength="50"
+											:class="[inputClass, errors.edition ? 'border-red-400 bg-red-50' : 'border-stone-200']" @input="errors.edition = ''" />
+											<p v-if="errors.edition" class="mt-1 text-[12.5px] text-red-500">{{ errors.edition }}</p>
 										</div>
 										<div>
-											<label for="bookVolume" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">Volume</label>
-											<input id="bookVolume" v-model="form.volume" type="text" placeholder="e.g. Vol. 2"
-												:class="[inputClass, 'border-stone-200']" />
+											<label for="bookVolume" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">Volume<FieldRequired /></label>
+											<input id="bookVolume" v-model="form.volume" type="text" placeholder="e.g. Vol. 2, or N/A" maxlength="50"
+											:class="[inputClass, errors.volume ? 'border-red-400 bg-red-50' : 'border-stone-200']" @input="errors.volume = ''" />
+											<p v-if="errors.volume" class="mt-1 text-[12.5px] text-red-500">{{ errors.volume }}</p>
 										</div>
 										<div>
-											<label for="bookPages" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">Pages</label>
+											<label for="bookPages" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">Pages<FieldRequired /></label>
 											<input id="bookPages" v-model="form.pages" type="number" min="1" placeholder="e.g. 320"
-												:class="[inputClass, 'border-stone-200']" />
+											:class="[inputClass, errors.pages ? 'border-red-400 bg-red-50' : 'border-stone-200']" @input="errors.pages = ''" />
+											<p v-if="errors.pages" class="mt-1 text-[12.5px] text-red-500">{{ errors.pages }}</p>
 										</div>
 										<div>
-											<label for="bookFund" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">Source of fund</label>
-											<input id="bookFund" v-model="form.sourceOfFund" type="text" placeholder="e.g. Library budget"
-												:class="[inputClass, 'border-stone-200']" />
+											<label for="bookFund" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">Source of fund<FieldRequired /></label>
+											<input id="bookFund" v-model="form.sourceOfFund" type="text" placeholder="e.g. Library budget, Donation" maxlength="255"
+											:class="[inputClass, errors.sourceOfFund ? 'border-red-400 bg-red-50' : 'border-stone-200']" @input="errors.sourceOfFund = ''" />
+											<p v-if="errors.sourceOfFund" class="mt-1 text-[12.5px] text-red-500">{{ errors.sourceOfFund }}</p>
 										</div>
 										<div>
-											<label for="bookCost" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">Cost</label>
+											<label for="bookCost" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">Cost (₱)<FieldRequired /></label>
 											<input id="bookCost" v-model="form.cost" type="number" min="0" step="0.01" placeholder="0.00"
-												:class="[inputClass, 'border-stone-200']" class="font-data !text-[13.5px]" />
-										</div>
-										<div>
-											<label for="bookCopyNumber" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">Copy number</label>
-											<input id="bookCopyNumber" v-model="form.copyNumber" type="text" placeholder="e.g. c.1"
-												:class="[inputClass, 'border-stone-200']" class="font-data !text-[13.5px]" />
+											:class="[inputClass, errors.cost ? 'border-red-400 bg-red-50' : 'border-stone-200']" class="font-data !text-[13.5px]" @input="errors.cost = ''" />
+											<p v-if="errors.cost" class="mt-1 text-[12.5px] text-red-500">{{ errors.cost }}</p>
+											<p v-else class="mt-1 text-[12.5px] text-stone-400">Enter 0 for a donated book.</p>
 										</div>
 									</div>
 									<div>
-										<label for="bookRemarks" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">Remarks</label>
-										<textarea id="bookRemarks" v-model="form.remarks" rows="3"
+										<label for="bookRemarks" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">
+											Remarks <span class="font-normal text-stone-400">(optional)</span>
+										</label>
+										<textarea id="bookRemarks" v-model="form.remarks" rows="3" maxlength="1000"
 											placeholder="e.g. Donated copy, minor cover wear"
 											class="w-full resize-y rounded-[10px] border border-stone-200 bg-white px-3 py-2 text-[14px] text-stone-900 outline-none focus:border-accent-500 focus:ring-2 focus:ring-accent-200" />
 									</div>
@@ -365,7 +370,6 @@ const form = reactive({
 	pages: '' as string | number,
 	sourceOfFund: '',
 	cost: '' as string | number,
-	copyNumber: '',
 	remarks: '',
 })
 
@@ -373,7 +377,7 @@ const form = reactive({
 const stepList = [
 	{ n: 1, label: 'Book details', optional: false, firstField: 'bookTitle' },
 	{ n: 2, label: 'Shelving & copies', optional: false, firstField: 'bookCategory' },
-	{ n: 3, label: 'More details', optional: true, firstField: 'bookPublisher' },
+	{ n: 3, label: 'More details', optional: false, firstField: 'bookPublisher' },
 	{ n: 4, label: 'Page photos', optional: true, firstField: null },
 ] as const
 const lastStep = stepList.length
@@ -405,10 +409,21 @@ const editorKey = ref(0)
 const quantity = ref(1)
 const submitting = ref(false)
 const coverLoadFailed = ref(false)
-const errors = reactive<{ title: string; authors: string; subjectName: string }>({
+// The fields every book must have, whether it is being added or edited (see StoreBookRequest and UpdateBookRequest).
+const REQUIRED_KEYS = ['isbn', 'publicationYear', 'publisher', 'edition', 'volume', 'pages', 'sourceOfFund', 'cost'] as const
+type RequiredKey = (typeof REQUIRED_KEYS)[number]
+const errors = reactive<{ title: string; authors: string; subjectName: string } & Record<RequiredKey, string>>({
 	title: '',
 	authors: '',
 	subjectName: '',
+	isbn: '',
+	publicationYear: '',
+	publisher: '',
+	edition: '',
+	volume: '',
+	pages: '',
+	sourceOfFund: '',
+	cost: '',
 })
 
 const categories = computed(() => props.categories ?? [])
@@ -464,7 +479,6 @@ function resetForm() {
 	form.pages = ''
 	form.sourceOfFund = ''
 	form.cost = ''
-	form.copyNumber = ''
 	form.remarks = ''
 	authors.value = [blankAuthor()]
 	quantity.value = 1
@@ -475,6 +489,7 @@ function resetForm() {
 	errors.title = ''
 	errors.authors = ''
 	errors.subjectName = ''
+	for (const key of REQUIRED_KEYS) errors[key] = ''
 }
 
 function fillFromBook(book: BookDetail) {
@@ -489,10 +504,9 @@ function fillFromBook(book: BookDetail) {
 	form.publisher = book.publisher ?? ''
 	form.edition = book.edition ?? ''
 	form.volume = book.volume ?? ''
-	form.pages = book.pages ?? ''
+	form.pages = book.pageCount ?? ''
 	form.sourceOfFund = book.sourceOfFund ?? ''
 	form.cost = book.cost ?? ''
-	form.copyNumber = book.copyNumber ?? ''
 	form.remarks = book.remarks ?? ''
 	authors.value = book.authors.length
 		? book.authors.map((a) => ({ key: ++authorKeySeq, name: a.name, role: a.role || 'Author' }))
@@ -514,23 +528,38 @@ function handleClose() {
 	emit('close')
 }
 
-/** Checks one step's required fields and shows their messages. Steps 3 and 4 are all optional. */
+/** Checks one step's required fields and shows their messages. Step 4 (page photos) is optional. */
 function checkStep(n: number): boolean {
 	if (n === 1) {
 		errors.title = form.title.trim() ? '' : 'Title is required.'
 		errors.authors = authors.value.some((a) => a.name.trim()) ? '' : 'At least one author is required.'
-		return !errors.title && !errors.authors
+		// A book's record is complete, new or edited.
+		errors.isbn = form.isbn.trim() ? '' : 'ISBN is required.'
+		errors.publicationYear = /^\d{4}$/.test(String(form.publicationYear).trim()) ? '' : 'Enter the four-digit year, like 2024.'
+		return !errors.title && !errors.authors && !errors.isbn && !errors.publicationYear
 	}
 	if (n === 2) {
 		errors.subjectName = form.subjectName.trim() ? '' : 'Category is required.'
 		return !errors.subjectName
 	}
+	if (n === 3) {
+		errors.publisher = form.publisher.trim() ? '' : 'Publisher is required.'
+		errors.edition = form.edition.trim() ? '' : 'Edition is required. Enter N/A if there isn\'t one.'
+		errors.volume = form.volume.trim() ? '' : 'Volume is required. Enter N/A if there isn\'t one.'
+		const pages = Number(form.pages)
+		errors.pages = form.pages !== '' && Number.isInteger(pages) && pages >= 1 ? '' : 'Enter the number of pages.'
+		errors.sourceOfFund = form.sourceOfFund.trim() ? '' : 'Source of fund is required.'
+		const price = form.cost === '' ? NaN : Number(form.cost)
+		errors.cost = Number.isFinite(price) && price >= 0 ? '' : 'Enter the cost (0 if it was donated).'
+		return !errors.publisher && !errors.edition && !errors.volume && !errors.pages && !errors.sourceOfFund && !errors.cost
+	}
 	return true
 }
 
 function stepHasError(n: number) {
-	if (n === 1) return !!(errors.title || errors.authors)
+	if (n === 1) return !!(errors.title || errors.authors || errors.isbn || errors.publicationYear)
 	if (n === 2) return !!errors.subjectName
+	if (n === 3) return !!(errors.publisher || errors.edition || errors.volume || errors.pages || errors.sourceOfFund || errors.cost)
 	return false
 }
 
@@ -573,7 +602,6 @@ async function handleSubmit() {
 		pages: form.pages ? Number(form.pages) : null,
 		sourceOfFund: form.sourceOfFund.trim() || null,
 		cost: form.cost !== '' ? Number(form.cost) : null,
-		copyNumber: form.copyNumber.trim() || null,
 		remarks: form.remarks.trim() || null,
 	}
 
@@ -608,8 +636,10 @@ async function handleSubmit() {
 		if (serverErrors) {
 			errors.title = serverErrors.title?.[0] ?? ''
 			errors.subjectName = serverErrors.subjectName?.[0] ?? ''
-			if (errors.title) goTo(1)
+			for (const key of REQUIRED_KEYS) errors[key] = serverErrors[key]?.[0] ?? ''
+			if (errors.title || errors.isbn || errors.publicationYear) goTo(1)
 			else if (errors.subjectName) goTo(2)
+			else if (REQUIRED_KEYS.some((key) => errors[key])) goTo(3)
 			// e.g. "Cannot reduce to 0: only 1 copies are currently available to retire"
 			const fieldError = serverErrors.quantity?.[0] ?? serverErrors.coverImageURL?.[0]
 			alert.error(failTitle, fieldError || error?.data?.message || 'Please check the highlighted fields.')

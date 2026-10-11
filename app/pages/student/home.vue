@@ -119,7 +119,7 @@
 					Nothing on the shelf to suggest yet. New books show up here as the library adds them.
 				</p>
 
-				<div v-else class="no-scrollbar -mx-5 flex snap-x gap-4 overflow-x-auto px-5 pb-1 md:mx-0 md:grid md:grid-cols-4 md:overflow-visible md:px-0">
+				<div v-else class="no-scrollbar -mx-5 flex snap-x scroll-pl-5 gap-4 overflow-x-auto px-5 pb-1 md:mx-0 md:scroll-pl-0 md:grid md:grid-cols-4 md:overflow-visible md:px-0">
 					<button v-for="book in recommended" :key="book.bookID" type="button"
 						class="group w-[148px] shrink-0 snap-start rounded-2xl text-left focus-visible:outline-none md:w-auto md:[&:nth-child(n+5)]:hidden"
 						:aria-pressed="isSelected(book.bookID)" @click="pick(book)">

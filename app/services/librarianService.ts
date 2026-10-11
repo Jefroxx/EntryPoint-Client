@@ -58,15 +58,26 @@ export interface BookStatusOverview {
   };
 }
 
-export interface RecentLoan {
+/** What the dashboard's "click a row" drawer shows beyond the row itself. Sent with every dashboard loan. */
+export interface LoanRowDetails {
+  loanID?: number;
+  studentIDNumber?: string | null;
+  academicProgram?: string | null;
+  accessionNumber?: number | string | null;
+  checkoutAt?: string;
+  dueAt?: string;
+  returnedAt?: string | null;
+}
+
+export interface RecentLoan extends LoanRowDetails {
   studentName: string;
   bookTitle: string;
   checkoutDate: string;
   dueDate: string;
-  status: "Active" | "Due Soon" | "Due" | "Returned";
+  status: "Active" | "Due Soon" | "Due" | "Received" | "Returned";
 }
 
-export interface OverdueLoan {
+export interface OverdueLoan extends LoanRowDetails {
   studentName: string;
   bookTitle: string;
   daysOverdue: number;
@@ -87,7 +98,18 @@ export interface StudentRecord {
   registrationStatus: "pending" | "approved" | "rejected";
   knowledgeScore: number;
   visitStreak: number;
-  user: { firstName: string; lastName: string; email: string } | null;
+  created_at?: string;
+  reviewedAt?: string | null;
+  user: {
+    firstName: string;
+    middleInitial?: string | null;
+    lastName: string;
+    email: string;
+    emailVerifiedAt?: string | null;
+    phoneNumber?: string | null;
+    birthDate?: string | null;
+    address?: string | null;
+  } | null;
 }
 
 export interface PaginatedStudents {
@@ -159,11 +181,11 @@ export interface BookDetail {
   publicationYear: number | null;
   volume: string | null;
   edition: string | null;
-  pages: number | null;
+  /** How many pages the book has (the page photos are `pages`, below). */
+  pageCount: number | null;
   publisher: string | null;
   sourceOfFund: string | null;
   cost: string | number | null;
-  copyNumber: string | null;
   remarks: string | null;
   coverImageURL: string | null;
   shelfLocation: string | null;
@@ -198,6 +220,10 @@ export interface CopyCatalogRow {
   accessionNumber: number;
   barcodeValue: string | null;
   status: CopyStatus;
+  /** This copy's own record of where it came from; null for copies that were added before it was kept. */
+  sourceOfFund?: string | null;
+  cost?: string | number | null;
+  remarks?: string | null;
   book: {
     bookID: number;
     uuid: string;
@@ -381,7 +407,6 @@ export interface NewBookPayload {
   pages?: number | null;
   sourceOfFund?: string | null;
   cost?: number | null;
-  copyNumber?: string | null;
   remarks?: string | null;
 }
 
@@ -522,8 +547,11 @@ class LibrarianServiceClass extends BaseService {
       `/librarian/copies/${copyUuid}`, { method: "PATCH", body: payload });
   }
 
-  /** More copies of a book that is already in the catalog; each is logged in the stock log. */
-  addCopies(bookUuid: string, payload: { quantity: number; note?: string }) {
+  /**
+   * More copies of a book that is already in the catalog; each is logged in the stock log. Where they came
+   * from is required (source of fund, and the cost of each copy); remarks are optional.
+   */
+  addCopies(bookUuid: string, payload: { quantity: number; sourceOfFund: string; cost: number; remarks?: string }) {
     return this.apiRequest<{ message: string; copies: { copyID: number; accessionNumber: number; status: string }[] }>(
       `/librarian/books/${bookUuid}/copies`, { method: "POST", body: payload });
   }
