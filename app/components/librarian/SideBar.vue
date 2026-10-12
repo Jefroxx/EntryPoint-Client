@@ -80,6 +80,8 @@ const ADMIN_LINKS = [
     { label: 'Staff', to: '/admin/staff', icon: 'i-tabler-id-badge-2' },
     { label: 'Members', to: '/admin/members', icon: 'i-tabler-users' },
     { label: 'Roles', to: '/admin/roles', icon: 'i-tabler-shield-lock' },
+    { label: 'Announcements', to: '/admin/announcements', icon: 'i-tabler-speakerphone' },
+    { label: 'Privacy', to: '/admin/privacy', icon: 'i-tabler-user-shield' },
     { label: 'Audit log', to: '/admin/audit-log', icon: 'i-tabler-history' },
     { label: 'Librarian side', to: '/librarian/dashboard', icon: 'i-tabler-arrow-back-up' },
 ]

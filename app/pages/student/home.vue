@@ -14,6 +14,8 @@
 				</NuxtLink>
 			</div>
 
+			<AnnouncementBanner v-if="announcements?.announcements.length" class="st-in mb-5" :items="announcements.announcements" />
+
 			<div class="grid gap-4" :class="isStudent ? 'lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]' : ''">
 				<!-- Points, streak and the last seven days of visits (students only) -->
 				<section v-if="isStudent" class="st-in relative overflow-hidden rounded-[22px] bg-gradient-to-br from-accent-600 via-accent-500 to-accent-400 p-5 text-white" style="animation-delay: 35ms">
@@ -259,6 +261,7 @@
 <script setup lang="ts">
 import { NuxtLink } from '#components'
 import { studentService, type AchievementRow, type CatalogBook, type LoanRow } from '~/services/studentService'
+import { announcementService } from '~/services/announcementService'
 import { TONE_SOFT, type StudentTone } from '~/utils/studentNotifications'
 import type { BookPagePhoto } from '~/utils/bookPages'
 
@@ -308,6 +311,9 @@ const { data, pending } = useStudentData('student-home', async () => {
 		basis: bySubject ? basis : null,
 	}
 })
+
+// Notices from the administrator, in their own request too. (A failed one just means no banner.)
+const { data: announcements } = useStudentData('student-announcements', () => announcementService.forStudents().catch(() => ({ announcements: [] })))
 
 // Its own request, so the rest of Home doesn't wait on the rankings.
 const { data: hallOfFame, pending: hallOfFamePending } = useStudentData('student-hall-of-fame', () => (isStudent.value ? studentService.hallOfFame() : Promise.resolve(null)))

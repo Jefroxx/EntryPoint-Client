@@ -26,9 +26,7 @@
 
 			<div v-else-if="book" class="flex-1 overflow-y-auto px-5 py-5">
 				<div class="flex gap-4">
-					<div class="h-[120px] w-[84px] shrink-0 overflow-hidden rounded-md bg-gradient-to-br from-accent-100 to-stone-200 shadow-sm">
-						<img v-if="book.coverImageURL" :src="book.coverImageURL" alt="" class="h-full w-full object-cover" />
-					</div>
+					<StudentCover :book="book" :width="84" />
 					<div class="min-w-0">
 						<p class="text-[17px] font-bold leading-snug text-stone-900">{{ book.title }}</p>
 						<p class="mt-1 text-[13.5px] text-stone-500">

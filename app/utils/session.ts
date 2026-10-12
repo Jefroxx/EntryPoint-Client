@@ -9,8 +9,8 @@ export type Area = 'librarian' | 'student'
 export const SESSION_COOKIES = {
   // Staff also keep their staff role and what it allows (so the sidebar is right on first paint); a student-side member
   // keeps their member type (student, faculty or staff), which decides whether points and rewards show.
-  librarian: { token: '_token', role: '_role', uuid: '_uuid', firstName: '_firstName', lastName: '_lastName', staffRole: '_staffRole', staffPerms: '_staffPerms' },
-  student: { token: '_student_token', role: '_student_role', uuid: '_student_uuid', firstName: '_student_firstName', lastName: '_student_lastName', memberType: '_student_memberType' },
+  librarian: { token: '_token', role: '_role', uuid: '_uuid', firstName: '_firstName', lastName: '_lastName', staffRole: '_staffRole', staffPerms: '_staffPerms', mustChange: '_mustChange' },
+  student: { token: '_student_token', role: '_student_role', uuid: '_student_uuid', firstName: '_student_firstName', lastName: '_student_lastName', memberType: '_student_memberType', mustChange: '_student_mustChange' },
 } as const
 
 /** The portal that is not this one. */

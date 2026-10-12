@@ -8,6 +8,8 @@ export interface LoginUser {
   lastName: string;
   email: string;
   userType: "librarian" | "student";
+  /** True while the account is on the temporary password an administrator gave it. */
+  mustChangePassword?: boolean;
   /** A student-side account's record: faculty and staff members are not students. */
   student?: { memberType: "student" | "faculty" | "staff" };
 }

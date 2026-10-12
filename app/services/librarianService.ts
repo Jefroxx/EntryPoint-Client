@@ -95,6 +95,9 @@ export interface StudentRecord {
   uuid: string;
   studentIDNumber: string;
   academicProgram: string | null;
+  /** Faculty and staff members have a department instead of a program (and an employee ID in studentIDNumber). */
+  memberType?: "student" | "faculty" | "staff";
+  department?: string | null;
   registrationStatus: "pending" | "approved" | "rejected";
   knowledgeScore: number;
   visitStreak: number;
@@ -694,7 +697,7 @@ class LibrarianServiceClass extends BaseService {
     );
   }
 
-  fetchStudents(params: { search?: string; program?: string; status?: string; memberType?: "student" | "faculty" | "staff"; page?: number; perPage?: number } = {}) {
+  fetchStudents(params: { search?: string; program?: string; status?: string; memberType?: "student" | "faculty" | "staff" | "members"; page?: number; perPage?: number } = {}) {
     const runtimeConfig = useRuntimeConfig();
 
     return $fetch<PaginatedStudents>("/librarian/students", {

@@ -65,6 +65,52 @@ export interface RolesOverview {
   roles: RoleRow[];
 }
 
+/** One line of an import file, as the server expects it. */
+export interface ImportRow {
+  type: string;
+  idNumber: string;
+  firstName: string;
+  middleInitial: string;
+  lastName: string;
+  email: string;
+  programOrDepartment: string;
+  phoneNumber: string;
+}
+
+export interface ImportCheckedRow {
+  /** 1-based, as the person would count the lines of their file. */
+  row: number;
+  data: ImportRow;
+  errors: Record<string, string>;
+  ok: boolean;
+}
+
+export interface ImportCheck {
+  rows: ImportCheckedRow[];
+  creatable: number;
+  skipped: number;
+}
+
+export interface ImportResult {
+  created: { name: string; email: string; type: string; idNumber: string; temporaryPassword: string }[];
+  skipped: ImportCheckedRow[];
+}
+
+/** One account in the data privacy tools (a student, faculty or staff member). */
+export interface PrivacyMember {
+  uuid: string;
+  name: string;
+  email: string;
+  idNumber: string;
+  memberType: "student" | "faculty" | "staff";
+  /** Their program (students) or department. */
+  detail: string | null;
+  isDisabled: boolean;
+  isAnonymized: boolean;
+  /** Why this account can't be anonymized yet; empty when it can. */
+  blockers: string[];
+}
+
 export interface Page<T> {
   data: T[];
   current_page: number;
@@ -129,6 +175,13 @@ class AdminServiceClass extends BaseService {
   createMember(payload: MemberPayload) {
     return this.apiRequest<CreatedAccount<MemberAccount>>("/admin/members", { method: "POST", body: payload });
   }
+  /** Checks a list without creating anything: which rows would be created and which skipped, and why. */
+  checkImport(rows: ImportRow[]) {
+    return this.apiRequest<ImportCheck>("/admin/members/import", { method: "POST", body: { rows, dryRun: true } });
+  }
+  importMembers(rows: ImportRow[]) {
+    return this.apiRequest<ImportResult>("/admin/members/import", { method: "POST", body: { rows } });
+  }
   updateMember(uuid: string, payload: Partial<MemberPayload>) {
     return this.apiRequest<{ account: MemberAccount }>(`/admin/members/${uuid}`, { method: "PATCH", body: payload });
   }
@@ -139,6 +192,18 @@ class AdminServiceClass extends BaseService {
     return this.apiRequest<{ temporaryPassword: string }>(`/admin/members/${uuid}/reset-password`, { method: "POST" });
   }
 
+  // ---- data privacy
+  searchPrivacy(q: string) {
+    return this.apiRequest<{ members: PrivacyMember[] }>("/admin/privacy/search", { query: { q } });
+  }
+  /** Everything the library holds about one member, as the server sends it. */
+  exportMemberData(uuid: string) {
+    return this.apiRequest<Record<string, unknown>>(`/admin/privacy/members/${uuid}/export`);
+  }
+  anonymizeMember(uuid: string) {
+    return this.apiRequest<{ message: string }>(`/admin/privacy/members/${uuid}/anonymize`, { method: "POST" });
+  }
+
   // ---- roles and the audit log
   roles() {
     return this.apiRequest<RolesOverview>("/admin/roles");
@@ -146,9 +211,9 @@ class AdminServiceClass extends BaseService {
   saveRole(role: StaffRole, permissions: string[]) {
     return this.apiRequest<RolesOverview>(`/admin/roles/${role}`, { method: "PUT", body: { permissions } });
   }
-  auditLogs(query: { search?: string; area?: string; page?: number } = {}) {
+  auditLogs(query: { search?: string; area?: string; page?: number; perPage?: number } = {}) {
     return this.apiRequest<{ areas: Record<string, string>; logs: Page<AuditEntry> }>("/admin/audit-logs", {
-      query: { search: query.search || undefined, area: query.area || undefined, page: query.page },
+      query: { search: query.search || undefined, area: query.area || undefined, page: query.page, perPage: query.perPage },
     });
   }
 }

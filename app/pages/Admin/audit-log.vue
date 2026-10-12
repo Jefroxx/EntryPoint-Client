@@ -15,6 +15,9 @@
             </select>
             <div class="flex-1"></div>
             <LibrarianResetFiltersButton @click="search = ''; area = ''" />
+            <ButtonsButton variant="ghost" :disabled="exporting || !rows.length" @click="exportCsv">
+                <Icon :name="exporting ? 'i-tabler-loader-2' : 'i-tabler-download'" class="h-3.5 w-3.5" :class="exporting ? 'animate-spin' : ''" />Export CSV
+            </ButtonsButton>
         </div>
 
         <LibrarianTableShell :columns="['When', 'Who', 'What happened']" :loading="pending && !data" :empty="rows.length === 0"
@@ -55,11 +58,14 @@
                 Next<Icon name="i-tabler-chevron-right" class="h-3.5 w-3.5" />
             </ButtonsButton>
         </div>
+        <AlertToast />
     </div>
 </template>
 
 <script setup lang="ts">
-import { adminService } from '~/services/adminService'
+import { adminService, type AuditEntry } from '~/services/adminService'
+import AlertToast from '~/api/alert/AlertToast.vue'
+import { useAlert } from '~/api/alert/useAlert'
 
 definePageMeta({ middleware: 'admin', layout: 'librarian' })
 useHead({ title: 'Audit log' })
@@ -86,6 +92,34 @@ const areas = computed(() => data.value?.areas ?? {})
 const logs = computed(() => data.value?.logs ?? null)
 const rows = computed(() => logs.value?.data ?? [])
 const hasFilters = computed(() => !!(debouncedSearch.value || area.value))
+
+// Everything that matches the search and area, not just this page: fetched 500 at a time.
+const exporting = ref(false)
+const alert = useAlert()
+
+async function exportCsv() {
+    exporting.value = true
+    try {
+        const all: AuditEntry[] = []
+        let next = 1
+        let last = 1
+        do {
+            const result = await adminService.auditLogs({ search: debouncedSearch.value, area: area.value, page: next, perPage: 500 })
+            all.push(...result.logs.data)
+            last = result.logs.last_page
+            next++
+        } while (next <= last)
+
+        downloadCsv(`audit-log-${new Date().toISOString().slice(0, 10)}.csv`, [
+            ['When', 'Who', 'Role', 'What happened'],
+            ...all.map((e) => [formatDateTime(e.created_at), e.actorName, roleLabel(e.actorRole), e.summary]),
+        ])
+    } catch (error) {
+        alert.error('Could not export the log', apiErrorMessage(error))
+    } finally {
+        exporting.value = false
+    }
+}
 
 const ROLE_LABELS: Record<string, string> = { admin: 'Administrator', librarian: 'Librarian', assistant: 'Student assistant', system: 'System' }
 const roleLabel = (role: string) => ROLE_LABELS[role] ?? role

@@ -31,7 +31,7 @@
 					<div>
 						<p class="text-[12px] font-bold uppercase tracking-wide" :class="feePaid ? 'text-emerald-800' : 'text-amber-800'">Late fee</p>
 						<p class="text-[22px] font-extrabold tabular-nums text-stone-900">{{ formatPeso(fine.amount) }}</p>
-						<p class="text-[13px] text-stone-600">{{ fine.unitsLate }} {{ unitWord(fine.unitsLate) }} late × {{ formatPeso(fine.rate ?? 0) }} per {{ fine.rateUnit }}</p>
+						<p class="text-[13px] text-stone-600">{{ fine.unitsLate }} {{ unitWord(fine.unitsLate) }} late × {{ formatPeso(fine.rate ?? 0) }} per {{ fine.rateUnit }}<template v-if="fine.graceDays">, after the {{ fine.graceDays }}-day grace period</template></p>
 					</div>
 					<span class="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[14px] font-bold"
 						:class="feePaid ? 'bg-emerald-600 text-white' : 'bg-amber-600 text-white'">
@@ -79,7 +79,7 @@
 						<p class="text-[15px] font-bold text-amber-900">This book is overdue. A late fee applies.</p>
 						<p class="mt-1 text-[14px] leading-snug text-amber-900">
 							Late by {{ fine.unitsLate }} {{ unitWord(fine.unitsLate) }} (due {{ formatDateTime(preview.loan.dueAt) }}).
-							Fee: {{ fine.unitsLate }} {{ unitWord(fine.unitsLate) }} × {{ formatPeso(fine.rate ?? 0) }} per {{ fine.rateUnit }}
+							Fee: {{ fine.unitsLate }} {{ unitWord(fine.unitsLate) }} × {{ formatPeso(fine.rate ?? 0) }} per {{ fine.rateUnit }}<template v-if="fine.graceDays"> (after the {{ fine.graceDays }}-day grace period)</template>
 							= <b class="tabular-nums">{{ formatPeso(fine.amount) }}</b>
 						</p>
 					</div>

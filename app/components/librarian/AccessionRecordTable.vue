@@ -5,9 +5,7 @@
 			<li v-for="book in books" :key="`card-${book.bookID}`">
 				<div role="button" tabindex="0" class="flex gap-3 px-4 py-3.5 transition-colors active:bg-accent-50"
 					@click="emit('view', book)" @keydown.enter.self="emit('view', book)">
-					<div class="h-[68px] w-12 shrink-0 overflow-hidden rounded-[5px] bg-gradient-to-br from-accent-100 to-stone-200 shadow-sm">
-						<img v-if="book.coverImageURL" :src="book.coverImageURL" alt="" class="h-full w-full object-cover" />
-					</div>
+					<StudentCover :book="book" :width="48" />
 					<div class="min-w-0 flex-1">
 						<p class="text-[15px] font-semibold leading-snug text-stone-900">{{ book.title }}</p>
 						<p class="truncate text-[13px] text-stone-500">{{ authorNames(book) }}</p>
@@ -55,9 +53,7 @@
 						:style="{ animationDelay: `${index * 40}ms` }">
 						<td class="px-4 py-3">
 							<div class="flex items-center gap-3">
-								<div class="h-11 w-8 shrink-0 overflow-hidden rounded-[4px] bg-gradient-to-br from-accent-100 to-stone-200 shadow-sm">
-									<img v-if="book.coverImageURL" :src="book.coverImageURL" alt="" class="h-full w-full object-cover" />
-								</div>
+								<StudentCover :book="book" :width="32" />
 								<div>
 									<button type="button" class="text-left text-[15px] font-semibold text-stone-900 hover:text-accent-600 hover:underline"
 										@click="emit('view', book)">{{ book.title }}</button>

@@ -142,10 +142,12 @@ async function handleLogin() {
 		signIn({
 			token, uuid: user.uuid, role: user.userType, firstName: user.firstName, lastName: user.lastName,
 			staffRole: staff?.role, staffPerms: staff?.permissions, memberType: user.student?.memberType,
+			mustChange: user.mustChangePassword,
 		})
 
 		// Back to the page the session ended on, or the user's own home.
-		await navigateTo(safeRedirect(route.query.redirect, user.userType, staff?.role))
+		// An account on a temporary password goes to set its own first.
+		await navigateTo(user.mustChangePassword ? '/set-password' : safeRedirect(route.query.redirect, user.userType, staff?.role))
 	} catch (error: any) {
 		errorMessage.value = error?.message || 'Invalid email or password.'
 		if (error instanceof NeedsVerificationError) {

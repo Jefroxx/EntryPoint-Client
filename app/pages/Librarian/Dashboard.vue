@@ -42,6 +42,9 @@
             </button>
         </header>
 
+        <!-- Notices from the administrator. -->
+        <AnnouncementBanner v-if="announcements?.announcements.length" class="mb-5" :items="announcements.announcements" />
+
         <!-- Quick actions: four even cards, so the row never ends up lopsided. -->
         <section aria-label="Quick actions" class="mb-5 grid gap-2 [grid-template-columns:repeat(var(--cols),minmax(0,1fr))] sm:grid-cols-2 sm:gap-3 xl:[grid-template-columns:repeat(var(--cols),minmax(0,1fr))]"
             :style="{ '--cols': Math.max(actions.length, 1) }">
@@ -211,6 +214,7 @@
 <script setup lang="ts">
 import { NuxtLink } from '#components'
 import { librarianService, type DemographicsScope } from '~/services/librarianService'
+import { announcementService } from '~/services/announcementService'
 
 /** One cell of the Today strip. `anchor` makes it jump to a card on this page instead of opening `to`. */
 interface LedgerCell {
@@ -373,6 +377,9 @@ function jumpTo(cell: { anchor?: string }, event: Event) {
 }
 
 const { can } = useStaffAccess()
+
+// Notices from the administrator. (A failed request just means no banner.)
+const { data: announcements } = useAsyncData('dashboard-announcements', () => announcementService.forStaff().catch(() => ({ announcements: [] })), { lazy: true })
 // A role sees only the shortcuts and queues for areas it can open (the server refuses the rest anyway).
 const opens = (to: string) => can(permissionForPath(to.split('?')[0]!))
 

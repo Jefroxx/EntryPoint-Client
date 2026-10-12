@@ -23,6 +23,8 @@ function areaCookies(area: Area) {
     staffPerms: area === 'librarian' ? make(names.staffPerms!) : undefined,
     // Student side:
     memberType: area === 'student' ? make(names.memberType!) : undefined,
+    // "1" while the account is still on the temporary password an administrator gave it (both sides).
+    mustChange: make(names.mustChange!),
   }
 }
 
@@ -79,7 +81,7 @@ export function useAuthSession(area: Area = 'librarian') {
     clear(otherArea(area))
   }
 
-  function signIn(user: { token: string; uuid: string; role: string; firstName: string; lastName: string; staffRole?: string; staffPerms?: string[]; memberType?: string }) {
+  function signIn(user: { token: string; uuid: string; role: string; firstName: string; lastName: string; staffRole?: string; staffPerms?: string[]; memberType?: string; mustChange?: boolean }) {
     endOtherSession()
 self.token.value = user.token
     self.uuid.value = user.uuid
@@ -89,6 +91,7 @@ self.token.value = user.token
     if (self.staffRole) self.staffRole.value = user.staffRole ?? null
     if (self.staffPerms) self.staffPerms.value = user.staffPerms ? user.staffPerms.join(',') : null
     if (self.memberType) self.memberType.value = user.memberType ?? null
+    self.mustChange.value = user.mustChange ? '1' : null
   }
 
   function signOut() {

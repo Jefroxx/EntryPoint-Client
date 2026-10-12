@@ -15,6 +15,9 @@
             <LibrarianSearchInput id="member-search" v-model="search" placeholder="Search name, employee ID or department" />
             <div class="flex-1"></div>
             <LibrarianResetFiltersButton @click="search = ''" />
+            <ButtonsButton variant="ghost" @click="isImportOpen = true">
+                <Icon name="i-tabler-file-import" class="h-3.5 w-3.5" />Import CSV
+            </ButtonsButton>
             <ButtonsButton variant="primary" @click="openCreate">
                 <Icon name="i-tabler-plus" class="h-3.5 w-3.5" />Add member
             </ButtonsButton>
@@ -76,6 +79,8 @@
         <AdminMemberFormModal :open="isFormOpen" :member="editing" :busy="busy" :server-errors="serverErrors"
             @close="isFormOpen = false" @submit="save" />
 
+        <AdminImportMembersModal :open="isImportOpen" @close="isImportOpen = false" @imported="refetch" />
+
         <AdminCredentialsModal :open="isCredentialsOpen" :title="credentialsTitle" :credentials="credentials" @close="isCredentialsOpen = false" />
 
         <LibrarianConfirmModal :open="isDisableOpen" title="Disable this account?"
@@ -125,6 +130,8 @@ const { data: page, pending, execute: refetch } = useAsyncData(
 
 const rows = computed(() => page.value?.data ?? [])
 const emptyText = computed(() => (debouncedSearch.value ? 'No members match your search.' : 'No faculty or staff members yet. Add one to give them a library account.'))
+
+const isImportOpen = ref(false)
 
 /* ---------- create and edit ---------- */
 const isFormOpen = ref(false)

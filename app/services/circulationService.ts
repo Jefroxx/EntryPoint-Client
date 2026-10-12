@@ -50,6 +50,8 @@ export interface ReturnPreview {
   fine: {
     hasRule: boolean;
     unitsLate: number;
+    /** Days after the due time with no charge; the late units are counted after it. */
+    graceDays?: number;
     rateUnit: "day" | "hour" | null;
     rate: number | null;
     amount: number;

@@ -9,14 +9,20 @@
             { label: 'Approved Students', short: 'Approved', value: 'approved' },
             { label: 'Pending Approval', short: 'Pending', value: 'pending', badge: stats?.pending || undefined },
             { label: 'Rejected', value: 'rejected' },
+            { label: 'Faculty and staff', short: 'Members', value: 'members' },
         ]" />
+
+        <p v-if="isMembers" class="mb-4 flex items-start gap-2.5 rounded-xl bg-stone-100 px-4 py-3 text-[13.5px] text-stone-700">
+            <Icon name="i-tabler-info-circle" class="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+            Faculty and staff members borrow and visit like students. An administrator creates and manages their accounts, so this list is for looking them up.
+        </p>
 
         <p v-if="activeTab === 'rejected'" class="mb-4 flex items-start gap-2.5 rounded-xl bg-stone-100 px-4 py-3 text-[13.5px] text-stone-700">
             <Icon name="i-tabler-info-circle" class="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
             These registrations were rejected, so these students can't log in. Reinstate a student to approve them again.
         </p>
 
-        <div class="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div v-if="!isMembers" class="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
             <LibrarianCatalogStatTile label="Total Students" :value="stats?.total ?? '—'"
                 icon="i-tabler-users" tone="accent" />
             <LibrarianCatalogStatTile label="Pending Approval" :value="stats?.pending ?? '—'"
@@ -31,11 +37,11 @@
             <div
                 class="flex h-[42px] min-w-[200px] max-w-[300px] flex-1 items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 transition-shadow focus-within:ring-2 focus-within:ring-accent-200">
                 <Icon name="i-tabler-search" class="h-[15px] w-[15px] text-stone-400" />
-                <input id="student-search" v-model="search" type="text" placeholder="Search name or student ID"
+                <input id="student-search" v-model="search" type="text" :placeholder="isMembers ? 'Search name or employee ID' : 'Search name or student ID'"
                     class="w-full border-none bg-transparent text-[15px] text-stone-800 outline-none placeholder:text-stone-400" />
             </div>
 
-            <select v-model="programFilter"
+            <select v-if="!isMembers" v-model="programFilter"
                 class="flex h-[42px] items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3 text-[14px] text-stone-500 transition-colors hover:bg-stone-50">
                 <option value="">All Programs</option>
                 <option v-for="p in programOptions" :key="p" :value="p">{{ p }}</option>
@@ -43,14 +49,14 @@
 
             <div class="flex-1"></div>
 
-            <LibrarianResetFiltersButton @click="search = ''; programFilter = ''" />
+            <LibrarianResetFiltersButton :class="isMembers ? 'toolbar-full' : ''" @click="search = ''; programFilter = ''" />
         </div>
 
-        <LibrarianStudentsTable :students="students?.data ?? []" :loading="studentsPending" :empty-text="emptyText"
+        <LibrarianStudentsTable :students="students?.data ?? []" :loading="studentsPending" :empty-text="emptyText" :members="isMembers"
             @view="openDrawer" @approve="handleApprove" @reject="handleReject" @reinstate="askReinstate" />
 
         <div v-if="students" class="mt-3 flex items-center justify-between text-[13.5px] text-stone-400">
-            <span>Showing {{ students.data.length }} of {{ students.total }} students</span>
+            <span>Showing {{ students.data.length }} of {{ students.total }} {{ isMembers ? 'members' : 'students' }}</span>
             <span>Page {{ students.current_page }} of {{ students.last_page }}</span>
         </div>
 
@@ -93,13 +99,17 @@ const alert = useAlert()
 
 const route = useRoute()
 // The list is split by status: approved students (the default), those waiting for approval, and rejected ones.
-type StudentTab = 'approved' | 'pending' | 'rejected'
-const activeTab = ref<StudentTab>(route.query.tab === 'pending' ? 'pending' : route.query.tab === 'rejected' ? 'rejected' : 'approved')
+type StudentTab = 'approved' | 'pending' | 'rejected' | 'members'
+const activeTab = ref<StudentTab>(['pending', 'rejected', 'members'].includes(String(route.query.tab)) ? (route.query.tab as StudentTab) : 'approved')
+
+// The fourth tab is a read-only list of faculty and staff members (an administrator manages their accounts).
+const isMembers = computed(() => activeTab.value === 'members')
 
 const emptyText = computed(() => ({
     approved: 'No approved students match your search.',
     pending: 'No registrations are waiting for approval.',
     rejected: 'No rejected registrations.',
+    members: 'No faculty or staff members match your search.',
 })[activeTab.value])
 const search = ref('')
 const programFilter = ref('')
@@ -112,9 +122,10 @@ const { data: students, pending: studentsPending, execute: refetchStudents } = u
     () => librarianService.fetchStudents({
         search: search.value || undefined,
         program: programFilter.value || undefined,
-        status: activeTab.value,
-        // Students only: faculty and staff members are managed by the administrator, and are never approved here.
-        memberType: 'student',
+        status: isMembers.value ? 'approved' : activeTab.value,
+        // The first three tabs are students only: faculty and staff members are created by the administrator and are
+        // never approved here. The fourth tab lists them.
+        memberType: isMembers.value ? 'members' : 'student',
         page: page.value,
         perPage: 10,
     }),

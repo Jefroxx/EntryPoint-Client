@@ -10,15 +10,15 @@
 						<div class="min-w-0 flex-1">
 							<p class="truncate text-[15px] font-semibold text-stone-900">{{ studentName(student) }}</p>
 							<p class="font-data text-[12px] text-stone-400">{{ student.studentIDNumber }}</p>
-							<p class="mt-0.5 truncate text-[13px] text-stone-500">{{ student.academicProgram ?? '—' }}</p>
-							<p class="mt-1 flex items-center gap-3 text-[12.5px] text-stone-500">
+							<p class="mt-0.5 truncate text-[13px] text-stone-500">{{ student.academicProgram ?? student.department ?? '—' }}</p>
+							<p v-if="!members" class="mt-1 flex items-center gap-3 text-[12.5px] text-stone-500">
 								<span class="inline-flex items-center gap-1"><Icon name="i-tabler-flame" class="h-3 w-3 text-amber-500" />{{ student.visitStreak }} day streak</span>
 								<span class="tabular-nums">{{ student.knowledgeScore }} pts</span>
 							</p>
 						</div>
-						<span class="inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[12px] font-bold" :class="statusClass(student.registrationStatus)">
-							<span class="h-1.5 w-1.5 rounded-full" :class="statusDotClass(student.registrationStatus)" />
-							{{ statusLabel(student.registrationStatus) }}
+						<span class="inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[12px] font-bold" :class="members ? 'bg-sky-50 text-sky-700' : statusClass(student.registrationStatus)">
+							<span class="h-1.5 w-1.5 rounded-full" :class="members ? 'bg-sky-500' : statusDotClass(student.registrationStatus)" />
+							{{ members ? typeLabel(student) : statusLabel(student.registrationStatus) }}
 						</span>
 					</div>
 					<div v-if="student.registrationStatus === 'pending'" class="mt-3 flex gap-2" @click.stop>
@@ -34,14 +34,14 @@
 		<p v-if="!loading && students.length === 0" class="px-4 py-10 text-center text-[15px] text-stone-400 sm:hidden">{{ emptyText ?? 'No students match your search.' }}</p>
 
 		<div class="max-h-[480px] overflow-auto max-sm:hidden">
-			<table class="w-full min-w-[920px] border-collapse text-left">
+			<table class="w-full border-collapse text-left" :class="members ? 'min-w-[760px]' : 'min-w-[920px]'">
 				<thead>
 					<tr>
 						<th class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-stone-400">Student</th>
-						<th class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-stone-400">Program</th>
+						<th class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-stone-400">{{ members ? 'Department' : 'Program' }}</th>
 						<th class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-stone-400">Email</th>
-						<th class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-stone-400">Visit Streak</th>
-						<th class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-stone-400">Knowledge Score</th>
+						<th class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-stone-400" v-if="!members">Visit Streak</th>
+						<th class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-stone-400" v-if="!members">Knowledge Score</th>
 						<th class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-stone-400">Status</th>
 						<th class="sticky top-0 z-10 border-b border-stone-100 bg-stone-50 px-4 py-3"></th>
 					</tr>
@@ -59,18 +59,18 @@
 								</div>
 							</div>
 						</td>
-						<td class="px-4 py-3 text-[14px] text-stone-600">{{ student.academicProgram ?? '—' }}</td>
+						<td class="px-4 py-3 text-[14px] text-stone-600">{{ student.academicProgram ?? student.department ?? '—' }}</td>
 						<td class="font-data px-4 py-3 text-[13px] text-stone-500">{{ student.user?.email ?? '—' }}</td>
-						<td class="px-4 py-3">
+						<td v-if="!members" class="px-4 py-3">
 							<span class="inline-flex items-center gap-1 font-semibold tabular-nums text-stone-700">
 								<Icon name="i-tabler-flame" class="h-3 w-3 text-amber-500" />{{ student.visitStreak }}
 							</span>
 						</td>
-						<td class="font-data px-4 py-3 text-[13.5px] text-stone-500">{{ student.knowledgeScore }}</td>
+						<td v-if="!members" class="font-data px-4 py-3 text-[13.5px] text-stone-500">{{ student.knowledgeScore }}</td>
 						<td class="px-4 py-3">
-							<span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[12px] font-bold" :class="statusClass(student.registrationStatus)">
-								<span class="h-1.5 w-1.5 rounded-full" :class="statusDotClass(student.registrationStatus)" />
-								{{ statusLabel(student.registrationStatus) }}
+							<span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[12px] font-bold" :class="members ? 'bg-sky-50 text-sky-700' : statusClass(student.registrationStatus)">
+								<span class="h-1.5 w-1.5 rounded-full" :class="members ? 'bg-sky-500' : statusDotClass(student.registrationStatus)" />
+								{{ members ? typeLabel(student) : statusLabel(student.registrationStatus) }}
 							</span>
 						</td>
 						<td class="px-4 py-3">
@@ -97,7 +97,7 @@
 					</tr>
 
 					<tr v-if="!loading && students.length === 0">
-						<td colspan="7" class="py-10 text-center text-[15px] text-stone-400">{{ emptyText ?? 'No students match your search.' }}</td>
+						<td :colspan="members ? 5 : 7" class="py-10 text-center text-[15px] text-stone-400">{{ emptyText ?? 'No students match your search.' }}</td>
 					</tr>
 				</tbody>
 			</table>
@@ -113,6 +113,8 @@ import type { StudentRecord } from '~/services/librarianService'
 defineProps<{
 	students: StudentRecord[]
 	loading: boolean
+	/** The read-only list of faculty and staff members: department instead of program, and no points or streak. */
+	members?: boolean
 	/** Shown when the list is empty (it differs by tab). */
 	emptyText?: string
 }>()
@@ -126,6 +128,10 @@ const emit = defineEmits<{
 
 function studentName(student: StudentRecord): string {
 	return student.user ? `${student.user.firstName} ${student.user.lastName}` : 'Unknown student'
+}
+
+function typeLabel(student: StudentRecord): string {
+	return student.memberType === 'staff' ? 'Staff' : 'Faculty'
 }
 
 function statusLabel(status: StudentRecord['registrationStatus']): string {

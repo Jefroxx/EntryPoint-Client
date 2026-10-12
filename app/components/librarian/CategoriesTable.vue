@@ -71,9 +71,7 @@
 					<li v-for="book in categoryBooks" :key="book.uuid">
 						<button type="button" class="flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-accent-50 focus-visible:bg-accent-50 focus-visible:outline-none"
 							@click="viewBook(book)">
-							<span class="h-11 w-8 shrink-0 overflow-hidden rounded bg-stone-100">
-								<img v-if="book.coverImageURL" :src="book.coverImageURL" alt="" class="h-full w-full object-cover" loading="lazy" />
-							</span>
+							<StudentCover :book="book" :width="32" />
 							<span class="min-w-0 flex-1">
 								<span class="block truncate text-[14px] font-semibold text-stone-900">{{ book.title }}</span>
 								<span class="block truncate text-[12.5px] text-stone-500">{{ book.authors.length ? book.authors.map((a) => a.name).join(', ') : 'No author listed' }}</span>
