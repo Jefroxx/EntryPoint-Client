@@ -2,7 +2,34 @@
 	<!-- The Book Catalog: one row per copy, its accession number and status first, then the book's fuller record.
 		 Wide on purpose; it scrolls sideways with the accession number and title pinned on the left. -->
 	<div class="relative overflow-hidden rounded-2xl border border-stone-200 bg-white">
-		<div class="max-h-[520px] overflow-auto">
+		<!-- Phones: one card per row, with the row's buttons on it. -->
+		<ul class="divide-y divide-stone-100 sm:hidden">
+			<li v-for="copy in copies" :key="`card-${copy.copyID}`">
+				<div role="button" tabindex="0" class="px-4 py-3.5 transition-colors active:bg-accent-50" @click="emit('view', copy)" @keydown.enter.self="emit('view', copy)">
+					<div class="flex items-start gap-3">
+						<span class="font-data flex h-11 min-w-11 shrink-0 items-center justify-center rounded-xl bg-stone-100 px-2 text-[15px] font-bold text-stone-900">{{ copy.accessionNumber }}</span>
+						<div class="min-w-0 flex-1">
+							<p class="line-clamp-2 text-[15px] font-semibold leading-snug text-stone-900">{{ copy.book.title }}</p>
+							<p class="truncate text-[13px] text-stone-500">{{ copy.book.authors.join(', ') || '—' }}</p>
+							<p class="mt-1 truncate text-[12.5px] text-stone-400">{{ [copy.book.subject?.name, areaLabel(copy.book.areaOfLibrary), copy.book.shelfLocation].filter(Boolean).join(' · ') || '—' }}</p>
+						</div>
+						<LibrarianStatusPill :label="STATUS[copy.status].label" :tone="STATUS[copy.status].tone" class="shrink-0" />
+					</div>
+					<div class="mt-2 flex items-center justify-end gap-1" @click.stop>
+						<ButtonsButton variant="icon" size="sm" :aria-label="`Add another copy of ${copy.book.title}`" class="!text-emerald-600 hover:!bg-emerald-50" @click="emit('add-copy', copy)">
+							<Icon name="i-tabler-circle-plus" class="h-[18px] w-[18px]" />
+						</ButtonsButton>
+						<ButtonsButton variant="icon" size="sm" :aria-label="`Remove accession no. ${copy.accessionNumber}`" class="!text-red-500 hover:!bg-red-50" @click="emit('remove-copy', copy)">
+							<Icon name="i-tabler-circle-minus" class="h-[18px] w-[18px]" />
+						</ButtonsButton>
+						<LibrarianRowMenu :items="COPY_MENU" :label="`More actions for accession no. ${copy.accessionNumber}`" @select="(key: string) => onMenu(key, copy)" />
+					</div>
+				</div>
+			</li>
+		</ul>
+		<p v-if="!loading && copies.length === 0" class="px-4 py-10 text-center text-[15px] text-stone-400 sm:hidden">{{ filtered ? 'No copies match these filters.' : 'No copies in the catalog yet.' }}</p>
+
+		<div class="scroll-shadow-x max-h-[520px] overflow-auto max-sm:hidden">
 			<table class="w-full min-w-[1680px] border-collapse text-left">
 				<thead>
 					<tr>

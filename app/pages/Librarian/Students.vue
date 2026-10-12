@@ -6,8 +6,8 @@
         </div>
 
         <LibrarianSegmentedTabs v-model="activeTab" class="mb-5" :tabs="[
-            { label: 'Approved Students', value: 'approved' },
-            { label: 'Pending Approval', value: 'pending', badge: stats?.pending || undefined },
+            { label: 'Approved Students', short: 'Approved', value: 'approved' },
+            { label: 'Pending Approval', short: 'Pending', value: 'pending', badge: stats?.pending || undefined },
             { label: 'Rejected', value: 'rejected' },
         ]" />
 
@@ -27,7 +27,7 @@
                 icon="i-tabler-circle-x" tone="danger" />
         </div>
 
-        <div class="mb-4 flex flex-wrap items-center gap-2">
+        <div class="phone-toolbar mb-4 flex flex-wrap items-center gap-2">
             <div
                 class="flex h-[42px] min-w-[200px] max-w-[300px] flex-1 items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 transition-shadow focus-within:ring-2 focus-within:ring-accent-200">
                 <Icon name="i-tabler-search" class="h-[15px] w-[15px] text-stone-400" />
@@ -105,7 +105,7 @@ const search = ref('')
 const programFilter = ref('')
 const page = ref(1)
 
-const { data: stats, execute: refetchStats } = useLiveAsyncData('student-stats', () => librarianService.fetchStudentStats(), { lazy: true })
+const { data: stats, execute: refetchStats } = useLiveAsyncData('student-stats', () => librarianService.fetchStudentStats('student'), { lazy: true })
 
 const { data: students, pending: studentsPending, execute: refetchStudents } = useLiveAsyncData(
     'students-list',
@@ -113,6 +113,8 @@ const { data: students, pending: studentsPending, execute: refetchStudents } = u
         search: search.value || undefined,
         program: programFilter.value || undefined,
         status: activeTab.value,
+        // Students only: faculty and staff members are managed by the administrator, and are never approved here.
+        memberType: 'student',
         page: page.value,
         perPage: 10,
     }),

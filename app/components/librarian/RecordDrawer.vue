@@ -27,6 +27,8 @@
 						</dd>
 					</div>
 				</dl>
+
+				<slot />
 			</div>
 
 			<div v-if="$slots.footer" class="flex gap-2.5 border-t border-stone-100 px-5 py-4">

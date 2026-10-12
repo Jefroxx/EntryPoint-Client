@@ -1,7 +1,7 @@
 <template>
 	<!-- The Hall of Fame boards: one card per category with its top three. Shared by the librarian Dashboard
 		 section (HallOfFame.vue) and the student "See all" drawer (student/HallOfFameStrip.vue). -->
-	<div v-if="loading && !board" class="grid gap-3" :class="gridClass" aria-busy="true">
+	<div v-if="loading && !board" class="grid grid-cols-1 gap-3" :class="gridClass" aria-busy="true">
 		<div v-for="n in 6" :key="n" class="h-[196px] animate-pulse rounded-2xl bg-stone-100" />
 	</div>
 
@@ -9,7 +9,7 @@
 		The Hall of Fame couldn't load. It'll try again in a moment.
 	</p>
 
-	<ul v-else class="grid gap-3" :class="gridClass">
+	<ul v-else class="grid grid-cols-1 gap-3" :class="gridClass">
 		<li v-for="category in board.categories" :key="category.key"
 			class="flex flex-col rounded-2xl border border-stone-200 bg-parchment/60 p-4">
 			<div class="flex items-start gap-2.5">
@@ -51,6 +51,13 @@
 				</li>
 			</ol>
 
+			<!-- Librarians can turn a board into a Facebook poster. -->
+			<button v-if="staff && category.leaders.length" type="button"
+				class="mt-3 flex items-center justify-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3 py-2 text-[13px] font-semibold text-stone-700 transition-colors hover:bg-stone-50"
+				@click="emit('post', category)">
+				<Icon name="i-tabler-brand-facebook" class="h-4 w-4" aria-hidden="true" />Create post
+			</button>
+
 			<!-- Where the viewing student stands when they aren't on the board: a nudge, not a ranking. -->
 			<p v-if="category.yourValue !== undefined && !category.leaders.some((l) => l.isYou)"
 				class="mt-3 border-t border-stone-200/80 pt-2.5 text-[12.5px] text-stone-500">
@@ -63,6 +70,8 @@
 
 <script setup lang="ts">
 import type { HallOfFame, HallOfFameCategory } from '~/services/studentService'
+
+const emit = defineEmits<{ (e: 'post', category: HallOfFameCategory): void }>()
 
 withDefaults(defineProps<{
 	board: HallOfFame | null

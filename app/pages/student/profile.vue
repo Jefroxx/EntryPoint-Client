@@ -9,7 +9,7 @@
 				<div class="min-w-0">
 					<h1 class="dashboard-heading truncate text-[26px] font-extrabold leading-tight text-crimson">{{ profile?.fullName ?? `${firstName} ${lastName}` }}</h1>
 					<p class="font-data mt-0.5 truncate text-[13px] text-stone-500">
-						{{ profile?.studentIDNumber }}{{ profile?.academicProgram ? ` · ${profile.academicProgram}` : '' }}
+						{{ profile?.studentIDNumber }}{{ (profile?.academicProgram ?? profile?.department) ? ` · ${profile?.academicProgram ?? profile?.department}` : '' }}
 					</p>
 				</div>
 			</div>
@@ -140,7 +140,7 @@
 				</div>
 
 				<div v-else-if="data" class="grid gap-5 lg:grid-cols-2 lg:items-start">
-					<section class="overflow-hidden rounded-[22px] border border-stone-200 bg-white">
+					<section v-if="isStudent" class="overflow-hidden rounded-[22px] border border-stone-200 bg-white">
 						<div class="flex items-baseline justify-between gap-3 px-5 pb-2 pt-4">
 							<h2 class="text-[17px] font-bold text-stone-900">Points</h2>
 							<span class="text-[12.5px] text-stone-500">Earned and spent</span>
@@ -211,15 +211,19 @@ const initials = computed(() => {
 })
 
 /* ---- tabs (?tab=, so notifications can link straight to Achievements) ---- */
-const TABS = ['details', 'achievements', 'history']
+const { isStudent } = useMemberType()
+const TABS = isStudent.value ? ['details', 'achievements', 'history'] : ['details', 'history']
 const tab = computed<string>({
 	get: () => (TABS.includes(String(route.query.tab)) ? String(route.query.tab) : TABS[0]!),
 	set: (value) => { void router.replace({ query: { ...route.query, tab: value } }) },
 })
 
 const { data, pending } = useStudentData('student-profile-page', async () => {
+	// Achievements and redemptions are for students; a faculty or staff member's request would be refused.
 	const [achievements, penalties, redemptions] = await Promise.all([
-		studentService.achievements(), studentService.penalties(), studentService.redemptions(),
+		isStudent.value ? studentService.achievements() : Promise.resolve({ achievements: [] as AchievementRow[] }),
+		studentService.penalties(),
+		isStudent.value ? studentService.redemptions() : Promise.resolve({ redemptions: [] as Awaited<ReturnType<typeof studentService.redemptions>>['redemptions'] }),
 	])
 	return { achievements: achievements.achievements, penalties: penalties.penalties, unpaidTotal: penalties.unpaidTotal, redemptions: redemptions.redemptions }
 })
@@ -228,7 +232,7 @@ const claimable = computed(() => (data.value?.achievements ?? []).filter((a) => 
 
 const tabs = computed(() => [
 	{ label: 'Details', value: 'details' },
-	{ label: 'Achievements', value: 'achievements', badge: claimable.value.length || undefined },
+	...(isStudent.value ? [{ label: 'Achievements', value: 'achievements', badge: claimable.value.length || undefined }] : []),
 	{ label: 'History', value: 'history' },
 ])
 
@@ -277,8 +281,8 @@ async function saveContact() {
 
 const lockedRows = computed(() => [
 	{ label: 'Name', value: profile.value?.fullName },
-	{ label: 'Student ID', value: profile.value?.studentIDNumber, mono: true },
-	{ label: 'Program', value: profile.value?.academicProgram },
+	{ label: isStudent.value ? 'Student ID' : 'Employee ID', value: profile.value?.studentIDNumber, mono: true },
+	{ label: isStudent.value ? 'Program' : 'Department', value: isStudent.value ? profile.value?.academicProgram : profile.value?.department },
 	{ label: 'Email', value: profile.value?.email },
 ])
 

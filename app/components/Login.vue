@@ -135,14 +135,17 @@ async function handleLogin() {
 	errorMessage.value = ''
 
 	try {
-		const { token, user } = isLibrarianPortal
+		const { token, user, staff } = isLibrarianPortal
 			? await authService.librarianLogin(email.value.trim(), password.value)
 			: await authService.login(email.value.trim(), password.value)
 
-		signIn({ token, uuid: user.uuid, role: user.userType, firstName: user.firstName, lastName: user.lastName })
+		signIn({
+			token, uuid: user.uuid, role: user.userType, firstName: user.firstName, lastName: user.lastName,
+			staffRole: staff?.role, staffPerms: staff?.permissions, memberType: user.student?.memberType,
+		})
 
 		// Back to the page the session ended on, or the user's own home.
-		await navigateTo(safeRedirect(route.query.redirect, user.userType))
+		await navigateTo(safeRedirect(route.query.redirect, user.userType, staff?.role))
 	} catch (error: any) {
 		errorMessage.value = error?.message || 'Invalid email or password.'
 		if (error instanceof NeedsVerificationError) {

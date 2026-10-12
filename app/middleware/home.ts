@@ -5,7 +5,7 @@ export default defineNuxtRouteMiddleware((to) => {
   const librarian = useCookie(SESSION_COOKIES.librarian.token).value && useCookie(SESSION_COOKIES.librarian.role).value === 'librarian'
 
   if (student) return navigateTo(homeFor('student'), { replace: true })
-  if (librarian && areaFromPath(to.path) !== 'student') return navigateTo(homeFor('librarian'), { replace: true })
+  if (librarian && areaFromPath(to.path) !== 'student') return navigateTo(homeFor('librarian', useCookie(SESSION_COOKIES.librarian.staffRole).value), { replace: true })
 
   return navigateTo('/login', { replace: true })
 })

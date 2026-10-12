@@ -22,7 +22,7 @@
                     icon="i-tabler-circle-x" tone="danger" />
             </div>
 
-            <div class="mb-4 flex flex-wrap items-center gap-2">
+            <div class="phone-toolbar mb-4 flex flex-wrap items-center gap-2">
                 <LibrarianSearchInput id="resource-search" v-model="resourceSearch" placeholder="Search resources" />
 
                 <select v-model="typeFilter"
@@ -34,7 +34,7 @@
                 <div class="flex-1"></div>
 
                 <LibrarianResetFiltersButton @click="resourceSearch = ''; typeFilter = ''" />
-                <ButtonsButton variant="primary" @click="openForm(null)">
+                <ButtonsButton variant="primary" class="toolbar-full" @click="openForm(null)">
                     <Icon name="i-tabler-plus" class="h-3.5 w-3.5" />Add Resource
                 </ButtonsButton>
             </div>
@@ -53,7 +53,7 @@
         </template>
 
         <template v-else>
-            <div class="mb-4 flex flex-wrap items-center gap-2">
+            <div class="phone-toolbar mb-4 flex flex-wrap items-center gap-2">
                 <LibrarianSearchInput id="usage-search" v-model="logSearch" placeholder="Search student or resource" />
 
                 <select v-model="logFilter"

@@ -8,12 +8,22 @@ export interface LoginUser {
   lastName: string;
   email: string;
   userType: "librarian" | "student";
+  /** A student-side account's record: faculty and staff members are not students. */
+  student?: { memberType: "student" | "faculty" | "staff" };
+}
+
+/** A staff account's role and what it may do (sent with the librarian login and /librarian/me). */
+export interface StaffAccess {
+  role: "admin" | "librarian" | "assistant";
+  isAdmin: boolean;
+  permissions: string[];
 }
 
 export interface LoginResponse {
   token: string;
   tokenType: string;
   user: LoginUser;
+  staff?: StaffAccess;
 }
 
 export interface RegisterPayload {
@@ -37,6 +47,7 @@ interface RawLoginResponse {
   access_token: string;
   token_type: string;
   user: LoginUser;
+  staff?: StaffAccess;
 }
 
 export class AuthService extends BaseService {
@@ -72,6 +83,7 @@ export class AuthService extends BaseService {
         token: response.access_token,
         tokenType: response.token_type,
         user: response.user,
+        staff: response.staff,
       };
     } catch (error: any) {
       // No `response` object at all means the request never reached the

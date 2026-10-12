@@ -1,6 +1,27 @@
 <template>
 	<LibrarianTableShell :columns="['Achievement', 'Unlocks when', 'Reward', 'Unlocked', 'Redeemed', '']" :loading="loading"
 		:empty="achievements.length === 0" empty-text="No achievements yet. Add one to start rewarding students.">
+		<!-- Phones: one card per row, with the row's buttons on it. -->
+		<template #cards>
+			<li v-for="achievement in achievements" :key="`card-${achievement.achievementID}`">
+				<div role="button" tabindex="0" class="px-4 py-3.5 transition-colors active:bg-accent-50" @click="selected = achievement" @keydown.enter.self="selected = achievement">
+					<div class="flex items-start justify-between gap-3">
+						<div class="min-w-0">
+							<p class="text-[15px] font-semibold text-stone-900">{{ achievement.name }}</p>
+							<p class="mt-0.5 text-[13px] text-stone-500">{{ criteria(achievement) }}</p>
+						</div>
+						<span class="shrink-0 rounded-full bg-accent-100 px-2.5 py-1 text-[12px] font-bold text-accent-700">+{{ achievement.pointsReward }} pts</span>
+					</div>
+					<div class="mt-2.5 flex items-center justify-between gap-2" @click.stop>
+						<p class="text-[12.5px] text-stone-500"><b class="tabular-nums text-stone-900">{{ achievement.unlockedCount }}</b> unlocked · <b class="tabular-nums text-stone-900">{{ achievement.redeemedCount }}</b> redeemed</p>
+						<div class="flex items-center gap-1.5">
+							<ButtonsButton variant="ghost" size="sm" @click="emit('edit', achievement)">Edit</ButtonsButton>
+							<ButtonsButton variant="danger" size="sm" @click="emit('delete', achievement)">Delete</ButtonsButton>
+						</div>
+					</div>
+				</div>
+			</li>
+		</template>
 		<tr v-for="(achievement, index) in achievements" :key="achievement.achievementID" tabindex="0" @click="selected = achievement" @keydown.enter.self="selected = achievement"
 			class="row-fade-in cursor-pointer border-b border-stone-100 transition-colors duration-150 last:border-0 hover:bg-accent-50"
 			:style="{ animationDelay: `${index * 40}ms` }">

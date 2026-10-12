@@ -50,12 +50,13 @@ definePageMeta({
 useHead({ title: 'Settings' })
 
 
-const sections = [
+const { can } = useStaffAccess()
+const sections = computed(() => [
     { label: 'Loan periods', value: 'loans' },
     { label: 'Fines', value: 'fines' },
     { label: 'Account', value: 'account' },
-]
-const active = ref('loans')
+].filter((s) => s.value === 'account' || can('settings')))
+const active = ref(can('settings') ? 'loans' : 'account')
 
 const { data: settings, pending, error, execute: refetch } =
     useAsyncData('librarian-settings', () => settingsService.fetchSettings(), { lazy: true })

@@ -7,7 +7,25 @@
 			<NuxtLink to="/librarian/circulation" class="text-[13px] font-semibold text-accent-600 hover:underline">View all</NuxtLink>
 		</div>
 
-		<div class="flex-1 overflow-x-auto">
+		<!-- A phone gets one row per loan; the table is for wider screens. -->
+		<ul class="divide-y divide-stone-100 sm:hidden">
+			<li v-for="loan in loans" :key="`m-${loan.studentName}-${loan.bookTitle}-${loan.checkoutDate}`">
+				<button type="button" class="flex w-full items-center gap-3 py-3 text-left" @click="selected = loan">
+					<LibrarianStudentAvatar :name="loan.studentName" />
+					<span class="min-w-0 flex-1">
+						<span class="block truncate text-[14.5px] font-semibold text-stone-800">{{ loan.studentName }}</span>
+						<span class="block truncate text-[13px] text-stone-500">{{ loan.bookTitle }}</span>
+					</span>
+					<span class="inline-flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-1 text-[12.5px] font-bold" :class="statusClass(loan.status)">
+						<Icon :name="statusIcon(loan.status)" class="h-3 w-3" />
+						{{ loan.status === 'Returned' ? 'Returned' : shortDate(loan.dueDate) }}
+					</span>
+				</button>
+			</li>
+			<li v-if="loans.length === 0" class="py-6 text-center text-[15px] text-stone-400">No recent loans.</li>
+		</ul>
+
+		<div class="hidden flex-1 overflow-x-auto sm:block">
 			<table class="w-full min-w-max text-left text-[15px]">
 				<thead>
 					<tr class="border-b border-stone-100 text-[13px] font-medium text-stone-500">

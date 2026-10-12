@@ -2,16 +2,22 @@
     <!-- backdrop-blur makes the header its own stacking layer; without an explicit z-index the
          dropdowns inside it get painted over by page content (sticky table heads, cards, sidebar). -->
     <!-- Sticky, so the menu button and the bell stay reachable on long pages (the sidebar sits beside it). -->
-    <header class="sticky top-0 z-40 flex h-[68px] w-full items-center justify-between border-b border-stone-200 bg-white/90 px-6 backdrop-blur-sm">
+    <header class="sticky top-0 z-40 flex h-[68px] w-full items-center justify-between border-b border-stone-200 bg-white/90 px-4 backdrop-blur-sm sm:px-6">
         <!-- Left: the sidebar toggle (the logo lives at the top of the sidebar, as on the student side) -->
         <div class="flex items-center gap-4">
-            <!-- Folds the sidebar to icons and back (it never disappears), so the icon stays a plain menu. -->
+            <!-- On desktop this folds the sidebar to icons and back; on a phone it opens and closes the menu drawer. -->
             <button type="button" aria-controls="librarian-sidebar" :aria-expanded="isSidebarOpen"
-                :aria-label="isSidebarOpen ? 'Collapse sidebar to icons' : 'Expand sidebar'" :title="isSidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'"
+                :aria-label="isDesktop ? (isSidebarOpen ? 'Collapse sidebar to icons' : 'Expand sidebar') : (isSidebarOpen ? 'Close menu' : 'Open menu')"
+                :title="isDesktop ? (isSidebarOpen ? 'Collapse sidebar' : 'Expand sidebar') : undefined"
                 class="-ml-2 flex h-10 w-10 items-center justify-center rounded-xl text-stone-600 transition-[transform,background-color,color] duration-150 ease-out hover:bg-stone-900/5 hover:text-stone-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-200 active:scale-90"
                 @click="$emit('toggle-sidebar')">
                 <Icon name="i-tabler-menu-2" class="h-[22px] w-[22px]" />
             </button>
+
+            <!-- The sidebar (and its logo) is out of sight on a phone, so the header carries the wordmark. -->
+            <NuxtLink to="/librarian/dashboard" aria-label="EntryPoint home" class="flex items-center lg:hidden">
+                <img src="~/assets/css/logo/EntryPointLogo.png" alt="" class="h-7 w-auto max-w-none" />
+            </NuxtLink>
 
         </div>
 
@@ -32,7 +38,7 @@
                 </span>
 
                 <div
-                    class="absolute right-0 top-[calc(100%+10px)] z-50 w-[380px] max-w-[calc(100vw-2rem)] origin-top-right overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-card transition-all duration-150"
+                    class="absolute right-0 top-[calc(100%+10px)] z-50 w-[380px] max-w-[calc(100vw-2rem)] origin-top-right max-sm:fixed max-sm:inset-x-3 max-sm:right-3 max-sm:top-[76px] max-sm:w-auto max-sm:max-w-none overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-card transition-all duration-150"
                     :class="isBellOpen ? 'scale-100 opacity-100' : 'pointer-events-none scale-95 opacity-0'">
                     <div class="flex items-center justify-between border-b border-stone-100 px-4 py-3">
                         <p class="text-[15px] font-bold text-stone-900">Notifications</p>
@@ -102,9 +108,10 @@
 import { authService } from '~/services/authService'
 import type { NotificationRecord } from '~/services/notificationService'
 
-defineProps<{
+withDefaults(defineProps<{
     isSidebarOpen: boolean
-}>()
+    isDesktop?: boolean
+}>(), { isDesktop: true })
 
 defineEmits<{
     (e: 'toggle-sidebar'): void

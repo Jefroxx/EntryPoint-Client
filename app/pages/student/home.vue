@@ -14,9 +14,9 @@
 				</NuxtLink>
 			</div>
 
-			<div class="grid gap-4 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
-				<!-- Points, streak and the last seven days of visits -->
-				<section class="st-in relative overflow-hidden rounded-[22px] bg-gradient-to-br from-accent-600 via-accent-500 to-accent-400 p-5 text-white" style="animation-delay: 35ms">
+			<div class="grid gap-4" :class="isStudent ? 'lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]' : ''">
+				<!-- Points, streak and the last seven days of visits (students only) -->
+				<section v-if="isStudent" class="st-in relative overflow-hidden rounded-[22px] bg-gradient-to-br from-accent-600 via-accent-500 to-accent-400 p-5 text-white" style="animation-delay: 35ms">
 					<span class="pointer-events-none absolute -right-10 -top-10 h-[150px] w-[150px] rounded-full bg-white/10" />
 					<div class="flex items-start justify-between gap-3">
 						<div>
@@ -96,7 +96,7 @@
 			</section>
 
 			<!-- Hall of Fame: the students who use the library best, for everyone to see -->
-			<StudentHallOfFameStrip class="st-in mt-5" style="animation-delay: 122ms" :board="hallOfFame ?? null" :loading="hallOfFamePending" />
+			<StudentHallOfFameStrip v-if="isStudent" class="st-in mt-5" style="animation-delay: 122ms" :board="hallOfFame ?? null" :loading="hallOfFamePending" />
 
 			<!-- Recommended -->
 			<section class="st-in mt-5 rounded-[22px] border border-stone-200 bg-white p-5 md:p-6" style="animation-delay: 140ms">
@@ -258,7 +258,7 @@
 
 <script setup lang="ts">
 import { NuxtLink } from '#components'
-import { studentService, type CatalogBook, type LoanRow } from '~/services/studentService'
+import { studentService, type AchievementRow, type CatalogBook, type LoanRow } from '~/services/studentService'
 import { TONE_SOFT, type StudentTone } from '~/utils/studentNotifications'
 import type { BookPagePhoto } from '~/utils/bookPages'
 
@@ -267,6 +267,7 @@ useHead({ title: 'Home' })
 
 const drawer = useDrawer()
 const { firstName } = useAuthSession('student')
+const { isStudent } = useMemberType()
 const { summary, points, streak, wishlist, isWished, isInCart, toggleWish, addToCart } = useStudent()
 
 const profile = computed(() => summary.value?.profile ?? null)
@@ -277,7 +278,8 @@ const { data, pending } = useStudentData('student-home', async () => {
 		studentService.loans(),
 		studentService.reservations(),
 		studentService.attendance(),
-		studentService.achievements(),
+		// Points and achievements are for students; a faculty or staff member's request would be refused.
+		isStudent.value ? studentService.achievements() : Promise.resolve({ achievements: [] as AchievementRow[] }),
 		studentService.subjects(),
 	])
 
@@ -308,7 +310,7 @@ const { data, pending } = useStudentData('student-home', async () => {
 })
 
 // Its own request, so the rest of Home doesn't wait on the rankings.
-const { data: hallOfFame, pending: hallOfFamePending } = useStudentData('student-hall-of-fame', () => studentService.hallOfFame())
+const { data: hallOfFame, pending: hallOfFamePending } = useStudentData('student-hall-of-fame', () => (isStudent.value ? studentService.hallOfFame() : Promise.resolve(null)))
 
 const recommended = computed(() => data.value?.recommended ?? [])
 const recommendedReason = computed(() => {

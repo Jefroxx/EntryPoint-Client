@@ -1,6 +1,42 @@
 <template>
 	<div class="relative overflow-hidden rounded-2xl border border-stone-200 bg-white">
-		<div class="max-h-[480px] overflow-auto">
+		<!-- Phones: one card per book; edit and the rest of the actions are on the card. -->
+		<ul class="divide-y divide-stone-100 sm:hidden">
+			<li v-for="book in books" :key="`card-${book.bookID}`">
+				<div role="button" tabindex="0" class="flex gap-3 px-4 py-3.5 transition-colors active:bg-accent-50"
+					@click="emit('view', book)" @keydown.enter.self="emit('view', book)">
+					<div class="h-[68px] w-12 shrink-0 overflow-hidden rounded-[5px] bg-gradient-to-br from-accent-100 to-stone-200 shadow-sm">
+						<img v-if="book.coverImageURL" :src="book.coverImageURL" alt="" class="h-full w-full object-cover" />
+					</div>
+					<div class="min-w-0 flex-1">
+						<p class="text-[15px] font-semibold leading-snug text-stone-900">{{ book.title }}</p>
+						<p class="truncate text-[13px] text-stone-500">{{ authorNames(book) }}</p>
+						<div class="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1">
+							<span v-if="book.subject"
+								class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[12px] font-semibold text-stone-700"
+								:style="{ backgroundColor: `${subjectSwatch(book.subject.name)}1f` }">
+								<span class="h-2 w-2 shrink-0 rounded-[3px]" :style="{ backgroundColor: subjectSwatch(book.subject.name) }" />{{ book.subject.name }}
+							</span>
+							<span class="font-data text-[12px] text-stone-400">{{ book.callNumber }}</span>
+						</div>
+						<p class="mt-1.5 text-[13px] tabular-nums text-stone-500">
+							<b :class="availableCopies(book) === 0 ? 'text-red-500' : 'text-stone-900'">{{ availableCopies(book) }}</b> of {{ book.copies.length }} on the shelf
+						</p>
+					</div>
+					<div class="flex shrink-0 flex-col items-center gap-0.5" @click.stop>
+						<ButtonsButton variant="icon" size="sm" :aria-label="`Edit ${book.title}`" @click="emit('edit', book)">
+							<Icon name="i-tabler-pencil" class="h-[15px] w-[15px]" />
+						</ButtonsButton>
+						<LibrarianRowMenu :items="BOOK_MENU" :label="`More actions for ${book.title}`" @select="(key: string) => onMenu(key, book)" />
+					</div>
+				</div>
+			</li>
+		</ul>
+		<p v-if="!loading && books.length === 0" class="px-4 py-10 text-center text-[15px] text-stone-400 sm:hidden">
+			{{ filtered ? 'No books match these filters.' : 'No books in the catalog yet.' }}
+		</p>
+
+		<div class="max-h-[480px] overflow-auto max-sm:hidden">
 			<table class="w-full min-w-[860px] border-collapse text-left">
 				<thead>
 					<tr>

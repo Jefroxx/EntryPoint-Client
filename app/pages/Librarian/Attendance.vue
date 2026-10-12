@@ -5,7 +5,7 @@
             <p class="dashboard-heading mt-1 text-crimson">Manage attendance records and related activities.</p>
         </div>
 
-        <div class="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div class="phone-stats mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
             <LibrarianCatalogStatTile label="Currently in library" :value="stats?.currentlyInLibrary ?? '—'"
                 icon="i-tabler-circle-check" tone="success" />
             <LibrarianCatalogStatTile label="Total visits today" :value="stats?.totalVisitsToday ?? '—'"
@@ -16,7 +16,7 @@
         </div>
 
         <!-- The scanner runs in its own tab; this card opens it and shows whether it's running. -->
-        <section class="mb-5 flex flex-wrap items-center gap-4 rounded-2xl border p-4 md:p-5 transition-colors duration-300"
+        <section class="mb-5 flex flex-col items-start gap-3 rounded-2xl border p-4 transition-colors duration-300 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4 md:p-5"
             :class="stationOpen ? 'border-emerald-200 bg-emerald-50' : 'border-stone-200 bg-white'">
             <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl"
                 :class="stationOpen ? 'bg-emerald-600 text-white' : 'bg-accent-100 text-accent-600'">
@@ -36,13 +36,13 @@
                         : 'Opens the scanner in its own tab using the webcam or a phone camera. It reads student IDs for attendance, and also borrowing receipts, reservation slips and facility labels.' }}
                 </p>
             </div>
-            <ButtonsButton :variant="stationOpen ? 'ghost' : 'primary'" @click="openStation">
+            <ButtonsButton :variant="stationOpen ? 'ghost' : 'primary'" class="max-sm:w-full" @click="openStation">
                 <Icon :name="stationOpen ? 'i-tabler-external-link' : 'i-tabler-player-play'" class="h-4 w-4" />
                 {{ stationOpen ? 'Go to station' : 'Start attendance' }}
             </ButtonsButton>
         </section>
 
-        <div class="mb-4 flex flex-wrap items-center gap-2">
+        <div class="phone-toolbar mb-4 flex flex-wrap items-center gap-2">
             <div
                 class="flex h-[42px] min-w-[200px] max-w-[300px] flex-1 items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 transition-shadow focus-within:ring-2 focus-within:ring-accent-200">
                 <Icon name="i-tabler-search" class="h-[15px] w-[15px] text-stone-400" />
@@ -52,7 +52,7 @@
 
             <div class="flex-1"></div>
 
-            <LibrarianResetFiltersButton @click="search = ''" />
+            <LibrarianResetFiltersButton class="toolbar-full" @click="search = ''" />
         </div>
 
         <LibrarianAttendanceLogTable :logs="logs?.data ?? []" :loading="logsPending" />

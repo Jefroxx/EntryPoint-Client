@@ -1,6 +1,6 @@
 <template>
 	<Teleport to="body">
-		<div class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6"
+		<div class="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-6"
 			:class="open ? '' : 'pointer-events-none'">
 			<Transition enter-active-class="transition-opacity duration-200 ease-out" enter-from-class="opacity-0"
 				enter-to-class="opacity-100" leave-active-class="transition-opacity duration-150 ease-out"
@@ -9,23 +9,26 @@
 			</Transition>
 
 			<Transition enter-active-class="transition-[transform,opacity] duration-[260ms] ease-out"
-				enter-from-class="scale-95 translate-y-2 opacity-0" enter-to-class="scale-100 translate-y-0 opacity-100"
+				enter-from-class="scale-95 translate-y-2 opacity-0 max-sm:translate-x-10 max-sm:translate-y-0 max-sm:scale-100" enter-to-class="scale-100 translate-y-0 opacity-100"
 				leave-active-class="transition-[transform,opacity] duration-150 ease-out"
 				leave-from-class="scale-100 translate-y-0 opacity-100"
-				leave-to-class="scale-95 translate-y-1 opacity-0">
+				leave-to-class="scale-95 translate-y-1 opacity-0 max-sm:translate-x-6 max-sm:translate-y-0 max-sm:scale-100">
 				<form v-if="open" role="dialog" aria-modal="true" aria-labelledby="addBookTitle" novalidate
 					@keydown.esc="handleClose" @submit.prevent="step < lastStep ? next() : handleSubmit()"
-					class="relative z-10 flex max-h-[min(780px,calc(100vh-32px))] w-full max-w-[940px] flex-col overflow-hidden rounded-[22px] bg-white shadow-overlay">
+					class="relative z-10 flex max-h-[min(780px,calc(100vh-32px))] w-full max-w-[940px] flex-col overflow-hidden rounded-[22px] bg-white shadow-overlay max-sm:h-dvh max-sm:max-h-none max-sm:rounded-none max-sm:shadow-none">
 					<!-- Header + step bar (same pattern as student registration) -->
 					<div class="flex-shrink-0 border-b border-stone-100 px-6 pb-4 pt-5 sm:px-7">
-						<div class="flex items-start justify-between gap-3">
-							<div>
+						<div class="flex items-start justify-between gap-3 max-sm:items-center">
+							<ButtonsButton variant="icon" size="md" aria-label="Back" class="-ml-1 shrink-0 sm:hidden" @click="handleClose">
+								<Icon name="i-tabler-arrow-left" class="h-[18px] w-[18px]" />
+							</ButtonsButton>
+							<div class="min-w-0 max-sm:flex-1">
 								<h2 id="addBookTitle" class="dashboard-heading text-2xl font-bold text-crimson">
 									{{ isEdit ? 'Edit Book' : 'Add New Book' }}</h2>
 								<p class="dashboard-heading text-[13.5px] text-crimson">
 									{{ isEdit ? 'Jump to any section, change what you need, then save.' : 'Catalog a new title and its physical copies.' }}</p>
 							</div>
-							<ButtonsButton variant="icon" size="md" aria-label="Close" @click="handleClose">
+							<ButtonsButton variant="icon" size="md" aria-label="Close" class="max-sm:hidden" @click="handleClose">
 								<Icon name="i-tabler-x" class="h-4 w-4" />
 							</ButtonsButton>
 						</div>

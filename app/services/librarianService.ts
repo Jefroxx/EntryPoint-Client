@@ -694,7 +694,7 @@ class LibrarianServiceClass extends BaseService {
     );
   }
 
-  fetchStudents(params: { search?: string; program?: string; status?: string; page?: number; perPage?: number } = {}) {
+  fetchStudents(params: { search?: string; program?: string; status?: string; memberType?: "student" | "faculty" | "staff"; page?: number; perPage?: number } = {}) {
     const runtimeConfig = useRuntimeConfig();
 
     return $fetch<PaginatedStudents>("/librarian/students", {
@@ -708,12 +708,13 @@ class LibrarianServiceClass extends BaseService {
     });
   }
 
-  fetchStudentStats() {
+  fetchStudentStats(memberType?: "student" | "faculty" | "staff") {
     const runtimeConfig = useRuntimeConfig();
 
     return $fetch<StudentStats>("/librarian/students/stats", {
       baseURL: runtimeConfig.public.apiBaseURL,
       method: "GET",
+      query: { memberType },
       headers: {
         Accept: "application/json",
         ...this.authHeaders(),

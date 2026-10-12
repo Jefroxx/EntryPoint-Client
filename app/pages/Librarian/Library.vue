@@ -6,10 +6,10 @@
         </div>
 
         <LibrarianSegmentedTabs v-model="activeTab" class="mb-5" :tabs="[
-            { label: 'Accession Record', value: 'accession' },
-            { label: 'Book Catalog', value: 'catalog' },
-            { label: 'Book Requests', value: 'requests' },
-            { label: 'Categories / Genres', value: 'categories' },
+            { label: 'Accession Record', short: 'Accession', value: 'accession' },
+            { label: 'Book Catalog', short: 'Catalog', value: 'catalog' },
+            { label: 'Book Requests', short: 'Requests', value: 'requests' },
+            { label: 'Categories / Genres', short: 'Categories', value: 'categories' },
         ]" />
 
         <!-- Accession Record (a row per book, its copies' accession numbers listed) and Book Catalog
@@ -27,7 +27,7 @@
 
         <template v-if="activeTab === 'accession'">
 
-            <div class="mb-4 flex flex-wrap items-center gap-2">
+            <div class="phone-toolbar mb-4 flex flex-wrap items-center gap-2">
                 <div
                     class="flex h-[42px] min-w-[200px] max-w-[320px] flex-1 items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 transition-shadow focus-within:ring-2 focus-within:ring-accent-200">
                     <Icon name="i-tabler-search" class="h-[15px] w-[15px] text-stone-400" />
@@ -85,7 +85,7 @@
             ]" />
 
             <template v-if="catalogView === 'copies'">
-            <div class="mb-4 flex flex-wrap items-center gap-2">
+            <div class="phone-toolbar mb-4 flex flex-wrap items-center gap-2">
                 <div
                     class="flex h-[42px] min-w-[200px] max-w-[320px] flex-1 items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 transition-shadow focus-within:ring-2 focus-within:ring-accent-200">
                     <Icon name="i-tabler-search" class="h-[15px] w-[15px] text-stone-400" />
@@ -148,7 +148,7 @@
             </template>
 
             <template v-else>
-                <div class="mb-4 flex flex-wrap items-center gap-2">
+                <div class="phone-toolbar mb-4 flex flex-wrap items-center gap-2">
                     <LibrarianSearchInput id="stock-search" v-model="stockSearch"
                         placeholder="Search title, accession no., reason or librarian" />
 
@@ -163,7 +163,7 @@
                     <div class="flex-1"></div>
 
                     <LibrarianResetFiltersButton @click="stockSearch = ''; stockAction = ''" />
-                    <ButtonsButton variant="primary" @click="openAddCopies()">
+                    <ButtonsButton variant="primary" class="toolbar-full" @click="openAddCopies()">
                         <Icon name="i-tabler-copy-plus" class="h-3.5 w-3.5" />Add Book Copy
                     </ButtonsButton>
                 </div>
@@ -200,7 +200,7 @@
                     icon="i-tabler-circle-x" tone="danger" />
             </div>
 
-            <div class="mb-4 flex flex-wrap items-center gap-2">
+            <div class="phone-toolbar mb-4 flex flex-wrap items-center gap-2">
                 <div
                     class="flex h-[42px] min-w-[200px] max-w-[320px] flex-1 items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 transition-shadow focus-within:ring-2 focus-within:ring-accent-200">
                     <Icon name="i-tabler-search" class="h-[15px] w-[15px] text-stone-400" />
@@ -243,27 +243,27 @@
         </template>
 
         <template v-else>
-            <div class="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div class="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
                 <LibrarianCatalogStatTile label="Categories" :value="subjects.length" icon="i-tabler-tags"
                     tone="accent" />
                 <LibrarianCatalogStatTile label="With a Dewey code"
                     :value="`${classifiedCount} of ${subjects.length}`" icon="i-tabler-circle-check"
                     tone="success" />
-                <LibrarianCatalogStatTile label="Largest category" :value="largestSubject?.name ?? '—'"
+                <LibrarianCatalogStatTile class="col-span-2 sm:col-span-1" label="Largest category" :value="largestSubject?.name ?? '—'"
                     icon="i-tabler-book-2" tone="warning" />
             </div>
 
-            <div class="mb-4 flex flex-wrap items-center gap-2">
+            <div class="phone-toolbar mb-4 flex flex-wrap items-center gap-2">
                 <LibrarianSearchInput id="category-search" v-model="categorySearch"
                     placeholder="Search categories" />
                 <div class="flex-1"></div>
-                <ButtonsButton variant="primary" @click="openCategoryForm(null)">
+                <ButtonsButton variant="primary" class="toolbar-full" @click="openCategoryForm(null)">
                     <Icon name="i-tabler-plus" class="h-3.5 w-3.5" />Add Category
                 </ButtonsButton>
             </div>
 
             <LibrarianCategoriesTable :subjects="filteredSubjects" :loading="subjectsPending"
-                @edit="openCategoryForm" @delete="askDeleteCategory" />
+                @edit="openCategoryForm" @delete="askDeleteCategory" @view-book="openBookDetail" @show-books="showCategoryBooks" />
 
             <div class="mt-3 flex items-center justify-between text-[13.5px] text-stone-400">
                 <span>Showing {{ filteredSubjects.length }} of {{ subjects.length }} categories</span>
@@ -592,6 +592,12 @@ async function loadBookDetail(bookUuid: string): Promise<BookDetail | null> {
     } finally {
         detailLoading.value = false
     }
+}
+
+// "Show all in Accession Record" in a category's details: the same list, filtered to that category.
+function showCategoryBooks(subject: SubjectRecord) {
+    subjectFilter.value = subject.subjectID
+    activeTab.value = 'accession'
 }
 
 async function openBookDetail(book: Pick<CatalogBook, 'uuid'>) {

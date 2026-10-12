@@ -76,7 +76,7 @@
 
 			<div class="flex items-center gap-2">
 				<!-- Same material as the search field (white, hairline border, h-40), so it reads as part of the bar. -->
-				<NuxtLink to="/student/rewards" :aria-label="`${points} knowledge points. Open rewards`" title="Knowledge points"
+				<NuxtLink v-if="isStudent" to="/student/rewards" :aria-label="`${points} knowledge points. Open rewards`" title="Knowledge points"
 					class="flex h-10 items-center gap-2 rounded-xl border border-stone-200 bg-white pl-1.5 pr-3 transition-[border-color,transform] duration-150 ease-out hover:border-accent-200 active:scale-[.97]">
 					<span class="flex h-7 w-7 items-center justify-center rounded-lg bg-accent-100 text-accent-600">
 						<Icon name="i-tabler-coins" class="h-4 w-4" />
@@ -114,7 +114,7 @@
 				<p class="truncate px-1 text-center text-[15px] font-semibold text-stone-900 transition-[opacity,transform] duration-200 ease-out"
 					:class="scrolled ? 'translate-y-0 opacity-100' : 'translate-y-1 opacity-0'">{{ route.meta.title }}</p>
 				<div class="flex items-center justify-end">
-					<NuxtLink to="/student/rewards" :aria-label="`${points} knowledge points. Open rewards`"
+					<NuxtLink v-if="isStudent" to="/student/rewards" :aria-label="`${points} knowledge points. Open rewards`"
 						class="mr-1 flex h-8 items-center gap-1.5 rounded-lg border border-stone-200 bg-white pl-1 pr-2 transition-transform duration-150 ease-out active:scale-95">
 						<span class="flex h-6 w-6 items-center justify-center rounded-md bg-accent-100 text-accent-600">
 							<Icon name="i-tabler-coins" class="h-3.5 w-3.5" />
@@ -195,7 +195,9 @@ const { cart, wishlist, attention, points, refreshShell, refreshProfile } = useS
 const shownPoints = useCountUp(points)
 const { unreadCount, refresh: refreshNotifications } = useNotifications()
 
-const links = [
+const { isStudent } = useMemberType()
+
+const ALL_LINKS = [
 	{ label: 'Home', to: '/student/home', icon: 'i-tabler-home' },
 	{ label: 'Discover', to: '/student/discover', icon: 'i-tabler-compass' },
 	// Between finding a book and borrowing it.
@@ -204,6 +206,8 @@ const links = [
 	{ label: 'Rewards', to: '/student/rewards', icon: 'i-tabler-gift' },
 	{ label: 'Facilities', to: '/student/facilities', icon: 'i-tabler-device-desktop' },
 ]
+// Faculty and staff members have no rewards page.
+const links = computed(() => ALL_LINKS.filter((l) => isStudent.value || l.to !== '/student/rewards'))
 
 const extras = [
 	{ label: 'Library ID', to: '/student/id', icon: 'i-tabler-id' },

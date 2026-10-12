@@ -171,7 +171,7 @@ function leaveIfSignedIn() {
 
 	if (has(SESSION_COOKIES.librarian.token) && has(SESSION_COOKIES.librarian.role)) {
 		const role = document.cookie.split('; ').find((c) => c.startsWith(`${SESSION_COOKIES.librarian.role}=`))
-		if (role?.endsWith('=librarian')) return navigateTo(homeFor('librarian'))
+		if (role?.endsWith('=librarian')) return navigateTo(homeFor('librarian', useCookie(SESSION_COOKIES.librarian.staffRole).value))
 	}
 	if (has(SESSION_COOKIES.student.token)) return navigateTo(homeFor('student'))
 }

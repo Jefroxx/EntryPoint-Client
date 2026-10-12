@@ -10,7 +10,7 @@
 
         <!-- Active loans -->
         <template v-if="activeTab === 'loans'">
-            <div class="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-4">
+            <div class="phone-stats mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <LibrarianCatalogStatTile label="Active Loans" :value="loanStats?.active ?? '—'"
                     icon="i-tabler-book" tone="accent" />
                 <LibrarianCatalogStatTile label="Due Soon" :value="loanStats?.dueSoon ?? '—'"
@@ -21,7 +21,7 @@
                     icon="i-tabler-checklist" tone="success" />
             </div>
 
-            <div class="mb-4 flex flex-wrap items-center gap-2">
+            <div class="phone-toolbar mb-4 flex flex-wrap items-center gap-2">
                 <LibrarianSearchInput id="loan-search" v-model="loanSearch" placeholder="Search student or book" />
 
                 <select v-model="loanStatus"
@@ -36,7 +36,7 @@
                 <div class="flex-1"></div>
 
                 <LibrarianResetFiltersButton @click="loanSearch = ''; loanStatus = ''" />
-                <ButtonsButton variant="primary" @click="checkoutCode = undefined; checkoutAuto = false; isCheckoutOpen = true">
+                <ButtonsButton variant="primary" class="toolbar-full" @click="checkoutCode = undefined; checkoutAuto = false; isCheckoutOpen = true">
                     <Icon name="i-tabler-plus" class="h-3.5 w-3.5" />Checkout Book
                 </ButtonsButton>
             </div>
@@ -49,7 +49,7 @@
 
         <!-- Reservations -->
         <template v-else-if="activeTab === 'reservations'">
-            <div class="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div class="phone-stats mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
                 <LibrarianCatalogStatTile label="Waiting" :value="reservationStats.waiting"
                     icon="i-tabler-clock" tone="warning" />
                 <LibrarianCatalogStatTile label="Accepted" :value="reservationStats.accepted"
@@ -58,7 +58,7 @@
                     icon="i-tabler-book" tone="accent" />
             </div>
 
-            <div class="mb-4 flex flex-wrap items-center gap-2">
+            <div class="phone-toolbar mb-4 flex flex-wrap items-center gap-2">
                 <LibrarianSearchInput id="reservation-search" v-model="reservationSearch" placeholder="Search student or book" />
 
                 <select v-model="reservationStatus"
@@ -98,7 +98,7 @@
 
         <!-- Penalties -->
         <template v-else>
-            <div class="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div class="phone-stats mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
                 <LibrarianCatalogStatTile label="Unpaid Fines" :value="penaltyStats?.unpaidCount ?? '—'"
                     icon="i-tabler-alert-circle" tone="danger" />
                 <LibrarianCatalogStatTile label="Unpaid Total"
@@ -108,7 +108,7 @@
                     icon="i-tabler-circle-check" tone="success" />
             </div>
 
-            <div class="mb-4 flex flex-wrap items-center gap-2">
+            <div class="phone-toolbar mb-4 flex flex-wrap items-center gap-2">
                 <LibrarianSearchInput id="penalty-search" v-model="penaltySearch" placeholder="Search student" />
 
                 <select v-model="penaltyStatus"
@@ -335,10 +335,10 @@ function goToPenaltyPage(next: number) {
 
 // ---- Tabs ----
 const tabs = computed(() => [
-    { label: 'Active Loans', value: 'loans', badge: loanStats.value?.received || undefined },
-    { label: 'Reservations', value: 'reservations', badge: reservationStats.value.waiting },
-    { label: 'Self-Return Reports', value: 'selfreturn', badge: selfReturns.value.length },
-    { label: 'Penalties', value: 'penalties' },
+    { label: 'Active Loans', short: 'Loans', value: 'loans', badge: loanStats.value?.received || undefined },
+    { label: 'Reservations', short: 'Reserved', value: 'reservations', badge: reservationStats.value.waiting },
+    { label: 'Self-Return Reports', short: 'Self-returns', value: 'selfreturn', badge: selfReturns.value.length },
+    { label: 'Penalties', short: 'Fines', value: 'penalties' },
 ])
 
 // ---- Actions ----

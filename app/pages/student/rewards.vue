@@ -161,7 +161,7 @@ import { studentService, type MarketCartLine, type MarketItem } from '~/services
 import { TONE_SOFT, type StudentTone } from '~/utils/studentNotifications'
 import { useAlert } from '~/api/alert/useAlert'
 
-definePageMeta({ layout: 'student', middleware: 'student', title: 'Rewards', nav: 'rewards', tab: 'rewards' })
+definePageMeta({ layout: 'student', middleware: ['student', 'engagement'], title: 'Rewards', nav: 'rewards', tab: 'rewards' })
 useHead({ title: 'Rewards' })
 
 const alert = useAlert()

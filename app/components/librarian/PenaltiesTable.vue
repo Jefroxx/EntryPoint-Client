@@ -1,6 +1,26 @@
 <template>
 	<LibrarianTableShell :columns="['Student', 'Book', 'Type', 'Amount', 'Computed', 'Status', '']" :loading="loading"
 		:empty="penalties.length === 0" empty-text="No fines recorded. Fines appear automatically when a loan is returned late." min-width="860px">
+		<!-- Phones: one card per row, with the row's buttons on it. -->
+		<template #cards>
+			<li v-for="penalty in penalties" :key="`card-${penalty.penaltyID}`">
+				<div role="button" tabindex="0" class="px-4 py-3.5 transition-colors active:bg-accent-50" @click="selected = penalty" @keydown.enter.self="selected = penalty">
+					<div class="flex items-start justify-between gap-3">
+						<LibrarianPersonCell :name="personName(penalty.loan?.student?.user)" :sub="penalty.loan?.student?.studentIDNumber" />
+						<LibrarianStatusPill :label="penalty.paymentStatus" :tone="penalty.paymentStatus === 'Paid' ? 'success' : 'danger'" class="shrink-0" />
+					</div>
+					<p class="mt-2 text-[14.5px] font-semibold leading-snug text-stone-900">{{ penalty.loan?.copy?.book?.title ?? 'Removed book' }}</p>
+					<div class="mt-1 flex items-center justify-between gap-3">
+						<p class="text-[12.5px] capitalize text-stone-500">{{ penalty.penalty_type?.category ?? '—' }} · {{ formatDate(penalty.computedAt) }}</p>
+						<p class="font-data text-[16px] font-bold text-stone-900">{{ formatPeso(penalty.amount) }}</p>
+					</div>
+					<div v-if="penalty.paymentStatus === 'Unpaid'" class="mt-3" @click.stop>
+						<ButtonsButton v-if="penalty.loan?.status === 'Returned'" variant="primary" class="w-full" @click="emit('settle', penalty)">Mark paid</ButtonsButton>
+						<p v-else class="text-center text-[12.5px] text-stone-400">Still accruing</p>
+					</div>
+				</div>
+			</li>
+		</template>
 		<tr v-for="(penalty, index) in penalties" :key="penalty.penaltyID" tabindex="0"
 			class="row-fade-in cursor-pointer border-b border-stone-100 transition-colors duration-150 last:border-0 hover:bg-accent-50"
 			@click="selected = penalty" @keydown.enter.self="selected = penalty"
@@ -33,7 +53,11 @@
 		<LibrarianRecordDrawer :open="!!selected" heading="Fine details" :title="selected ? formatPeso(selected.amount) : ''"
 			:subtitle="selected?.loan?.copy?.book?.title ?? 'Removed book'"
 			:status="selected ? { label: selected.paymentStatus, tone: selected.paymentStatus === 'Paid' ? 'success' : 'danger' } : undefined"
-			:fields="penaltyFields" @close="selected = null" />
+			:fields="penaltyFields" @close="selected = null">
+			<template v-if="selected && selected.paymentStatus === 'Unpaid' && selected.loan?.status === 'Returned'" #footer>
+				<ButtonsButton variant="primary" class="w-full" @click="settleSelected(selected)">Mark paid</ButtonsButton>
+			</template>
+		</LibrarianRecordDrawer>
 	</LibrarianTableShell>
 </template>
 
@@ -49,6 +73,8 @@ const emit = defineEmits<{ (e: 'settle', penalty: PenaltyRecord): void }>()
 
 const selected = ref<PenaltyRecord | null>(null)
 
+// The details panel's button closes it, then starts the same flow as the row's button.
+function settleSelected(p: PenaltyRecord) { selected.value = null; emit('settle', p) }
 const penaltyFields = computed(() => {
 	const p = selected.value
 	if (!p) return []

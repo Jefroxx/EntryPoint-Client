@@ -45,6 +45,9 @@ export interface StudentProfile {
   birthDate: string | null;
   studentIDNumber: string;
   academicProgram: string | null;
+  /** Faculty and staff members have a department instead of a program, and no points or rewards. */
+  memberType?: "student" | "faculty" | "staff";
+  department?: string | null;
   barcodeValue: string | null;
   registrationStatus: string;
 }

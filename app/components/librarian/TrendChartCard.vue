@@ -19,7 +19,7 @@
 			</span>
 		</div>
 
-		<div class="relative" @mouseleave="hover = null">
+		<div ref="box" class="relative" @mouseleave="hover = null">
 			<svg :viewBox="`0 0 ${W} ${H}`" class="block h-auto w-full overflow-visible" role="img" :aria-label="ariaLabel">
 				<!-- Recessive grid + y values -->
 				<g>
@@ -50,7 +50,7 @@
 
 			<div v-if="hover !== null"
 				class="pointer-events-none absolute top-0 z-10 min-w-[170px] -translate-x-1/2 rounded-xl border border-stone-200 bg-white px-3 py-2 shadow-card"
-				:style="{ left: `${(xFor(hover) / W) * 100}%` }">
+				:style="{ left: tipLeft }">
 				<p class="mb-1 text-[12px] font-semibold text-stone-500">{{ periodLabel }} {{ labels[hover] }}</p>
 				<p v-for="s in lines" :key="s.key" class="flex items-center justify-between gap-4 text-[13px] text-stone-600">
 					<span class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-full" :style="{ backgroundColor: s.color }" />{{ s.label }}</span>
@@ -92,13 +92,29 @@ const props = withDefaults(defineProps<{
 	periodLabel?: string
 }>(), { subtitle: '', periodLabel: 'Week of' })
 
-// Sized to roughly the card's real width, so 11px text renders at about 11px instead of scaling up.
-const W = 800
-const H = 230
+// The drawing is as wide as the card really is (measured below), so 11px text renders at about 11px on a phone
+// and on a desktop alike instead of being scaled down with the picture.
+const box = ref<HTMLElement | null>(null)
+const width = ref(800)
+const W = computed(() => width.value)
+const H = computed(() => (width.value < 520 ? 210 : 230))
 const LEFT = 34
-const RIGHT = 786
+const RIGHT = computed(() => W.value - 14)
 const TOP = 12
-const BOTTOM = 202
+const BOTTOM = computed(() => H.value - 28)
+
+let observer: ResizeObserver | undefined
+onMounted(() => {
+	if (!box.value) return
+	// Applied on the next frame: resizing the drawing changes its height, and doing that inside the callback makes the browser report a ResizeObserver loop.
+	observer = new ResizeObserver(([entry]) => {
+		if (!entry) return
+		const next = Math.max(280, Math.min(800, Math.round(entry.contentRect.width)))
+		if (next !== width.value) requestAnimationFrame(() => { width.value = next })
+	})
+	observer.observe(box.value)
+})
+onUnmounted(() => observer?.disconnect())
 
 const hover = ref<number | null>(null)
 
@@ -114,8 +130,15 @@ const axisMax = computed(() => {
 const ticks = computed(() => [0, 1, 2, 3, 4].map((i) => (axisMax.value / 4) * i))
 
 // Periods sit in the middle of equal columns, so the first and last labels never touch the edges.
-const columnWidth = computed(() => (RIGHT - LEFT) / Math.max(props.labels.length, 1))
+const columnWidth = computed(() => (RIGHT.value - LEFT) / Math.max(props.labels.length, 1))
 const xFor = (i: number) => LEFT + columnWidth.value * (i + 0.5)
-const yFor = (value: number) => BOTTOM - (value / axisMax.value) * (BOTTOM - TOP)
+const yFor = (value: number) => BOTTOM.value - (value / axisMax.value) * (BOTTOM.value - TOP)
+
+// The tooltip is centred on its column but kept inside the card, so it can't run off a phone's edge.
+const tipLeft = computed(() => {
+	if (hover.value === null) return '0'
+	const half = 90
+	return `${(Math.min(Math.max(xFor(hover.value), half), W.value - half) / W.value) * 100}%`
+})
 const pointsFor = (values: number[]) => values.map((v, i) => `${xFor(i)},${yFor(v)}`).join(' ')
 </script>

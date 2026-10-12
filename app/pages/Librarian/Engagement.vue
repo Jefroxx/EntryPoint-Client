@@ -10,7 +10,7 @@
 
         <!-- Achievements -->
         <template v-if="activeTab === 'achievements'">
-            <div class="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div class="phone-stats mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
                 <LibrarianCatalogStatTile label="Achievements" :value="achievements.length" icon="i-tabler-trophy"
                     tone="accent" />
                 <LibrarianCatalogStatTile label="Unlocked by students" :value="totalUnlocked"
@@ -19,7 +19,7 @@
                     tone="warning" />
             </div>
 
-            <div class="mb-4 flex flex-wrap items-center gap-2">
+            <div class="phone-toolbar mb-4 flex flex-wrap items-center gap-2">
                 <LibrarianSearchInput id="achievement-search" v-model="achievementSearch" placeholder="Search achievements" />
                 <div class="flex-1"></div>
                 <LibrarianResetFiltersButton @click="achievementSearch = ''" />
@@ -34,7 +34,7 @@
 
         <!-- Market -->
         <template v-else-if="activeTab === 'market'">
-            <div class="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div class="phone-stats mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
                 <LibrarianCatalogStatTile label="Market items" :value="items.length" icon="i-tabler-gift"
                     tone="accent" />
                 <LibrarianCatalogStatTile label="Low stock" :value="lowStockCount" icon="i-tabler-alert-circle"
@@ -43,7 +43,7 @@
                     icon="i-tabler-circle-check" tone="success" />
             </div>
 
-            <div class="mb-4 flex flex-wrap items-center gap-2">
+            <div class="phone-toolbar mb-4 flex flex-wrap items-center gap-2">
                 <LibrarianSearchInput id="item-search" v-model="itemSearch" placeholder="Search items" />
                 <div class="flex-1"></div>
                 <LibrarianResetFiltersButton @click="itemSearch = ''" />
@@ -58,7 +58,7 @@
 
         <!-- Redemptions -->
         <template v-else>
-            <div class="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div class="phone-stats mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
                 <LibrarianCatalogStatTile label="Pending" :value="redemptionCount('Pending')" icon="i-tabler-clock"
                     tone="warning" />
                 <LibrarianCatalogStatTile label="Fulfilled" :value="redemptionCount('Fulfilled')"
@@ -67,7 +67,7 @@
                     icon="i-tabler-circle-x" tone="danger" />
             </div>
 
-            <div class="mb-4 flex flex-wrap items-center gap-2">
+            <div class="phone-toolbar mb-4 flex flex-wrap items-center gap-2">
                 <LibrarianSearchInput id="redemption-search" v-model="redemptionSearch" placeholder="Search student or item" />
                 <select v-model="redemptionStatus"
                     class="h-[42px] rounded-xl border border-stone-200 bg-white px-3 text-[14px] text-stone-500 transition-colors hover:bg-stone-50">
@@ -144,7 +144,7 @@ const redemptions = computed(() => redemptionsResponse.value?.redemptions ?? [])
 
 const tabs = computed(() => [
     { label: 'Achievements', value: 'achievements' },
-    { label: 'Rewards Market', value: 'market' },
+    { label: 'Rewards Market', short: 'Rewards', value: 'market' },
     { label: 'Redemptions', value: 'redemptions', badge: redemptionCount('Pending') },
 ])
 

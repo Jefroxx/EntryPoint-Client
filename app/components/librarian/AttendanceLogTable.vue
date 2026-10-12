@@ -1,6 +1,28 @@
 <template>
 	<div class="relative overflow-hidden rounded-2xl border border-stone-200 bg-white">
-		<div class="max-h-[480px] overflow-auto">
+		<!-- Phones: one card per row, with the row's buttons on it. -->
+		<ul class="divide-y divide-stone-100 sm:hidden">
+			<li v-for="log in logs" :key="`card-${log.logID}`">
+				<div role="button" tabindex="0" class="px-4 py-3.5 transition-colors active:bg-accent-50" @click="selected = log" @keydown.enter.self="selected = log">
+					<div class="flex items-start gap-3">
+						<LibrarianStudentAvatar :name="studentName(log)" />
+						<div class="min-w-0 flex-1">
+							<p class="truncate text-[15px] font-semibold text-stone-900">{{ studentName(log) }}</p>
+							<p class="font-data text-[12px] text-stone-400">{{ log.student?.studentIDNumber ?? '—' }}</p>
+							<p class="truncate text-[13px] text-stone-500">{{ log.student?.academicProgram ?? '—' }}</p>
+							<p class="font-data mt-1 text-[12.5px] text-stone-500">In {{ formatTime(log.entryTime) }} · Out {{ log.exitTime ? formatTime(log.exitTime) : '—' }} · {{ duration(log) }}</p>
+						</div>
+						<span v-if="!log.exitTime" class="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[12px] font-semibold text-emerald-600">
+							<span class="pulse-dot h-1.5 w-1.5 rounded-full bg-emerald-500" />In Library
+						</span>
+						<span v-else class="inline-flex shrink-0 items-center rounded-full bg-stone-100 px-2.5 py-1 text-[12px] font-semibold text-stone-500">Checked Out</span>
+					</div>
+				</div>
+			</li>
+		</ul>
+		<p v-if="!loading && logs.length === 0" class="px-4 py-10 text-center text-[15px] text-stone-400 sm:hidden">No attendance logs match your search.</p>
+
+		<div class="scroll-shadow-x max-h-[480px] overflow-auto max-sm:hidden">
 			<table class="w-full min-w-[760px] border-collapse text-left">
 				<thead>
 					<tr>

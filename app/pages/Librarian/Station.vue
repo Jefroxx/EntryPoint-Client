@@ -107,9 +107,10 @@ async function saveFinish(payload: { condition: 'good' | 'damaged'; note: string
 }
 
 /* ---------- clock ---------- */
-const now = ref(new Date())
-const time = computed(() => now.value.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }))
-const today = computed(() => now.value.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }))
+// Empty until the page is in the browser: the server's time would never match the browser's, and Vue would warn.
+const now = ref<Date | null>(null)
+const time = computed(() => now.value?.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) ?? '')
+const today = computed(() => now.value?.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }) ?? '')
 let tick: ReturnType<typeof setInterval> | undefined
 
 /* ---------- full screen (for a dedicated front-desk screen) ---------- */
@@ -139,6 +140,7 @@ function endSession() {
 }
 
 onMounted(() => {
+	now.value = new Date()
 	post({ type: 'open' })
 	tick = setInterval(() => { now.value = new Date() }, 15_000)
 	canFullscreen.value = !!document.documentElement.requestFullscreen
