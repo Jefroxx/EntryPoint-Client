@@ -127,6 +127,35 @@
 	}
 }
 
+/* Whatever shows through between two fading layouts (and during overscroll) is parchment, the page
+   ground of the whole app, never the browser's or the UI kit's default. */
+html,
+body {
+	background-color: var(--color-parchment);
+}
+
+/* Layout fade: only between the landing page and the sign-in pages (see layoutTransition in those pages).
+   Out first, then in, so the two never sit on top of each other. */
+.soft-fade-leave-active {
+	transition: opacity 170ms ease-out;
+}
+
+.soft-fade-enter-active {
+	transition: opacity 280ms var(--ease-out);
+}
+
+.soft-fade-enter-from,
+.soft-fade-leave-to {
+	opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.soft-fade-enter-active,
+	.soft-fade-leave-active {
+		transition-duration: 1ms;
+	}
+}
+
 /* ------------------------------------------------------------------ */
 /* Printing one thing on its own (utils/printOnly.ts)                   */
 /* ------------------------------------------------------------------ */
@@ -256,4 +285,48 @@
 		animation: none;
 		opacity: 1;
 	}
+}
+
+/* Librarian toolbars (search, filters, Reset, Add): a flex-wrapped row on desktop, a tidy two-column grid on a phone.
+   The search box (first child) spans both columns, the empty spacer disappears, and .toolbar-full makes a lone
+   action button span the row. Add class "phone-toolbar" to the toolbar to opt in. */
+@media (max-width: 639px) {
+	.phone-toolbar {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.phone-toolbar > * {
+		min-width: 0;
+		max-width: none;
+	}
+
+	.phone-toolbar > :first-child,
+	.phone-toolbar > .toolbar-full {
+		grid-column: 1 / -1;
+	}
+
+	.phone-toolbar > div:empty {
+		display: none;
+	}
+
+	/* A control that shares the first row with another (Reports: month and Export CSV). */
+	.phone-toolbar > .toolbar-half {
+		grid-column: auto;
+	}
+
+	/* Stat tiles, two across; an odd last tile takes the whole row so nothing is left hanging. */
+	.phone-stats > :last-child:nth-child(odd) {
+		grid-column: 1 / -1;
+	}
+}
+
+/* Scroll shadows for a table that scrolls sideways: a soft edge on whichever side has more to show. Pure CSS, so it
+   needs no measuring. The three tables that don't use LibrarianTableShell opt in with this class. */
+.scroll-shadow-x {
+	background:
+		linear-gradient(to right, #fff 30%, rgba(255, 255, 255, 0)) left center / 28px 100% no-repeat local,
+		linear-gradient(to left, #fff 30%, rgba(255, 255, 255, 0)) right center / 28px 100% no-repeat local,
+		linear-gradient(to right, rgba(120, 100, 80, .22), rgba(120, 100, 80, 0)) left center / 12px 100% no-repeat scroll,
+		linear-gradient(to left, rgba(120, 100, 80, .22), rgba(120, 100, 80, 0)) right center / 12px 100% no-repeat scroll;
 }

@@ -23,10 +23,11 @@
 			<div class="rounded-2xl border border-stone-200 bg-white p-4">
 				<div class="flex items-center justify-between gap-2">
 					<b class="text-[14.5px] text-stone-900">
-						{{ book.availableCopies ? `${book.availableCopies} of ${book.totalCopies} copies available` : 'All copies are out' }}
+						{{ !book.totalCopies ? 'No copies available' : book.availableCopies ? `${book.availableCopies} of ${book.totalCopies} copies available` : 'All copies are out' }}
 					</b>
 					<StudentPill v-if="book.availableCopies" tone="good">Available</StudentPill>
-					<StudentPill v-else tone="warn">{{ book.queueLength }} waiting</StudentPill>
+					<StudentPill v-else-if="book.totalCopies" tone="warn">{{ book.queueLength }} waiting</StudentPill>
+					<StudentPill v-else tone="warn">Unavailable</StudentPill>
 				</div>
 				<div class="mt-3 flex flex-wrap gap-[5px]">
 					<i v-for="n in book.totalCopies" :key="n" class="h-2 w-6 rounded-full"
@@ -74,7 +75,7 @@ const { isWished, isInCart, toggleWish, addToCart } = useStudent()
 const open = computed(() => drawer.active.value?.kind === 'book')
 
 // Keep the last book while the drawer slides out, so it doesn't go blank mid-exit.
-const bookId = ref<number | null>(null)
+const bookId = ref<string | null>(null)
 watch(() => drawer.active.value, (active) => {
 	if (active?.kind === 'book' && active.id) bookId.value = active.id
 }, { immediate: true })

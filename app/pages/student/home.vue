@@ -14,9 +14,11 @@
 				</NuxtLink>
 			</div>
 
-			<div class="grid gap-4 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
-				<!-- Points, streak and the last seven days of visits -->
-				<section class="st-in relative overflow-hidden rounded-[22px] bg-gradient-to-br from-accent-600 via-accent-500 to-accent-400 p-5 text-white" style="animation-delay: 35ms">
+			<AnnouncementBanner v-if="announcements?.announcements.length" class="st-in mb-5" :items="announcements.announcements" />
+
+			<div class="grid gap-4" :class="isStudent ? 'lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]' : ''">
+				<!-- Points, streak and the last seven days of visits (students only) -->
+				<section v-if="isStudent" class="st-in relative overflow-hidden rounded-[22px] bg-gradient-to-br from-accent-600 via-accent-500 to-accent-400 p-5 text-white" style="animation-delay: 35ms">
 					<span class="pointer-events-none absolute -right-10 -top-10 h-[150px] w-[150px] rounded-full bg-white/10" />
 					<div class="flex items-start justify-between gap-3">
 						<div>
@@ -96,7 +98,7 @@
 			</section>
 
 			<!-- Hall of Fame: the students who use the library best, for everyone to see -->
-			<StudentHallOfFameStrip class="st-in mt-5" style="animation-delay: 122ms" :board="hallOfFame ?? null" :loading="hallOfFamePending" />
+			<StudentHallOfFameStrip v-if="isStudent" class="st-in mt-5" style="animation-delay: 122ms" :board="hallOfFame ?? null" :loading="hallOfFamePending" />
 
 			<!-- Recommended -->
 			<section class="st-in mt-5 rounded-[22px] border border-stone-200 bg-white p-5 md:p-6" style="animation-delay: 140ms">
@@ -119,7 +121,7 @@
 					Nothing on the shelf to suggest yet. New books show up here as the library adds them.
 				</p>
 
-				<div v-else class="no-scrollbar -mx-5 flex snap-x gap-4 overflow-x-auto px-5 pb-1 md:mx-0 md:grid md:grid-cols-4 md:overflow-visible md:px-0">
+				<div v-else class="no-scrollbar -mx-5 flex snap-x scroll-pl-5 gap-4 overflow-x-auto px-5 pb-1 md:mx-0 md:scroll-pl-0 md:grid md:grid-cols-4 md:overflow-visible md:px-0">
 					<button v-for="book in recommended" :key="book.bookID" type="button"
 						class="group w-[148px] shrink-0 snap-start rounded-2xl text-left focus-visible:outline-none md:w-auto md:[&:nth-child(n+5)]:hidden"
 						:aria-pressed="isSelected(book.bookID)" @click="pick(book)">
@@ -258,7 +260,8 @@
 
 <script setup lang="ts">
 import { NuxtLink } from '#components'
-import { studentService, type CatalogBook, type LoanRow } from '~/services/studentService'
+import { studentService, type AchievementRow, type CatalogBook, type LoanRow } from '~/services/studentService'
+import { announcementService } from '~/services/announcementService'
 import { TONE_SOFT, type StudentTone } from '~/utils/studentNotifications'
 import type { BookPagePhoto } from '~/utils/bookPages'
 
@@ -267,6 +270,7 @@ useHead({ title: 'Home' })
 
 const drawer = useDrawer()
 const { firstName } = useAuthSession('student')
+const { isStudent } = useMemberType()
 const { summary, points, streak, wishlist, isWished, isInCart, toggleWish, addToCart } = useStudent()
 
 const profile = computed(() => summary.value?.profile ?? null)
@@ -277,7 +281,8 @@ const { data, pending } = useStudentData('student-home', async () => {
 		studentService.loans(),
 		studentService.reservations(),
 		studentService.attendance(),
-		studentService.achievements(),
+		// Points and achievements are for students; a faculty or staff member's request would be refused.
+		isStudent.value ? studentService.achievements() : Promise.resolve({ achievements: [] as AchievementRow[] }),
 		studentService.subjects(),
 	])
 
@@ -307,8 +312,11 @@ const { data, pending } = useStudentData('student-home', async () => {
 	}
 })
 
+// Notices from the administrator, in their own request too. (A failed one just means no banner.)
+const { data: announcements } = useStudentData('student-announcements', () => announcementService.forStudents().catch(() => ({ announcements: [] })))
+
 // Its own request, so the rest of Home doesn't wait on the rankings.
-const { data: hallOfFame, pending: hallOfFamePending } = useStudentData('student-hall-of-fame', () => studentService.hallOfFame())
+const { data: hallOfFame, pending: hallOfFamePending } = useStudentData('student-hall-of-fame', () => (isStudent.value ? studentService.hallOfFame() : Promise.resolve(null)))
 
 const recommended = computed(() => data.value?.recommended ?? [])
 const recommendedReason = computed(() => {
@@ -356,19 +364,19 @@ onBeforeUnmount(() => mq?.removeEventListener('change', syncWide))
 
 function pick(book: CatalogBook) {
 	if (wideScreen.value) selectedId.value = book.bookID
-	else void drawer.open('book', book.bookID)
+	else void drawer.open('book', book.uuid)
 }
 
 // "Look inside" photos for the panel's book. The shelf lists don't include them, so they're fetched once
 // per book the panel shows (only on wide screens, where the panel exists) and remembered for this visit.
-const pagesByBook = ref(new Map<number, BookPagePhoto[]>())
-const selectedPages = computed(() => (selected.value ? pagesByBook.value.get(selected.value.bookID) ?? [] : []))
+const pagesByBook = ref(new Map<string, BookPagePhoto[]>())
+const selectedPages = computed(() => (selected.value ? pagesByBook.value.get(selected.value.uuid) ?? [] : []))
 
-watch([() => selected.value?.bookID, wideScreen], async ([bookID, wide]) => {
-	if (!bookID || !wide || pagesByBook.value.has(bookID)) return
+watch([() => selected.value?.uuid, wideScreen], async ([bookUuid, wide]) => {
+	if (!bookUuid || !wide || pagesByBook.value.has(bookUuid)) return
 	try {
-		const { book } = await studentService.catalogBook(bookID)
-		pagesByBook.value = new Map(pagesByBook.value).set(bookID, book.pages ?? [])
+		const { book } = await studentService.catalogBook(bookUuid)
+		pagesByBook.value = new Map(pagesByBook.value).set(bookUuid, book.pages ?? [])
 	} catch {
 		// No photos is a fine fallback; the rest of the panel doesn't depend on them.
 	}

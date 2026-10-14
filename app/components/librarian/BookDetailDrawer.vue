@@ -26,9 +26,7 @@
 
 			<div v-else-if="book" class="flex-1 overflow-y-auto px-5 py-5">
 				<div class="flex gap-4">
-					<div class="h-[120px] w-[84px] shrink-0 overflow-hidden rounded-md bg-gradient-to-br from-accent-100 to-stone-200 shadow-sm">
-						<img v-if="book.coverImageURL" :src="book.coverImageURL" alt="" class="h-full w-full object-cover" />
-					</div>
+					<StudentCover :book="book" :width="84" />
 					<div class="min-w-0">
 						<p class="text-[17px] font-bold leading-snug text-stone-900">{{ book.title }}</p>
 						<p class="mt-1 text-[13.5px] text-stone-500">
@@ -143,8 +141,7 @@ const fields = computed(() => {
 		{ label: 'Publisher', value: b.publisher ?? '', optional: true },
 		{ label: 'Edition', value: b.edition ?? '', optional: true },
 		{ label: 'Volume', value: b.volume ?? '', optional: true },
-		{ label: 'Pages', value: b.pages ?? '', optional: true },
-		{ label: 'Copy number', value: b.copyNumber ?? '', optional: true, mono: true },
+		{ label: 'Pages', value: b.pageCount ?? '', optional: true },
 		{ label: 'Source of fund', value: b.sourceOfFund ?? '', optional: true },
 		{ label: 'Cost', value: b.cost !== null && b.cost !== '' ? peso(b.cost) : '', optional: true },
 		{ label: 'Remarks', value: b.remarks ?? '', optional: true, wide: true },

@@ -31,7 +31,7 @@ async function confirm() {
 	busy.value = true
 
 	const ok = await perform(
-		() => studentService.selfReturn(shown.value!.loanID),
+		() => studentService.selfReturn(shown.value!.uuid),
 		'Return reported',
 		'Could not report the return',
 		[refreshProfile],

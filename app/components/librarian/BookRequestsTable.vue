@@ -1,6 +1,30 @@
 <template>
 	<div class="relative overflow-hidden rounded-2xl border border-stone-200 bg-white">
-		<div class="max-h-[480px] overflow-auto">
+		<!-- Phones: one card per row, with the row's buttons on it. -->
+		<ul class="divide-y divide-stone-100 sm:hidden">
+			<li v-for="suggestion in suggestions" :key="`card-${suggestion.suggestionID}`">
+				<div role="button" tabindex="0" class="px-4 py-3.5 transition-colors active:bg-accent-50" @click="emit('review', suggestion)" @keydown.enter.self="emit('review', suggestion)">
+					<div class="flex items-start gap-3">
+						<div class="flex h-14 w-10 shrink-0 items-center justify-center rounded-[5px] text-[12px] font-bold text-white shadow-sm" :style="{ background: coverColor(suggestion.title) }">
+							{{ coverInitials(suggestion.title) }}
+						</div>
+						<div class="min-w-0 flex-1">
+							<p class="line-clamp-2 text-[15px] font-semibold leading-snug text-stone-900">{{ suggestion.title }}</p>
+							<p class="truncate text-[13px] text-stone-500">{{ suggestion.author || 'No author listed' }}</p>
+							<p class="mt-1 truncate text-[12.5px] text-stone-400">By {{ requesterName(suggestion) }} · {{ formatDate(suggestion.submittedAt) }}</p>
+						</div>
+						<LibrarianRequestStatusPill :status="suggestion.status" class="shrink-0" />
+					</div>
+					<div class="mt-2.5 flex items-center justify-end gap-1.5" @click.stop>
+						<ButtonsButton variant="primary" size="sm" @click="emit('review', suggestion)">Review</ButtonsButton>
+						<LibrarianRowMenu :items="menuItems(suggestion)" @select="onAction(suggestion, $event)" />
+					</div>
+				</div>
+			</li>
+		</ul>
+		<p v-if="!loading && suggestions.length === 0" class="px-4 py-10 text-center text-[15px] text-stone-400 sm:hidden">No book requests match your filters.</p>
+
+		<div class="scroll-shadow-x max-h-[480px] overflow-auto max-sm:hidden">
 			<table class="w-full min-w-[860px] border-collapse text-left">
 				<thead>
 					<tr>
@@ -14,8 +38,8 @@
 					</tr>
 				</thead>
 				<tbody>
-					<tr v-for="(suggestion, index) in suggestions" :key="suggestion.suggestionID"
-						class="row-enter border-b border-stone-100 opacity-0 transition-colors duration-150 last:border-0 hover:bg-accent-50"
+					<tr v-for="(suggestion, index) in suggestions" :key="suggestion.suggestionID" tabindex="0" @click="emit('review', suggestion)" @keydown.enter.self="emit('review', suggestion)"
+						class="row-enter cursor-pointer border-b border-stone-100 opacity-0 transition-colors duration-150 last:border-0 hover:bg-accent-50"
 						:style="{ animationDelay: `${index * 40}ms` }">
 						<td class="px-4 py-3">
 							<div class="flex items-center gap-3">
@@ -40,7 +64,7 @@
 						<td class="px-4 py-3">
 							<LibrarianRequestStatusPill :status="suggestion.status" />
 						</td>
-						<td class="px-4 py-3">
+						<td class="px-4 py-3" @click.stop>
 							<div class="flex items-center justify-end gap-1.5">
 								<ButtonsButton variant="primary" size="sm" @click="emit('review', suggestion)">
 									Review

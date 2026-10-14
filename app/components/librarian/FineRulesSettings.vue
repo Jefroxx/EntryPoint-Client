@@ -15,9 +15,9 @@
 					<thead>
 						<tr class="text-[11.5px] font-semibold uppercase tracking-wide text-stone-400">
 							<th class="pb-2 pr-3">Collection</th>
-							<th class="pb-2 pr-3">Rate (₱)</th>
-							<th class="pb-2 pr-3">Per</th>
-							<th class="pb-2 pr-3">Grace (days)</th>
+							<th class="pb-2 pr-3">Rate (₱)<FieldRequired /></th>
+							<th class="pb-2 pr-3">Per<FieldRequired /></th>
+							<th class="pb-2 pr-3">Grace (days)<FieldRequired /></th>
 							<th class="pb-2"></th>
 						</tr>
 					</thead>

@@ -6,11 +6,23 @@
         </div>
 
         <LibrarianSegmentedTabs v-model="activeTab" class="mb-5" :tabs="[
-            { label: 'All Students', value: 'all' },
-            { label: 'Pending Approval', value: 'pending' },
+            { label: 'Approved Students', short: 'Approved', value: 'approved' },
+            { label: 'Pending Approval', short: 'Pending', value: 'pending', badge: stats?.pending || undefined },
+            { label: 'Rejected', value: 'rejected' },
+            { label: 'Faculty and staff', short: 'Members', value: 'members' },
         ]" />
 
-        <div class="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <p v-if="isMembers" class="mb-4 flex items-start gap-2.5 rounded-xl bg-stone-100 px-4 py-3 text-[13.5px] text-stone-700">
+            <Icon name="i-tabler-info-circle" class="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+            Faculty and staff members borrow and visit like students. An administrator creates and manages their accounts, so this list is for looking them up.
+        </p>
+
+        <p v-if="activeTab === 'rejected'" class="mb-4 flex items-start gap-2.5 rounded-xl bg-stone-100 px-4 py-3 text-[13.5px] text-stone-700">
+            <Icon name="i-tabler-info-circle" class="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+            These registrations were rejected, so these students can't log in. Reinstate a student to approve them again.
+        </p>
+
+        <div v-if="!isMembers" class="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
             <LibrarianCatalogStatTile label="Total Students" :value="stats?.total ?? '—'"
                 icon="i-tabler-users" tone="accent" />
             <LibrarianCatalogStatTile label="Pending Approval" :value="stats?.pending ?? '—'"
@@ -21,15 +33,15 @@
                 icon="i-tabler-circle-x" tone="danger" />
         </div>
 
-        <div class="mb-4 flex flex-wrap items-center gap-2">
+        <div class="phone-toolbar mb-4 flex flex-wrap items-center gap-2">
             <div
                 class="flex h-[42px] min-w-[200px] max-w-[300px] flex-1 items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 transition-shadow focus-within:ring-2 focus-within:ring-accent-200">
                 <Icon name="i-tabler-search" class="h-[15px] w-[15px] text-stone-400" />
-                <input id="student-search" v-model="search" type="text" placeholder="Search name or student ID"
+                <input id="student-search" v-model="search" type="text" :placeholder="isMembers ? 'Search name or employee ID' : 'Search name or student ID'"
                     class="w-full border-none bg-transparent text-[15px] text-stone-800 outline-none placeholder:text-stone-400" />
             </div>
 
-            <select v-model="programFilter"
+            <select v-if="!isMembers" v-model="programFilter"
                 class="flex h-[42px] items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3 text-[14px] text-stone-500 transition-colors hover:bg-stone-50">
                 <option value="">All Programs</option>
                 <option v-for="p in programOptions" :key="p" :value="p">{{ p }}</option>
@@ -37,14 +49,14 @@
 
             <div class="flex-1"></div>
 
-            <LibrarianResetFiltersButton @click="search = ''; programFilter = ''" />
+            <LibrarianResetFiltersButton :class="isMembers ? 'toolbar-full' : ''" @click="search = ''; programFilter = ''" />
         </div>
 
-        <LibrarianStudentsTable :students="students?.data ?? []" :loading="studentsPending"
-            @view="openDrawer" @approve="handleApprove" @reject="handleReject" />
+        <LibrarianStudentsTable :students="students?.data ?? []" :loading="studentsPending" :empty-text="emptyText" :members="isMembers"
+            @view="openDrawer" @approve="handleApprove" @reject="handleReject" @reinstate="askReinstate" />
 
         <div v-if="students" class="mt-3 flex items-center justify-between text-[13.5px] text-stone-400">
-            <span>Showing {{ students.data.length }} of {{ students.total }} students</span>
+            <span>Showing {{ students.data.length }} of {{ students.total }} {{ isMembers ? 'members' : 'students' }}</span>
             <span>Page {{ students.current_page }} of {{ students.last_page }}</span>
         </div>
 
@@ -61,7 +73,10 @@
     
 
         <LibrarianStudentDetailDrawer :open="isDrawerOpen" :student="activeStudent" @close="isDrawerOpen = false"
-            @approve="handleApprove" @reject="handleReject" />
+            @approve="handleApprove" @reject="handleReject" @reinstate="askReinstate" />
+
+        <LibrarianStudentReviewModal :open="isReviewOpen" :mode="reviewMode" :student="reviewStudent" :busy="reviewBusy"
+            @close="isReviewOpen = false" @submit="confirmReview" />
 
         <AlertToast />
     
@@ -83,19 +98,34 @@ useHead({ title: 'Students' })
 const alert = useAlert()
 
 const route = useRoute()
-const activeTab = ref(route.query.tab === 'pending' ? 'pending' : 'all')
+// The list is split by status: approved students (the default), those waiting for approval, and rejected ones.
+type StudentTab = 'approved' | 'pending' | 'rejected' | 'members'
+const activeTab = ref<StudentTab>(['pending', 'rejected', 'members'].includes(String(route.query.tab)) ? (route.query.tab as StudentTab) : 'approved')
+
+// The fourth tab is a read-only list of faculty and staff members (an administrator manages their accounts).
+const isMembers = computed(() => activeTab.value === 'members')
+
+const emptyText = computed(() => ({
+    approved: 'No approved students match your search.',
+    pending: 'No registrations are waiting for approval.',
+    rejected: 'No rejected registrations.',
+    members: 'No faculty or staff members match your search.',
+})[activeTab.value])
 const search = ref('')
 const programFilter = ref('')
 const page = ref(1)
 
-const { data: stats, execute: refetchStats } = useLiveAsyncData('student-stats', () => librarianService.fetchStudentStats(), { lazy: true })
+const { data: stats, execute: refetchStats } = useLiveAsyncData('student-stats', () => librarianService.fetchStudentStats('student'), { lazy: true })
 
 const { data: students, pending: studentsPending, execute: refetchStudents } = useLiveAsyncData(
     'students-list',
     () => librarianService.fetchStudents({
         search: search.value || undefined,
         program: programFilter.value || undefined,
-        status: activeTab.value === 'pending' ? 'pending' : undefined,
+        status: isMembers.value ? 'approved' : activeTab.value,
+        // The first three tabs are students only: faculty and staff members are created by the administrator and are
+        // never approved here. The fourth tab lists them.
+        memberType: isMembers.value ? 'members' : 'student',
         page: page.value,
         perPage: 10,
     }),
@@ -135,25 +165,47 @@ function openDrawer(student: StudentRecord) {
     isDrawerOpen.value = true
 }
 
-async function handleApprove(student: StudentRecord) {
-    try {
-        await librarianService.approveStudent(student.studentID)
-        isDrawerOpen.value = false
-        alert.success('Student approved', `${student.user?.firstName ?? 'Student'} can now log in.`)
-        await Promise.all([refetchStudents(), refetchStats()])
-    } catch (error: any) {
-        alert.error('Could not approve student', error?.data?.message || 'Please try again.')
-    }
+// Approving, rejecting and reinstating a student all ask first, in one window: the student's details, then a
+// last confirmation. Nothing changes until that final button.
+type ReviewMode = 'approve' | 'reject' | 'reinstate'
+const isReviewOpen = ref(false)
+const reviewMode = ref<ReviewMode>('approve')
+const reviewStudent = ref<StudentRecord | null>(null)
+const reviewBusy = ref(false)
+
+function openReview(student: StudentRecord, mode: ReviewMode) {
+    reviewStudent.value = student
+    reviewMode.value = mode
+    isReviewOpen.value = true
 }
 
-async function handleReject(student: StudentRecord) {
+const handleApprove = (student: StudentRecord) => openReview(student, 'approve')
+const handleReject = (student: StudentRecord) => openReview(student, 'reject')
+const askReinstate = (student: StudentRecord) => openReview(student, 'reinstate')
+
+async function confirmReview() {
+    const student = reviewStudent.value
+    if (!student) return
+    const mode = reviewMode.value
+    const name = student.user?.firstName ?? 'The student'
+
+    reviewBusy.value = true
     try {
-        await librarianService.rejectStudent(student.studentID)
+        if (mode === 'reject') await librarianService.rejectStudent(student.uuid)
+        else await librarianService.approveStudent(student.uuid)
+
+        isReviewOpen.value = false
         isDrawerOpen.value = false
-        alert.success('Student rejected', `${student.user?.firstName ?? 'Student'}'s registration was rejected.`)
+        if (mode === 'approve') alert.success('Student approved', `${name} can now log in.`)
+        else if (mode === 'reinstate') alert.success('Approval reinstated', `${name} can log in again.`)
+        else alert.success('Student rejected', `${name}'s registration was rejected.`)
         await Promise.all([refetchStudents(), refetchStats()])
     } catch (error: any) {
-        alert.error('Could not reject student', error?.data?.message || 'Please try again.')
+        isReviewOpen.value = false
+        const title = mode === 'reject' ? 'Could not reject student' : mode === 'reinstate' ? 'Could not reinstate the student' : 'Could not approve student'
+        alert.error(title, apiErrorMessage(error, 'Please try again.'))
+    } finally {
+        reviewBusy.value = false
     }
 }
 </script>

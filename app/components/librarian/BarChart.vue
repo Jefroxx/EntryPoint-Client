@@ -1,5 +1,5 @@
 <template>
-	<svg :viewBox="`0 0 ${WIDTH} ${height}`" class="block w-full" role="img" :aria-label="ariaLabel">
+	<svg ref="svgEl" :viewBox="`0 0 ${WIDTH} ${height}`" class="block w-full" role="img" :aria-label="ariaLabel">
 		<g v-for="tick in ticks" :key="tick.value">
 			<line :x1="LEFT" :x2="WIDTH - RIGHT" :y1="tick.y" :y2="tick.y" stroke="#eee9dd" />
 			<text :x="LEFT - 6" :y="tick.y + 3.5" text-anchor="end" font-size="10" fill="#a39a89">{{ tick.value }}</text>
@@ -11,7 +11,7 @@
 				<title>{{ s.name }} · {{ label }}: {{ s.values[i] ?? 0 }}</title>
 			</rect>
 			<text :x="LEFT + band * i + band / 2" :y="height - 7" text-anchor="middle" font-size="10.5" fill="#6b6156">
-				{{ label }}
+				{{ band < 56 ? label.split(' ')[0] : label }}
 			</text>
 		</g>
 	</svg>
@@ -29,7 +29,23 @@ const props = withDefaults(defineProps<{
 })
 
 // One coordinate system for marks, gridlines and axis labels.
-const WIDTH = 640
+// Drawn at the card's measured width, never wider than the 640 it was designed at.
+const svgEl = ref<SVGSVGElement | null>(null)
+const measured = ref(640)
+const WIDTH = computed(() => measured.value)
+
+let observer: ResizeObserver | undefined
+onMounted(() => {
+	if (!svgEl.value) return
+	// Applied on the next frame: resizing the drawing changes its height, and doing that inside the callback makes the browser report a ResizeObserver loop.
+	observer = new ResizeObserver(([entry]) => {
+		if (!entry) return
+		const next = Math.max(280, Math.min(640, Math.round(entry.contentRect.width)))
+		if (next !== measured.value) requestAnimationFrame(() => { measured.value = next })
+	})
+	observer.observe(svgEl.value)
+})
+onUnmounted(() => observer?.disconnect())
 const LEFT = 34
 const RIGHT = 8
 const TOP = 10
@@ -37,7 +53,7 @@ const BOTTOM = 24
 const TICKS = 4
 
 const plotHeight = computed(() => props.height - TOP - BOTTOM)
-const band = computed(() => (WIDTH - LEFT - RIGHT) / Math.max(1, props.labels.length))
+const band = computed(() => (WIDTH.value - LEFT - RIGHT) / Math.max(1, props.labels.length))
 const barWidth = computed(() => Math.min(24, band.value / (props.series.length + 1)))
 
 /** Smallest "round" axis maximum that fits the data, in whole steps. */

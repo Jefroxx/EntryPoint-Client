@@ -5,9 +5,15 @@
             <p class="dashboard-heading mt-1 text-crimson">Review circulation, attendance and collection trends.</p>
         </div>
 
-        <div class="mb-5 flex flex-wrap items-center gap-2">
+        <LibrarianSegmentedTabs v-model="activeTab" class="mb-5" :tabs="[
+            { label: 'Overview', value: 'overview' },
+            { label: 'Hall of Fame', value: 'hall-of-fame' },
+        ]" />
+
+        <template v-if="activeTab === 'overview'">
+        <div class="phone-toolbar mb-5 flex flex-wrap items-center gap-2">
             <select v-model="months"
-                class="h-[42px] rounded-xl border border-stone-200 bg-white px-3 text-[14px] text-stone-600 transition-colors hover:bg-stone-50">
+                class="toolbar-half h-[42px] rounded-xl border border-stone-200 bg-white px-3 text-[14px] text-stone-600 transition-colors hover:bg-stone-50">
                 <option :value="3">Last 3 months</option>
                 <option :value="6">Last 6 months</option>
                 <option :value="12">Last 12 months</option>
@@ -68,12 +74,16 @@
 
             <LibrarianLoadingOverlay :loading="pending && !overview" />
         </div>
-    
+        </template>
+
+        <!-- The same boards as the Dashboard and the student Home page, with full names and ID numbers. -->
+        <HallOfFame v-else :board="hallOfFame ?? null" :loading="hallOfFamePending" />
     </div>
 </template>
 
 <script setup lang="ts">
 import { reportService } from '~/services/reportService'
+import { librarianService } from '~/services/librarianService'
 
 definePageMeta({
     middleware: 'librarian',
@@ -83,7 +93,14 @@ definePageMeta({
 useHead({ title: 'Reports' })
 
 
+const route = useRoute()
+const activeTab = ref(route.query.tab === 'hall-of-fame' ? 'hall-of-fame' : 'overview')
+
 const months = ref<3 | 6 | 12>(6)
+
+// The server recalculates the boards every 5 minutes at most, so polling faster than that shows nothing new.
+const { data: hallOfFame, pending: hallOfFamePending } =
+    useLiveAsyncData('reports-hall-of-fame', () => librarianService.fetchHallOfFame(), { lazy: true, pollMs: 300_000 })
 
 const { data: overview, pending } = useAsyncData(
     'reports-overview',

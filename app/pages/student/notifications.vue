@@ -18,7 +18,7 @@
 <script setup lang="ts">
 import { useAlert } from '~/api/alert/useAlert'
 
-definePageMeta({ layout: 'student', middleware: 'student', title: 'Notifications', nav: 'home', tab: 'me' })
+definePageMeta({ layout: 'student', middleware: 'student', title: 'Notifications', nav: 'home', tab: 'me', back: '/student/me' })
 useHead({ title: 'Notifications' })
 
 const alert = useAlert()

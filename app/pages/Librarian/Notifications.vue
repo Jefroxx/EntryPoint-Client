@@ -5,7 +5,7 @@
             <p class="dashboard-heading mt-1 text-crimson">Stay on top of registrations, requests and returns.</p>
         </div>
 
-        <div class="mb-4 flex flex-wrap items-center gap-2">
+        <div class="phone-toolbar mb-4 flex flex-wrap items-center gap-2">
             <LibrarianSegmentedTabs v-model="filter" :tabs="[
                 { label: 'All', value: 'all' },
                 { label: 'Unread', value: 'unread', badge: unreadCount },
@@ -13,7 +13,7 @@
 
             <div class="flex-1"></div>
 
-            <ButtonsButton variant="ghost" :disabled="unreadCount === 0" @click="markAll">
+            <ButtonsButton variant="ghost" class="toolbar-full" :disabled="unreadCount === 0" @click="markAll">
                 <Icon name="i-tabler-checks" class="h-3.5 w-3.5" />Mark all as read
             </ButtonsButton>
         </div>

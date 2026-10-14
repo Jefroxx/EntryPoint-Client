@@ -15,12 +15,13 @@
 			</div>
 		</div>
 
-		<HallOfFameBoards :board="board" :loading="loading" staff />
+		<HallOfFameBoards :board="board" :loading="loading" staff @post="(c) => { postCategory = c; postOpen = true }" />
+		<LibrarianHallOfFamePostModal :open="postOpen" :category="postCategory" :month="board?.month ?? ''" @close="postOpen = false" />
 	</section>
 </template>
 
 <script setup lang="ts">
-import type { HallOfFame } from '~/services/studentService'
+import type { HallOfFame, HallOfFameCategory } from '~/services/studentService'
 
 defineProps<{
 	board: HallOfFame | null
@@ -28,4 +29,6 @@ defineProps<{
 }>()
 
 const headingId = useId()
+const postOpen = ref(false)
+const postCategory = ref<HallOfFameCategory | null>(null)
 </script>

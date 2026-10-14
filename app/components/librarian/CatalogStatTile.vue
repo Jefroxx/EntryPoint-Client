@@ -1,12 +1,12 @@
 <template>
 	<div
-		class="flex items-center gap-3.5 rounded-[18px] border border-stone-200 bg-white p-[18px] transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-card">
-		<div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-[13px]" :class="toneClasses.bg">
-			<Icon :name="icon" class="h-5 w-5" :class="toneClasses.text" />
+		class="flex items-center gap-2.5 rounded-2xl border border-stone-200 bg-white p-3 transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-card sm:gap-3.5 sm:rounded-[18px] sm:p-[18px]">
+		<div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl sm:h-11 sm:w-11 sm:rounded-[13px]" :class="toneClasses.bg">
+			<Icon :name="icon" class="h-[18px] w-[18px] sm:h-5 sm:w-5" :class="toneClasses.text" />
 		</div>
-		<div>
-			<p class="text-[28px] font-bold leading-tight tracking-[-0.02em] tabular-nums text-stone-900">{{ value }}</p>
-			<p class="mt-0.5 text-[13px] text-stone-500">{{ label }}</p>
+		<div class="min-w-0">
+			<p class="truncate text-[22px] font-bold leading-tight tracking-[-0.02em] tabular-nums text-stone-900 sm:text-[28px]" :title="String(value)">{{ value }}</p>
+			<p class="mt-0.5 text-[12px] leading-tight text-stone-500 sm:text-[13px]">{{ label }}</p>
 		</div>
 	</div>
 </template>

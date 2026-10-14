@@ -87,29 +87,30 @@ function openCheckout(code: string) {
 /* ---------- borrowing receipt: check the book, then finish the return ---------- */
 const isFinishOpen = ref(false)
 const finishBusy = ref(false)
-const finishLoanID = ref<number | null>(null)
+const finishLoanUuid = ref<string | null>(null)
 const finishSummary = ref<{ bookTitle: string; accessionNumber: number; studentName: string } | null>(null)
 
-function openFinish(loan: { loanID: number; bookTitle: string; accessionNumber: number; studentName: string }) {
-	finishLoanID.value = loan.loanID
+function openFinish(loan: { loanUuid: string; bookTitle: string; accessionNumber: number; studentName: string }) {
+	finishLoanUuid.value = loan.loanUuid
 	finishSummary.value = { bookTitle: loan.bookTitle, accessionNumber: loan.accessionNumber, studentName: loan.studentName }
 	isFinishOpen.value = true
 }
 
 async function saveFinish(payload: { condition: 'good' | 'damaged'; note: string | undefined }) {
-	if (finishLoanID.value == null) return
-	const loanID = finishLoanID.value
+	if (finishLoanUuid.value == null) return
+	const loanUuid = finishLoanUuid.value
 	finishBusy.value = true
-	const ok = await perform(() => circulationService.finishReturn(loanID, payload),
+	const ok = await perform(() => circulationService.finishReturn(loanUuid, payload),
 		payload.condition === 'damaged' ? 'Return finished, marked damaged' : 'Return finished', 'Could not finish the return')
 	finishBusy.value = false
 	if (ok) isFinishOpen.value = false
 }
 
 /* ---------- clock ---------- */
-const now = ref(new Date())
-const time = computed(() => now.value.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }))
-const today = computed(() => now.value.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }))
+// Empty until the page is in the browser: the server's time would never match the browser's, and Vue would warn.
+const now = ref<Date | null>(null)
+const time = computed(() => now.value?.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) ?? '')
+const today = computed(() => now.value?.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }) ?? '')
 let tick: ReturnType<typeof setInterval> | undefined
 
 /* ---------- full screen (for a dedicated front-desk screen) ---------- */
@@ -139,6 +140,7 @@ function endSession() {
 }
 
 onMounted(() => {
+	now.value = new Date()
 	post({ type: 'open' })
 	tick = setInterval(() => { now.value = new Date() }, 15_000)
 	canFullscreen.value = !!document.documentElement.requestFullscreen

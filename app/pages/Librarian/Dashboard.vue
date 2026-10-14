@@ -1,20 +1,21 @@
 <template>
     <div class="dash">
         <!-- Greeting: the date is just stated; there's nothing to pick on a live dashboard. -->
-        <header class="mb-5">
-            <h1 class="dashboard-heading text-3xl font-bold text-crimson">{{ greeting }}, {{ name }}</h1>
-            <p class="mt-1 text-[14.5px] text-stone-500">
-                {{ todayLabel }}<template v-if="today">
-                    <span class="mx-1.5 text-stone-300">·</span>
-                    <span class="text-stone-700"><b class="font-semibold tabular-nums">{{ today.inLibrary }}</b> {{ today.inLibrary === 1 ? 'student is' : 'students are' }} in the library right now</span>
-                </template>
-            </p>
-        </header>
+        <header class="mb-5 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div class="min-w-0">
+                <h1 class="dashboard-heading text-3xl font-bold text-crimson">{{ greeting }}, {{ name }}</h1>
+                <p class="mt-1 text-[14.5px] text-stone-500">
+                    {{ todayLabel }}<template v-if="today">
+                        <span class="mx-1.5 text-stone-300">·</span>
+                        <span class="text-stone-700"><b class="font-semibold tabular-nums">{{ today.inLibrary }}</b> {{ today.inLibrary === 1 ? 'student is' : 'students are' }} in the library right now</span>
+                    </template>
+                </p>
+            </div>
 
-        <!-- Quick actions: attendance leads, the rest are the desk's everyday jobs. -->
-        <section aria-label="Quick actions" class="mb-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-[1.35fr_1fr_1fr_1fr]">
+            <!-- The scanner is the desk's one standing tool, so it sits on its own up here instead of
+                 being the odd one out in the row of quick actions below. -->
             <button type="button"
-                class="group flex items-center gap-3.5 rounded-2xl p-4 text-left transition-[transform,background-color,box-shadow] duration-150 ease-out active:scale-[.98] sm:col-span-2 xl:col-span-1"
+                class="group flex shrink-0 items-center gap-3.5 rounded-2xl p-4 text-left transition-[transform,background-color,box-shadow] duration-150 ease-out active:scale-[.98] md:min-w-[22rem]"
                 :class="stationOpen
                     ? 'border border-emerald-200 bg-emerald-50 hover:bg-emerald-100/70'
                     : 'bg-accent-500 text-white shadow-[0_8px_20px_-10px_rgba(83,44,46,.7)] hover:bg-accent-600'"
@@ -39,24 +40,42 @@
                     class="h-4 w-4 shrink-0 transition-transform duration-150 ease-out group-hover:translate-x-0.5"
                     :class="stationOpen ? 'text-emerald-700' : 'text-white/80'" />
             </button>
+        </header>
 
+        <!-- Notices from the administrator. -->
+        <AnnouncementBanner v-if="announcements?.announcements.length" class="mb-5" :items="announcements.announcements" />
+
+        <!-- Quick actions: four even cards, so the row never ends up lopsided. -->
+        <section aria-label="Quick actions" class="mb-5 grid gap-2 [grid-template-columns:repeat(var(--cols),minmax(0,1fr))] sm:grid-cols-2 sm:gap-3 xl:[grid-template-columns:repeat(var(--cols),minmax(0,1fr))]"
+            :style="{ '--cols': Math.max(actions.length, 1) }">
             <NuxtLink v-for="action in actions" :key="action.label" :to="action.to"
-                class="group flex items-center gap-3 rounded-2xl border border-stone-200 bg-white p-4 transition-[transform,border-color,box-shadow] duration-150 ease-out hover:border-accent-200 hover:shadow-card active:scale-[.98]">
+                class="group relative flex flex-col items-center gap-1.5 rounded-2xl border border-stone-200 bg-white p-2.5 text-center transition-[transform,border-color,box-shadow] duration-150 ease-out hover:border-accent-200 hover:shadow-card active:scale-[.98] sm:flex-row sm:gap-3 sm:p-4 sm:text-left">
                 <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent-50 text-accent-600 transition-colors duration-150 group-hover:bg-accent-100">
                     <Icon :name="action.icon" class="h-5 w-5" />
                 </span>
-                <span class="min-w-0 flex-1">
-                    <span class="block text-[14.5px] font-semibold text-stone-900">{{ action.label }}</span>
-                    <span class="block truncate text-[12.5px] text-stone-500">{{ action.hint }}</span>
+                <span class="min-w-0 sm:flex-1">
+                    <span class="block text-[12.5px] font-semibold leading-tight text-stone-900 sm:text-[14.5px]">
+                        <span class="sm:hidden">{{ action.short }}</span><span class="hidden sm:inline">{{ action.label }}</span>
+                    </span>
+                    <span class="hidden truncate text-[12.5px] text-stone-500 sm:block">{{ action.hint }}</span>
                 </span>
-                <span v-if="action.badge" class="flex h-6 min-w-6 items-center justify-center rounded-full bg-amber-600 px-2 text-[12px] font-bold tabular-nums text-white">
+                <span v-if="action.badge" class="absolute right-1.5 top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-600 px-1.5 text-[11.5px] font-bold tabular-nums text-white sm:static sm:h-6 sm:min-w-6 sm:px-2 sm:text-[12px]">
                     {{ action.badge }}</span>
             </NuxtLink>
         </section>
 
+        <!-- On a phone the sections below are split into tabs so the page isn't one very long scroll; from 640px
+             up they all show, as before. The greeting, scanner and quick actions stay above the tabs. -->
+        <LibrarianSegmentedTabs v-model="mobileTab" class="mb-4 sm:hidden" :tabs="[
+            { label: 'Today', value: 'today', badge: attentionTotal || undefined },
+            { label: 'Loans', value: 'loans', badge: today?.overdue || undefined },
+            { label: 'Trends', value: 'trends' },
+            { label: 'Hall of Fame', value: 'hall' },
+        ]" />
+
         <!-- 1 · Act now: every queue waiting on a librarian, as a strip like "Today" below. Each cell opens
              the page where that queue is handled; a queue with nothing waiting stays in place, greyed. -->
-        <section aria-labelledby="attention-heading" class="mb-5 overflow-hidden rounded-2xl border border-stone-200 bg-white">
+        <section aria-labelledby="attention-heading" class="mb-5 overflow-hidden rounded-2xl border border-stone-200 bg-white" :class="{ 'max-sm:hidden': mobileTab !== 'today' }">
             <div class="flex items-center justify-between gap-3 border-b border-stone-100 px-5 py-3">
                 <h2 id="attention-heading" class="font-bold text-crimson">Needs your attention</h2>
                 <span v-if="!today" class="text-[13px] text-stone-400">Loading…</span>
@@ -65,57 +84,57 @@
                     <Icon name="i-tabler-check" class="h-4 w-4" />All caught up
                 </span>
             </div>
-            <div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6">
+            <div class="grid grid-cols-1 sm:grid-cols-3 xl:[grid-template-columns:repeat(var(--cols),minmax(0,1fr))]" :style="{ '--cols': Math.max(attentionCells.length, 1) }">
                 <NuxtLink v-for="cell in attentionCells" :key="cell.label" :to="cell.to"
-                    class="ledger-cell group relative px-5 py-4 transition-colors duration-150 hover:bg-stone-50">
-                    <span class="flex items-center gap-1.5 text-[12.5px] font-medium text-stone-500">
+                    class="ledger-cell group relative grid grid-cols-[1fr_auto] items-center gap-x-3 px-4 py-3 transition-colors duration-150 hover:bg-stone-50 sm:block sm:px-5 sm:py-4">
+                    <span class="flex items-center gap-1.5 text-[13px] font-medium text-stone-500 sm:text-[12.5px]">
                         <Icon :name="cell.icon" class="h-3.5 w-3.5" :class="cell.count ? cell.iconClass : 'text-stone-300'" />{{ cell.label }}
                     </span>
-                    <span class="mt-1 block text-[28px] font-bold leading-none tracking-[-0.02em] tabular-nums"
+                    <span class="col-start-2 row-span-2 row-start-1 block text-2xl font-bold leading-none tracking-[-0.02em] tabular-nums sm:mt-1 sm:text-[28px]"
                         :class="cell.count ? cell.valueClass : 'text-stone-300'">{{ today ? cell.count : '—' }}</span>
-                    <span class="mt-1.5 block truncate text-[12px] text-stone-400">{{ cell.count ? cell.hint : 'nothing waiting' }}</span>
+                    <span class="mt-0.5 block truncate text-[12.5px] text-stone-400 sm:mt-1.5 sm:text-[12px]">{{ cell.count ? cell.hint : 'nothing waiting' }}</span>
                 </NuxtLink>
             </div>
         </section>
 
         <!-- 2 · Today at a glance -->
         <!-- Today at the desk: one ledger instead of a row of look-alike tiles. -->
-        <section aria-labelledby="today-heading" class="mb-5 overflow-hidden rounded-2xl border border-stone-200 bg-white">
+        <section aria-labelledby="today-heading" class="mb-5 overflow-hidden rounded-2xl border border-stone-200 bg-white" :class="{ 'max-sm:hidden': mobileTab !== 'today' }">
             <h2 id="today-heading" class="sr-only">Today</h2>
             <div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6">
                 <!-- A cell with an `anchor` jumps to that card on this page (a plain #link: the router doesn't
                      scroll for a hash on the page you're already on); the rest open their page. -->
                 <component :is="cell.anchor ? 'a' : NuxtLink" v-for="cell in ledger" :key="cell.label"
-                    v-bind="cell.anchor ? { href: `#${cell.anchor}` } : { to: cell.to }"
-                    class="ledger-cell group relative px-5 py-4 transition-colors duration-150 hover:bg-stone-50">
+                    v-bind="cell.anchor ? { href: `#${cell.anchor}` } : { to: cell.to }" @click="jumpTo(cell, $event)"
+                    class="ledger-cell group relative px-4 py-3 transition-colors duration-150 hover:bg-stone-50 sm:px-5 sm:py-4">
                     <span class="flex items-center gap-1.5 text-[12.5px] font-medium text-stone-500">
-                        <Icon :name="cell.icon" class="h-3.5 w-3.5" :class="cell.iconClass" />{{ cell.label }}
+                        <Icon :name="cell.icon" class="h-3.5 w-3.5 shrink-0" :class="cell.iconClass" />{{ cell.label }}
                     </span>
-                    <span class="mt-1 block text-[28px] font-bold leading-none tracking-[-0.02em] tabular-nums"
+                    <span class="mt-1 block text-2xl font-bold leading-none tracking-[-0.02em] tabular-nums sm:text-[28px]"
                         :class="cell.valueClass">{{ cell.value }}</span>
-                    <span class="mt-1.5 block text-[12px] text-stone-400">{{ cell.note }}</span>
+                    <span class="mt-1.5 block text-[12px] leading-snug text-stone-400">{{ cell.note }}</span>
                 </component>
             </div>
         </section>
 
         <!-- 3 · Loans: what just went out, and what's late, side by side. -->
-        <div class="mb-5 grid gap-4 xl:grid-cols-2">
+        <div class="mb-5 grid grid-cols-1 gap-4 xl:grid-cols-2" :class="{ 'max-sm:hidden': mobileTab !== 'loans' }">
             <div class="relative">
                 <LibrarianRecentLoansCard :loans="recentLoans ?? []" :class="{ 'opacity-40 transition-opacity': recentLoansPending }" />
                 <LibrarianLoadingOverlay :loading="recentLoansPending" />
             </div>
-            <div id="overdue-books" class="relative scroll-mt-24">
+            <div id="overdue-books" class="relative order-first scroll-mt-24 xl:order-none">
                 <LibrarianOverdueBooksCard :loans="overdueLoans ?? []" :class="{ 'opacity-40 transition-opacity': overdueLoansPending }" />
                 <LibrarianLoadingOverlay :loading="overdueLoansPending" />
             </div>
         </div>
 
         <!-- 4 · Trends: for looking back and reporting, not for acting on right now. -->
-        <section aria-labelledby="trends-heading" class="mb-5">
+        <section aria-labelledby="trends-heading" class="mb-5" :class="{ 'max-sm:hidden': mobileTab !== 'trends' }">
             <h2 id="trends-heading" class="mb-3 mt-8 flex items-center gap-3 text-[12px] font-semibold uppercase tracking-[.1em] text-stone-400">
                 Trends<span class="h-px flex-1 bg-stone-200" />
             </h2>
-            <div class="grid gap-4 xl:grid-cols-3">
+            <div class="grid grid-cols-1 gap-4 xl:grid-cols-3">
             <div class="relative xl:col-span-2">
                 <LibrarianTrendChartCard :title="chart.title" :subtitle="chart.subtitle" :labels="overview?.labels ?? []"
                     :series="chart.series" :class="{ 'opacity-40 transition-opacity': overviewPending }">
@@ -187,7 +206,7 @@
 
         <!-- 5 · Recognition -->
         <!-- Hall of Fame: the students leading the library this month (the same boards students see). -->
-        <HallOfFame :board="hallOfFame ?? null" :loading="hallOfFamePending" />
+        <HallOfFame :board="hallOfFame ?? null" :loading="hallOfFamePending" :class="{ 'max-sm:hidden': mobileTab !== 'hall' }" />
 
     </div>
 </template>
@@ -195,6 +214,7 @@
 <script setup lang="ts">
 import { NuxtLink } from '#components'
 import { librarianService, type DemographicsScope } from '~/services/librarianService'
+import { announcementService } from '~/services/announcementService'
 
 /** One cell of the Today strip. `anchor` makes it jump to a card on this page instead of opening `to`. */
 interface LedgerCell {
@@ -346,11 +366,29 @@ const { post } = useStationChannel((message) => {
 onMounted(() => post({ type: 'ping' }))
 
 /* ---------- quick actions ---------- */
-const actions = computed(() => [
-    { label: 'Check out a book', hint: 'Lend a copy to a student', icon: 'i-tabler-book-upload', to: '/librarian/circulation?new=checkout', badge: 0 },
-    { label: 'Add a book', hint: 'Catalog a new title', icon: 'i-tabler-book-2', to: '/librarian/library?new=book', badge: 0 },
+/* ---------- phone tabs ---------- */
+const mobileTab = ref('today')
+
+function jumpTo(cell: { anchor?: string }, event: Event) {
+    if (!cell.anchor) return
+    event.preventDefault()
+    if (cell.anchor === 'overdue-books') mobileTab.value = 'loans'
+    nextTick(() => document.getElementById(cell.anchor!)?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
+}
+
+const { can } = useStaffAccess()
+
+// Notices from the administrator. (A failed request just means no banner.)
+const { data: announcements } = useAsyncData('dashboard-announcements', () => announcementService.forStaff().catch(() => ({ announcements: [] })), { lazy: true })
+// A role sees only the shortcuts and queues for areas it can open (the server refuses the rest anyway).
+const opens = (to: string) => can(permissionForPath(to.split('?')[0]!))
+
+const allActions = computed(() => [
+    { label: 'Check out a book', short: 'Check out', hint: 'Lend a copy to a student', icon: 'i-tabler-book-upload', to: '/librarian/circulation?new=checkout', badge: 0 },
+    { label: 'Return a book', short: 'Return', hint: 'Check a copy back in', icon: 'i-tabler-book-download', to: '/librarian/circulation', badge: 0 },
+    { label: 'Add a book', short: 'Add book', hint: 'Catalog a new title', icon: 'i-tabler-book-2', to: '/librarian/library?new=book', badge: 0 },
     {
-        label: 'Approve students', hint: today.value?.attention.registrations ? 'Registrations are waiting' : 'No one waiting',
+        label: 'Approve students', short: 'Approve', hint: today.value?.attention.registrations ? 'Registrations are waiting' : 'No one waiting',
         icon: 'i-tabler-user-check', to: '/librarian/students?tab=pending', badge: today.value?.attention.registrations ?? 0,
     },
 ])
@@ -381,7 +419,7 @@ const ledger = computed<LedgerCell[]>(() => {
 /* ---------- needs your attention ---------- */
 const peso = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' })
 
-const attentionCells = computed(() => {
+const allAttentionCells = computed(() => {
     const a = today.value?.attention
     const warn = { iconClass: 'text-amber-600', valueClass: 'text-amber-700' }
     return [
@@ -395,6 +433,9 @@ const attentionCells = computed(() => {
 })
 
 // Fines are a running balance rather than a job to clear today, so they don't add to the badge.
+const actions = computed(() => allActions.value.filter((a) => opens(a.to)))
+const attentionCells = computed(() => allAttentionCells.value.filter((c) => opens(c.to)))
+
 const attentionTotal = computed(() => attentionCells.value.filter((c) => c.label !== 'Unpaid fines').reduce((sum, c) => sum + c.count, 0))
 
 /* ---------- collection ---------- */

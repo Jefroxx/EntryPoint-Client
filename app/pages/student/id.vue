@@ -23,7 +23,7 @@
 						<p class="dashboard-heading text-[22px] font-extrabold leading-tight text-crimson">{{
 							profile?.fullName ?? '…' }}</p>
 						<p class="font-data mt-0.5 text-[13px] text-stone-500">{{ profile?.studentIDNumber }}{{
-							profile?.academicProgram ? ` · ${profile.academicProgram}` : '' }}</p>
+							(profile?.academicProgram ?? profile?.department) ? ` · ${profile?.academicProgram ?? profile?.department}` : '' }}</p>
 
 						<!-- Tapping the barcode enlarges it too: it's what people reach for at the door. -->
 						<button v-if="profile?.barcodeValue" type="button" aria-label="Enlarge your Library ID"
@@ -67,7 +67,7 @@
 			<div class="st-in mt-2 md:mt-0" style="animation-delay: 70ms">
 				<h2
 					class="mb-2.5 mt-5 px-0.5 text-[11px] font-semibold uppercase tracking-[.08em] text-stone-400 md:mt-0">
-					Visit streak</h2>
+					{{ isStudent ? 'Visit streak' : 'Recent visits' }}</h2>
 				<div class="rounded-2xl border border-stone-200 bg-white p-4">
 					<div class="flex items-center gap-2.5">
 						<span
@@ -75,8 +75,14 @@
 							<Icon name="i-tabler-flame" class="h-[17px] w-[17px]" />
 						</span>
 						<div>
-							<b class="text-[15px]">{{ streak }} day{{ streak === 1 ? '' : 's' }} in a row</b>
-							<p class="text-[12.5px] text-stone-400">{{ streakHint }}</p>
+							<template v-if="isStudent">
+								<b class="text-[15px]">{{ streak }} day{{ streak === 1 ? '' : 's' }} in a row</b>
+								<p class="text-[12.5px] text-stone-400">{{ streakHint }}</p>
+							</template>
+							<template v-else>
+								<b class="text-[15px]">Your last seven days</b>
+								<p class="text-[12.5px] text-stone-400">The days you came to the library.</p>
+							</template>
 						</div>
 					</div>
 					<div class="mt-3.5 flex justify-between">
@@ -123,16 +129,21 @@
 </template>
 
 <script setup lang="ts">
-import { studentService } from '~/services/studentService'
+import { studentService, type AchievementRow } from '~/services/studentService'
 
-definePageMeta({ layout: 'student', middleware: 'student', title: 'Library ID', nav: 'home', tab: 'id' })
+definePageMeta({ layout: 'student', middleware: 'student', title: 'Library ID', nav: 'home', tab: 'id', back: '/student/home' })
 useHead({ title: 'Library ID' })
 
 const { summary, streak } = useStudent()
+const { isStudent } = useMemberType()
 const profile = computed(() => summary.value?.profile ?? null)
 
 const { data, pending } = useStudentData('student-attendance', async () => {
-	const [attendance, achievements] = await Promise.all([studentService.attendance(), studentService.achievements()])
+	// Achievements are for students; asking for them as a faculty or staff member would be refused.
+	const [attendance, achievements] = await Promise.all([
+		studentService.attendance(),
+		isStudent.value ? studentService.achievements() : Promise.resolve({ achievements: [] as AchievementRow[] }),
+	])
 	return { ...attendance, achievements: achievements.achievements }
 })
 

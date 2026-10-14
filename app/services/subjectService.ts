@@ -2,6 +2,7 @@ import { BaseService } from "./BaseService";
 
 export interface SubjectRecord {
   subjectID: number;
+  uuid: string;
   name: string;
   classificationCode: string | null;
   books_count: number;
@@ -16,12 +17,12 @@ class SubjectServiceClass extends BaseService {
     return this.apiRequest<{ message: string; subject: SubjectRecord }>("/librarian/subjects", { method: "POST", body: payload });
   }
 
-  updateSubject(subjectID: number, payload: { name?: string; classificationCode?: string | null }) {
-    return this.apiRequest<{ message: string; subject: SubjectRecord }>(`/librarian/subjects/${subjectID}`, { method: "PATCH", body: payload });
+  updateSubject(subjectUuid: string, payload: { name?: string; classificationCode?: string | null }) {
+    return this.apiRequest<{ message: string; subject: SubjectRecord }>(`/librarian/subjects/${subjectUuid}`, { method: "PATCH", body: payload });
   }
 
-  deleteSubject(subjectID: number) {
-    return this.apiRequest<{ message: string }>(`/librarian/subjects/${subjectID}`, { method: "DELETE" });
+  deleteSubject(subjectUuid: string) {
+    return this.apiRequest<{ message: string }>(`/librarian/subjects/${subjectUuid}`, { method: "DELETE" });
   }
 }
 

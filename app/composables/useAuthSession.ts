@@ -7,16 +7,24 @@ const SESSION_SECONDS = 60 * 60 * 24 * 7
 // that way (e.g. when the profile name changes) would silently downgrade it.
 const AUTH_COOKIE_OPTIONS = { maxAge: SESSION_SECONDS, sameSite: 'lax', path: '/' } as const
 
-/** The five cookies of one area. */
+/** The cookies of one area: the five every session has, and the area's own extras (staff role and permissions, or member type). */
 function areaCookies(area: Area) {
-  const names = SESSION_COOKIES[area]
+  const names = SESSION_COOKIES[area] as Record<string, string>
+  const make = (name: string) => useCookie<string | null>(name, AUTH_COOKIE_OPTIONS)
 
   return {
-    token: useCookie<string | null>(names.token, AUTH_COOKIE_OPTIONS),
-    uuid: useCookie<string | null>(names.uuid, AUTH_COOKIE_OPTIONS),
-    role: useCookie<string | null>(names.role, AUTH_COOKIE_OPTIONS),
-    firstName: useCookie<string | null>(names.firstName, AUTH_COOKIE_OPTIONS),
-    lastName: useCookie<string | null>(names.lastName, AUTH_COOKIE_OPTIONS),
+    token: make(names.token!),
+    uuid: make(names.uuid!),
+    role: make(names.role!),
+    firstName: make(names.firstName!),
+    lastName: make(names.lastName!),
+    // Staff side:
+    staffRole: area === 'librarian' ? make(names.staffRole!) : undefined,
+    staffPerms: area === 'librarian' ? make(names.staffPerms!) : undefined,
+    // Student side:
+    memberType: area === 'student' ? make(names.memberType!) : undefined,
+    // "1" while the account is still on the temporary password an administrator gave it (both sides).
+    mustChange: make(names.mustChange!),
   }
 }
 
@@ -40,7 +48,7 @@ export function useAuthSession(area: Area = 'librarian') {
 
   /** Forgets one area's cookies and whatever on-screen state belonged to that person. */
   function clear(target: Area) {
-    for (const cookie of Object.values(target === area ? self : other)) cookie.value = null
+    for (const cookie of Object.values(target === area ? self : other)) if (cookie) cookie.value = null
 
     // (The librarian sidebar's expanded/collapsed state is a per-device preference cookie; it survives sign-outs.)
     if (target !== 'librarian') {
@@ -73,14 +81,17 @@ export function useAuthSession(area: Area = 'librarian') {
     clear(otherArea(area))
   }
 
-  function signIn(user: { token: string; uuid: string; role: string; firstName: string; lastName: string }) {
+  function signIn(user: { token: string; uuid: string; role: string; firstName: string; lastName: string; staffRole?: string; staffPerms?: string[]; memberType?: string; mustChange?: boolean }) {
     endOtherSession()
-
-    self.token.value = user.token
+self.token.value = user.token
     self.uuid.value = user.uuid
     self.role.value = user.role
     self.firstName.value = user.firstName
     self.lastName.value = user.lastName
+    if (self.staffRole) self.staffRole.value = user.staffRole ?? null
+    if (self.staffPerms) self.staffPerms.value = user.staffPerms ? user.staffPerms.join(',') : null
+    if (self.memberType) self.memberType.value = user.memberType ?? null
+    self.mustChange.value = user.mustChange ? '1' : null
   }
 
   function signOut() {

@@ -9,4 +9,8 @@ export default defineNuxtRouteMiddleware((to) => {
   }
 
   if (import.meta.client) useAuthSession('librarian').endOtherSession()
+
+  // A role that can't use this area goes to the dashboard instead (the server refuses its requests anyway).
+  const needed = permissionForPath(to.path)
+  if (needed && !useStaffAccess().can(needed)) return navigateTo('/librarian/dashboard')
 })

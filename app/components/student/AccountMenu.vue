@@ -68,8 +68,10 @@ const initialsText = computed(() => initials(profile.value?.firstName ?? firstNa
 
 interface MenuLink { label: string; hint: string; icon: string; to?: string; action?: () => void }
 
+const { isStudent } = useMemberType()
+
 const links = computed<MenuLink[]>(() => [
-	{ label: 'Profile', hint: 'Details, achievements and history', icon: 'i-tabler-user-circle', to: '/student/profile' },
+	{ label: 'Profile', hint: isStudent.value ? 'Details, achievements and history' : 'Details and history', icon: 'i-tabler-user-circle', to: '/student/profile' },
 	{ label: 'Library ID', hint: 'Barcode for check-in', icon: 'i-tabler-id', to: '/student/id' },
 	{ label: 'Wishlist', hint: `${wishlist.value.length} saved`, icon: 'i-tabler-heart', to: '/student/wishlist' },
 	{ label: 'Suggest a book', hint: '', icon: 'i-tabler-bulb', to: '/student/suggest' },

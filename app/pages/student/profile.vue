@@ -9,11 +9,13 @@
 				<div class="min-w-0">
 					<h1 class="dashboard-heading truncate text-[26px] font-extrabold leading-tight text-crimson">{{ profile?.fullName ?? `${firstName} ${lastName}` }}</h1>
 					<p class="font-data mt-0.5 truncate text-[13px] text-stone-500">
-						{{ profile?.studentIDNumber }}{{ profile?.academicProgram ? ` · ${profile.academicProgram}` : '' }}
+						{{ profile?.studentIDNumber }}{{ (profile?.academicProgram ?? profile?.department) ? ` · ${profile?.academicProgram ?? profile?.department}` : '' }}
 					</p>
 				</div>
 			</div>
-			<LibrarianSegmentedTabs v-model="tab" :tabs="tabs" />
+			<!-- On a phone the tabs take their own row inside the card, a little tighter so all three fit within its padding. -->
+			<LibrarianSegmentedTabs v-model="tab" :tabs="tabs"
+				class="w-full justify-between md:w-auto md:justify-start [&>button]:!px-3 [&>button]:!text-[13.5px] md:[&>button]:!px-4 md:[&>button]:!text-[15px]" />
 		</section>
 
 		<div :key="tab" class="st-swap">
@@ -104,14 +106,14 @@
 							:class="a.status === 'Unlocked' ? 'border-accent-200 shadow-card' : 'border-stone-200'">
 							<span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"
 								:class="a.status === 'Locked' ? TONE_SOFT.neutral : a.status === 'Unlocked' ? TONE_SOFT.accent : TONE_SOFT.good">
-								<Icon :name="a.status === 'Locked' ? 'i-tabler-lock' : 'i-tabler-trophy'" class="h-5 w-5" />
+								<Icon :name="a.status === 'Locked' ? 'i-tabler-lock' : metricIcon(a)" class="h-5 w-5" />
 							</span>
 							<div class="min-w-0 flex-1">
 								<p class="text-[15px] font-semibold text-stone-900">{{ a.name }}</p>
-								<p class="text-[12.5px] text-stone-500">{{ criteriaText(a) }}</p>
-								<template v-if="a.status === 'Locked' && a.criteria">
-									<StudentMeter class="mt-2" :value="progress(a) / a.criteria.threshold" />
-									<p class="mt-1 text-[11.5px] tabular-nums text-stone-500">{{ Math.min(progress(a), a.criteria.threshold) }} / {{ a.criteria.threshold }}</p>
+								<p class="text-[12.5px] text-stone-500">{{ a.description }}</p>
+								<template v-if="a.status === 'Locked' && a.progress.target">
+									<StudentMeter class="mt-2" :value="a.progress.current / a.progress.target" />
+									<p class="mt-1 text-[11.5px] tabular-nums text-stone-500">{{ Math.min(a.progress.current, a.progress.target) }} / {{ a.progress.target }}</p>
 								</template>
 								<p v-else-if="a.status === 'Redeemed' && a.redeemedAt" class="mt-0.5 text-[11.5px] text-stone-400">Claimed {{ formatDate(a.redeemedAt) }}</p>
 							</div>
@@ -138,7 +140,7 @@
 				</div>
 
 				<div v-else-if="data" class="grid gap-5 lg:grid-cols-2 lg:items-start">
-					<section class="overflow-hidden rounded-[22px] border border-stone-200 bg-white">
+					<section v-if="isStudent" class="overflow-hidden rounded-[22px] border border-stone-200 bg-white">
 						<div class="flex items-baseline justify-between gap-3 px-5 pb-2 pt-4">
 							<h2 class="text-[17px] font-bold text-stone-900">Points</h2>
 							<span class="text-[12.5px] text-stone-500">Earned and spent</span>
@@ -191,7 +193,7 @@ import { studentService, type AchievementRow } from '~/services/studentService'
 import { TONE_SOFT, type StudentTone } from '~/utils/studentNotifications'
 import { useAlert } from '~/api/alert/useAlert'
 
-definePageMeta({ layout: 'student', middleware: 'student', title: 'Profile', nav: 'profile', tab: 'me' })
+definePageMeta({ layout: 'student', middleware: 'student', title: 'Profile', nav: 'profile', tab: 'me', back: '/student/me' })
 useHead({ title: 'Profile' })
 
 const route = useRoute()
@@ -199,7 +201,7 @@ const router = useRouter()
 const alert = useAlert()
 const { perform } = useAction()
 const { firstName, lastName } = useAuthSession('student')
-const { summary, points, streak, refreshProfile, bumpData } = useStudent()
+const { summary, points, refreshProfile, bumpData } = useStudent()
 const profile = computed(() => summary.value?.profile ?? null)
 
 const initials = computed(() => {
@@ -209,15 +211,19 @@ const initials = computed(() => {
 })
 
 /* ---- tabs (?tab=, so notifications can link straight to Achievements) ---- */
-const TABS = ['details', 'achievements', 'history']
+const { isStudent } = useMemberType()
+const TABS = isStudent.value ? ['details', 'achievements', 'history'] : ['details', 'history']
 const tab = computed<string>({
 	get: () => (TABS.includes(String(route.query.tab)) ? String(route.query.tab) : TABS[0]!),
 	set: (value) => { void router.replace({ query: { ...route.query, tab: value } }) },
 })
 
 const { data, pending } = useStudentData('student-profile-page', async () => {
+	// Achievements and redemptions are for students; a faculty or staff member's request would be refused.
 	const [achievements, penalties, redemptions] = await Promise.all([
-		studentService.achievements(), studentService.penalties(), studentService.redemptions(),
+		isStudent.value ? studentService.achievements() : Promise.resolve({ achievements: [] as AchievementRow[] }),
+		studentService.penalties(),
+		isStudent.value ? studentService.redemptions() : Promise.resolve({ redemptions: [] as Awaited<ReturnType<typeof studentService.redemptions>>['redemptions'] }),
 	])
 	return { achievements: achievements.achievements, penalties: penalties.penalties, unpaidTotal: penalties.unpaidTotal, redemptions: redemptions.redemptions }
 })
@@ -226,7 +232,7 @@ const claimable = computed(() => (data.value?.achievements ?? []).filter((a) => 
 
 const tabs = computed(() => [
 	{ label: 'Details', value: 'details' },
-	{ label: 'Achievements', value: 'achievements', badge: claimable.value.length || undefined },
+	...(isStudent.value ? [{ label: 'Achievements', value: 'achievements', badge: claimable.value.length || undefined }] : []),
 	{ label: 'History', value: 'history' },
 ])
 
@@ -275,8 +281,8 @@ async function saveContact() {
 
 const lockedRows = computed(() => [
 	{ label: 'Name', value: profile.value?.fullName },
-	{ label: 'Student ID', value: profile.value?.studentIDNumber, mono: true },
-	{ label: 'Program', value: profile.value?.academicProgram },
+	{ label: isStudent.value ? 'Student ID' : 'Employee ID', value: profile.value?.studentIDNumber, mono: true },
+	{ label: isStudent.value ? 'Program' : 'Department', value: isStudent.value ? profile.value?.academicProgram : profile.value?.department },
 	{ label: 'Email', value: profile.value?.email },
 ])
 
@@ -313,14 +319,14 @@ async function savePassword() {
 }
 
 /* ---- achievements (moved here from Rewards) ---- */
-const progress = (a: AchievementRow) => (a.criteria?.metric === 'visitStreak' ? streak.value : points.value)
-
-function criteriaText(a: AchievementRow): string {
-	if (!a.criteria) return 'Keep using the library to unlock it'
-	return a.criteria.metric === 'visitStreak'
-		? `Visit ${a.criteria.threshold} day${a.criteria.threshold === 1 ? '' : 's'} in a row`
-		: `Reach ${a.criteria.threshold} knowledge points`
+// An earned achievement shows an icon for what it was about.
+const METRIC_ICONS: Record<string, string> = {
+	knowledgeScore: 'i-tabler-star', visitStreak: 'i-tabler-flame', daysVisited: 'i-tabler-calendar-event',
+	booksBorrowed: 'i-tabler-books', onTimeReturns: 'i-tabler-clock-check', onTimeReturnStreak: 'i-tabler-clock-check',
+	genresExplored: 'i-tabler-compass', reservationsPickedUp: 'i-tabler-bookmark', suggestionsApproved: 'i-tabler-bulb',
+	rewardsRedeemed: 'i-tabler-gift',
 }
+const metricIcon = (a: AchievementRow) => METRIC_ICONS[a.criteria?.metric ?? ''] ?? 'i-tabler-trophy'
 
 // Ready to claim first, then the ones in progress, then what's already claimed.
 const ORDER: Record<AchievementRow['status'], number> = { Unlocked: 0, Locked: 1, Redeemed: 2 }
@@ -330,7 +336,7 @@ const earnedCount = computed(() => (data.value?.achievements ?? []).filter((a) =
 const redeeming = ref<number | null>(null)
 async function redeem(a: AchievementRow) {
 	redeeming.value = a.achievementID
-	const ok = await perform(() => studentService.redeemAchievement(a.achievementID), `+${a.pointsReward} points · ${a.name}`, 'Could not claim it', [refreshProfile])
+	const ok = await perform(() => studentService.redeemAchievement(a.uuid), `+${a.pointsReward} points · ${a.name}`, 'Could not claim it', [refreshProfile])
 	redeeming.value = null
 	if (ok) bumpData()
 }

@@ -10,7 +10,7 @@
 
         <!-- Achievements -->
         <template v-if="activeTab === 'achievements'">
-            <div class="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div class="phone-stats mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
                 <LibrarianCatalogStatTile label="Achievements" :value="achievements.length" icon="i-tabler-trophy"
                     tone="accent" />
                 <LibrarianCatalogStatTile label="Unlocked by students" :value="totalUnlocked"
@@ -19,7 +19,7 @@
                     tone="warning" />
             </div>
 
-            <div class="mb-4 flex flex-wrap items-center gap-2">
+            <div class="phone-toolbar mb-4 flex flex-wrap items-center gap-2">
                 <LibrarianSearchInput id="achievement-search" v-model="achievementSearch" placeholder="Search achievements" />
                 <div class="flex-1"></div>
                 <LibrarianResetFiltersButton @click="achievementSearch = ''" />
@@ -34,7 +34,7 @@
 
         <!-- Market -->
         <template v-else-if="activeTab === 'market'">
-            <div class="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div class="phone-stats mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
                 <LibrarianCatalogStatTile label="Market items" :value="items.length" icon="i-tabler-gift"
                     tone="accent" />
                 <LibrarianCatalogStatTile label="Low stock" :value="lowStockCount" icon="i-tabler-alert-circle"
@@ -43,7 +43,7 @@
                     icon="i-tabler-circle-check" tone="success" />
             </div>
 
-            <div class="mb-4 flex flex-wrap items-center gap-2">
+            <div class="phone-toolbar mb-4 flex flex-wrap items-center gap-2">
                 <LibrarianSearchInput id="item-search" v-model="itemSearch" placeholder="Search items" />
                 <div class="flex-1"></div>
                 <LibrarianResetFiltersButton @click="itemSearch = ''" />
@@ -58,7 +58,7 @@
 
         <!-- Redemptions -->
         <template v-else>
-            <div class="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div class="phone-stats mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
                 <LibrarianCatalogStatTile label="Pending" :value="redemptionCount('Pending')" icon="i-tabler-clock"
                     tone="warning" />
                 <LibrarianCatalogStatTile label="Fulfilled" :value="redemptionCount('Fulfilled')"
@@ -67,7 +67,7 @@
                     icon="i-tabler-circle-x" tone="danger" />
             </div>
 
-            <div class="mb-4 flex flex-wrap items-center gap-2">
+            <div class="phone-toolbar mb-4 flex flex-wrap items-center gap-2">
                 <LibrarianSearchInput id="redemption-search" v-model="redemptionSearch" placeholder="Search student or item" />
                 <select v-model="redemptionStatus"
                     class="h-[42px] rounded-xl border border-stone-200 bg-white px-3 text-[14px] text-stone-500 transition-colors hover:bg-stone-50">
@@ -81,7 +81,7 @@
             </div>
 
             <LibrarianRedemptionsTable :redemptions="pagedRedemptions" :loading="redemptionsPending"
-                @fulfill="handleFulfill" @cancel="askCancelRedemption" />
+                @fulfill="(r) => openRedemption(r, 'fulfill')" @cancel="(r) => openRedemption(r, 'cancel')" />
 
             <LibrarianPagination :shown="pagedRedemptions.length" :total="filteredRedemptions.length"
                 noun="redemptions" :page="redemptionPage" :last-page="redemptionTotalPages"
@@ -89,10 +89,12 @@
         </template>
     
 
-        <LibrarianAchievementFormModal :open="isAchievementOpen" :achievement="editingAchievement" :busy="busy"
+        <LibrarianAchievementFormModal :open="isAchievementOpen" :achievement="editingAchievement" :metrics="achievementMetrics" :busy="busy"
             @close="isAchievementOpen = false" @submit="saveAchievement" />
         <LibrarianMarketItemFormModal :open="isItemOpen" :item="editingItem" :busy="busy" @close="isItemOpen = false"
             @submit="saveItem" />
+        <LibrarianRedemptionReviewModal :open="isRedemptionOpen" :mode="redemptionMode" :redemption="redemptionTarget" :busy="redemptionBusy"
+            @close="isRedemptionOpen = false" @submit="confirmRedemption" />
         <LibrarianConfirmModal :open="confirmOpen" :title="confirmState.title" :message="confirmState.message"
             :confirm-label="confirmState.label" :loading="busy" @close="confirmOpen = false" @confirm="runConfirm" />
 
@@ -136,12 +138,13 @@ const { data: redemptionsResponse, pending: redemptionsPending, execute: refetch
     useLiveAsyncData('engagement-redemptions', () => engagementService.fetchRedemptions(), { lazy: true })
 
 const achievements = computed(() => achievementsResponse.value?.achievements ?? [])
+const achievementMetrics = computed(() => achievementsResponse.value?.metrics ?? [])
 const items = computed(() => itemsResponse.value?.items ?? [])
 const redemptions = computed(() => redemptionsResponse.value?.redemptions ?? [])
 
 const tabs = computed(() => [
     { label: 'Achievements', value: 'achievements' },
-    { label: 'Rewards Market', value: 'market' },
+    { label: 'Rewards Market', short: 'Rewards', value: 'market' },
     { label: 'Redemptions', value: 'redemptions', badge: redemptionCount('Pending') },
 ])
 
@@ -166,7 +169,7 @@ async function saveAchievement(payload: AchievementPayload) {
     busy.value = true
     const target = editingAchievement.value
     const ok = await perform(
-        () => target ? engagementService.updateAchievement(target.achievementID, payload) : engagementService.createAchievement(payload),
+        () => target ? engagementService.updateAchievement(target.uuid, payload) : engagementService.createAchievement(payload),
         target ? 'Achievement updated' : 'Achievement added',
         'Could not save achievement',
         [refetchAchievements],
@@ -197,20 +200,20 @@ async function saveItem(payload: MarketItemPayload, photo: MarketItemPhotoChange
     const target = editingItem.value
     const ok = await perform(
         async () => {
-            let itemID = target?.itemID
+            let itemUuid = target?.uuid
             let result: { message?: string }
             if (target) {
-                result = await engagementService.updateMarketItem(target.itemID, payload)
+                result = await engagementService.updateMarketItem(target.uuid, payload)
             } else {
                 const created = await engagementService.createMarketItem(payload)
-                itemID = created.item.itemID
+                itemUuid = created.item.uuid
                 // If the photo upload below fails, the window stays open on the item that now exists,
                 // so trying again edits it instead of adding a duplicate.
                 editingItem.value = { ...created.item, redemptions_count: 0 }
                 result = created
             }
-            if (photo.blob) await engagementService.uploadMarketItemPhoto(itemID!, photo.blob)
-            else if (photo.remove) await engagementService.deleteMarketItemPhoto(itemID!)
+            if (photo.blob) await engagementService.uploadMarketItemPhoto(itemUuid!, photo.blob)
+            else if (photo.remove) await engagementService.deleteMarketItemPhoto(itemUuid!)
             return result
         },
         target ? 'Item updated' : 'Item added',
@@ -243,8 +246,28 @@ const pagedRedemptions = computed(() => {
 })
 watch([redemptionSearch, redemptionStatus], () => { redemptionPage.value = 1 })
 
-function handleFulfill(redemption: RedemptionRecord) {
-    return perform(() => engagementService.fulfillRedemption(redemption.redemptionID), 'Redemption fulfilled', 'Could not fulfill redemption', [refetchRedemptions])
+// Fulfilling and cancelling a redemption both ask first, in one window: the item, the student and the redemption,
+// then a last confirmation. Nothing changes until that final button.
+const isRedemptionOpen = ref(false)
+const redemptionMode = ref<'fulfill' | 'cancel'>('fulfill')
+const redemptionTarget = ref<RedemptionRecord | null>(null)
+const redemptionBusy = ref(false)
+
+function openRedemption(redemption: RedemptionRecord, mode: 'fulfill' | 'cancel') {
+    redemptionTarget.value = redemption
+    redemptionMode.value = mode
+    isRedemptionOpen.value = true
+}
+
+async function confirmRedemption() {
+    const redemption = redemptionTarget.value
+    if (!redemption) return
+    redemptionBusy.value = true
+    const ok = redemptionMode.value === 'fulfill'
+        ? await perform(() => engagementService.fulfillRedemption(redemption.uuid), 'Redemption fulfilled', 'Could not fulfill redemption', [refetchRedemptions])
+        : await perform(() => engagementService.cancelRedemption(redemption.uuid), 'Redemption cancelled', 'Could not cancel redemption', [refetchRedemptions, refetchItems])
+    redemptionBusy.value = false
+    if (ok) isRedemptionOpen.value = false
 }
 
 // ---- Confirmations (delete / cancel) ----
@@ -270,7 +293,7 @@ function askDeleteAchievement(achievement: AchievementRecord) {
         'Delete achievement?',
         `“${achievement.name}” will be removed, along with every student's progress toward it. This can't be undone.`,
         'Delete',
-        () => perform(() => engagementService.deleteAchievement(achievement.achievementID), 'Achievement deleted', 'Could not delete achievement', [refetchAchievements]),
+        () => perform(() => engagementService.deleteAchievement(achievement.uuid), 'Achievement deleted', 'Could not delete achievement', [refetchAchievements]),
     )
 }
 
@@ -279,16 +302,7 @@ function askDeleteItem(item: MarketItemRecord) {
         'Delete item?',
         `“${item.name}” will be removed from the rewards market.`,
         'Delete',
-        () => perform(() => engagementService.deleteMarketItem(item.itemID), 'Item deleted', 'Could not delete item', [refetchItems]),
-    )
-}
-
-function askCancelRedemption(redemption: RedemptionRecord) {
-    ask(
-        'Cancel redemption?',
-        `${personName(redemption.student?.user)} gets ${redemption.pointsSpent} points back and “${redemption.item?.name ?? 'the item'}” is restocked.`,
-        'Cancel redemption',
-        () => perform(() => engagementService.cancelRedemption(redemption.redemptionID), 'Redemption cancelled', 'Could not cancel redemption', [refetchRedemptions, refetchItems]),
+        () => perform(() => engagementService.deleteMarketItem(item.uuid), 'Item deleted', 'Could not delete item', [refetchItems]),
     )
 }
 </script>

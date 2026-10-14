@@ -6,10 +6,10 @@
         </div>
 
         <LibrarianSegmentedTabs v-model="activeTab" class="mb-5" :tabs="[
-            { label: 'Accession Record', value: 'accession' },
-            { label: 'Book Catalog', value: 'catalog' },
-            { label: 'Book Requests', value: 'requests' },
-            { label: 'Categories / Genres', value: 'categories' },
+            { label: 'Accession Record', short: 'Accession', value: 'accession' },
+            { label: 'Book Catalog', short: 'Catalog', value: 'catalog' },
+            { label: 'Book Requests', short: 'Requests', value: 'requests' },
+            { label: 'Categories / Genres', short: 'Categories', value: 'categories' },
         ]" />
 
         <!-- Accession Record (a row per book, its copies' accession numbers listed) and Book Catalog
@@ -27,7 +27,7 @@
 
         <template v-if="activeTab === 'accession'">
 
-            <div class="mb-4 flex flex-wrap items-center gap-2">
+            <div class="phone-toolbar mb-4 flex flex-wrap items-center gap-2">
                 <div
                     class="flex h-[42px] min-w-[200px] max-w-[320px] flex-1 items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 transition-shadow focus-within:ring-2 focus-within:ring-accent-200">
                     <Icon name="i-tabler-search" class="h-[15px] w-[15px] text-stone-400" />
@@ -85,7 +85,7 @@
             ]" />
 
             <template v-if="catalogView === 'copies'">
-            <div class="mb-4 flex flex-wrap items-center gap-2">
+            <div class="phone-toolbar mb-4 flex flex-wrap items-center gap-2">
                 <div
                     class="flex h-[42px] min-w-[200px] max-w-[320px] flex-1 items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 transition-shadow focus-within:ring-2 focus-within:ring-accent-200">
                     <Icon name="i-tabler-search" class="h-[15px] w-[15px] text-stone-400" />
@@ -148,7 +148,7 @@
             </template>
 
             <template v-else>
-                <div class="mb-4 flex flex-wrap items-center gap-2">
+                <div class="phone-toolbar mb-4 flex flex-wrap items-center gap-2">
                     <LibrarianSearchInput id="stock-search" v-model="stockSearch"
                         placeholder="Search title, accession no., reason or librarian" />
 
@@ -163,7 +163,7 @@
                     <div class="flex-1"></div>
 
                     <LibrarianResetFiltersButton @click="stockSearch = ''; stockAction = ''" />
-                    <ButtonsButton variant="primary" @click="openAddCopies()">
+                    <ButtonsButton variant="primary" class="toolbar-full" @click="openAddCopies()">
                         <Icon name="i-tabler-copy-plus" class="h-3.5 w-3.5" />Add Book Copy
                     </ButtonsButton>
                 </div>
@@ -200,7 +200,7 @@
                     icon="i-tabler-circle-x" tone="danger" />
             </div>
 
-            <div class="mb-4 flex flex-wrap items-center gap-2">
+            <div class="phone-toolbar mb-4 flex flex-wrap items-center gap-2">
                 <div
                     class="flex h-[42px] min-w-[200px] max-w-[320px] flex-1 items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 transition-shadow focus-within:ring-2 focus-within:ring-accent-200">
                     <Icon name="i-tabler-search" class="h-[15px] w-[15px] text-stone-400" />
@@ -243,27 +243,27 @@
         </template>
 
         <template v-else>
-            <div class="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div class="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
                 <LibrarianCatalogStatTile label="Categories" :value="subjects.length" icon="i-tabler-tags"
                     tone="accent" />
                 <LibrarianCatalogStatTile label="With a Dewey code"
                     :value="`${classifiedCount} of ${subjects.length}`" icon="i-tabler-circle-check"
                     tone="success" />
-                <LibrarianCatalogStatTile label="Largest category" :value="largestSubject?.name ?? '—'"
+                <LibrarianCatalogStatTile class="col-span-2 sm:col-span-1" label="Largest category" :value="largestSubject?.name ?? '—'"
                     icon="i-tabler-book-2" tone="warning" />
             </div>
 
-            <div class="mb-4 flex flex-wrap items-center gap-2">
+            <div class="phone-toolbar mb-4 flex flex-wrap items-center gap-2">
                 <LibrarianSearchInput id="category-search" v-model="categorySearch"
                     placeholder="Search categories" />
                 <div class="flex-1"></div>
-                <ButtonsButton variant="primary" @click="openCategoryForm(null)">
+                <ButtonsButton variant="primary" class="toolbar-full" @click="openCategoryForm(null)">
                     <Icon name="i-tabler-plus" class="h-3.5 w-3.5" />Add Category
                 </ButtonsButton>
             </div>
 
             <LibrarianCategoriesTable :subjects="filteredSubjects" :loading="subjectsPending"
-                @edit="openCategoryForm" @delete="askDeleteCategory" />
+                @edit="openCategoryForm" @delete="askDeleteCategory" @view-book="openBookDetail" @show-books="showCategoryBooks" />
 
             <div class="mt-3 flex items-center justify-between text-[13.5px] text-stone-400">
                 <span>Showing {{ filteredSubjects.length }} of {{ subjects.length }} categories</span>
@@ -427,7 +427,7 @@ async function saveCopyStatus(status: Exclude<CopyStatus, 'borrowed'> | 'retired
     const copy = editingCopy.value
     if (!copy) return
     copyBusy.value = true
-    const ok = await perform(() => librarianService.updateCopy(copy.copyID, { status }),
+    const ok = await perform(() => librarianService.updateCopy(copy.uuid, { status }),
         status === 'retired' ? `Accession no. ${copy.accessionNumber} removed` : `Accession no. ${copy.accessionNumber} updated`,
         'Could not update this copy', [refetchCopies, refetchBooks, refetchStats, refetchStockLogs])
     copyBusy.value = false
@@ -476,16 +476,16 @@ const refreshStock = [refetchCopies, refetchBooks, refetchStats, refetchStockLog
 
 // "Add Book Copy": from a catalog row the book is known; from the header button the librarian searches for it.
 const isAddCopiesOpen = ref(false)
-const addCopiesBook = ref<{ bookID: number; title: string } | null>(null)
+const addCopiesBook = ref<{ bookUuid: string; title: string } | null>(null)
 
 function openAddCopies(copy?: CopyCatalogRow) {
-    addCopiesBook.value = copy ? { bookID: copy.book.bookID, title: copy.book.title } : null
+    addCopiesBook.value = copy ? { bookUuid: copy.book.uuid, title: copy.book.title } : null
     isAddCopiesOpen.value = true
 }
 
-async function saveAddCopies(payload: { bookID: number; title: string; quantity: number; note: string | undefined }) {
+async function saveAddCopies(payload: { bookUuid: string; title: string; quantity: number; sourceOfFund: string; cost: number; remarks: string | undefined }) {
     stockBusy.value = true
-    const ok = await perform(() => librarianService.addCopies(payload.bookID, { quantity: payload.quantity, note: payload.note }),
+    const ok = await perform(() => librarianService.addCopies(payload.bookUuid, { quantity: payload.quantity, sourceOfFund: payload.sourceOfFund, cost: payload.cost, remarks: payload.remarks }),
         payload.quantity === 1 ? 'Copy added' : `${payload.quantity} copies added`, 'Could not add copies', refreshStock)
     stockBusy.value = false
     if (ok) isAddCopiesOpen.value = false
@@ -503,7 +503,7 @@ async function saveRemoveCopy(payload: { reason: RemoveReason; note: string | un
     const copy = removingCopy.value
     if (!copy) return
     stockBusy.value = true
-    const ok = await perform(() => librarianService.removeCopy(copy.copyID, payload),
+    const ok = await perform(() => librarianService.removeCopy(copy.uuid, payload),
         `Accession no. ${copy.accessionNumber} removed`, 'Could not remove this copy', refreshStock)
     stockBusy.value = false
     if (ok) isRemoveCopyOpen.value = false
@@ -537,7 +537,7 @@ async function saveCategory(payload: { name: string; classificationCode: string 
     categoryBusy.value = true
     const target = editingSubject.value
     const ok = await perform(
-        () => target ? subjectService.updateSubject(target.subjectID, payload) : subjectService.createSubject(payload),
+        () => target ? subjectService.updateSubject(target.uuid, payload) : subjectService.createSubject(payload),
         target ? 'Category updated' : 'Category added',
         'Could not save category',
         [refetchSubjects, refetchBooks, refetchCopies],
@@ -556,9 +556,9 @@ function askDeleteCategory(subject: SubjectRecord) {
 
 async function handleDeleteCategory() {
     if (!deleteSubject.value) return
-    const subjectID = deleteSubject.value.subjectID
+    const subjectUuid = deleteSubject.value.uuid
     categoryBusy.value = true
-    const ok = await perform(() => subjectService.deleteSubject(subjectID), 'Category deleted', 'Could not delete category', [refetchSubjects])
+    const ok = await perform(() => subjectService.deleteSubject(subjectUuid), 'Category deleted', 'Could not delete category', [refetchSubjects])
     categoryBusy.value = false
     if (ok) isDeleteCategoryOpen.value = false
 }
@@ -579,11 +579,11 @@ const isDetailOpen = ref(false)
 const detailLoading = ref(false)
 const detailError = ref('')
 
-async function loadBookDetail(bookID: number): Promise<BookDetail | null> {
+async function loadBookDetail(bookUuid: string): Promise<BookDetail | null> {
     detailLoading.value = true
     detailError.value = ''
     try {
-        const { book } = await librarianService.fetchBook(bookID)
+        const { book } = await librarianService.fetchBook(bookUuid)
         detailBook.value = book
         return book
     } catch (error) {
@@ -594,10 +594,16 @@ async function loadBookDetail(bookID: number): Promise<BookDetail | null> {
     }
 }
 
-async function openBookDetail(book: Pick<CatalogBook, 'bookID'>) {
-    if (detailBook.value?.bookID !== book.bookID) detailBook.value = null
+// "Show all in Accession Record" in a category's details: the same list, filtered to that category.
+function showCategoryBooks(subject: SubjectRecord) {
+    subjectFilter.value = subject.subjectID
+    activeTab.value = 'accession'
+}
+
+async function openBookDetail(book: Pick<CatalogBook, 'uuid'>) {
+    if (detailBook.value?.uuid !== book.uuid) detailBook.value = null
     isDetailOpen.value = true
-    await loadBookDetail(book.bookID)
+    await loadBookDetail(book.uuid)
 }
 
 const editingBook = ref<BookDetail | null>(null)
@@ -613,13 +619,16 @@ function openAddBook() {
 onMounted(() => {
     if (route.query.new !== 'book') return
     openAddBook()
-    const { new: _, ...rest } = route.query
-    void navigateTo({ query: rest }, { replace: true })
+    // Done on the address bar alone, not through the router: a router navigation here interrupts the page change
+    // that is still finishing (the loading cover stayed up), and a query-only one rewrote the path to /Librarian/….
+    const url = new URL(window.location.href)
+    url.searchParams.delete('new')
+    window.history.replaceState(window.history.state, '', url)
 })
 
 /** From the table (a list row, so fetch the full record) or from the details drawer (already full). */
-async function openEditBook(book: Pick<CatalogBook, 'bookID'> | BookDetail) {
-    const full = 'loans' in book ? book : await loadBookDetail(book.bookID)
+async function openEditBook(book: Pick<CatalogBook, 'uuid'> | BookDetail) {
+    const full = 'loans' in book ? book : await loadBookDetail(book.uuid)
     if (!full) {
         alert.error('Could not open this book', detailError.value)
         return
@@ -630,29 +639,29 @@ async function openEditBook(book: Pick<CatalogBook, 'bookID'> | BookDetail) {
 }
 
 async function handleBookUpdated() {
-    const bookID = editingBook.value?.bookID
-    await Promise.all([refetchBooks(), refetchCopies(), refetchStats(), refetchSubjects(), refetchStockLogs(), bookID ? loadBookDetail(bookID) : null])
+    const bookUuid = editingBook.value?.uuid
+    await Promise.all([refetchBooks(), refetchCopies(), refetchStats(), refetchSubjects(), refetchStockLogs(), bookUuid ? loadBookDetail(bookUuid) : null])
 }
 
-const removingBook = ref<{ bookID: number; title: string } | null>(null)
+const removingBook = ref<{ uuid: string; title: string } | null>(null)
 const isRemoveBookOpen = ref(false)
 const removingBusy = ref(false)
 
 function askRemoveBook(book: CatalogBook | BookDetail) {
-    removingBook.value = { bookID: book.bookID, title: book.title }
+    removingBook.value = { uuid: book.uuid, title: book.title }
     isRemoveBookOpen.value = true
 }
 
 async function handleRemoveBook() {
     if (!removingBook.value) return
-    const { bookID } = removingBook.value
+    const { uuid } = removingBook.value
     removingBusy.value = true
-    const ok = await perform(() => librarianService.deleteBook(bookID), 'Book removed', 'Could not remove book',
+    const ok = await perform(() => librarianService.deleteBook(uuid), 'Book removed', 'Could not remove book',
         [refetchBooks, refetchCopies, refetchStats, refetchSubjects, refetchStockLogs])
     removingBusy.value = false
     if (ok) {
         isRemoveBookOpen.value = false
-        if (detailBook.value?.bookID === bookID) isDetailOpen.value = false
+        if (detailBook.value?.uuid === uuid) isDetailOpen.value = false
     }
 }
 
@@ -712,7 +721,7 @@ function openReviewDrawer(suggestion: BookSuggestion) {
 async function handleApprove(suggestion: BookSuggestion) {
     requestActionError.value = ''
     try {
-        await librarianService.approveBookSuggestion(suggestion.suggestionID)
+        await librarianService.approveBookSuggestion(suggestion.uuid)
         isDrawerOpen.value = false
         await refetchRequests()
     } catch (error: any) {
@@ -723,7 +732,7 @@ async function handleApprove(suggestion: BookSuggestion) {
 async function handleReject(suggestion: BookSuggestion) {
     requestActionError.value = ''
     try {
-        await librarianService.rejectBookSuggestion(suggestion.suggestionID)
+        await librarianService.rejectBookSuggestion(suggestion.uuid)
         isDrawerOpen.value = false
         await refetchRequests()
     } catch (error: any) {

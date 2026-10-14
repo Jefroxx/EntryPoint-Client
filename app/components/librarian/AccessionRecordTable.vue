@@ -1,6 +1,40 @@
 <template>
 	<div class="relative overflow-hidden rounded-2xl border border-stone-200 bg-white">
-		<div class="max-h-[480px] overflow-auto">
+		<!-- Phones: one card per book; edit and the rest of the actions are on the card. -->
+		<ul class="divide-y divide-stone-100 sm:hidden">
+			<li v-for="book in books" :key="`card-${book.bookID}`">
+				<div role="button" tabindex="0" class="flex gap-3 px-4 py-3.5 transition-colors active:bg-accent-50"
+					@click="emit('view', book)" @keydown.enter.self="emit('view', book)">
+					<StudentCover :book="book" :width="48" />
+					<div class="min-w-0 flex-1">
+						<p class="text-[15px] font-semibold leading-snug text-stone-900">{{ book.title }}</p>
+						<p class="truncate text-[13px] text-stone-500">{{ authorNames(book) }}</p>
+						<div class="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1">
+							<span v-if="book.subject"
+								class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[12px] font-semibold text-stone-700"
+								:style="{ backgroundColor: `${subjectSwatch(book.subject.name)}1f` }">
+								<span class="h-2 w-2 shrink-0 rounded-[3px]" :style="{ backgroundColor: subjectSwatch(book.subject.name) }" />{{ book.subject.name }}
+							</span>
+							<span class="font-data text-[12px] text-stone-400">{{ book.callNumber }}</span>
+						</div>
+						<p class="mt-1.5 text-[13px] tabular-nums text-stone-500">
+							<b :class="availableCopies(book) === 0 ? 'text-red-500' : 'text-stone-900'">{{ availableCopies(book) }}</b> of {{ book.copies.length }} on the shelf
+						</p>
+					</div>
+					<div class="flex shrink-0 flex-col items-center gap-0.5" @click.stop>
+						<ButtonsButton variant="icon" size="sm" :aria-label="`Edit ${book.title}`" @click="emit('edit', book)">
+							<Icon name="i-tabler-pencil" class="h-[15px] w-[15px]" />
+						</ButtonsButton>
+						<LibrarianRowMenu :items="BOOK_MENU" :label="`More actions for ${book.title}`" @select="(key: string) => onMenu(key, book)" />
+					</div>
+				</div>
+			</li>
+		</ul>
+		<p v-if="!loading && books.length === 0" class="px-4 py-10 text-center text-[15px] text-stone-400 sm:hidden">
+			{{ filtered ? 'No books match these filters.' : 'No books in the catalog yet.' }}
+		</p>
+
+		<div class="max-h-[480px] overflow-auto max-sm:hidden">
 			<table class="w-full min-w-[860px] border-collapse text-left">
 				<thead>
 					<tr>
@@ -14,14 +48,12 @@
 					</tr>
 				</thead>
 				<tbody>
-					<tr v-for="(book, index) in books" :key="book.bookID"
-						class="row-enter border-b border-stone-100 opacity-0 transition-colors duration-150 last:border-0 hover:bg-accent-50"
+					<tr v-for="(book, index) in books" :key="book.bookID" tabindex="0" @click="emit('view', book)" @keydown.enter.self="emit('view', book)"
+						class="row-enter cursor-pointer border-b border-stone-100 opacity-0 transition-colors duration-150 last:border-0 hover:bg-accent-50"
 						:style="{ animationDelay: `${index * 40}ms` }">
 						<td class="px-4 py-3">
 							<div class="flex items-center gap-3">
-								<div class="h-11 w-8 shrink-0 overflow-hidden rounded-[4px] bg-gradient-to-br from-accent-100 to-stone-200 shadow-sm">
-									<img v-if="book.coverImageURL" :src="book.coverImageURL" alt="" class="h-full w-full object-cover" />
-								</div>
+								<StudentCover :book="book" :width="32" />
 								<div>
 									<button type="button" class="text-left text-[15px] font-semibold text-stone-900 hover:text-accent-600 hover:underline"
 										@click="emit('view', book)">{{ book.title }}</button>
@@ -52,7 +84,7 @@
 								<li v-if="book.copies.length > COLLAPSED_COUNT">
 									<button type="button"
 										class="rounded-md px-1.5 py-0.5 text-[12.5px] font-semibold text-accent-600 hover:bg-accent-50 hover:underline"
-										@click="toggleExpanded(book.bookID)">
+										@click.stop="toggleExpanded(book.bookID)">
 										{{ expanded.has(book.bookID) ? 'Show less' : `+${book.copies.length - COLLAPSED_COUNT} more` }}
 									</button>
 								</li>
@@ -65,7 +97,7 @@
 							</span>
 							<span class="text-stone-400"> / {{ book.copies.length }}</span>
 						</td>
-						<td class="px-4 py-3">
+						<td class="px-4 py-3" @click.stop>
 							<div class="flex items-center justify-end gap-1">
 								<ButtonsButton variant="icon" size="sm" :aria-label="`Edit ${book.title}`" @click="emit('edit', book)">
 									<Icon name="i-tabler-pencil" class="h-[15px] w-[15px]" />

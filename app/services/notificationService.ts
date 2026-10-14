@@ -2,6 +2,7 @@ import { BaseService } from "./BaseService";
 
 export interface NotificationRecord {
   notificationID: number;
+  uuid: string;
   message: string;
   type: string | null;
   sentAt: string;
@@ -13,8 +14,8 @@ class NotificationServiceClass extends BaseService {
     return this.apiRequest<{ notifications: NotificationRecord[]; unreadCount: number }>("/notifications");
   }
 
-  markRead(notificationID: number) {
-    return this.apiRequest<{ message: string }>(`/notifications/${notificationID}/read`, { method: "PATCH" });
+  markRead(notificationUuid: string) {
+    return this.apiRequest<{ message: string }>(`/notifications/${notificationUuid}/read`, { method: "PATCH" });
   }
 
   markAllRead() {

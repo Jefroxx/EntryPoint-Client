@@ -85,8 +85,10 @@ const initialsText = computed(() => initials(profile.value?.firstName ?? firstNa
 
 interface Row { label: string; sub: string; icon: string; to?: string; action?: () => void }
 
+const { isStudent } = useMemberType()
+
 const rows = computed<Row[]>(() => [
-	{ label: 'Profile', sub: 'Details, achievements and history', icon: 'i-tabler-user-circle', to: '/student/profile' },
+	{ label: 'Profile', sub: isStudent.value ? 'Details, achievements and history' : 'Details and history', icon: 'i-tabler-user-circle', to: '/student/profile' },
 	{ label: 'Library ID', sub: 'Barcode for check-in', icon: 'i-tabler-id', to: '/student/id' },
 	{ label: 'Notifications', sub: unreadCount.value ? `${unreadCount.value} unread` : 'All read', icon: 'i-tabler-bell', to: '/student/notifications' },
 	{ label: 'Wishlist', sub: `${wishlist.value.length} saved`, icon: 'i-tabler-heart', to: '/student/wishlist' },

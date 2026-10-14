@@ -1,6 +1,6 @@
 <template>
 	<Teleport to="body">
-		<div class="fixed inset-0 z-[100] flex items-center justify-center p-6" :class="open ? '' : 'pointer-events-none'">
+		<div class="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-6" :class="open ? '' : 'pointer-events-none'">
 			<Transition enter-active-class="transition-opacity duration-200 ease-out" enter-from-class="opacity-0"
 				enter-to-class="opacity-100" leave-active-class="transition-opacity duration-150 ease-out"
 				leave-from-class="opacity-100" leave-to-class="opacity-0">
@@ -8,31 +8,34 @@
 			</Transition>
 
 			<Transition enter-active-class="transition-[transform,opacity] duration-[260ms] ease-out"
-				enter-from-class="scale-95 translate-y-2 opacity-0" enter-to-class="scale-100 translate-y-0 opacity-100"
+				enter-from-class="scale-95 translate-y-2 opacity-0 max-sm:translate-x-10 max-sm:translate-y-0 max-sm:scale-100" enter-to-class="scale-100 translate-y-0 opacity-100"
 				leave-active-class="transition-[transform,opacity] duration-150 ease-out"
-				leave-from-class="scale-100 translate-y-0 opacity-100" leave-to-class="scale-95 translate-y-1 opacity-0">
+				leave-from-class="scale-100 translate-y-0 opacity-100" leave-to-class="scale-95 translate-y-1 opacity-0 max-sm:translate-x-6 max-sm:translate-y-0 max-sm:scale-100">
 				<div v-if="open" role="dialog" aria-modal="true" aria-labelledby="checkoutTitle" @keydown.esc="handleClose"
-					class="relative z-10 flex max-h-[calc(100vh-48px)] w-full max-w-[480px] flex-col rounded-[22px] bg-white shadow-overlay">
-					<div class="flex items-start justify-between gap-3 border-b border-stone-100 px-6 py-5">
-						<div>
+					class="relative z-10 flex max-h-[calc(100vh-48px)] w-full max-w-[480px] flex-col rounded-[22px] bg-white shadow-overlay max-sm:h-dvh max-sm:max-h-none max-sm:max-w-none max-sm:rounded-none max-sm:shadow-none">
+					<div class="flex items-start justify-between gap-3 border-b border-stone-100 px-6 py-5 max-sm:items-center max-sm:px-3 max-sm:py-3">
+						<ButtonsButton variant="icon" size="md" aria-label="Back" class="-ml-1 shrink-0 sm:hidden" @click="handleClose">
+								<Icon name="i-tabler-arrow-left" class="h-[18px] w-[18px]" />
+							</ButtonsButton>
+						<div class="min-w-0 max-sm:flex-1">
 							<h2 id="checkoutTitle" class="dashboard-heading text-2xl font-bold text-crimson">{{ receipt ? 'Checked out' : 'Checkout Book' }}</h2>
 							<p class="dashboard-heading text-[13.5px] text-crimson">
 								{{ receipt ? 'Print the receipt for the student to keep.' : 'Lend an available copy to an approved student.' }}
 							</p>
 						</div>
-						<ButtonsButton variant="icon" size="md" aria-label="Close" @click="handleClose">
+						<ButtonsButton variant="icon" size="md" aria-label="Close" class="max-sm:hidden" @click="handleClose">
 							<Icon name="i-tabler-x" class="h-4 w-4" />
 						</ButtonsButton>
 					</div>
 
 					<!-- After checkout: the receipt, ready to print. -->
-					<div v-if="receipt" class="overflow-y-auto px-6 py-5">
+					<div v-if="receipt" class="overflow-y-auto px-6 py-5 max-sm:flex-1 max-sm:px-4">
 						<LoanReceipt ref="receiptView" :receipt="receipt" />
 					</div>
 
-					<div v-else class="space-y-4 px-6 py-5">
+					<div v-else class="space-y-4 px-6 py-5 max-sm:flex-1 max-sm:overflow-y-auto max-sm:px-4">
 						<form autocomplete="off" @submit.prevent="handlePickupCode">
-							<label for="checkout-pickup" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">Reservation pickup code</label>
+							<label for="checkout-pickup" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">Reservation pickup code <span class="font-normal text-stone-400">(optional)</span></label>
 							<div class="flex gap-2">
 								<input id="checkout-pickup" v-model="pickupCode" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false"
 									placeholder="Scan the student's slip, or type R-000123" :disabled="lookingUp"
@@ -45,7 +48,7 @@
 						</form>
 
 						<div>
-							<label for="checkout-student" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">Student</label>
+							<label for="checkout-student" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">Student<FieldRequired /></label>
 							<LibrarianSearchSelect v-model="student" input-id="checkout-student" placeholder="Search name or student ID"
 								:fetcher="searchStudents" :get-label="studentLabel" :get-sublabel="studentSublabel"
 								:invalid="!!errors.student" />
@@ -53,7 +56,7 @@
 						</div>
 
 						<div>
-							<label for="checkout-book" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">Book</label>
+							<label for="checkout-book" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">Book<FieldRequired /></label>
 							<LibrarianSearchSelect v-model="book" input-id="checkout-book" placeholder="Search by title"
 								:fetcher="searchBooks" :get-label="bookLabel" :get-sublabel="bookSublabel"
 								:invalid="!!errors.book" />
@@ -61,7 +64,7 @@
 						</div>
 
 						<div v-if="book">
-							<label for="checkout-copy" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">Copy</label>
+							<label for="checkout-copy" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">Copy<FieldRequired /></label>
 							<select v-if="availableCopies.length" id="checkout-copy" v-model="copyID"
 								class="font-data h-11 w-full rounded-[10px] border border-stone-200 bg-white px-3 text-[13.5px] text-stone-900 outline-none focus:border-accent-500 focus:ring-2 focus:ring-accent-200">
 								<option v-for="copy in availableCopies" :key="copy.copyID" :value="copy.copyID">{{ copy.accessionNumber }}</option>
@@ -72,14 +75,14 @@
 						</div>
 					</div>
 
-					<div v-if="receipt" class="flex justify-end gap-2 border-t border-stone-100 px-6 py-4">
+					<div v-if="receipt" class="flex justify-end gap-2 border-t border-stone-100 px-6 py-4 max-sm:px-4 max-sm:pb-[max(1rem,env(safe-area-inset-bottom))] max-sm:[&>*]:flex-1">
 						<ButtonsButton variant="ghost" @click="emit('close')">Done</ButtonsButton>
 						<ButtonsButton variant="primary" @click="receiptView?.print()">
 							<Icon name="i-tabler-printer" class="h-4 w-4" />Print receipt
 						</ButtonsButton>
 					</div>
 
-					<div v-else class="flex justify-end gap-2 border-t border-stone-100 px-6 py-4">
+					<div v-else class="flex justify-end gap-2 border-t border-stone-100 px-6 py-4 max-sm:px-4 max-sm:pb-[max(1rem,env(safe-area-inset-bottom))] max-sm:[&>*]:flex-1">
 						<ButtonsButton variant="ghost" @click="handleClose">Cancel</ButtonsButton>
 						<ButtonsButton variant="primary" :disabled="submitting" @click="handleSubmit">
 							<Icon v-if="submitting" name="i-tabler-loader-2" class="h-3.5 w-3.5 animate-spin" />
@@ -97,7 +100,13 @@ import { librarianService, type StudentRecord, type CatalogBook } from '~/servic
 import { circulationService, type LoanReceipt as LoanReceiptData } from '~/services/circulationService'
 import { useAlert } from '~/api/alert/useAlert'
 
-const props = defineProps<{ open: boolean; /** A pickup code the scanner already read: looked up as soon as the window opens. */ initialCode?: string }>()
+const props = defineProps<{
+	open: boolean
+	/** A pickup code the scanner already read: looked up as soon as the window opens. */
+	initialCode?: string
+	/** With a code that is found, check the book out straight away (the slip was scanned, so there is nothing left to fill in). */
+	autoCheckout?: boolean
+}>()
 
 const emit = defineEmits<{
 	(e: 'close'): void
@@ -141,7 +150,11 @@ watch(() => props.open, (isOpen) => {
 
 	if (props.initialCode) {
 		pickupCode.value = props.initialCode
-		void handlePickupCode()
+		void handlePickupCode().then(async () => {
+			if (!props.autoCheckout || !reservation.value || !student.value || !book.value) return
+			await nextTick() // the book's watcher picks the copy to lend
+			if (props.open && copyID.value) void handleSubmit()
+		})
 	}
 })
 

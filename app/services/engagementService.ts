@@ -1,11 +1,25 @@
 import { BaseService } from "./BaseService";
 
-export type AchievementMetric = "knowledgeScore" | "visitStreak";
+/** What an achievement can be about (knowledgeScore, visitStreak, booksBorrowed, …). The server owns the list. */
+export type AchievementMetric = string;
+
+/** One choice in "Unlocks when": its key, the sentence it reads as, and what its number counts. */
+export interface AchievementMetricInfo {
+  key: AchievementMetric;
+  label: string;
+  unit: string;
+  /** How a goal reads to students, with {n} for the number; `one` is the wording for exactly 1. */
+  goal?: string;
+  one?: string;
+}
 
 export interface AchievementRecord {
   achievementID: number;
+  uuid: string;
   name: string;
   criteriaJSON: { metric: AchievementMetric; threshold: number };
+  /** The goal in plain words, e.g. "Borrow 5 books". */
+  description?: string;
   pointsReward: number;
   unlockedCount: number;
   redeemedCount: number;
@@ -19,6 +33,7 @@ export interface AchievementPayload {
 
 export interface MarketItemRecord {
   itemID: number;
+  uuid: string;
   name: string;
   type: string | null;
   pointCost: number;
@@ -44,29 +59,37 @@ export type FulfillmentStatus = "Pending" | "Fulfilled" | "Cancelled";
 
 export interface RedemptionRecord {
   redemptionID: number;
+  uuid: string;
   quantity: number;
   pointsSpent: number;
   fulfillmentStatus: FulfillmentStatus;
   redeemedAt: string;
-  student: { studentID: number; user: { firstName: string; lastName: string } | null } | null;
-  item: { itemID: number; name: string } | null;
+  student: {
+    studentID: number;
+    studentIDNumber?: string;
+    academicProgram?: string | null;
+    /** The student's points balance now. */
+    knowledgeScore?: number;
+    user: { firstName: string; lastName: string; email?: string } | null;
+  } | null;
+  item: { itemID: number; name: string; type?: string | null; pointCost?: number; stock?: number } | null;
 }
 
 class EngagementServiceClass extends BaseService {
   fetchAchievements() {
-    return this.apiRequest<{ achievements: AchievementRecord[] }>("/librarian/achievements");
+    return this.apiRequest<{ achievements: AchievementRecord[]; metrics: AchievementMetricInfo[] }>("/librarian/achievements");
   }
 
   createAchievement(payload: AchievementPayload) {
     return this.apiRequest<{ message: string }>("/librarian/achievements", { method: "POST", body: payload });
   }
 
-  updateAchievement(achievementID: number, payload: Partial<AchievementPayload>) {
-    return this.apiRequest<{ message: string }>(`/librarian/achievements/${achievementID}`, { method: "PATCH", body: payload });
+  updateAchievement(achievementUuid: string, payload: Partial<AchievementPayload>) {
+    return this.apiRequest<{ message: string }>(`/librarian/achievements/${achievementUuid}`, { method: "PATCH", body: payload });
   }
 
-  deleteAchievement(achievementID: number) {
-    return this.apiRequest<{ message: string }>(`/librarian/achievements/${achievementID}`, { method: "DELETE" });
+  deleteAchievement(achievementUuid: string) {
+    return this.apiRequest<{ message: string }>(`/librarian/achievements/${achievementUuid}`, { method: "DELETE" });
   }
 
   fetchMarketItems() {
@@ -78,34 +101,34 @@ class EngagementServiceClass extends BaseService {
   }
 
   /** Sets or replaces the item's photo. Compress it first (compressPagePhoto). */
-  uploadMarketItemPhoto(itemID: number, photo: Blob) {
+  uploadMarketItemPhoto(itemUuid: string, photo: Blob) {
     const body = new FormData();
     body.append("photo", photo, "item.jpg");
-    return this.apiRequest<{ message: string }>(`/librarian/market-items/${itemID}/photo`, { method: "POST", body });
+    return this.apiRequest<{ message: string }>(`/librarian/market-items/${itemUuid}/photo`, { method: "POST", body });
   }
 
-  deleteMarketItemPhoto(itemID: number) {
-    return this.apiRequest<{ message: string }>(`/librarian/market-items/${itemID}/photo`, { method: "DELETE" });
+  deleteMarketItemPhoto(itemUuid: string) {
+    return this.apiRequest<{ message: string }>(`/librarian/market-items/${itemUuid}/photo`, { method: "DELETE" });
   }
 
-  updateMarketItem(itemID: number, payload: Partial<MarketItemPayload>) {
-    return this.apiRequest<{ message: string }>(`/librarian/market-items/${itemID}`, { method: "PATCH", body: payload });
+  updateMarketItem(itemUuid: string, payload: Partial<MarketItemPayload>) {
+    return this.apiRequest<{ message: string }>(`/librarian/market-items/${itemUuid}`, { method: "PATCH", body: payload });
   }
 
-  deleteMarketItem(itemID: number) {
-    return this.apiRequest<{ message: string }>(`/librarian/market-items/${itemID}`, { method: "DELETE" });
+  deleteMarketItem(itemUuid: string) {
+    return this.apiRequest<{ message: string }>(`/librarian/market-items/${itemUuid}`, { method: "DELETE" });
   }
 
   fetchRedemptions() {
     return this.apiRequest<{ redemptions: RedemptionRecord[] }>("/librarian/point-redemptions");
   }
 
-  fulfillRedemption(redemptionID: number) {
-    return this.apiRequest<{ message: string }>(`/librarian/point-redemptions/${redemptionID}/fulfill`, { method: "POST" });
+  fulfillRedemption(redemptionUuid: string) {
+    return this.apiRequest<{ message: string }>(`/librarian/point-redemptions/${redemptionUuid}/fulfill`, { method: "POST" });
   }
 
-  cancelRedemption(redemptionID: number) {
-    return this.apiRequest<{ message: string }>(`/librarian/point-redemptions/${redemptionID}/cancel`, { method: "POST" });
+  cancelRedemption(redemptionUuid: string) {
+    return this.apiRequest<{ message: string }>(`/librarian/point-redemptions/${redemptionUuid}/cancel`, { method: "POST" });
   }
 }
 

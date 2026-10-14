@@ -7,8 +7,10 @@
 export type Area = 'librarian' | 'student'
 
 export const SESSION_COOKIES = {
-  librarian: { token: '_token', role: '_role', uuid: '_uuid', firstName: '_firstName', lastName: '_lastName' },
-  student: { token: '_student_token', role: '_student_role', uuid: '_student_uuid', firstName: '_student_firstName', lastName: '_student_lastName' },
+  // Staff also keep their staff role and what it allows (so the sidebar is right on first paint); a student-side member
+  // keeps their member type (student, faculty or staff), which decides whether points and rewards show.
+  librarian: { token: '_token', role: '_role', uuid: '_uuid', firstName: '_firstName', lastName: '_lastName', staffRole: '_staffRole', staffPerms: '_staffPerms', mustChange: '_mustChange' },
+  student: { token: '_student_token', role: '_student_role', uuid: '_student_uuid', firstName: '_student_firstName', lastName: '_student_lastName', memberType: '_student_memberType', mustChange: '_student_mustChange' },
 } as const
 
 /** The portal that is not this one. */
@@ -22,9 +24,10 @@ export function areaFromPath(path: string): Area {
 }
 
 /** Where each kind of signed-in user lives. */
-export function homeFor(role: string | null | undefined): string {
+export function homeFor(role: string | null | undefined, staffRole?: string | null): string {
   if (role === 'student') return '/student/home'
-  if (role === 'librarian') return '/librarian/dashboard'
+  // An administrator lands on the admin side (they can still open the librarian side from its sidebar).
+  if (role === 'librarian') return staffRole === 'admin' ? '/admin/dashboard' : '/librarian/dashboard'
   return '/login'
 }
 
@@ -33,15 +36,16 @@ export function homeFor(role: string | null | undefined): string {
  * internal path inside the signed-in user's own area is honoured, so a crafted
  * link can't bounce someone to another site or to the other role's pages.
  */
-export function safeRedirect(target: unknown, role: string): string {
+export function safeRedirect(target: unknown, role: string, staffRole?: string | null): string {
   const path = Array.isArray(target) ? target[0] : target
-  const fallback = homeFor(role)
+  const fallback = homeFor(role, staffRole)
 
   if (typeof path !== 'string' || !path.startsWith('/') || path.startsWith('//') || path.includes('\\')) return fallback
 
-  const area = role === 'student' ? '/student' : '/librarian'
+  // An administrator may also be sent to the admin side; everyone else stays in their own area.
+  const areas = role === 'student' ? ['/student'] : staffRole === 'admin' ? ['/librarian', '/admin'] : ['/librarian']
   const lower = path.toLowerCase()
-  const insideArea = lower === area || lower.startsWith(`${area}/`) || lower.startsWith(`${area}?`)
+  const insideArea = areas.some((area) => lower === area || lower.startsWith(`${area}/`) || lower.startsWith(`${area}?`))
 
   // The sign-in pages themselves are never a valid destination.
   return insideArea && !lower.endsWith('/login') ? path : fallback

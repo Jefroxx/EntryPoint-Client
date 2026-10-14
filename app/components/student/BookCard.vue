@@ -4,14 +4,14 @@
 		<button type="button" :aria-label="`View ${book.title}`"
 			class="flex w-full justify-center pb-[18px] pt-[22px] transition-transform duration-150 ease-out active:scale-[.98]"
 			:style="{ background: `linear-gradient(180deg, color-mix(in srgb, ${swatch} 18%, white), white)` }"
-			@click="drawer.open('book', book.bookID)">
+			@click="drawer.open('book', book.uuid)">
 			<StudentCover :book="book" :width="112" />
 		</button>
 		<div class="px-4">
 			<!-- Always two lines tall, so availability and the buttons line up across a row of cards. -->
 			<button type="button" :title="book.title"
 				class="line-clamp-2 min-h-[2.75em] text-left text-[14.5px] font-semibold leading-snug text-stone-900 hover:text-accent-500"
-				@click="drawer.open('book', book.bookID)">{{ book.title }}</button>
+				@click="drawer.open('book', book.uuid)">{{ book.title }}</button>
 			<p class="mt-0.5 truncate text-[12.5px] text-stone-500">{{ authorLine(book) }}</p>
 			<div class="mt-2">
 				<StudentAvailability :available="book.availableCopies" :total="book.totalCopies" :queue="book.queueLength" />

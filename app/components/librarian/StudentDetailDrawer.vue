@@ -6,7 +6,7 @@
 		<aside class="fixed right-0 top-0 z-[61] flex h-full w-full max-w-[400px] flex-col bg-white shadow-overlay transition-transform duration-300 ease-[cubic-bezier(.32,.72,0,1)]"
 			:class="open ? 'translate-x-0' : 'translate-x-full'">
 			<div class="flex items-center justify-between border-b border-stone-100 px-5 py-4">
-				<h3 class="text-[17px] font-bold text-accent-700">Student details</h3>
+				<h3 class="text-[17px] font-bold text-accent-700">{{ isStudent ? 'Student details' : 'Member details' }}</h3>
 				<ButtonsButton variant="icon" aria-label="Close" @click="emit('close')">
 					<Icon name="i-tabler-x" class="h-[18px] w-[18px]" />
 				</ButtonsButton>
@@ -17,7 +17,7 @@
 					<LibrarianStudentAvatar :name="studentName" class="!h-16 !w-16 !text-xl" />
 				</div>
 				<p class="mt-3 text-[16px] font-bold text-stone-900">{{ studentName }}</p>
-				<p class="text-[13.5px] text-stone-500">{{ student.studentIDNumber }} · {{ student.academicProgram ?? '—' }}</p>
+				<p class="text-[13.5px] text-stone-500">{{ student.studentIDNumber }} · {{ student.academicProgram ?? student.department ?? '—' }}</p>
 
 				<div class="mt-4 grid grid-cols-2 gap-x-4 gap-y-3.5">
 					<div class="col-span-2">
@@ -25,21 +25,27 @@
 						<p class="font-data text-[13.5px] font-medium text-stone-800">{{ student.user?.email ?? '—' }}</p>
 					</div>
 					<div>
-						<p class="mb-0.5 text-[12px] font-bold uppercase tracking-wide text-stone-400">Status</p>
-						<p class="text-[15px] font-medium capitalize text-stone-800">{{ student.registrationStatus }}</p>
+						<p class="mb-0.5 text-[12px] font-bold uppercase tracking-wide text-stone-400">{{ isStudent ? 'Status' : 'Type' }}</p>
+						<p class="text-[15px] font-medium capitalize text-stone-800">{{ isStudent ? student.registrationStatus : student.memberType }}</p>
 					</div>
-					<div>
+					<div v-if="isStudent">
 						<p class="mb-0.5 text-[12px] font-bold uppercase tracking-wide text-stone-400">Visit streak</p>
 						<p class="text-[15px] font-medium text-stone-800">{{ student.visitStreak }} days</p>
 					</div>
-					<div>
+					<div v-if="isStudent">
 						<p class="mb-0.5 text-[12px] font-bold uppercase tracking-wide text-stone-400">Knowledge score</p>
 						<p class="text-[15px] font-medium text-stone-800">{{ student.knowledgeScore }} pts</p>
 					</div>
 				</div>
 			</div>
 
-			<div v-if="student?.registrationStatus === 'pending'" class="flex gap-2.5 border-t border-stone-100 px-5 py-4">
+			<div v-if="student?.registrationStatus === 'rejected'" class="flex gap-2.5 border-t border-stone-100 px-5 py-4">
+				<ButtonsButton variant="primary" class="flex-1" @click="emit('reinstate', student)">
+					Reinstate approval
+				</ButtonsButton>
+			</div>
+
+			<div v-else-if="student?.registrationStatus === 'pending'" class="flex gap-2.5 border-t border-stone-100 px-5 py-4">
 				<ButtonsButton variant="danger" class="flex-1" @click="emit('reject', student)">
 					Reject
 				</ButtonsButton>
@@ -63,7 +69,11 @@ const emit = defineEmits<{
 	(e: 'close'): void
 	(e: 'approve', student: StudentRecord): void
 	(e: 'reject', student: StudentRecord): void
+	(e: 'reinstate', student: StudentRecord): void
 }>()
+
+// Faculty and staff members have no points or streak, and show their type instead of a registration status.
+const isStudent = computed(() => (props.student?.memberType ?? 'student') === 'student')
 
 const studentName = computed(() => {
 	const user = props.student?.user

@@ -26,7 +26,7 @@
 			The Hall of Fame couldn't load. It'll try again in a moment.
 		</p>
 
-		<ul v-else class="no-scrollbar -mx-4 flex snap-x gap-2.5 overflow-x-auto px-4 pb-0.5 md:mx-0 md:grid md:grid-cols-3 md:overflow-visible md:px-0 lg:grid-cols-6 xl:grid-cols-3 2xl:grid-cols-6">
+		<ul v-else class="no-scrollbar -mx-4 flex snap-x scroll-pl-4 gap-2.5 overflow-x-auto px-4 pb-0.5 md:mx-0 md:scroll-pl-0 md:grid md:grid-cols-3 md:overflow-visible md:px-0 lg:grid-cols-6 xl:grid-cols-3 2xl:grid-cols-6">
 			<li v-for="category in board.categories" :key="category.key" class="w-[152px] shrink-0 snap-start md:w-auto">
 				<button type="button" class="flex h-full w-full flex-col rounded-xl border px-3 py-2.5 text-left transition-colors duration-150"
 					:class="winnerIsYou(category) ? 'border-accent-200 bg-accent-50 hover:bg-accent-100' : 'border-stone-200 bg-parchment/60 hover:bg-parchment'"

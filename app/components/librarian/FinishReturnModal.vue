@@ -8,7 +8,7 @@
 			</p>
 
 			<fieldset class="space-y-2">
-				<legend class="mb-2 text-[13px] font-semibold text-stone-700">Condition</legend>
+				<legend class="mb-2 text-[13px] font-semibold text-stone-700">Condition<FieldRequired /></legend>
 				<label v-for="option in OPTIONS" :key="option.value"
 					class="flex cursor-pointer items-start gap-3 rounded-xl border px-4 py-3 transition-colors"
 					:class="condition === option.value
