@@ -82,6 +82,10 @@ export interface LoanRow {
   returnDate: string | null;
   /** Whole days until due; negative once overdue. */
   daysLeft: number;
+  /** Why the librarian rejected the student's last return report (null when it wasn't rejected). */
+  rejectionReason?: string | null;
+  /** When that rejected return can be reported again. */
+  canReportAgainAt?: string | null;
   book: BookBrief;
 }
 

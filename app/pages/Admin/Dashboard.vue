@@ -53,11 +53,10 @@
                         <dd class="font-bold tabular-nums text-stone-900">{{ row.value }}</dd>
                     </div>
                 </dl>
-                <NuxtLink v-if="overview?.pendingRegistrations" to="/librarian/students?tab=pending"
-                    class="mt-4 flex items-center justify-between gap-2 rounded-xl bg-amber-50 px-3.5 py-3 text-[13.5px] font-semibold text-amber-900 transition-colors hover:bg-amber-100">
-                    {{ overview.pendingRegistrations }} student {{ overview.pendingRegistrations === 1 ? 'registration is' : 'registrations are' }} waiting
-                    <Icon name="i-tabler-arrow-right" class="h-4 w-4 shrink-0" />
-                </NuxtLink>
+                <p v-if="overview?.pendingRegistrations"
+                    class="mt-4 rounded-xl bg-amber-50 px-3.5 py-3 text-[13.5px] font-semibold text-amber-900">
+                    {{ overview.pendingRegistrations }} student {{ overview.pendingRegistrations === 1 ? 'registration is' : 'registrations are' }} waiting for a librarian
+                </p>
             </section>
         </div>
     </div>

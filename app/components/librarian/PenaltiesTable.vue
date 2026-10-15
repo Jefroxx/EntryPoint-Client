@@ -1,5 +1,5 @@
 <template>
-	<LibrarianTableShell :columns="['Student', 'Book', 'Type', 'Amount', 'Computed', 'Status', '']" :loading="loading"
+	<LibrarianTableShell :columns="['Student', 'Book', 'Type', 'Amount', 'Computed', 'Status', 'Receipt no.', '']" :loading="loading"
 		:empty="penalties.length === 0" empty-text="No fines recorded. Fines appear automatically when a loan is returned late." min-width="860px">
 		<!-- Phones: one card per row, with the row's buttons on it. -->
 		<template #cards>
@@ -11,7 +11,7 @@
 					</div>
 					<p class="mt-2 text-[14.5px] font-semibold leading-snug text-stone-900">{{ penalty.loan?.copy?.book?.title ?? 'Removed book' }}</p>
 					<div class="mt-1 flex items-center justify-between gap-3">
-						<p class="text-[12.5px] capitalize text-stone-500">{{ penalty.penalty_type?.category ?? '—' }} · {{ formatDate(penalty.computedAt) }}</p>
+						<p class="text-[12.5px] capitalize text-stone-500">{{ penalty.penalty_type?.category ?? '—' }} · {{ formatDate(penalty.computedAt) }}<template v-if="penalty.receiptNumber"> · <span class="font-data normal-case">{{ penalty.receiptNumber }}</span></template></p>
 						<p class="font-data text-[16px] font-bold text-stone-900">{{ formatPeso(penalty.amount) }}</p>
 					</div>
 					<div v-if="penalty.paymentStatus === 'Unpaid'" class="mt-3" @click.stop>
@@ -38,6 +38,7 @@
 				<LibrarianStatusPill :label="penalty.paymentStatus"
 					:tone="penalty.paymentStatus === 'Paid' ? 'success' : 'danger'" />
 			</td>
+			<td class="font-data px-4 py-3 text-[13.5px] text-stone-700">{{ penalty.receiptNumber || '—' }}</td>
 			<td class="px-4 py-3" @click.stop>
 				<div v-if="penalty.paymentStatus === 'Unpaid'" class="flex justify-end">
 					<ButtonsButton v-if="penalty.loan?.status === 'Returned'" variant="primary" size="sm"
@@ -85,6 +86,7 @@ const penaltyFields = computed(() => {
 		{ label: 'Reason', value: p.penalty_type?.category },
 		{ label: 'Computed', value: formatDateTime(p.computedAt) },
 		{ label: 'Settled', value: p.settledAt ? formatDateTime(p.settledAt) : null },
+		{ label: 'Receipt no.', value: p.receiptNumber, mono: true },
 		{ label: 'Loan due', value: p.loan ? formatDateTime(p.loan.dueDate) : null },
 		{ label: 'Book returned', value: p.loan?.returnDate ? formatDateTime(p.loan.returnDate) : null },
 		{ label: 'Loan', value: p.loan ? `#${p.loan.loanID} · ${p.loan.status}` : null },

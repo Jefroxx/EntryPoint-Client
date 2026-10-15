@@ -19,7 +19,7 @@
 					<b class="text-stone-800">{{ preview.student.name }}</b> ({{ preview.student.studentIDNumber || 'no ID' }})
 				</p>
 				<p v-if="preview.report" class="mt-2 text-[13.5px] text-stone-600">
-					The student reported returning it on {{ formatDateTime(preview.report.reportedAt) }}.
+					The student returned it on {{ formatDateTime(preview.report.reportedAt) }}.
 				</p>
 				<p class="mt-2 text-[13.5px] text-stone-600">
 					Due {{ formatDateTime(preview.loan.dueAt) }}. {{ words.outcome }}
@@ -42,9 +42,22 @@
 				<p class="mt-2.5 text-[13.5px]" :class="feePaid ? 'text-emerald-900' : 'text-amber-900'">{{ feeOutcome }}</p>
 			</section>
 
+			<!-- The cashier's receipt for the fee collected now: written down with the fine. -->
+			<div v-if="needsReceipt" class="rounded-xl border border-dashed border-amber-400 bg-amber-50/60 p-3">
+				<label for="return-receipt" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">Cashier receipt no.<FieldRequired /></label>
+				<input id="return-receipt" v-model="receiptNumber" type="text" autocomplete="off" maxlength="50" placeholder="e.g. OR-2026-00123"
+					class="font-data h-11 w-full rounded-[10px] border border-stone-200 bg-white px-3 text-[13.5px] text-stone-900 outline-none focus:border-accent-500 focus:ring-2 focus:ring-accent-200">
+				<p class="mt-1.5 text-[12.5px] text-stone-600">Copy it from the cashier's official receipt. It is saved with this fine.</p>
+			</div>
+
 			<p v-else-if="kind !== 'reject'" class="flex items-center gap-2 rounded-xl bg-emerald-50 px-4 py-3 text-[14px] font-medium text-emerald-900">
 				<Icon name="i-tabler-circle-check" class="h-4 w-4" aria-hidden="true" />No late fee. The book is not overdue, or its collection has no fine rule.
 			</p>
+
+			<section v-if="kind === 'reject'" class="rounded-2xl border border-red-200 bg-red-50 p-4">
+				<p class="text-[12px] font-bold uppercase tracking-wide text-red-800">Reason the student will see</p>
+				<p class="mt-1 text-[14px] text-red-950">{{ reason.trim() }}</p>
+			</section>
 
 			<p v-if="preview.student.unpaidFinesTotal > 0" class="rounded-lg bg-amber-50 px-3 py-2 text-[13px] font-medium text-amber-900">
 				{{ preview.student.name }} also owes <b class="tabular-nums">{{ formatPeso(preview.student.unpaidFinesTotal) }}</b> in unpaid fines from other loans.
@@ -53,6 +66,21 @@
 
 		<!-- Step 1: everything about the return on one screen. -->
 		<div v-else-if="preview" class="space-y-4">
+			<!-- Rejecting: the student is told why, so a reason is required. -->
+			<section v-if="kind === 'reject'" class="rounded-2xl border border-stone-200 p-4">
+				<p class="mb-2 text-[13.5px] font-semibold text-stone-800">Reason for rejecting<FieldRequired /></p>
+				<div class="mb-2 flex flex-wrap gap-2">
+					<button v-for="r in REJECT_REASONS" :key="r" type="button"
+						class="rounded-full border px-3 py-1.5 text-[13px] font-semibold transition-colors"
+						:class="reasonChoice === r ? 'border-accent-500 bg-accent-500 text-white' : 'border-stone-200 text-stone-600 hover:bg-stone-50'"
+						@click="chooseReason(r)">{{ r }}</button>
+				</div>
+				<label for="reject-reason" class="sr-only">Reason</label>
+				<textarea id="reject-reason" v-model="reason" rows="3" maxlength="500" placeholder="Tell the student why the report was rejected."
+					class="w-full resize-none rounded-[10px] border border-stone-200 bg-white px-3 py-2 text-[13.5px] text-stone-900 outline-none focus:border-accent-500 focus:ring-2 focus:ring-accent-200" />
+				<p class="mt-1 text-[12.5px] text-stone-600">The student will see this message.</p>
+			</section>
+
 			<!-- The fee is already on record as paid: the window says so itself and asks nothing. -->
 			<section v-if="owesFee && alreadyPaid" role="status" class="rounded-2xl border border-emerald-300 bg-emerald-50 p-4">
 				<div class="flex items-start gap-3">
@@ -162,7 +190,7 @@
 				<ButtonsButton variant="ghost" :disabled="busy" @click="step = 'details'">
 					<Icon name="i-tabler-arrow-left" class="h-3.5 w-3.5" />Back
 				</ButtonsButton>
-				<ButtonsButton :variant="kind === 'reject' ? 'danger' : 'primary'" :disabled="busy" @click="confirm">
+				<ButtonsButton :variant="kind === 'reject' ? 'danger' : 'primary'" :disabled="busy || needsReceiptNumber" @click="confirm">
 					<Icon v-if="busy" name="i-tabler-loader-2" class="h-3.5 w-3.5 animate-spin" />
 					<Icon v-else :name="words.icon" class="h-3.5 w-3.5" />
 					{{ confirmLabel }}
@@ -170,7 +198,7 @@
 			</template>
 			<template v-else>
 				<ButtonsButton variant="ghost" :disabled="busy" @click="emit('close')">Cancel</ButtonsButton>
-				<ButtonsButton variant="primary" :disabled="loading || !preview || needsAnswer" @click="step = 'confirm'">
+				<ButtonsButton variant="primary" :disabled="loading || !preview || needsAnswer || needsReason" @click="step = 'confirm'">
 					Continue<Icon name="i-tabler-arrow-right" class="h-3.5 w-3.5" />
 				</ButtonsButton>
 			</template>
@@ -194,7 +222,7 @@ const props = defineProps<{
 const emit = defineEmits<{
 	(e: 'close'): void
 	/** `finePaid` is undefined when there is nothing to answer (no fee, or a fee already on record as paid). */
-	(e: 'submit', payload: { finePaid: boolean | undefined }): void
+	(e: 'submit', payload: { finePaid: boolean | undefined; receiptNumber?: string; reason?: string }): void
 }>()
 
 const kind = computed(() => props.mode ?? 'return')
@@ -215,7 +243,7 @@ const WORDS = {
 	reject: {
 		title: 'Reject this report?', subtitle: "Check the details, then continue. The book stays on the student's loan.",
 		confirmTitle: 'Confirm the rejection', confirmSubtitle: 'This is the last step. Check it, then reject the report.',
-		about: 'You are about to reject the report for', outcome: 'The book stays on loan. The student is told it could not be verified and can report again after 6 hours.',
+		about: 'You are about to reject the report for', outcome: 'The book stays on loan. The student is told why it could not be verified and can report again after 6 hours.',
 		confirm: 'Yes, reject the report', icon: 'i-tabler-circle-x',
 	},
 } as const
@@ -233,7 +261,25 @@ const paid = ref<boolean | null>(null)
 // Two steps: the details (and the fee question), then a last look before anything is changed.
 const step = ref<'details' | 'confirm'>('details')
 
-watch(() => [props.open, props.preview?.loan.loanID], () => { paid.value = null; step.value = 'details' })
+// The cashier's receipt number for a fee collected with the return, and the reason for rejecting a self-return report.
+const receiptNumber = ref('')
+const reason = ref('')
+const reasonChoice = ref('')
+const REJECT_REASONS = ['Book not at the shelf', 'Wrong book', 'Book is damaged', 'Other']
+
+watch(() => [props.open, props.preview?.loan.loanID], () => {
+	paid.value = null
+	step.value = 'details'
+	receiptNumber.value = ''
+	reason.value = ''
+	reasonChoice.value = ''
+})
+
+function chooseReason(r: string) {
+	reasonChoice.value = r
+	// "Other" leaves the text for the librarian to write; the others start it off.
+	reason.value = r === 'Other' ? '' : r
+}
 
 const fine = computed(() => props.preview?.fine ?? { hasRule: false, unitsLate: 0, rateUnit: null, rate: null, amount: 0, onRecord: null })
 // Rejecting a report returns nothing, so there is no fee to ask about.
@@ -243,6 +289,10 @@ const owesFee = computed(() => kind.value !== 'reject' && !!props.preview && pro
 const alreadyPaid = computed(() => fine.value.onRecord?.paymentStatus === 'Paid')
 const needsAnswer = computed(() => owesFee.value && !alreadyPaid.value && paid.value === null)
 const feePaid = computed(() => alreadyPaid.value || paid.value === true)
+// Collecting the fee now needs the cashier's receipt number; rejecting needs a reason.
+const needsReceipt = computed(() => owesFee.value && !alreadyPaid.value && paid.value === true)
+const needsReceiptNumber = computed(() => needsReceipt.value && !receiptNumber.value.trim())
+const needsReason = computed(() => kind.value === 'reject' && !reason.value.trim())
 
 const feeOutcome = computed(() => {
 	if (alreadyPaid.value) return 'It was already paid, so there is nothing more to collect.'
@@ -292,7 +342,7 @@ const loanFields = computed(() => {
 	const l = props.preview?.loan
 	if (!l) return []
 	return [
-		...(props.preview?.report ? [{ label: 'Reported', value: formatDateTime(props.preview.report.reportedAt) }] : []),
+		...(props.preview?.report ? [{ label: 'Returned', value: formatDateTime(props.preview.report.reportedAt) }] : []),
 		{ label: 'Checked out', value: formatDateTime(l.checkoutAt) },
 		{ label: 'Due', value: formatDateTime(l.dueAt) },
 		{ label: 'Loan length', value: dayCount(l.checkoutAt, l.dueAt) },
@@ -309,6 +359,10 @@ const loanPill = computed<{ label: string; tone: 'info' | 'warning' | 'danger' |
 
 function confirm() {
 	// Only send an answer when the librarian gave one; a fee already on record as paid stays as it is.
-	emit('submit', { finePaid: owesFee.value && !alreadyPaid.value ? (paid.value as boolean) : undefined })
+	emit('submit', {
+		finePaid: owesFee.value && !alreadyPaid.value ? (paid.value as boolean) : undefined,
+		receiptNumber: needsReceipt.value ? receiptNumber.value.trim() : undefined,
+		reason: kind.value === 'reject' ? reason.value.trim() : undefined,
+	})
 }
 </script>

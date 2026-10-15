@@ -14,15 +14,16 @@
 
         <!-- Accession Record (a row per book, its copies' accession numbers listed) and Book Catalog
              (a row per copy with the fuller record) share the shelf numbers. -->
-        <div v-if="activeTab === 'accession' || activeTab === 'catalog'" class="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <LibrarianCatalogStatTile label="Total Books" :value="stats?.totalBooks ?? '—'"
-                    icon="i-tabler-book-2" tone="accent" />
-                <LibrarianCatalogStatTile label="Available Books" :value="stats?.availableBooks ?? '—'"
-                    icon="i-tabler-circle-check" tone="success" />
-                <LibrarianCatalogStatTile label="Borrowed Books" :value="stats?.borrowedBooks ?? '—'"
-                    icon="i-tabler-book" tone="warning" />
-                <LibrarianCatalogStatTile label="Overdue Books" :value="stats?.overdueBooks ?? '—'"
-                    icon="i-tabler-alert-circle" tone="danger" />
+        <div v-if="activeTab === 'accession' || activeTab === 'catalog'"
+            class="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <LibrarianCatalogStatTile label="Total Books" :value="stats?.totalBooks ?? '—'" icon="i-tabler-book-2"
+                tone="accent" />
+            <LibrarianCatalogStatTile label="Available Books" :value="stats?.availableBooks ?? '—'"
+                icon="i-tabler-circle-check" tone="success" />
+            <LibrarianCatalogStatTile label="Borrowed Books" :value="stats?.borrowedBooks ?? '—'" icon="i-tabler-book"
+                tone="warning" />
+            <LibrarianCatalogStatTile label="Overdue Books" :value="stats?.overdueBooks ?? '—'"
+                icon="i-tabler-alert-circle" tone="danger" />
         </div>
 
         <template v-if="activeTab === 'accession'">
@@ -31,8 +32,7 @@
                 <div
                     class="flex h-[42px] min-w-[200px] max-w-[320px] flex-1 items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 transition-shadow focus-within:ring-2 focus-within:ring-accent-200">
                     <Icon name="i-tabler-search" class="h-[15px] w-[15px] text-stone-400" />
-                    <input id="library-search" v-model="search" type="text"
-                        placeholder="Search book, author, or ISBN"
+                    <input id="library-search" v-model="search" type="text" placeholder="Search book, author, or ISBN"
                         class="w-full border-none bg-transparent text-[15px] text-stone-800 outline-none placeholder:text-stone-400" />
                 </div>
 
@@ -72,7 +72,8 @@
                 </ButtonsButton>
                 <ButtonsButton variant="ghost" size="sm" :disabled="books.current_page >= books.last_page"
                     @click="goToPage(books.current_page + 1)">
-                    Next<Icon name="i-tabler-chevron-right" class="h-3.5 w-3.5" />
+                    Next
+                    <Icon name="i-tabler-chevron-right" class="h-3.5 w-3.5" />
                 </ButtonsButton>
             </div>
         </template>
@@ -85,66 +86,65 @@
             ]" />
 
             <template v-if="catalogView === 'copies'">
-            <div class="phone-toolbar mb-4 flex flex-wrap items-center gap-2">
-                <div
-                    class="flex h-[42px] min-w-[200px] max-w-[320px] flex-1 items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 transition-shadow focus-within:ring-2 focus-within:ring-accent-200">
-                    <Icon name="i-tabler-search" class="h-[15px] w-[15px] text-stone-400" />
-                    <input id="copy-search" v-model="copySearch" type="text"
-                        placeholder="Search accession no., title, author, or ISBN"
-                        class="w-full border-none bg-transparent text-[15px] text-stone-800 outline-none placeholder:text-stone-400" />
+                <div class="phone-toolbar mb-4 flex flex-wrap items-center gap-2">
+                    <div
+                        class="flex h-[42px] min-w-[200px] max-w-[320px] flex-1 items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 transition-shadow focus-within:ring-2 focus-within:ring-accent-200">
+                        <Icon name="i-tabler-search" class="h-[15px] w-[15px] text-stone-400" />
+                        <input id="copy-search" v-model="copySearch" type="text"
+                            placeholder="Search accession no., title, author, or ISBN"
+                            class="w-full border-none bg-transparent text-[15px] text-stone-800 outline-none placeholder:text-stone-400" />
+                    </div>
+
+                    <select v-model="copySubjectFilter" aria-label="Filter by category"
+                        class="h-[42px] rounded-xl border bg-white px-3 text-[14px] outline-none transition-colors hover:bg-stone-50 focus:ring-2 focus:ring-accent-200"
+                        :class="copySubjectFilter ? 'border-accent-300 text-stone-800' : 'border-stone-200 text-stone-500'">
+                        <option value="">All Categories</option>
+                        <option v-for="s in subjects" :key="s.subjectID" :value="s.subjectID">{{ s.name }}</option>
+                    </select>
+                    <select v-model="copyAreaFilter" aria-label="Filter by area of the library"
+                        class="h-[42px] rounded-xl border bg-white px-3 text-[14px] outline-none transition-colors hover:bg-stone-50 focus:ring-2 focus:ring-accent-200"
+                        :class="copyAreaFilter ? 'border-accent-300 text-stone-800' : 'border-stone-200 text-stone-500'">
+                        <option value="">All Areas</option>
+                        <option v-for="(label, area) in LIBRARY_AREAS" :key="area" :value="area">{{ label }}</option>
+                    </select>
+                    <select v-model="copyStatusFilter" aria-label="Filter by status"
+                        class="h-[42px] rounded-xl border bg-white px-3 text-[14px] outline-none transition-colors hover:bg-stone-50 focus:ring-2 focus:ring-accent-200"
+                        :class="copyStatusFilter ? 'border-accent-300 text-stone-800' : 'border-stone-200 text-stone-500'">
+                        <option value="">All Status</option>
+                        <option value="available">On the shelf</option>
+                        <option value="borrowed">Borrowed</option>
+                        <option value="damaged">Damaged</option>
+                        <option value="lost">Lost</option>
+                    </select>
+                    <div class="flex-1"></div>
+
+                    <LibrarianResetFiltersButton @click="clearCopyFilters" />
+                    <ButtonsButton variant="primary" @click="openAddCopies()">
+                        <Icon name="i-tabler-copy-plus" class="h-3.5 w-3.5" />Add Book Copy
+                    </ButtonsButton>
                 </div>
 
-                <select v-model="copySubjectFilter" aria-label="Filter by category"
-                    class="h-[42px] rounded-xl border bg-white px-3 text-[14px] outline-none transition-colors hover:bg-stone-50 focus:ring-2 focus:ring-accent-200"
-                    :class="copySubjectFilter ? 'border-accent-300 text-stone-800' : 'border-stone-200 text-stone-500'">
-                    <option value="">All Categories</option>
-                    <option v-for="s in subjects" :key="s.subjectID" :value="s.subjectID">{{ s.name }}</option>
-                </select>
-                <select v-model="copyAreaFilter" aria-label="Filter by area of the library"
-                    class="h-[42px] rounded-xl border bg-white px-3 text-[14px] outline-none transition-colors hover:bg-stone-50 focus:ring-2 focus:ring-accent-200"
-                    :class="copyAreaFilter ? 'border-accent-300 text-stone-800' : 'border-stone-200 text-stone-500'">
-                    <option value="">All Areas</option>
-                    <option v-for="(label, area) in LIBRARY_AREAS" :key="area" :value="area">{{ label }}</option>
-                </select>
-                <select v-model="copyStatusFilter" aria-label="Filter by status"
-                    class="h-[42px] rounded-xl border bg-white px-3 text-[14px] outline-none transition-colors hover:bg-stone-50 focus:ring-2 focus:ring-accent-200"
-                    :class="copyStatusFilter ? 'border-accent-300 text-stone-800' : 'border-stone-200 text-stone-500'">
-                    <option value="">All Status</option>
-                    <option value="available">On the shelf</option>
-                    <option value="borrowed">Borrowed</option>
-                    <option value="damaged">Damaged</option>
-                    <option value="lost">Lost</option>
-                </select>
-                <div class="flex-1"></div>
+                <LibrarianBookCatalogTable :copies="copies?.data ?? []" :loading="copiesPending"
+                    :filtered="hasCopyFilters" @view="(copy) => openBookDetail(copy.book)"
+                    @edit-book="(copy) => openEditBook(copy.book)" @edit-copy="openEditCopy" @add-copy="openAddCopies"
+                    @remove-copy="openRemoveCopy" />
 
-                <LibrarianResetFiltersButton @click="clearCopyFilters" />
-                <ButtonsButton variant="ghost" @click="openAddCopies()">
-                    <Icon name="i-tabler-copy-plus" class="h-3.5 w-3.5" />Add Book Copy
-                </ButtonsButton>
-                <ButtonsButton variant="primary" @click="openAddBook">
-                    <Icon name="i-tabler-plus" class="h-3.5 w-3.5" />Add New Book
-                </ButtonsButton>
-            </div>
+                <div v-if="copies" class="mt-3 flex items-center justify-between text-[13.5px] text-stone-400">
+                    <span>Showing {{ copies.data.length }} of {{ copies.total }} copies</span>
+                    <span>Page {{ copies.current_page }} of {{ copies.last_page }}</span>
+                </div>
 
-            <LibrarianBookCatalogTable :copies="copies?.data ?? []" :loading="copiesPending" :filtered="hasCopyFilters"
-                @view="(copy) => openBookDetail(copy.book)" @edit-book="(copy) => openEditBook(copy.book)"
-                @edit-copy="openEditCopy" @add-copy="openAddCopies" @remove-copy="openRemoveCopy" />
-
-            <div v-if="copies" class="mt-3 flex items-center justify-between text-[13.5px] text-stone-400">
-                <span>Showing {{ copies.data.length }} of {{ copies.total }} copies</span>
-                <span>Page {{ copies.current_page }} of {{ copies.last_page }}</span>
-            </div>
-
-            <div v-if="copies && copies.last_page > 1" class="mt-3 flex items-center justify-center gap-2">
-                <ButtonsButton variant="ghost" size="sm" :disabled="copies.current_page <= 1"
-                    @click="goToCopyPage(copies.current_page - 1)">
-                    <Icon name="i-tabler-chevron-left" class="h-3.5 w-3.5" />Previous
-                </ButtonsButton>
-                <ButtonsButton variant="ghost" size="sm" :disabled="copies.current_page >= copies.last_page"
-                    @click="goToCopyPage(copies.current_page + 1)">
-                    Next<Icon name="i-tabler-chevron-right" class="h-3.5 w-3.5" />
-                </ButtonsButton>
-            </div>
+                <div v-if="copies && copies.last_page > 1" class="mt-3 flex items-center justify-center gap-2">
+                    <ButtonsButton variant="ghost" size="sm" :disabled="copies.current_page <= 1"
+                        @click="goToCopyPage(copies.current_page - 1)">
+                        <Icon name="i-tabler-chevron-left" class="h-3.5 w-3.5" />Previous
+                    </ButtonsButton>
+                    <ButtonsButton variant="ghost" size="sm" :disabled="copies.current_page >= copies.last_page"
+                        @click="goToCopyPage(copies.current_page + 1)">
+                        Next
+                        <Icon name="i-tabler-chevron-right" class="h-3.5 w-3.5" />
+                    </ButtonsButton>
+                </div>
             </template>
 
             <template v-else>
@@ -168,7 +168,8 @@
                     </ButtonsButton>
                 </div>
 
-                <LibrarianStockLogTable :logs="stockLogs?.data ?? []" :loading="stockPending" :filtered="hasStockFilters" />
+                <LibrarianStockLogTable :logs="stockLogs?.data ?? []" :loading="stockPending"
+                    :filtered="hasStockFilters" />
 
                 <div v-if="stockLogs" class="mt-3 flex items-center justify-between text-[13.5px] text-stone-400">
                     <span>Showing {{ stockLogs.data.length }} of {{ stockLogs.total }} entries</span>
@@ -182,7 +183,8 @@
                     </ButtonsButton>
                     <ButtonsButton variant="ghost" size="sm" :disabled="stockLogs.current_page >= stockLogs.last_page"
                         @click="goToStockPage(stockLogs.current_page + 1)">
-                        Next<Icon name="i-tabler-chevron-right" class="h-3.5 w-3.5" />
+                        Next
+                        <Icon name="i-tabler-chevron-right" class="h-3.5 w-3.5" />
                     </ButtonsButton>
                 </div>
             </template>
@@ -192,8 +194,8 @@
             <div class="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <LibrarianCatalogStatTile label="Total Requests" :value="requestStats.total"
                     icon="i-tabler-clipboard-list" tone="accent" />
-                <LibrarianCatalogStatTile label="Pending Requests" :value="requestStats.pending"
-                    icon="i-tabler-clock" tone="warning" />
+                <LibrarianCatalogStatTile label="Pending Requests" :value="requestStats.pending" icon="i-tabler-clock"
+                    tone="warning" />
                 <LibrarianCatalogStatTile label="Approved Requests" :value="requestStats.approved"
                     icon="i-tabler-circle-check" tone="success" />
                 <LibrarianCatalogStatTile label="Rejected Requests" :value="requestStats.rejected"
@@ -236,8 +238,10 @@
                 <ButtonsButton variant="ghost" size="sm" :disabled="requestsPage <= 1" @click="requestsPage--">
                     <Icon name="i-tabler-chevron-left" class="h-3.5 w-3.5" />Previous
                 </ButtonsButton>
-                <ButtonsButton variant="ghost" size="sm" :disabled="requestsPage >= requestsTotalPages" @click="requestsPage++">
-                    Next<Icon name="i-tabler-chevron-right" class="h-3.5 w-3.5" />
+                <ButtonsButton variant="ghost" size="sm" :disabled="requestsPage >= requestsTotalPages"
+                    @click="requestsPage++">
+                    Next
+                    <Icon name="i-tabler-chevron-right" class="h-3.5 w-3.5" />
                 </ButtonsButton>
             </div>
         </template>
@@ -246,31 +250,29 @@
             <div class="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
                 <LibrarianCatalogStatTile label="Categories" :value="subjects.length" icon="i-tabler-tags"
                     tone="accent" />
-                <LibrarianCatalogStatTile label="With a Dewey code"
-                    :value="`${classifiedCount} of ${subjects.length}`" icon="i-tabler-circle-check"
-                    tone="success" />
-                <LibrarianCatalogStatTile class="col-span-2 sm:col-span-1" label="Largest category" :value="largestSubject?.name ?? '—'"
-                    icon="i-tabler-book-2" tone="warning" />
+                <LibrarianCatalogStatTile label="With a Dewey code" :value="`${classifiedCount} of ${subjects.length}`"
+                    icon="i-tabler-circle-check" tone="success" />
+                <LibrarianCatalogStatTile class="col-span-2 sm:col-span-1" label="Largest category"
+                    :value="largestSubject?.name ?? '—'" icon="i-tabler-book-2" tone="warning" />
             </div>
 
             <div class="phone-toolbar mb-4 flex flex-wrap items-center gap-2">
-                <LibrarianSearchInput id="category-search" v-model="categorySearch"
-                    placeholder="Search categories" />
+                <LibrarianSearchInput id="category-search" v-model="categorySearch" placeholder="Search categories" />
                 <div class="flex-1"></div>
                 <ButtonsButton variant="primary" class="toolbar-full" @click="openCategoryForm(null)">
                     <Icon name="i-tabler-plus" class="h-3.5 w-3.5" />Add Category
                 </ButtonsButton>
             </div>
 
-            <LibrarianCategoriesTable :subjects="filteredSubjects" :loading="subjectsPending"
-                @edit="openCategoryForm" @delete="askDeleteCategory" @view-book="openBookDetail" @show-books="showCategoryBooks" />
+            <LibrarianCategoriesTable :subjects="filteredSubjects" :loading="subjectsPending" @edit="openCategoryForm"
+                @delete="askDeleteCategory" @view-book="openBookDetail" @show-books="showCategoryBooks" />
 
             <div class="mt-3 flex items-center justify-between text-[13.5px] text-stone-400">
                 <span>Showing {{ filteredSubjects.length }} of {{ subjects.length }} categories</span>
                 <span>{{ totalBooks }} books total</span>
             </div>
         </template>
-    
+
 
         <LibrarianRequestReviewDrawer :open="isDrawerOpen" :suggestion="activeRequest" @close="isDrawerOpen = false"
             @approve="handleApprove" @reject="handleReject" />
@@ -303,7 +305,7 @@
             @confirm="handleDeleteCategory" />
 
         <AlertToast />
-    
+
     </div>
 </template>
 

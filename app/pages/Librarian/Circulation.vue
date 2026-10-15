@@ -71,10 +71,24 @@
                     <option value="Fulfilled">Fulfilled</option>
                 </select>
 
+                <select v-model="reservationBook" aria-label="Filter by book"
+                    class="h-[42px] max-w-[260px] rounded-xl border border-stone-200 bg-white px-3 text-[14px] text-stone-500 transition-colors hover:bg-stone-50">
+                    <option value="">All books</option>
+                    <option v-for="b in reservationBookOptions" :key="b.bookID" :value="b.bookID">{{ b.title }} ({{ b.count }})</option>
+                </select>
+
                 <div class="flex-1"></div>
 
-                <LibrarianResetFiltersButton @click="reservationSearch = ''; reservationStatus = 'open'" />
+                <LibrarianResetFiltersButton @click="reservationSearch = ''; reservationStatus = 'open'; reservationBook = ''" />
             </div>
+
+            <p v-if="reservationBookTitle" class="mb-3 flex flex-wrap items-center gap-2 text-[13px] text-stone-600">
+                Showing {{ filteredReservations.length }} reservations for
+                <button type="button" class="inline-flex items-center gap-1.5 rounded-full bg-accent-50 py-1 pl-3 pr-1.5 text-[13px] font-semibold text-crimson"
+                    aria-label="Clear the book filter" @click="reservationBook = ''">
+                    {{ reservationBookTitle }}<Icon name="i-tabler-x" class="h-3.5 w-3.5" />
+                </button>
+            </p>
 
             <LibrarianReservationsTable :reservations="pagedReservations" :queue-positions="queuePositions"
                 :loading="reservationsPending" @accept="handleAcceptReservation"
@@ -92,7 +106,29 @@
                     icon="i-tabler-clock" tone="warning" />
             </div>
 
-            <LibrarianSelfReturnTable :reports="selfReturns" :loading="selfReturnsPending"
+            <div class="phone-toolbar mb-4 flex flex-wrap items-center gap-2">
+                <LibrarianSearchInput id="self-return-search" v-model="selfReturnSearch" placeholder="Search student or book" />
+
+                <select v-model="selfReturnBook" aria-label="Filter by book"
+                    class="h-[42px] max-w-[260px] rounded-xl border border-stone-200 bg-white px-3 text-[14px] text-stone-500 transition-colors hover:bg-stone-50">
+                    <option value="">All books</option>
+                    <option v-for="b in selfReturnBookOptions" :key="b.bookID" :value="b.bookID">{{ b.title }} ({{ b.count }})</option>
+                </select>
+
+                <div class="flex-1"></div>
+
+                <LibrarianResetFiltersButton @click="selfReturnSearch = ''; selfReturnBook = ''" />
+            </div>
+
+            <p v-if="selfReturnBookTitle" class="mb-3 flex flex-wrap items-center gap-2 text-[13px] text-stone-600">
+                Showing {{ filteredSelfReturns.length }} of {{ selfReturns.length }} reports for
+                <button type="button" class="inline-flex items-center gap-1.5 rounded-full bg-accent-50 py-1 pl-3 pr-1.5 text-[13px] font-semibold text-crimson"
+                    aria-label="Clear the book filter" @click="selfReturnBook = ''">
+                    {{ selfReturnBookTitle }}<Icon name="i-tabler-x" class="h-3.5 w-3.5" />
+                </button>
+            </p>
+
+            <LibrarianSelfReturnTable :reports="filteredSelfReturns" :loading="selfReturnsPending"
                 @verify="handleVerifySelfReturn" @reject="handleRejectSelfReturn" />
         </template>
 
@@ -247,6 +283,8 @@ const reservationSearch = ref('')
 // 'open' = still to be dealt with: waiting for a decision, or accepted and waiting for pickup.
 const reservationStatus = ref<'' | 'open' | ReservationStatus>('open')
 const reservationPage = ref(1)
+// Filter by one book ('' = every book).
+const reservationBook = ref<number | ''>('')
 const RESERVATIONS_PER_PAGE = 10
 
 const reservationStats = computed(() => ({
@@ -268,12 +306,19 @@ const queuePositions = computed(() => {
     return positions
 })
 
+// The reservations the status filter lets through; the book list is built from these, so each count matches the table.
+const reservationsInStatus = computed(() => reservations.value.filter((r) => {
+    if (reservationStatus.value === 'open') return r.status === 'Waiting' || r.status === 'Accepted'
+    return !reservationStatus.value || r.status === reservationStatus.value
+}))
+
+const reservationBookOptions = computed(() => bookOptions(reservationsInStatus.value.map((r) => r.book)))
+const reservationBookTitle = computed(() => reservationBookOptions.value.find((b) => b.bookID === reservationBook.value)?.title ?? '')
+
 const filteredReservations = computed(() => {
     const term = reservationSearch.value.trim().toLowerCase()
-    return reservations.value.filter((r) => {
-        if (reservationStatus.value === 'open') {
-            if (r.status !== 'Waiting' && r.status !== 'Accepted') return false
-        } else if (reservationStatus.value && r.status !== reservationStatus.value) return false
+    return reservationsInStatus.value.filter((r) => {
+        if (reservationBook.value !== '' && r.book?.bookID !== reservationBook.value) return false
         if (!term) return true
         return (
             personName(r.student?.user).toLowerCase().includes(term) ||
@@ -290,8 +335,12 @@ const pagedReservations = computed(() => {
     return filteredReservations.value.slice(start, start + RESERVATIONS_PER_PAGE)
 })
 
-watch([reservationSearch, reservationStatus], () => {
+watch([reservationSearch, reservationStatus, reservationBook], () => {
     reservationPage.value = 1
+})
+// A book that has no reservations left in this view (handled, or another status picked) can't stay selected.
+watch(reservationBookOptions, (options) => {
+    if (reservationBook.value !== '' && !options.some((b) => b.bookID === reservationBook.value)) reservationBook.value = ''
 })
 
 // ---- Self-return reports (always the pending queue) ----
@@ -299,6 +348,42 @@ const { data: selfReturnResponse, pending: selfReturnsPending, execute: refetchS
     useLiveAsyncData('circ-self-returns', () => circulationService.fetchSelfReturnReports(), { lazy: true })
 
 const selfReturns = computed(() => selfReturnResponse.value?.reports ?? [])
+
+// Filter the pending reports by student or book (all in the browser, like the reservations).
+const selfReturnSearch = ref('')
+const selfReturnBook = ref<number | ''>('')
+
+const selfReturnBookOptions = computed(() => bookOptions(selfReturns.value.map((r) => r.loan?.copy?.book)))
+const selfReturnBookTitle = computed(() => selfReturnBookOptions.value.find((b) => b.bookID === selfReturnBook.value)?.title ?? '')
+
+const filteredSelfReturns = computed(() => {
+    const term = selfReturnSearch.value.trim().toLowerCase()
+    return selfReturns.value.filter((r) => {
+        if (selfReturnBook.value !== '' && r.loan?.copy?.book?.bookID !== selfReturnBook.value) return false
+        if (!term) return true
+        return (
+            personName(r.loan?.student?.user).toLowerCase().includes(term) ||
+            (r.loan?.copy?.book?.title ?? '').toLowerCase().includes(term)
+        )
+    })
+})
+
+// Same for a book whose last pending report was just handled.
+watch(selfReturnBookOptions, (options) => {
+    if (selfReturnBook.value !== '' && !options.some((b) => b.bookID === selfReturnBook.value)) selfReturnBook.value = ''
+})
+
+// The distinct books in a list, with how many rows each has, A to Z: the options of a per-book filter.
+function bookOptions(books: Array<{ bookID: number; title: string } | null | undefined>) {
+    const counts = new Map<number, { bookID: number; title: string; count: number }>()
+    for (const book of books) {
+        if (!book) continue
+        const entry = counts.get(book.bookID) ?? { bookID: book.bookID, title: book.title, count: 0 }
+        entry.count += 1
+        counts.set(book.bookID, entry)
+    }
+    return [...counts.values()].sort((a, b) => a.title.localeCompare(b.title))
+}
 
 // ---- Penalties ----
 const penaltySearch = ref('')
@@ -371,12 +456,12 @@ async function handleReturn(loan: LoanRecord) {
     }
 }
 
-async function confirmReturn(payload: { finePaid: boolean | undefined }) {
+async function confirmReturn(payload: { finePaid: boolean | undefined; receiptNumber?: string }) {
     const loan = returningLoan.value
     if (!loan) return
     returnBusy.value = true
     const ok = await perform(
-        () => circulationService.returnLoan(loan.uuid, payload.finePaid === undefined ? {} : { finePaid: payload.finePaid }),
+        () => circulationService.returnLoan(loan.uuid, payload.finePaid === undefined ? {} : { finePaid: payload.finePaid, receiptNumber: payload.receiptNumber }),
         'Book returned', 'Could not return book', refreshLoanData())
     returnBusy.value = false
     if (ok) isReturnOpen.value = false
@@ -471,15 +556,15 @@ async function openReportWindow(report: SelfReturnReportRecord, mode: 'verify' |
 const handleVerifySelfReturn = (report: SelfReturnReportRecord) => openReportWindow(report, 'verify')
 const handleRejectSelfReturn = (report: SelfReturnReportRecord) => openReportWindow(report, 'reject')
 
-async function confirmReport(payload: { finePaid: boolean | undefined }) {
+async function confirmReport(payload: { finePaid: boolean | undefined; receiptNumber?: string; reason?: string }) {
     const report = reportTarget.value
     if (!report) return
     reportBusy.value = true
     const ok = reportMode.value === 'verify'
         ? await perform(
-            () => circulationService.verifySelfReturn(report.uuid, payload.finePaid === undefined ? {} : { finePaid: payload.finePaid }),
+            () => circulationService.verifySelfReturn(report.uuid, payload.finePaid === undefined ? {} : { finePaid: payload.finePaid, receiptNumber: payload.receiptNumber }),
             'Return verified', 'Could not verify return', [refetchSelfReturns, ...refreshLoanData()])
-        : await perform(() => circulationService.rejectSelfReturn(report.uuid), 'Report rejected', 'Could not reject report', [refetchSelfReturns])
+        : await perform(() => circulationService.rejectSelfReturn(report.uuid, { reason: payload.reason ?? '' }), 'Report rejected', 'Could not reject report', [refetchSelfReturns])
     reportBusy.value = false
     if (ok) isReportOpen.value = false
 }
@@ -494,11 +579,11 @@ function handleSettle(penalty: PenaltyRecord) {
     isSettleOpen.value = true
 }
 
-async function confirmSettle() {
+async function confirmSettle(payload: { receiptNumber: string }) {
     const penalty = settlingPenalty.value
     if (!penalty) return
     settleBusy.value = true
-    const ok = await perform(() => circulationService.settlePenalty(penalty.uuid), 'Fine settled', 'Could not settle fine', [refetchPenalties, refetchPenaltyStats])
+    const ok = await perform(() => circulationService.settlePenalty(penalty.uuid, { receiptNumber: payload.receiptNumber }), 'Fine settled', 'Could not settle fine', [refetchPenalties, refetchPenaltyStats])
     settleBusy.value = false
     if (ok) isSettleOpen.value = false
 }

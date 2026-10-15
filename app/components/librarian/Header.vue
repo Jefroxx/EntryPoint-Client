@@ -15,7 +15,7 @@
             </button>
 
             <!-- The sidebar (and its logo) is out of sight on a phone, so the header carries the wordmark. -->
-            <NuxtLink to="/librarian/dashboard" aria-label="EntryPoint home" class="flex items-center lg:hidden">
+            <NuxtLink :to="staffRole === 'admin' ? '/admin/dashboard' : '/librarian/dashboard'" aria-label="EntryPoint home" class="flex items-center lg:hidden">
                 <img src="~/assets/css/logo/EntryPointLogo.png" alt="" class="h-7 w-auto max-w-none" />
             </NuxtLink>
 
@@ -118,6 +118,7 @@ defineEmits<{
 }>()
 
 const { firstName, lastName, role, signOut } = useAuthSession()
+const staffRole = useCookie(SESSION_COOKIES.librarian.staffRole)
 
 const initials = computed(() => {
     const a = (firstName.value ?? '').trim().charAt(0)

@@ -10,6 +10,12 @@ export default defineNuxtRouteMiddleware((to) => {
 
   if (import.meta.client) useAuthSession('librarian').endOtherSession()
 
+  // Administrators have their own side. The librarian pages are not for them (the server refuses their requests too);
+  // the notifications page is shared.
+  if (useCookie(SESSION_COOKIES.librarian.staffRole).value === 'admin' && !to.path.toLowerCase().startsWith('/librarian/notifications')) {
+    return navigateTo('/admin/dashboard')
+  }
+
   // A role that can't use this area goes to the dashboard instead (the server refuses its requests anyway).
   const needed = permissionForPath(to.path)
   if (needed && !useStaffAccess().can(needed)) return navigateTo('/librarian/dashboard')

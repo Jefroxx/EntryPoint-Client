@@ -1,5 +1,5 @@
 <template>
-	<LibrarianTableShell :columns="['Student', 'Book', 'Reported At', 'Status', '']" :loading="loading"
+	<LibrarianTableShell :columns="['Student', 'Book', 'Returned At', 'Status', '']" :loading="loading"
 		:empty="reports.length === 0" empty-text="No self-return reports are waiting for verification.">
 		<!-- Phones: one card per row, with the row's buttons on it. -->
 		<template #cards>
@@ -10,7 +10,7 @@
 						<LibrarianStatusPill label="Pending" tone="warning" class="shrink-0" />
 					</div>
 					<p class="mt-2 text-[14.5px] font-semibold leading-snug text-stone-900">{{ report.loan?.copy?.book?.title ?? 'Removed book' }}</p>
-					<p class="mt-0.5 text-[12.5px] text-stone-500">Reported {{ formatDateTime(report.reportedAt) }}</p>
+					<p class="mt-0.5 text-[12.5px] text-stone-500">Returned {{ formatDateTime(report.reportedAt) }}</p>
 					<div class="mt-3 flex gap-2" @click.stop>
 						<ButtonsButton variant="danger" class="flex-1" @click="emit('reject', report)">Reject</ButtonsButton>
 						<ButtonsButton variant="primary" class="flex-[1.4]" @click="emit('verify', report)">Verify</ButtonsButton>
@@ -75,7 +75,7 @@ const fields = computed(() => {
 		{ label: 'Student ID', value: loan?.student?.studentIDNumber, mono: true },
 		{ label: 'Program', value: loan?.student?.academicProgram },
 		{ label: 'Accession no.', value: loan?.copy?.accessionNumber, mono: true },
-		{ label: 'Reported', value: formatDateTime(selected.value.reportedAt) },
+		{ label: 'Returned', value: formatDateTime(selected.value.reportedAt) },
 		{ label: 'Checked out', value: loan ? formatDateTime(loan.checkoutDate) : null },
 		{ label: 'Due', value: loan ? formatDateTime(loan.dueDate) : null },
 		{ label: 'Loan', value: loan ? `#${loan.loanID}` : null, mono: true },
