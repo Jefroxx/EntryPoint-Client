@@ -132,9 +132,37 @@
                 @verify="handleVerifySelfReturn" @reject="handleRejectSelfReturn" />
         </template>
 
+        <!-- Lost and damaged copies -->
+        <template v-else-if="activeTab === 'lostdamaged'">
+            <div class="phone-stats mb-5 grid grid-cols-2 gap-3 sm:max-w-[560px]">
+                <LibrarianCatalogStatTile label="Lost" :value="lostDamaged?.stats.lost ?? '—'"
+                    icon="i-tabler-help-hexagon" tone="danger" />
+                <LibrarianCatalogStatTile label="Damaged" :value="lostDamaged?.stats.damaged ?? '—'"
+                    icon="i-tabler-book-off" tone="warning" />
+            </div>
+
+            <div class="phone-toolbar mb-4 flex flex-wrap items-center gap-2">
+                <LibrarianSearchInput id="lost-damaged-search" v-model="lostDamagedSearch" placeholder="Search book, accession no. or student" />
+
+                <select v-model="lostDamagedStatus" aria-label="Filter by status"
+                    class="h-[42px] rounded-xl border border-stone-200 bg-white px-3 text-[14px] text-stone-500 transition-colors hover:bg-stone-50">
+                    <option value="">Lost and damaged</option>
+                    <option value="lost">Lost only</option>
+                    <option value="damaged">Damaged only</option>
+                </select>
+
+                <div class="flex-1"></div>
+
+                <LibrarianResetFiltersButton @click="lostDamagedSearch = ''; lostDamagedStatus = ''" />
+            </div>
+
+            <LibrarianLostDamagedTable :copies="filteredLostDamaged" :loading="lostDamagedPending"
+                @restore="handleRestoreCopy" @remove="openRemoveCopy" />
+        </template>
+
         <!-- Penalties -->
         <template v-else>
-            <div class="phone-stats mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <div class="phone-stats mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <LibrarianCatalogStatTile label="Unpaid Fines" :value="penaltyStats?.unpaidCount ?? '—'"
                     icon="i-tabler-alert-circle" tone="danger" />
                 <LibrarianCatalogStatTile label="Unpaid Total"
@@ -142,6 +170,8 @@
                     icon="i-tabler-coin" tone="warning" />
                 <LibrarianCatalogStatTile label="Settled" :value="penaltyStats?.paidCount ?? '—'"
                     icon="i-tabler-circle-check" tone="success" />
+                <LibrarianCatalogStatTile :label="`Unpaid ${longUnpaidDays}+ Days`" :value="penaltyStats?.longUnpaidCount ?? '—'"
+                    icon="i-tabler-hourglass-high" tone="danger" />
             </div>
 
             <div class="phone-toolbar mb-4 flex flex-wrap items-center gap-2">
@@ -152,6 +182,7 @@
                     <option value="">All fines</option>
                     <option value="Unpaid">Unpaid</option>
                     <option value="Paid">Paid</option>
+                    <option value="longUnpaid">Unpaid {{ longUnpaidDays }}+ days</option>
                 </select>
 
                 <div class="flex-1"></div>
@@ -160,7 +191,7 @@
             </div>
 
             <LibrarianPenaltiesTable :penalties="penalties?.data ?? []" :loading="penaltiesPending"
-                @settle="handleSettle" />
+                :long-unpaid-days="longUnpaidDays" @settle="handleSettle" />
 
             <LibrarianPagination v-if="penalties" :shown="penalties.data.length" :total="penalties.total"
                 noun="fines" :page="penalties.current_page" :last-page="penalties.last_page"
@@ -183,6 +214,8 @@
         <LibrarianReturnLoanModal :open="isReturnOpen" :preview="returnPreview" :loading="returnLoading" :error="returnError"
             :busy="returnBusy" @close="isReturnOpen = false" @submit="confirmReturn" />
 
+        <LibrarianRemoveCopyModal :open="isRemoveCopyOpen" :copy="removingCopy" :busy="removeCopyBusy"
+            @close="isRemoveCopyOpen = false" @submit="saveRemoveCopy" />
         <LibrarianFinishReturnModal :open="isFinishOpen" :summary="finishSummary" :busy="finishBusy"
             @close="isFinishOpen = false" @submit="saveFinishReturn" />
 
@@ -200,7 +233,9 @@ import {
     type SelfReturnReportRecord,
     type ReturnPreview,
     type PenaltyRecord,
+    type PenaltyFilter,
 } from '~/services/circulationService'
+import { librarianService, type LostDamagedCopy, type RemoveReason } from '~/services/librarianService'
 import AlertToast from '~/api/alert/AlertToast.vue'
 
 definePageMeta({
@@ -212,7 +247,7 @@ useHead({ title: 'Circulation' })
 
 
 const route = useRoute()
-const activeTab = ref(['loans', 'reservations', 'selfreturn', 'penalties'].includes(String(route.query.tab)) ? String(route.query.tab) : 'loans')
+const activeTab = ref(['loans', 'reservations', 'selfreturn', 'lostdamaged', 'penalties'].includes(String(route.query.tab)) ? String(route.query.tab) : 'loans')
 const isCheckoutOpen = ref(false)
 // Checking out a reservation starts with a scan of its pickup slip; the form is the manual way.
 const isScanOpen = ref(false)
@@ -387,11 +422,14 @@ function bookOptions(books: Array<{ bookID: number; title: string } | null | und
 
 // ---- Penalties ----
 const penaltySearch = ref('')
-const penaltyStatus = ref<'' | 'Unpaid' | 'Paid'>('')
+const penaltyStatus = ref<'' | PenaltyFilter>('')
 const penaltyPage = ref(1)
 
 const { data: penaltyStats, execute: refetchPenaltyStats } =
     useLiveAsyncData('circ-penalty-stats', () => circulationService.fetchPenaltyStats(), { lazy: true })
+
+// The server decides how long is "long unpaid"; 30 until the stats arrive.
+const longUnpaidDays = computed(() => penaltyStats.value?.longUnpaidDays ?? 30)
 
 const { data: penalties, pending: penaltiesPending, execute: refetchPenalties } = useLiveAsyncData(
     'circ-penalties',
@@ -418,18 +456,65 @@ function goToPenaltyPage(next: number) {
     refetchPenalties()
 }
 
+// ---- Lost and damaged copies ----
+const lostDamagedSearch = ref('')
+const lostDamagedStatus = ref<'' | 'lost' | 'damaged'>('')
+
+const { data: lostDamaged, pending: lostDamagedPending, execute: refetchLostDamaged } =
+    useLiveAsyncData('circ-lost-damaged', () => librarianService.fetchLostDamagedCopies(), { lazy: true })
+
+const filteredLostDamaged = computed(() => {
+    const term = lostDamagedSearch.value.trim().toLowerCase()
+    return (lostDamaged.value?.copies ?? []).filter((copy) => {
+        if (lostDamagedStatus.value && copy.status !== lostDamagedStatus.value) return false
+        if (!term) return true
+        return copy.book.title.toLowerCase().includes(term)
+            || String(copy.accessionNumber) === term
+            || (copy.lastLoan?.studentName ?? '').toLowerCase().includes(term)
+            || (copy.lastLoan?.studentIDNumber ?? '').toLowerCase().includes(term)
+    })
+})
+
+// Found (lost) or repaired (damaged): the copy goes back on the shelf.
+async function handleRestoreCopy(copy: LostDamagedCopy) {
+    await perform(() => librarianService.updateCopy(copy.uuid, { status: 'available' }),
+        `Accession no. ${copy.accessionNumber} is back on the shelf`, 'Could not update this copy', [refetchLostDamaged])
+}
+
+// Removing it takes it out of the catalog for good, with a reason, through the same window as the Library page.
+const isRemoveCopyOpen = ref(false)
+const removingCopy = ref<LostDamagedCopy | null>(null)
+const removeCopyBusy = ref(false)
+
+function openRemoveCopy(copy: LostDamagedCopy) {
+    removingCopy.value = copy
+    isRemoveCopyOpen.value = true
+}
+
+async function saveRemoveCopy(payload: { reason: RemoveReason; note: string | undefined }) {
+    const copy = removingCopy.value
+    if (!copy) return
+    removeCopyBusy.value = true
+    const ok = await perform(() => librarianService.removeCopy(copy.uuid, payload),
+        `Accession no. ${copy.accessionNumber} removed`, 'Could not remove this copy', [refetchLostDamaged])
+    removeCopyBusy.value = false
+    if (ok) isRemoveCopyOpen.value = false
+}
+
 // ---- Tabs ----
 const tabs = computed(() => [
     { label: 'Active Loans', short: 'Loans', value: 'loans', badge: loanStats.value?.received || undefined },
     { label: 'Reservations', short: 'Reserved', value: 'reservations', badge: reservationStats.value.waiting },
     { label: 'Self-Return Reports', short: 'Self-returns', value: 'selfreturn', badge: selfReturns.value.length },
+    { label: 'Lost & Damaged', short: 'Lost', value: 'lostdamaged', badge: lostDamaged.value?.copies.length || undefined },
     { label: 'Penalties', short: 'Fines', value: 'penalties' },
 ])
 
 // ---- Actions ----
 const { perform } = useAction()
 
-const refreshLoanData = () => [refetchLoans, refetchLoanStats, refetchPenalties, refetchPenaltyStats]
+// A return can leave a copy marked damaged, so the Lost and damaged tab refreshes with the loans.
+const refreshLoanData = () => [refetchLoans, refetchLoanStats, refetchPenalties, refetchPenaltyStats, refetchLostDamaged]
 
 // Returning a book asks first: the window shows the loan, the book and the student, and for a late book it
 // asks whether the fee has been paid.

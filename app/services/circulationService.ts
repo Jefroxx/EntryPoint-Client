@@ -117,7 +117,13 @@ export interface PenaltyStats {
   unpaidCount: number;
   unpaidTotal: number;
   paidCount: number;
+  /** Unpaid fines whose book came back more than `longUnpaidDays` days ago. */
+  longUnpaidCount: number;
+  longUnpaidDays: number;
 }
+
+/** `longUnpaid`: unpaid long after the book came back (see PenaltyStats.longUnpaidDays). */
+export type PenaltyFilter = "Unpaid" | "Paid" | "longUnpaid";
 
 export interface CheckoutPayload {
   studentID: number;
@@ -234,7 +240,7 @@ class CirculationServiceClass extends BaseService {
     return this.request<{ message: string }>(`/librarian/self-return-reports/${reportUuid}/reject`, { method: "POST", body: payload });
   }
 
-  fetchPenalties(params: { search?: string; status?: "Unpaid" | "Paid"; page?: number; perPage?: number } = {}) {
+  fetchPenalties(params: { search?: string; status?: PenaltyFilter; page?: number; perPage?: number } = {}) {
     return this.request<Paginated<PenaltyRecord>>("/librarian/penalties", { query: params });
   }
 
