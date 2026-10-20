@@ -71,10 +71,24 @@
                     <option value="Fulfilled">Fulfilled</option>
                 </select>
 
+                <select v-model="reservationBook" aria-label="Filter by book"
+                    class="h-[42px] max-w-[260px] rounded-xl border border-stone-200 bg-white px-3 text-[14px] text-stone-500 transition-colors hover:bg-stone-50">
+                    <option value="">All books</option>
+                    <option v-for="b in reservationBookOptions" :key="b.bookID" :value="b.bookID">{{ b.title }} ({{ b.count }})</option>
+                </select>
+
                 <div class="flex-1"></div>
 
-                <LibrarianResetFiltersButton @click="reservationSearch = ''; reservationStatus = 'open'" />
+                <LibrarianResetFiltersButton @click="reservationSearch = ''; reservationStatus = 'open'; reservationBook = ''" />
             </div>
+
+            <p v-if="reservationBookTitle" class="mb-3 flex flex-wrap items-center gap-2 text-[13px] text-stone-600">
+                Showing {{ filteredReservations.length }} reservations for
+                <button type="button" class="inline-flex items-center gap-1.5 rounded-full bg-accent-50 py-1 pl-3 pr-1.5 text-[13px] font-semibold text-crimson"
+                    aria-label="Clear the book filter" @click="reservationBook = ''">
+                    {{ reservationBookTitle }}<Icon name="i-tabler-x" class="h-3.5 w-3.5" />
+                </button>
+            </p>
 
             <LibrarianReservationsTable :reservations="pagedReservations" :queue-positions="queuePositions"
                 :loading="reservationsPending" @accept="handleAcceptReservation"
@@ -92,13 +106,63 @@
                     icon="i-tabler-clock" tone="warning" />
             </div>
 
-            <LibrarianSelfReturnTable :reports="selfReturns" :loading="selfReturnsPending"
+            <div class="phone-toolbar mb-4 flex flex-wrap items-center gap-2">
+                <LibrarianSearchInput id="self-return-search" v-model="selfReturnSearch" placeholder="Search student or book" />
+
+                <select v-model="selfReturnBook" aria-label="Filter by book"
+                    class="h-[42px] max-w-[260px] rounded-xl border border-stone-200 bg-white px-3 text-[14px] text-stone-500 transition-colors hover:bg-stone-50">
+                    <option value="">All books</option>
+                    <option v-for="b in selfReturnBookOptions" :key="b.bookID" :value="b.bookID">{{ b.title }} ({{ b.count }})</option>
+                </select>
+
+                <div class="flex-1"></div>
+
+                <LibrarianResetFiltersButton @click="selfReturnSearch = ''; selfReturnBook = ''" />
+            </div>
+
+            <p v-if="selfReturnBookTitle" class="mb-3 flex flex-wrap items-center gap-2 text-[13px] text-stone-600">
+                Showing {{ filteredSelfReturns.length }} of {{ selfReturns.length }} reports for
+                <button type="button" class="inline-flex items-center gap-1.5 rounded-full bg-accent-50 py-1 pl-3 pr-1.5 text-[13px] font-semibold text-crimson"
+                    aria-label="Clear the book filter" @click="selfReturnBook = ''">
+                    {{ selfReturnBookTitle }}<Icon name="i-tabler-x" class="h-3.5 w-3.5" />
+                </button>
+            </p>
+
+            <LibrarianSelfReturnTable :reports="filteredSelfReturns" :loading="selfReturnsPending"
                 @verify="handleVerifySelfReturn" @reject="handleRejectSelfReturn" />
+        </template>
+
+        <!-- Lost and damaged copies -->
+        <template v-else-if="activeTab === 'lostdamaged'">
+            <div class="phone-stats mb-5 grid grid-cols-2 gap-3 sm:max-w-[560px]">
+                <LibrarianCatalogStatTile label="Lost" :value="lostDamaged?.stats.lost ?? '—'"
+                    icon="i-tabler-help-hexagon" tone="danger" />
+                <LibrarianCatalogStatTile label="Damaged" :value="lostDamaged?.stats.damaged ?? '—'"
+                    icon="i-tabler-book-off" tone="warning" />
+            </div>
+
+            <div class="phone-toolbar mb-4 flex flex-wrap items-center gap-2">
+                <LibrarianSearchInput id="lost-damaged-search" v-model="lostDamagedSearch" placeholder="Search book, accession no. or student" />
+
+                <select v-model="lostDamagedStatus" aria-label="Filter by status"
+                    class="h-[42px] rounded-xl border border-stone-200 bg-white px-3 text-[14px] text-stone-500 transition-colors hover:bg-stone-50">
+                    <option value="">Lost and damaged</option>
+                    <option value="lost">Lost only</option>
+                    <option value="damaged">Damaged only</option>
+                </select>
+
+                <div class="flex-1"></div>
+
+                <LibrarianResetFiltersButton @click="lostDamagedSearch = ''; lostDamagedStatus = ''" />
+            </div>
+
+            <LibrarianLostDamagedTable :copies="filteredLostDamaged" :loading="lostDamagedPending"
+                @restore="handleRestoreCopy" @remove="openRemoveCopy" />
         </template>
 
         <!-- Penalties -->
         <template v-else>
-            <div class="phone-stats mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <div class="phone-stats mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <LibrarianCatalogStatTile label="Unpaid Fines" :value="penaltyStats?.unpaidCount ?? '—'"
                     icon="i-tabler-alert-circle" tone="danger" />
                 <LibrarianCatalogStatTile label="Unpaid Total"
@@ -106,6 +170,8 @@
                     icon="i-tabler-coin" tone="warning" />
                 <LibrarianCatalogStatTile label="Settled" :value="penaltyStats?.paidCount ?? '—'"
                     icon="i-tabler-circle-check" tone="success" />
+                <LibrarianCatalogStatTile :label="`Unpaid ${longUnpaidDays}+ Days`" :value="penaltyStats?.longUnpaidCount ?? '—'"
+                    icon="i-tabler-hourglass-high" tone="danger" />
             </div>
 
             <div class="phone-toolbar mb-4 flex flex-wrap items-center gap-2">
@@ -116,6 +182,7 @@
                     <option value="">All fines</option>
                     <option value="Unpaid">Unpaid</option>
                     <option value="Paid">Paid</option>
+                    <option value="longUnpaid">Unpaid {{ longUnpaidDays }}+ days</option>
                 </select>
 
                 <div class="flex-1"></div>
@@ -124,7 +191,7 @@
             </div>
 
             <LibrarianPenaltiesTable :penalties="penalties?.data ?? []" :loading="penaltiesPending"
-                @settle="handleSettle" />
+                :long-unpaid-days="longUnpaidDays" @settle="handleSettle" />
 
             <LibrarianPagination v-if="penalties" :shown="penalties.data.length" :total="penalties.total"
                 noun="fines" :page="penalties.current_page" :last-page="penalties.last_page"
@@ -147,6 +214,8 @@
         <LibrarianReturnLoanModal :open="isReturnOpen" :preview="returnPreview" :loading="returnLoading" :error="returnError"
             :busy="returnBusy" @close="isReturnOpen = false" @submit="confirmReturn" />
 
+        <LibrarianRemoveCopyModal :open="isRemoveCopyOpen" :copy="removingCopy" :busy="removeCopyBusy"
+            @close="isRemoveCopyOpen = false" @submit="saveRemoveCopy" />
         <LibrarianFinishReturnModal :open="isFinishOpen" :summary="finishSummary" :busy="finishBusy"
             @close="isFinishOpen = false" @submit="saveFinishReturn" />
 
@@ -164,7 +233,9 @@ import {
     type SelfReturnReportRecord,
     type ReturnPreview,
     type PenaltyRecord,
+    type PenaltyFilter,
 } from '~/services/circulationService'
+import { librarianService, type LostDamagedCopy, type RemoveReason } from '~/services/librarianService'
 import AlertToast from '~/api/alert/AlertToast.vue'
 
 definePageMeta({
@@ -176,7 +247,7 @@ useHead({ title: 'Circulation' })
 
 
 const route = useRoute()
-const activeTab = ref(['loans', 'reservations', 'selfreturn', 'penalties'].includes(String(route.query.tab)) ? String(route.query.tab) : 'loans')
+const activeTab = ref(['loans', 'reservations', 'selfreturn', 'lostdamaged', 'penalties'].includes(String(route.query.tab)) ? String(route.query.tab) : 'loans')
 const isCheckoutOpen = ref(false)
 // Checking out a reservation starts with a scan of its pickup slip; the form is the manual way.
 const isScanOpen = ref(false)
@@ -247,6 +318,8 @@ const reservationSearch = ref('')
 // 'open' = still to be dealt with: waiting for a decision, or accepted and waiting for pickup.
 const reservationStatus = ref<'' | 'open' | ReservationStatus>('open')
 const reservationPage = ref(1)
+// Filter by one book ('' = every book).
+const reservationBook = ref<number | ''>('')
 const RESERVATIONS_PER_PAGE = 10
 
 const reservationStats = computed(() => ({
@@ -268,12 +341,19 @@ const queuePositions = computed(() => {
     return positions
 })
 
+// The reservations the status filter lets through; the book list is built from these, so each count matches the table.
+const reservationsInStatus = computed(() => reservations.value.filter((r) => {
+    if (reservationStatus.value === 'open') return r.status === 'Waiting' || r.status === 'Accepted'
+    return !reservationStatus.value || r.status === reservationStatus.value
+}))
+
+const reservationBookOptions = computed(() => bookOptions(reservationsInStatus.value.map((r) => r.book)))
+const reservationBookTitle = computed(() => reservationBookOptions.value.find((b) => b.bookID === reservationBook.value)?.title ?? '')
+
 const filteredReservations = computed(() => {
     const term = reservationSearch.value.trim().toLowerCase()
-    return reservations.value.filter((r) => {
-        if (reservationStatus.value === 'open') {
-            if (r.status !== 'Waiting' && r.status !== 'Accepted') return false
-        } else if (reservationStatus.value && r.status !== reservationStatus.value) return false
+    return reservationsInStatus.value.filter((r) => {
+        if (reservationBook.value !== '' && r.book?.bookID !== reservationBook.value) return false
         if (!term) return true
         return (
             personName(r.student?.user).toLowerCase().includes(term) ||
@@ -290,8 +370,12 @@ const pagedReservations = computed(() => {
     return filteredReservations.value.slice(start, start + RESERVATIONS_PER_PAGE)
 })
 
-watch([reservationSearch, reservationStatus], () => {
+watch([reservationSearch, reservationStatus, reservationBook], () => {
     reservationPage.value = 1
+})
+// A book that has no reservations left in this view (handled, or another status picked) can't stay selected.
+watch(reservationBookOptions, (options) => {
+    if (reservationBook.value !== '' && !options.some((b) => b.bookID === reservationBook.value)) reservationBook.value = ''
 })
 
 // ---- Self-return reports (always the pending queue) ----
@@ -300,13 +384,52 @@ const { data: selfReturnResponse, pending: selfReturnsPending, execute: refetchS
 
 const selfReturns = computed(() => selfReturnResponse.value?.reports ?? [])
 
+// Filter the pending reports by student or book (all in the browser, like the reservations).
+const selfReturnSearch = ref('')
+const selfReturnBook = ref<number | ''>('')
+
+const selfReturnBookOptions = computed(() => bookOptions(selfReturns.value.map((r) => r.loan?.copy?.book)))
+const selfReturnBookTitle = computed(() => selfReturnBookOptions.value.find((b) => b.bookID === selfReturnBook.value)?.title ?? '')
+
+const filteredSelfReturns = computed(() => {
+    const term = selfReturnSearch.value.trim().toLowerCase()
+    return selfReturns.value.filter((r) => {
+        if (selfReturnBook.value !== '' && r.loan?.copy?.book?.bookID !== selfReturnBook.value) return false
+        if (!term) return true
+        return (
+            personName(r.loan?.student?.user).toLowerCase().includes(term) ||
+            (r.loan?.copy?.book?.title ?? '').toLowerCase().includes(term)
+        )
+    })
+})
+
+// Same for a book whose last pending report was just handled.
+watch(selfReturnBookOptions, (options) => {
+    if (selfReturnBook.value !== '' && !options.some((b) => b.bookID === selfReturnBook.value)) selfReturnBook.value = ''
+})
+
+// The distinct books in a list, with how many rows each has, A to Z: the options of a per-book filter.
+function bookOptions(books: Array<{ bookID: number; title: string } | null | undefined>) {
+    const counts = new Map<number, { bookID: number; title: string; count: number }>()
+    for (const book of books) {
+        if (!book) continue
+        const entry = counts.get(book.bookID) ?? { bookID: book.bookID, title: book.title, count: 0 }
+        entry.count += 1
+        counts.set(book.bookID, entry)
+    }
+    return [...counts.values()].sort((a, b) => a.title.localeCompare(b.title))
+}
+
 // ---- Penalties ----
 const penaltySearch = ref('')
-const penaltyStatus = ref<'' | 'Unpaid' | 'Paid'>('')
+const penaltyStatus = ref<'' | PenaltyFilter>('')
 const penaltyPage = ref(1)
 
 const { data: penaltyStats, execute: refetchPenaltyStats } =
     useLiveAsyncData('circ-penalty-stats', () => circulationService.fetchPenaltyStats(), { lazy: true })
+
+// The server decides how long is "long unpaid"; 30 until the stats arrive.
+const longUnpaidDays = computed(() => penaltyStats.value?.longUnpaidDays ?? 30)
 
 const { data: penalties, pending: penaltiesPending, execute: refetchPenalties } = useLiveAsyncData(
     'circ-penalties',
@@ -333,18 +456,65 @@ function goToPenaltyPage(next: number) {
     refetchPenalties()
 }
 
+// ---- Lost and damaged copies ----
+const lostDamagedSearch = ref('')
+const lostDamagedStatus = ref<'' | 'lost' | 'damaged'>('')
+
+const { data: lostDamaged, pending: lostDamagedPending, execute: refetchLostDamaged } =
+    useLiveAsyncData('circ-lost-damaged', () => librarianService.fetchLostDamagedCopies(), { lazy: true })
+
+const filteredLostDamaged = computed(() => {
+    const term = lostDamagedSearch.value.trim().toLowerCase()
+    return (lostDamaged.value?.copies ?? []).filter((copy) => {
+        if (lostDamagedStatus.value && copy.status !== lostDamagedStatus.value) return false
+        if (!term) return true
+        return copy.book.title.toLowerCase().includes(term)
+            || String(copy.accessionNumber) === term
+            || (copy.lastLoan?.studentName ?? '').toLowerCase().includes(term)
+            || (copy.lastLoan?.studentIDNumber ?? '').toLowerCase().includes(term)
+    })
+})
+
+// Found (lost) or repaired (damaged): the copy goes back on the shelf.
+async function handleRestoreCopy(copy: LostDamagedCopy) {
+    await perform(() => librarianService.updateCopy(copy.uuid, { status: 'available' }),
+        `Accession no. ${copy.accessionNumber} is back on the shelf`, 'Could not update this copy', [refetchLostDamaged])
+}
+
+// Removing it takes it out of the catalog for good, with a reason, through the same window as the Library page.
+const isRemoveCopyOpen = ref(false)
+const removingCopy = ref<LostDamagedCopy | null>(null)
+const removeCopyBusy = ref(false)
+
+function openRemoveCopy(copy: LostDamagedCopy) {
+    removingCopy.value = copy
+    isRemoveCopyOpen.value = true
+}
+
+async function saveRemoveCopy(payload: { reason: RemoveReason; note: string | undefined }) {
+    const copy = removingCopy.value
+    if (!copy) return
+    removeCopyBusy.value = true
+    const ok = await perform(() => librarianService.removeCopy(copy.uuid, payload),
+        `Accession no. ${copy.accessionNumber} removed`, 'Could not remove this copy', [refetchLostDamaged])
+    removeCopyBusy.value = false
+    if (ok) isRemoveCopyOpen.value = false
+}
+
 // ---- Tabs ----
 const tabs = computed(() => [
     { label: 'Active Loans', short: 'Loans', value: 'loans', badge: loanStats.value?.received || undefined },
     { label: 'Reservations', short: 'Reserved', value: 'reservations', badge: reservationStats.value.waiting },
     { label: 'Self-Return Reports', short: 'Self-returns', value: 'selfreturn', badge: selfReturns.value.length },
+    { label: 'Lost & Damaged', short: 'Lost', value: 'lostdamaged', badge: lostDamaged.value?.copies.length || undefined },
     { label: 'Penalties', short: 'Fines', value: 'penalties' },
 ])
 
 // ---- Actions ----
 const { perform } = useAction()
 
-const refreshLoanData = () => [refetchLoans, refetchLoanStats, refetchPenalties, refetchPenaltyStats]
+// A return can leave a copy marked damaged, so the Lost and damaged tab refreshes with the loans.
+const refreshLoanData = () => [refetchLoans, refetchLoanStats, refetchPenalties, refetchPenaltyStats, refetchLostDamaged]
 
 // Returning a book asks first: the window shows the loan, the book and the student, and for a late book it
 // asks whether the fee has been paid.
@@ -371,12 +541,12 @@ async function handleReturn(loan: LoanRecord) {
     }
 }
 
-async function confirmReturn(payload: { finePaid: boolean | undefined }) {
+async function confirmReturn(payload: { finePaid: boolean | undefined; receiptNumber?: string }) {
     const loan = returningLoan.value
     if (!loan) return
     returnBusy.value = true
     const ok = await perform(
-        () => circulationService.returnLoan(loan.uuid, payload.finePaid === undefined ? {} : { finePaid: payload.finePaid }),
+        () => circulationService.returnLoan(loan.uuid, payload.finePaid === undefined ? {} : { finePaid: payload.finePaid, receiptNumber: payload.receiptNumber }),
         'Book returned', 'Could not return book', refreshLoanData())
     returnBusy.value = false
     if (ok) isReturnOpen.value = false
@@ -471,15 +641,15 @@ async function openReportWindow(report: SelfReturnReportRecord, mode: 'verify' |
 const handleVerifySelfReturn = (report: SelfReturnReportRecord) => openReportWindow(report, 'verify')
 const handleRejectSelfReturn = (report: SelfReturnReportRecord) => openReportWindow(report, 'reject')
 
-async function confirmReport(payload: { finePaid: boolean | undefined }) {
+async function confirmReport(payload: { finePaid: boolean | undefined; receiptNumber?: string; reason?: string }) {
     const report = reportTarget.value
     if (!report) return
     reportBusy.value = true
     const ok = reportMode.value === 'verify'
         ? await perform(
-            () => circulationService.verifySelfReturn(report.uuid, payload.finePaid === undefined ? {} : { finePaid: payload.finePaid }),
+            () => circulationService.verifySelfReturn(report.uuid, payload.finePaid === undefined ? {} : { finePaid: payload.finePaid, receiptNumber: payload.receiptNumber }),
             'Return verified', 'Could not verify return', [refetchSelfReturns, ...refreshLoanData()])
-        : await perform(() => circulationService.rejectSelfReturn(report.uuid), 'Report rejected', 'Could not reject report', [refetchSelfReturns])
+        : await perform(() => circulationService.rejectSelfReturn(report.uuid, { reason: payload.reason ?? '' }), 'Report rejected', 'Could not reject report', [refetchSelfReturns])
     reportBusy.value = false
     if (ok) isReportOpen.value = false
 }
@@ -494,11 +664,11 @@ function handleSettle(penalty: PenaltyRecord) {
     isSettleOpen.value = true
 }
 
-async function confirmSettle() {
+async function confirmSettle(payload: { receiptNumber: string }) {
     const penalty = settlingPenalty.value
     if (!penalty) return
     settleBusy.value = true
-    const ok = await perform(() => circulationService.settlePenalty(penalty.uuid), 'Fine settled', 'Could not settle fine', [refetchPenalties, refetchPenaltyStats])
+    const ok = await perform(() => circulationService.settlePenalty(penalty.uuid, { receiptNumber: payload.receiptNumber }), 'Fine settled', 'Could not settle fine', [refetchPenalties, refetchPenaltyStats])
     settleBusy.value = false
     if (ok) isSettleOpen.value = false
 }

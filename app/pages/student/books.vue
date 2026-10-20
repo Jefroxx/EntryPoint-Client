@@ -42,8 +42,11 @@
 								<p class="mt-1 text-[12.5px] md:text-[14.5px] text-stone-500">Due {{ formatDate(loan.dueDate) }}</p>
 							</div>
 							<div class="mt-3 flex gap-2 md:mt-0 md:flex-col md:items-end md:gap-1.5">
-								<p v-if="loan.status === 'Reported'" class="flex-1 text-[12.5px] md:text-[14.5px] text-stone-500 md:max-w-[180px] md:flex-none md:text-right">Reported. A librarian will verify it.</p>
+								<p v-if="loan.status === 'Reported'" class="flex-1 text-[12.5px] md:text-[14.5px] text-stone-500 md:max-w-[180px] md:flex-none md:text-right">Returned. A librarian will verify it.</p>
 								<p v-else-if="loan.status === 'Received'" class="flex-1 text-[12.5px] md:text-[14.5px] text-stone-500 md:max-w-[180px] md:flex-none md:text-right">Handed in. A librarian is checking the book.</p>
+								<ButtonsButton v-else-if="waiting(loan)" variant="ghost" size="sm" disabled class="!h-10 flex-1 !text-[14px] md:!h-10 md:w-[180px] md:flex-none md:!text-[14.5px]">
+									<Icon name="i-tabler-clock" class="h-3.5 w-3.5 md:h-4 md:w-4" />Report again later
+								</ButtonsButton>
 								<ButtonsButton v-else variant="ghost" size="sm" class="!h-10 flex-1 !border-accent-100 !bg-accent-100 !text-[14px] !text-accent-600 md:!h-10 md:w-[180px] md:flex-none md:!text-[14.5px]"
 									@click="returning = loan">
 									<Icon name="i-tabler-arrow-back-up" class="h-3.5 w-3.5 md:h-4 md:w-4" />I returned this
@@ -52,6 +55,16 @@
 									@click="openReceipt(loan)">
 									<Icon name="i-tabler-receipt" class="h-3.5 w-3.5 md:h-4 md:w-4" />Receipt
 								</ButtonsButton>
+							</div>
+							<div v-if="loan.rejectionReason" class="mt-3 rounded-xl border px-3.5 py-2.5 text-[13px] md:col-span-3 md:mt-0 md:text-[14px]"
+								:class="waiting(loan) ? 'border-red-200 bg-red-50 text-red-800' : 'border-amber-200 bg-amber-50 text-amber-900'">
+								<template v-if="waiting(loan)">
+									<b class="font-semibold">Return not accepted.</b> Reason: {{ loan.rejectionReason }}
+									<br>Bring the book to the desk, or report again at {{ formatDateTime(loan.canReportAgainAt!) }} (in {{ countdown(loan) }}).
+								</template>
+								<template v-else>
+									<b class="font-semibold">You can report this return again.</b> Last time: {{ loan.rejectionReason }} Make sure the book is at the desk first.
+								</template>
 							</div>
 						</div>
 					</div>
@@ -318,6 +331,27 @@ const slipShown = computed(() => slipFor.value ?? lastSlip.value)
 const slipView = ref<{ print: () => void } | null>(null)
 
 const returning = ref<LoanRow | null>(null)
+
+// A rejected return can be reported again after a wait. `now` ticks so the countdown stays current.
+const now = ref(Date.now())
+onMounted(() => {
+	const timer = window.setInterval(() => { now.value = Date.now() }, 30_000)
+	onBeforeUnmount(() => window.clearInterval(timer))
+})
+
+function waitMs(loan: LoanRow): number {
+	return loan.canReportAgainAt ? new Date(loan.canReportAgainAt).getTime() - now.value : 0
+}
+
+function waiting(loan: LoanRow): boolean {
+	return waitMs(loan) > 0
+}
+
+function countdown(loan: LoanRow): string {
+	const minutes = Math.max(Math.ceil(waitMs(loan) / 60_000), 1)
+	const hours = Math.floor(minutes / 60)
+	return hours ? `${hours}h ${minutes % 60}m` : `${minutes}m`
+}
 const cancelling = ref<ReservationRow | null>(null)
 const lastCancelled = ref<ReservationRow | null>(null)
 const cancelBusy = ref(false)

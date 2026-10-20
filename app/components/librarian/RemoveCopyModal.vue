@@ -45,7 +45,7 @@ import type { CopyCatalogRow, RemoveReason } from '~/services/librarianService'
 
 const props = defineProps<{
 	open: boolean
-	copy: CopyCatalogRow | null
+	copy: (Pick<CopyCatalogRow, 'accessionNumber'> & { status: string; book: { title: string } }) | null
 	busy?: boolean
 }>()
 

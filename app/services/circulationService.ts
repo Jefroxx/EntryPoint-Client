@@ -95,6 +95,8 @@ export interface SelfReturnReportRecord {
   uuid: string;
   reportedAt: string;
   verificationStatus: "Pending" | "Verified" | "Rejected";
+  /** Why a rejected report was rejected; the student is told. */
+  rejectionReason?: string | null;
   loan: LoanRecord | null;
 }
 
@@ -105,6 +107,8 @@ export interface PenaltyRecord {
   computedAt: string;
   settledAt: string | null;
   paymentStatus: "Unpaid" | "Paid";
+  /** The cashier's official receipt number, written down when the fine was marked paid. */
+  receiptNumber: string | null;
   loan: LoanRecord | null;
   penalty_type: { category: string } | null;
 }
@@ -113,7 +117,13 @@ export interface PenaltyStats {
   unpaidCount: number;
   unpaidTotal: number;
   paidCount: number;
+  /** Unpaid fines whose book came back more than `longUnpaidDays` days ago. */
+  longUnpaidCount: number;
+  longUnpaidDays: number;
 }
+
+/** `longUnpaid`: unpaid long after the book came back (see PenaltyStats.longUnpaidDays). */
+export type PenaltyFilter = "Unpaid" | "Paid" | "longUnpaid";
 
 export interface CheckoutPayload {
   studentID: number;
@@ -190,8 +200,8 @@ class CirculationServiceClass extends BaseService {
     return this.request<{ preview: ReturnPreview }>(`/librarian/loans/${loanUuid}/return-preview`);
   }
 
-  /** `finePaid`: the student paid the late fee at the desk, so the fine is settled with the return. */
-  returnLoan(loanUuid: string, payload: { finePaid?: boolean } = {}) {
+  /** `finePaid`: the student paid the late fee at the desk, so the fine is settled with the return (with the cashier's `receiptNumber`). */
+  returnLoan(loanUuid: string, payload: { finePaid?: boolean; receiptNumber?: string } = {}) {
     return this.request<{ message: string; loan: LoanRecord; penalty: { amount: string; paymentStatus: "Paid" | "Unpaid" } | null }>(
       `/librarian/loans/${loanUuid}/return`, { method: "POST", body: payload });
   }
@@ -220,16 +230,17 @@ class CirculationServiceClass extends BaseService {
   }
 
   /** `finePaid`: the student paid the late fee at the desk, so the fine is settled with the return. */
-  verifySelfReturn(reportUuid: string, payload: { finePaid?: boolean } = {}) {
+  verifySelfReturn(reportUuid: string, payload: { finePaid?: boolean; receiptNumber?: string } = {}) {
     return this.request<{ message: string; penalty: { amount: string; paymentStatus: "Paid" | "Unpaid" } | null }>(
       `/librarian/self-return-reports/${reportUuid}/verify`, { method: "POST", body: payload });
   }
 
-  rejectSelfReturn(reportUuid: string) {
-    return this.request<{ message: string }>(`/librarian/self-return-reports/${reportUuid}/reject`, { method: "POST" });
+  /** The `reason` is shown to the student. */
+  rejectSelfReturn(reportUuid: string, payload: { reason: string }) {
+    return this.request<{ message: string }>(`/librarian/self-return-reports/${reportUuid}/reject`, { method: "POST", body: payload });
   }
 
-  fetchPenalties(params: { search?: string; status?: "Unpaid" | "Paid"; page?: number; perPage?: number } = {}) {
+  fetchPenalties(params: { search?: string; status?: PenaltyFilter; page?: number; perPage?: number } = {}) {
     return this.request<Paginated<PenaltyRecord>>("/librarian/penalties", { query: params });
   }
 
@@ -237,8 +248,9 @@ class CirculationServiceClass extends BaseService {
     return this.request<PenaltyStats>("/librarian/penalties/stats");
   }
 
-  settlePenalty(penaltyUuid: string) {
-    return this.request<{ message: string }>(`/librarian/penalties/${penaltyUuid}/settle`, { method: "POST" });
+  /** `receiptNumber`: the cashier's official receipt for the payment. */
+  settlePenalty(penaltyUuid: string, payload: { receiptNumber: string }) {
+    return this.request<{ message: string }>(`/librarian/penalties/${penaltyUuid}/settle`, { method: "POST", body: payload });
   }
 }
 

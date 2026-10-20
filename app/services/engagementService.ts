@@ -25,6 +25,17 @@ export interface AchievementRecord {
   redeemedCount: number;
 }
 
+/** One student who unlocked an achievement (GET /librarian/achievements/{uuid}/students). */
+export interface AchievementStudent {
+  studentID: number;
+  name: string;
+  studentIDNumber: string | null;
+  academicProgram: string | null;
+  earnedAt: string | null;
+  /** When the reward was redeemed; null while it is not. */
+  redeemedAt: string | null;
+}
+
 export interface AchievementPayload {
   name: string;
   criteriaJSON: { metric: AchievementMetric; threshold: number };
@@ -78,6 +89,10 @@ export interface RedemptionRecord {
 class EngagementServiceClass extends BaseService {
   fetchAchievements() {
     return this.apiRequest<{ achievements: AchievementRecord[]; metrics: AchievementMetricInfo[] }>("/librarian/achievements");
+  }
+
+  fetchAchievementStudents(achievementUuid: string) {
+    return this.apiRequest<{ students: AchievementStudent[] }>(`/librarian/achievements/${achievementUuid}/students`);
   }
 
   createAchievement(payload: AchievementPayload) {

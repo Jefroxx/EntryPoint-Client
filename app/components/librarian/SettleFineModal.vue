@@ -15,6 +15,13 @@
 					The fine is marked <b>paid</b> as of now, and it can't be undone from here. Only continue if the money has been collected at the desk.
 				</p>
 			</section>
+
+			<div class="rounded-xl border border-dashed border-amber-400 bg-amber-50/60 p-3">
+				<label for="settle-receipt" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">Cashier receipt no.<FieldRequired /></label>
+				<input id="settle-receipt" v-model="receiptNumber" type="text" autocomplete="off" maxlength="50" placeholder="e.g. OR-2026-00123"
+					class="font-data h-11 w-full rounded-[10px] border border-stone-200 bg-white px-3 text-[13.5px] text-stone-900 outline-none focus:border-accent-500 focus:ring-2 focus:ring-accent-200">
+				<p class="mt-1.5 text-[12.5px] text-stone-600">Copy it from the cashier's official receipt. It is saved with this fine.</p>
+			</div>
 		</div>
 
 		<!-- Step 1: everything about the fine on one screen. -->
@@ -79,7 +86,7 @@
 				<ButtonsButton variant="ghost" :disabled="busy" @click="step = 'details'">
 					<Icon name="i-tabler-arrow-left" class="h-3.5 w-3.5" />Back
 				</ButtonsButton>
-				<ButtonsButton variant="primary" :disabled="busy" @click="emit('submit')">
+				<ButtonsButton variant="primary" :disabled="busy || !receiptNumber.trim()" @click="emit('submit', { receiptNumber: receiptNumber.trim() })">
 					<Icon v-if="busy" name="i-tabler-loader-2" class="h-3.5 w-3.5 animate-spin" />
 					<Icon v-else name="i-tabler-circle-check" class="h-3.5 w-3.5" />
 					Yes, mark {{ penalty ? formatPeso(penalty.amount) : '' }} as paid
@@ -106,12 +113,14 @@ const props = defineProps<{
 
 const emit = defineEmits<{
 	(e: 'close'): void
-	(e: 'submit'): void
+	(e: 'submit', payload: { receiptNumber: string }): void
 }>()
 
 // Two steps: the details, then a last look before anything is changed.
 const step = ref<'details' | 'confirm'>('details')
-watch(() => [props.open, props.penalty?.penaltyID], () => { step.value = 'details' })
+// The cashier's receipt number, written down with the payment.
+const receiptNumber = ref('')
+watch(() => [props.open, props.penalty?.penaltyID], () => { step.value = 'details'; receiptNumber.value = '' })
 
 const loan = computed(() => props.penalty?.loan ?? null)
 const student = computed(() => loan.value?.student ?? null)

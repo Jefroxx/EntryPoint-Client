@@ -26,7 +26,7 @@ export function areaFromPath(path: string): Area {
 /** Where each kind of signed-in user lives. */
 export function homeFor(role: string | null | undefined, staffRole?: string | null): string {
   if (role === 'student') return '/student/home'
-  // An administrator lands on the admin side (they can still open the librarian side from its sidebar).
+  // An administrator lands on the admin side; the librarian side is closed to them.
   if (role === 'librarian') return staffRole === 'admin' ? '/admin/dashboard' : '/librarian/dashboard'
   return '/login'
 }
@@ -42,8 +42,8 @@ export function safeRedirect(target: unknown, role: string, staffRole?: string |
 
   if (typeof path !== 'string' || !path.startsWith('/') || path.startsWith('//') || path.includes('\\')) return fallback
 
-  // An administrator may also be sent to the admin side; everyone else stays in their own area.
-  const areas = role === 'student' ? ['/student'] : staffRole === 'admin' ? ['/librarian', '/admin'] : ['/librarian']
+  // An administrator stays on the admin side; everyone else stays in their own area.
+  const areas = role === 'student' ? ['/student'] : staffRole === 'admin' ? ['/admin'] : ['/librarian']
   const lower = path.toLowerCase()
   const insideArea = areas.some((area) => lower === area || lower.startsWith(`${area}/`) || lower.startsWith(`${area}?`))
 

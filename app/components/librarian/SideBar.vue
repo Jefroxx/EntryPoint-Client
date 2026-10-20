@@ -74,7 +74,7 @@ const ALL_LINKS = [
     { label: 'Settings', to: '/librarian/settings', icon: 'i-tabler-settings' },
 ]
 
-// The admin side has its own sidebar. Administrators reach it from the librarian one, and come back from it.
+// The admin side has its own sidebar. Administrators only ever see this one; the librarian side is closed to them.
 const ADMIN_LINKS = [
     { label: 'Overview', to: '/admin/dashboard', icon: 'i-tabler-layout-dashboard' },
     { label: 'Staff', to: '/admin/staff', icon: 'i-tabler-id-badge-2' },
@@ -83,7 +83,6 @@ const ADMIN_LINKS = [
     { label: 'Announcements', to: '/admin/announcements', icon: 'i-tabler-speakerphone' },
     { label: 'Privacy', to: '/admin/privacy', icon: 'i-tabler-user-shield' },
     { label: 'Audit log', to: '/admin/audit-log', icon: 'i-tabler-history' },
-    { label: 'Librarian side', to: '/librarian/dashboard', icon: 'i-tabler-arrow-back-up' },
 ]
 
 const inAdminArea = computed(() => route.path.toLowerCase().startsWith('/admin'))
@@ -91,11 +90,10 @@ const inAdminArea = computed(() => route.path.toLowerCase().startsWith('/admin')
 // A role sees only the areas it may use (the server enforces it; this keeps the sidebar honest).
 const { can, isAdmin } = useStaffAccess()
 const navLinks = computed(() => {
-    if (inAdminArea.value) return ADMIN_LINKS
-    const links = ALL_LINKS.filter((link) => can(permissionForPath(link.to)))
-    return isAdmin.value ? [...links, { label: 'Admin', to: '/admin/dashboard', icon: 'i-tabler-shield-lock' }] : links
+    if (inAdminArea.value || isAdmin.value) return ADMIN_LINKS
+    return ALL_LINKS.filter((link) => can(permissionForPath(link.to)))
 })
-const homeLink = computed(() => (inAdminArea.value ? '/admin/dashboard' : '/librarian/dashboard'))
+const homeLink = computed(() => (inAdminArea.value || isAdmin.value ? '/admin/dashboard' : '/librarian/dashboard'))
 
 const linkRefs = ref<any[]>([])
 function setLinkRef(el: any, index: number) {

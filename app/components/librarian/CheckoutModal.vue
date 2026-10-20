@@ -55,6 +55,20 @@
 							<p v-if="errors.student" class="mt-1 text-[12.5px] text-red-500">{{ errors.student }}</p>
 						</div>
 
+						<!-- The student has several reservations ready: pick the one being collected. -->
+						<fieldset v-if="studentReservations.length > 1 && !reservation" class="rounded-[14px] border border-dashed border-amber-400 bg-amber-50/60 p-3">
+							<legend class="px-1.5 text-[13.5px] font-semibold text-stone-800">Reserved for pickup ({{ studentReservations.length }})</legend>
+							<label v-for="r in studentReservations" :key="r.reservationID" :for="`checkout-res-${r.reservationID}`"
+								class="mb-2 flex cursor-pointer items-center gap-3 rounded-xl border border-stone-200 bg-white px-3 py-2.5 last:mb-0 hover:bg-stone-50">
+								<input :id="`checkout-res-${r.reservationID}`" type="radio" name="checkout-reservation" class="accent-accent-500" @change="pickReservation(r)">
+								<span class="min-w-0 flex-1">
+									<span class="block text-[14px] font-semibold text-stone-900">{{ r.book?.title }}</span>
+									<span class="font-data block text-[12.5px] text-stone-500">{{ r.pickupCode }}</span>
+								</span>
+							</label>
+							<p class="mt-2 text-[12.5px] text-stone-600">Pick one to fill in the book and copy, or search for a different book below.</p>
+						</fieldset>
+
 						<div>
 							<label for="checkout-book" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">Book<FieldRequired /></label>
 							<LibrarianSearchSelect v-model="book" input-id="checkout-book" placeholder="Search by title"
@@ -97,7 +111,7 @@
 
 <script setup lang="ts">
 import { librarianService, type StudentRecord, type CatalogBook } from '~/services/librarianService'
-import { circulationService, type LoanReceipt as LoanReceiptData } from '~/services/circulationService'
+import { circulationService, type LoanReceipt as LoanReceiptData, type ReservationRecord } from '~/services/circulationService'
 import { useAlert } from '~/api/alert/useAlert'
 
 const props = defineProps<{
@@ -124,6 +138,8 @@ const errors = reactive({ student: '', book: '', pickup: '' })
 const pickupCode = ref('')
 const lookingUp = ref(false)
 const reservation = ref<{ reservationID: number; studentID: number; bookID: number; pickupCode: string } | null>(null)
+// The accepted reservations of the chosen student: one is loaded by itself, several are offered to pick from.
+const studentReservations = ref<ReservationRecord[]>([])
 // Set once the checkout goes through; the window then shows the receipt instead of the form.
 const receipt = ref<LoanReceiptData | null>(null)
 const receiptView = ref<{ print: () => void } | null>(null)
@@ -134,7 +150,32 @@ watch(book, () => {
 	copyID.value = availableCopies.value[0]?.copyID ?? null
 	errors.book = ''
 })
-watch(student, () => { errors.student = '' })
+watch(student, (chosen) => {
+	errors.student = ''
+	studentReservations.value = []
+	// A loaded reservation belongs to its student: choosing someone else lets go of it.
+	if (reservation.value && reservation.value.studentID !== chosen?.studentID) reservation.value = null
+	if (chosen && !reservation.value) void loadStudentReservations(chosen)
+})
+
+// Checking out by hand: once the student is chosen, their accepted reservation fills in by itself, as if its slip had been scanned.
+async function loadStudentReservations(chosen: StudentRecord) {
+	try {
+		const { reservations } = await circulationService.fetchReservations('Accepted')
+		if (student.value?.studentID !== chosen.studentID || reservation.value) return // the form moved on meanwhile
+		const ready = reservations.filter((r) => r.student?.studentID === chosen.studentID && r.book)
+		if (ready.length === 1) await pickReservation(ready[0]!)
+		else studentReservations.value = ready
+	} catch {
+		// Looking for a reservation is a convenience; the form still works without it.
+	}
+}
+
+async function pickReservation(r: ReservationRecord) {
+	if (!r.pickupCode) return
+	pickupCode.value = r.pickupCode
+	await handlePickupCode()
+}
 
 watch(() => props.open, (isOpen) => {
 	if (!isOpen) return
@@ -144,6 +185,7 @@ watch(() => props.open, (isOpen) => {
 	copyID.value = null
 	pickupCode.value = ''
 	reservation.value = null
+	studentReservations.value = []
 	errors.student = ''
 	errors.book = ''
 	errors.pickup = ''
@@ -182,7 +224,8 @@ async function handlePickupCode() {
 		student.value = matchedStudent
 		book.value = matchedBook
 		reservation.value = { reservationID: found.reservationID, studentID: found.studentID, bookID: found.bookID, pickupCode: found.pickupCode ?? code }
-		pickupCode.value = ''
+		// The code stays in the box, so the librarian can see which reservation was loaded.
+		pickupCode.value = found.pickupCode ?? code
 	} catch (error: any) {
 		reservation.value = null
 		errors.pickup = error?.data?.errors?.code?.[0] ?? error?.data?.message ?? 'Could not look up that code.'

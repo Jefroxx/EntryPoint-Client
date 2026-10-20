@@ -10,6 +10,15 @@
 				</span>
 			</span>
 		</button>
+		<!-- Phones show this compact row instead of the card, so the cart button lives here too. -->
+		<ButtonsButton v-if="isInCart(book.bookID)" variant="icon" size="md" :aria-label="`${book.title} is in your cart. View cart`"
+			class="shrink-0 !text-emerald-600" @click="drawer.open('cart')">
+			<Icon name="i-tabler-check" class="h-[18px] w-[18px]" />
+		</ButtonsButton>
+		<ButtonsButton v-else variant="icon" size="md" :aria-label="`Add ${book.title} to cart`"
+			class="shrink-0 !text-accent-600" @click="addToCart(book.bookID)">
+			<StudentCartIcon class="h-[18px] w-[18px]" />
+		</ButtonsButton>
 		<StudentHeartButton :active="isWished(book.bookID)" @toggle="toggleWish(book.bookID)" />
 	</div>
 </template>
@@ -20,5 +29,5 @@ import type { CatalogBook } from '~/services/studentService'
 defineProps<{ book: CatalogBook }>()
 
 const drawer = useDrawer()
-const { isWished, toggleWish } = useStudent()
+const { isWished, isInCart, toggleWish, addToCart } = useStudent()
 </script>
