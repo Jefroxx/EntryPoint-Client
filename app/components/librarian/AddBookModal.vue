@@ -5,7 +5,7 @@
 			<Transition enter-active-class="transition-opacity duration-200 ease-out" enter-from-class="opacity-0"
 				enter-to-class="opacity-100" leave-active-class="transition-opacity duration-150 ease-out"
 				leave-from-class="opacity-100" leave-to-class="opacity-0">
-				<div v-if="open" class="absolute inset-0 bg-[#1c1712]/35 backdrop-blur-[3px]" @click="handleClose" />
+				<div v-if="open" class="absolute inset-0 bg-[#1c1712]/40" @click="handleClose" />
 			</Transition>
 
 			<Transition enter-active-class="transition-[transform,opacity] duration-[260ms] ease-out"
@@ -41,12 +41,12 @@
 									<span class="block h-1 rounded-full transition-colors duration-300"
 										:class="s.n <= step ? 'bg-accent-500' : 'bg-stone-200'" />
 									<span class="mt-2 flex items-center gap-1.5 text-[12.5px] font-semibold transition-colors duration-300"
-										:class="step === s.n ? 'text-accent-600' : canOpen(s.n) ? 'text-stone-700 group-hover:text-accent-600' : 'text-stone-400'">
+										:class="step === s.n ? 'text-accent-600' : canOpen(s.n) ? 'text-stone-700 group-hover:text-accent-600' : 'text-stone-500'">
 										<Icon v-if="stepHasError(s.n)" name="i-tabler-alert-circle" class="h-3.5 w-3.5 text-red-500" />
 										<Icon v-else-if="s.n < step" name="i-tabler-check" class="h-3.5 w-3.5" />
 										<span v-else class="tabular-nums">{{ s.n }}.</span>
 										{{ s.label }}
-										<span v-if="s.optional" class="font-normal text-stone-400">(optional)</span>
+										<span v-if="s.optional" class="font-normal text-stone-500">(optional)</span>
 									</span>
 								</button>
 							</li>
@@ -58,7 +58,7 @@
 						<aside
 							class="flex flex-shrink-0 gap-4 border-b border-stone-100 bg-stone-50/70 px-6 py-5 md:w-[272px] md:flex-col md:overflow-y-auto md:border-b-0 md:border-r md:px-6">
 							<button type="button" aria-label="Set cover image"
-								class="group relative aspect-[2/3] w-[112px] shrink-0 overflow-hidden rounded-[14px] transition-transform duration-150 ease-out active:scale-[0.98] md:w-full"
+								class="group relative aspect-[2/3] w-[112px] shrink-0 overflow-hidden rounded-[14px] transition-transform duration-150 ease-out active:scale-[0.96] md:w-full"
 								:class="hasCover ? 'bg-stone-200 shadow-[0_10px_24px_-12px_rgba(28,23,18,.45)]' : 'border-2 border-dashed border-accent-200 bg-accent-50 hover:border-accent-400 hover:bg-accent-100/60'"
 								@click="focusCoverInput">
 								<img v-if="hasCover" :src="form.coverImageURL.trim()" alt="Cover preview"
@@ -80,7 +80,7 @@
 
 							<div class="min-w-0 flex-1">
 								<label for="bookCover" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">
-									Cover image link <span class="font-normal text-stone-400">(optional)</span>
+									Cover image link <span class="font-normal text-stone-500">(optional)</span>
 								</label>
 								<input id="bookCover" ref="coverInputRef" v-model="form.coverImageURL" type="url"
 									placeholder="https://…" :class="[inputClass, coverError ? 'border-red-400 bg-red-50' : 'border-stone-200']"
@@ -163,7 +163,7 @@
 
 								<div v-else-if="step === 2" key="shelving" class="space-y-6">
 									<fieldset>
-										<legend class="mb-2.5 text-[12px] font-bold uppercase tracking-wide text-stone-400">Classification</legend>
+										<legend class="mb-2.5 text-[12px] font-bold uppercase tracking-wide text-stone-500">Classification</legend>
 										<div class="grid gap-3 sm:grid-cols-2">
 											<div>
 												<label for="bookCategory" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">
@@ -179,7 +179,7 @@
 											</div>
 											<div>
 												<label for="bookCall" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">
-													Call number <span class="font-normal text-stone-400">(optional)</span>
+													Call number <span class="font-normal text-stone-500">(optional)</span>
 												</label>
 												<input id="bookCall" v-model="form.callNumber" type="text"
 													:placeholder="isEdit ? 'Leave blank to keep the current one' : 'Auto-generated if left blank'"
@@ -189,7 +189,7 @@
 									</fieldset>
 
 									<fieldset>
-										<legend class="mb-2.5 text-[12px] font-bold uppercase tracking-wide text-stone-400">Location</legend>
+										<legend class="mb-2.5 text-[12px] font-bold uppercase tracking-wide text-stone-500">Location</legend>
 										<div class="grid gap-3 sm:grid-cols-2">
 											<div>
 												<label for="bookArea" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">
@@ -206,7 +206,7 @@
 											</div>
 											<div>
 												<label for="bookShelf" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">
-													Shelf location <span class="font-normal text-stone-400">(optional)</span>
+													Shelf location <span class="font-normal text-stone-500">(optional)</span>
 												</label>
 												<input id="bookShelf" v-model="form.shelfLocation" type="text"
 													placeholder="e.g. 2nd Floor, Aisle 4" :class="[inputClass, 'border-stone-200']" />
@@ -215,7 +215,7 @@
 									</fieldset>
 
 									<fieldset v-if="isEdit">
-										<legend class="mb-2.5 text-[12px] font-bold uppercase tracking-wide text-stone-400">Copies</legend>
+										<legend class="mb-2.5 text-[12px] font-bold uppercase tracking-wide text-stone-500">Copies</legend>
 										<!-- Copies are added and removed from the Book Catalog so every change lands in the stock log. -->
 										<p class="text-[14px] text-stone-700"><b class="tabular-nums text-stone-900">{{ originalQuantity }}</b> {{ originalQuantity === 1 ? 'copy' : 'copies' }} in the catalog.</p>
 										<p class="mt-1 text-[12.5px] leading-snug text-stone-500">
@@ -223,17 +223,17 @@
 										</p>
 									</fieldset>
 									<fieldset v-else>
-										<legend class="mb-2.5 text-[12px] font-bold uppercase tracking-wide text-stone-400">Copies<FieldRequired /></legend>
+										<legend class="mb-2.5 text-[12px] font-bold uppercase tracking-wide text-stone-500">Copies<FieldRequired /></legend>
 										<div class="flex flex-wrap items-center gap-3">
 											<div class="flex w-fit overflow-hidden rounded-[10px] border border-stone-200">
 												<button type="button" aria-label="Decrease quantity" :disabled="quantity <= minQuantity"
-													class="flex h-11 w-10 items-center justify-center text-stone-500 transition-colors hover:bg-stone-50 active:scale-90 disabled:opacity-40"
+													class="flex h-11 w-10 items-center justify-center text-stone-500 transition-colors hover:bg-stone-50 active:scale-[0.96] disabled:opacity-40"
 													@click="quantity = Math.max(minQuantity, quantity - 1)">–</button>
 												<span
 													class="flex h-11 w-12 items-center justify-center border-x border-stone-200 text-[15px] font-bold tabular-nums text-stone-900">{{
 														quantity }}</span>
 												<button type="button" aria-label="Increase quantity"
-													class="flex h-11 w-10 items-center justify-center text-stone-500 transition-colors hover:bg-stone-50 active:scale-90"
+													class="flex h-11 w-10 items-center justify-center text-stone-500 transition-colors hover:bg-stone-50 active:scale-[0.96]"
 													@click="quantity = Math.min(100, quantity + 1)">+</button>
 											</div>
 											<span class="text-[13px] text-stone-500">{{ quantity === 1 ? 'copy' : 'copies' }} on the shelf</span>
@@ -281,12 +281,12 @@
 											<input id="bookCost" v-model="form.cost" type="number" min="0" step="0.01" placeholder="0.00"
 											:class="[inputClass, errors.cost ? 'border-red-400 bg-red-50' : 'border-stone-200']" class="font-data !text-[13.5px]" @input="errors.cost = ''" />
 											<p v-if="errors.cost" class="mt-1 text-[12.5px] text-red-500">{{ errors.cost }}</p>
-											<p v-else class="mt-1 text-[12.5px] text-stone-400">Enter 0 for a donated book.</p>
+											<p v-else class="mt-1 text-[12.5px] text-stone-500">Enter 0 for a donated book.</p>
 										</div>
 									</div>
 									<div>
 										<label for="bookRemarks" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">
-											Remarks <span class="font-normal text-stone-400">(optional)</span>
+											Remarks <span class="font-normal text-stone-500">(optional)</span>
 										</label>
 										<textarea id="bookRemarks" v-model="form.remarks" rows="3" maxlength="1000"
 											placeholder="e.g. Donated copy, minor cover wear"
@@ -303,7 +303,7 @@
 					</div>
 
 					<div class="flex flex-shrink-0 items-center justify-between gap-2 border-t border-stone-100 px-6 py-4 sm:px-7">
-						<span class="text-[12.5px] tabular-nums text-stone-400">Step {{ step }} of {{ lastStep }}</span>
+						<span class="text-[12.5px] tabular-nums text-stone-500">Step {{ step }} of {{ lastStep }}</span>
 						<div class="flex gap-2">
 							<ButtonsButton v-if="step > 1" variant="ghost" :disabled="submitting" @click="goTo(step - 1)">
 								<Icon name="i-tabler-arrow-left" class="h-4 w-4" />Back

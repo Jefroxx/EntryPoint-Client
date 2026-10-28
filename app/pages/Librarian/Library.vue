@@ -16,13 +16,13 @@
              (a row per copy with the fuller record) share the shelf numbers. -->
         <div v-if="activeTab === 'accession' || activeTab === 'catalog'"
             class="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <LibrarianCatalogStatTile label="Total Books" :value="stats?.totalBooks ?? '—'" icon="i-tabler-book-2"
+            <LibrarianCatalogStatTile label="Book Titles" :value="stats?.totalBooks ?? '—'" icon="i-tabler-book-2"
                 tone="accent" />
-            <LibrarianCatalogStatTile label="Available Books" :value="stats?.availableBooks ?? '—'"
+            <LibrarianCatalogStatTile label="Copies on the Shelf" :value="stats?.availableBooks ?? '—'"
                 icon="i-tabler-circle-check" tone="success" />
-            <LibrarianCatalogStatTile label="Borrowed Books" :value="stats?.borrowedBooks ?? '—'" icon="i-tabler-book"
+            <LibrarianCatalogStatTile label="Copies Borrowed" :value="stats?.borrowedBooks ?? '—'" icon="i-tabler-book"
                 tone="warning" />
-            <LibrarianCatalogStatTile label="Overdue Books" :value="stats?.overdueBooks ?? '—'"
+            <LibrarianCatalogStatTile label="Overdue Loans" :value="stats?.overdueBooks ?? '—'"
                 icon="i-tabler-alert-circle" tone="danger" />
         </div>
 
@@ -60,7 +60,7 @@
             <LibrarianAccessionRecordTable :books="books?.data ?? []" :loading="booksPending" :filtered="hasBookFilters"
                 @view="openBookDetail" @edit="openEditBook" @remove="askRemoveBook" />
 
-            <div v-if="books" class="mt-3 flex items-center justify-between text-[13.5px] text-stone-400">
+            <div v-if="books" class="mt-3 flex items-center justify-between text-[13.5px] text-stone-500">
                 <span>Showing {{ books.data.length }} of {{ books.total }} books</span>
                 <span>Page {{ books.current_page }} of {{ books.last_page }}</span>
             </div>
@@ -91,7 +91,7 @@
                         class="flex h-[42px] min-w-[200px] max-w-[320px] flex-1 items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 transition-shadow focus-within:ring-2 focus-within:ring-accent-200">
                         <Icon name="i-tabler-search" class="h-[15px] w-[15px] text-stone-400" />
                         <input id="copy-search" v-model="copySearch" type="text"
-                            placeholder="Search accession no., title, author, or ISBN"
+                            placeholder="Title, author, ISBN or acc. no."
                             class="w-full border-none bg-transparent text-[15px] text-stone-800 outline-none placeholder:text-stone-400" />
                     </div>
 
@@ -119,6 +119,9 @@
                     <div class="flex-1"></div>
 
                     <LibrarianResetFiltersButton @click="clearCopyFilters" />
+                    <ButtonsButton variant="ghost" :disabled="exportingCopies" @click="exportCopies">
+                        <Icon :name="exportingCopies ? 'i-tabler-loader-2' : 'i-tabler-file-spreadsheet'" class="h-3.5 w-3.5" :class="{ 'animate-spin': exportingCopies }" />Export to Excel
+                    </ButtonsButton>
                     <ButtonsButton variant="primary" @click="openAddCopies()">
                         <Icon name="i-tabler-copy-plus" class="h-3.5 w-3.5" />Add Book Copy
                     </ButtonsButton>
@@ -129,7 +132,7 @@
                     @edit-book="(copy) => openEditBook(copy.book)" @edit-copy="openEditCopy" @add-copy="openAddCopies"
                     @remove-copy="openRemoveCopy" />
 
-                <div v-if="copies" class="mt-3 flex items-center justify-between text-[13.5px] text-stone-400">
+                <div v-if="copies" class="mt-3 flex items-center justify-between text-[13.5px] text-stone-500">
                     <span>Showing {{ copies.data.length }} of {{ copies.total }} copies</span>
                     <span>Page {{ copies.current_page }} of {{ copies.last_page }}</span>
                 </div>
@@ -171,7 +174,7 @@
                 <LibrarianStockLogTable :logs="stockLogs?.data ?? []" :loading="stockPending"
                     :filtered="hasStockFilters" />
 
-                <div v-if="stockLogs" class="mt-3 flex items-center justify-between text-[13.5px] text-stone-400">
+                <div v-if="stockLogs" class="mt-3 flex items-center justify-between text-[13.5px] text-stone-500">
                     <span>Showing {{ stockLogs.data.length }} of {{ stockLogs.total }} entries</span>
                     <span>Page {{ stockLogs.current_page }} of {{ stockLogs.last_page }}</span>
                 </div>
@@ -224,12 +227,10 @@
                 <LibrarianResetFiltersButton @click="requestSearch = ''; requestStatusFilter = ''" />
             </div>
 
-            <p v-if="requestActionError" class="mb-3 text-[14px] font-medium text-red-600">{{ requestActionError }}</p>
-
             <LibrarianBookRequestsTable :suggestions="pagedRequests" :loading="requestsPending"
                 @review="openReviewDrawer" @approve="handleApprove" @reject="handleReject" />
 
-            <div v-if="suggestions" class="mt-3 flex items-center justify-between text-[13.5px] text-stone-400">
+            <div v-if="suggestions" class="mt-3 flex items-center justify-between text-[13.5px] text-stone-500">
                 <span>Showing {{ pagedRequests.length }} of {{ filteredRequests.length }} requests</span>
                 <span>Page {{ requestsPage }} of {{ requestsTotalPages }}</span>
             </div>
@@ -267,7 +268,7 @@
             <LibrarianCategoriesTable :subjects="filteredSubjects" :loading="subjectsPending" @edit="openCategoryForm"
                 @delete="askDeleteCategory" @view-book="openBookDetail" @show-books="showCategoryBooks" />
 
-            <div class="mt-3 flex items-center justify-between text-[13.5px] text-stone-400">
+            <div class="mt-3 flex items-center justify-between text-[13.5px] text-stone-500">
                 <span>Showing {{ filteredSubjects.length }} of {{ subjects.length }} categories</span>
                 <span>{{ totalBooks }} books total</span>
             </div>
@@ -291,6 +292,11 @@
 
         <LibrarianBookDetailDrawer :open="isDetailOpen" :book="detailBook" :loading="detailLoading" :error="detailError"
             @close="isDetailOpen = false" @edit="openEditBook" @remove="askRemoveBook" />
+
+        <LibrarianConfirmModal :open="isRequestDecisionOpen" :title="requestDecisionText.title"
+            :message="requestDecisionText.message" :confirm-label="requestDecisionText.confirm"
+            :danger="requestDecision?.action === 'reject'" :loading="requestDecisionBusy"
+            @close="isRequestDecisionOpen = false" @confirm="confirmRequestDecision" />
 
         <LibrarianConfirmModal :open="isRemoveBookOpen" title="Remove this book?"
             :message="`“${removingBook?.title ?? 'This book'}” leaves the catalog and its copies are retired. Past loans and fines stay on students' records.`"
@@ -396,6 +402,19 @@ watch(copySearch, () => {
         refetchCopies()
     }, 300)
 })
+
+// Exports every copy the current search and filters match, not just the page on screen.
+const exportingCopies = ref(false)
+async function exportCopies() {
+    exportingCopies.value = true
+    await perform(() => exportCopiesToExcel({
+        search: copySearch.value.trim() || undefined,
+        subjectID: copySubjectFilter.value || undefined,
+        area: copyAreaFilter.value || undefined,
+        status: copyStatusFilter.value || undefined,
+    }), 'Catalog exported', 'Could not export the catalog')
+    exportingCopies.value = false
+}
 
 watch([copySubjectFilter, copyAreaFilter, copyStatusFilter], () => {
     copyPage.value = 1
@@ -675,7 +694,6 @@ const suggestions = computed(() => suggestionsResponse.value?.suggestions ?? [])
 
 const requestSearch = ref('')
 const requestStatusFilter = ref<'' | 'Pending' | 'Approved' | 'Rejected'>('')
-const requestActionError = ref('')
 
 const requestStats = computed(() => ({
     total: suggestions.value.length,
@@ -720,25 +738,51 @@ function openReviewDrawer(suggestion: BookSuggestion) {
     isDrawerOpen.value = true
 }
 
-async function handleApprove(suggestion: BookSuggestion) {
-    requestActionError.value = ''
-    try {
-        await librarianService.approveBookSuggestion(suggestion.uuid)
-        isDrawerOpen.value = false
-        await refetchRequests()
-    } catch (error: any) {
-        requestActionError.value = error?.data?.message || 'Could not approve this request. Please try again.'
-    }
+// Approving or rejecting a book request asks first: the student is told either way, and an approved request also
+// counts toward their achievements, so neither can be taken back.
+const requestDecision = ref<{ suggestion: BookSuggestion; action: 'approve' | 'reject' } | null>(null)
+const isRequestDecisionOpen = ref(false)
+const requestDecisionBusy = ref(false)
+
+const requestDecisionText = computed(() => {
+    const d = requestDecision.value
+    if (!d) return { title: '', message: '', confirm: '' }
+    const requester = d.suggestion.student?.user ? `${d.suggestion.student.user.firstName} ${d.suggestion.student.user.lastName}` : 'the student'
+    return d.action === 'approve'
+        ? {
+            title: 'Approve this request?',
+            message: `Approve ${requester}'s request for “${d.suggestion.title}”? They are told it will be added to the collection, and it counts toward their achievements.`,
+            confirm: 'Yes, approve',
+        }
+        : {
+            title: 'Reject this request?',
+            message: `Reject ${requester}'s request for “${d.suggestion.title}”? They are told it was not approved. This can't be undone.`,
+            confirm: 'Yes, reject',
+        }
+})
+
+function handleApprove(suggestion: BookSuggestion) {
+    requestDecision.value = { suggestion, action: 'approve' }
+    isRequestDecisionOpen.value = true
 }
 
-async function handleReject(suggestion: BookSuggestion) {
-    requestActionError.value = ''
-    try {
-        await librarianService.rejectBookSuggestion(suggestion.uuid)
+function handleReject(suggestion: BookSuggestion) {
+    requestDecision.value = { suggestion, action: 'reject' }
+    isRequestDecisionOpen.value = true
+}
+
+async function confirmRequestDecision() {
+    const decision = requestDecision.value
+    if (!decision) return
+    const { suggestion, action } = decision
+    requestDecisionBusy.value = true
+    const ok = action === 'approve'
+        ? await perform(() => librarianService.approveBookSuggestion(suggestion.uuid), 'Request approved', 'Could not approve this request', [refetchRequests])
+        : await perform(() => librarianService.rejectBookSuggestion(suggestion.uuid), 'Request rejected', 'Could not reject this request', [refetchRequests])
+    requestDecisionBusy.value = false
+    if (ok) {
+        isRequestDecisionOpen.value = false
         isDrawerOpen.value = false
-        await refetchRequests()
-    } catch (error: any) {
-        requestActionError.value = error?.data?.message || 'Could not reject this request. Please try again.'
     }
 }
 </script>

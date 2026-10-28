@@ -23,8 +23,8 @@
 
 			<div v-if="isOpen"
 				class="absolute left-0 right-0 top-[calc(100%+4px)] z-20 max-h-56 overflow-y-auto rounded-xl border border-stone-200 bg-white p-1 shadow-card">
-				<p v-if="loading" class="px-3 py-2 text-[13.5px] text-stone-400">Searching…</p>
-				<p v-else-if="results.length === 0" class="px-3 py-2 text-[13.5px] text-stone-400">No matches.</p>
+				<p v-if="loading" class="px-3 py-2 text-[13.5px] text-stone-500">Searching…</p>
+				<p v-else-if="results.length === 0" class="px-3 py-2 text-[13.5px] text-stone-500">No matches.</p>
 				<button v-for="(item, index) in results" :key="index" type="button"
 					class="flex w-full flex-col rounded-lg px-3 py-2 text-left transition-colors hover:bg-stone-50"
 					@mousedown.prevent="choose(item)">

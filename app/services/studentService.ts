@@ -91,8 +91,10 @@ export interface LoanRow {
 
 export interface PenaltyRow {
   penaltyID: number;
+  /** 'overdue' is a late fee; 'lost' / 'damaged' mean the book itself: pay its price or replace it. */
+  kind: "overdue" | "lost" | "damaged";
   amount: number;
-  paymentStatus: "Unpaid" | "Paid" | string;
+  paymentStatus: "Unpaid" | "Paid" | "Replaced" | string;
   computedAt: string;
   settledAt: string | null;
   loanReturned: boolean;

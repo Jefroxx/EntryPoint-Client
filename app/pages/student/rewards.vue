@@ -16,7 +16,7 @@
 					</p>
 				</div>
 				<NuxtLink to="/student/profile?tab=achievements"
-					class="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-[10px] bg-white px-3.5 text-[13.5px] font-semibold text-accent-600 transition-transform duration-150 ease-out active:scale-95">
+					class="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-[10px] bg-white px-3.5 text-[13.5px] font-semibold text-accent-600 transition-transform duration-150 ease-out active:scale-[0.96]">
 					<Icon name="i-tabler-trophy" class="h-4 w-4" />Achievements
 				</NuxtLink>
 			</div>
@@ -38,7 +38,7 @@
 		<!-- Wide screens: your picks sit in a panel beside the shelf, so they never get pushed down the page. -->
 		<div v-else-if="data" class="lg:grid lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start lg:gap-6">
 			<section id="market" class="st-in min-w-0 scroll-mt-20" style="animation-delay: 105ms">
-				<h2 class="mb-2.5 mt-6 px-0.5 text-[11px] font-semibold uppercase tracking-[.08em] text-stone-400">Marketplace</h2>
+				<h2 class="mb-2.5 mt-6 px-0.5 text-[11px] font-semibold uppercase tracking-[.08em] text-stone-500">Marketplace</h2>
 
 				<p v-if="!data.items.length" class="rounded-2xl bg-stone-100 px-4 py-6 text-center text-[13.5px] text-stone-500">Nothing is on the marketplace yet.</p>
 				<div v-else class="grid grid-cols-2 gap-2.5 md:grid-cols-[repeat(auto-fill,minmax(170px,1fr))] md:gap-3">
@@ -48,16 +48,16 @@
 							<Icon :name="artIcon(item.type)" class="h-8 w-8" />
 						</div>
 						<p class="text-[13.5px] font-semibold leading-tight text-stone-900">{{ item.name }}</p>
-						<p class="mb-2.5 mt-0.5 text-[11.5px] text-stone-400">{{ item.type ?? 'Item' }}{{ item.inStock && item.stock < 5 ? ` · ${item.stock} left` : '' }}</p>
+						<p class="mb-2.5 mt-0.5 text-[11.5px] text-stone-500">{{ item.type ?? 'Item' }}{{ item.inStock && item.stock < 5 ? ` · ${item.stock} left` : '' }}</p>
 						<div class="mt-auto flex min-h-8 items-center justify-between gap-1.5">
-							<span class="text-[14px] font-bold tabular-nums">{{ item.pointCost }} <small class="font-medium text-stone-400">pts</small></span>
+							<span class="text-[14px] font-bold tabular-nums">{{ item.pointCost }} <small class="font-medium text-stone-500">pts</small></span>
 
 							<StudentPill v-if="!item.inStock">Out of stock</StudentPill>
-							<span v-else-if="!qty(item.itemID) && item.pointCost > points" class="text-[11.5px] text-stone-400">Need {{ item.pointCost - points }} more</span>
-							<div v-else-if="qty(item.itemID)" class="inline-flex h-8 items-center overflow-hidden rounded-[10px] bg-accent-100 text-accent-600">
-								<button type="button" aria-label="Fewer" class="flex h-8 w-8 items-center justify-center transition-transform duration-150 ease-out active:scale-75" @click="step(item, -1)"><Icon name="i-tabler-minus" class="h-3.5 w-3.5" /></button>
+							<span v-else-if="!qty(item.itemID) && item.pointCost > points" class="text-[11.5px] text-stone-500">Need {{ item.pointCost - points }} more</span>
+							<div v-else-if="qty(item.itemID)" class="inline-flex h-11 sm:h-10 items-center overflow-hidden rounded-[10px] bg-accent-100 text-accent-600">
+								<button type="button" aria-label="Fewer" class="flex h-11 w-11 items-center justify-center transition-transform sm:h-10 sm:w-10 duration-150 ease-out active:scale-[0.96]" @click="step(item, -1)"><Icon name="i-tabler-minus" class="h-3.5 w-3.5" /></button>
 								<b class="min-w-5 text-center text-[14px] tabular-nums">{{ qty(item.itemID) }}</b>
-								<button type="button" aria-label="More" class="flex h-8 w-8 items-center justify-center transition-transform duration-150 ease-out active:scale-75" @click="step(item, 1)"><Icon name="i-tabler-plus" class="h-3.5 w-3.5" /></button>
+								<button type="button" aria-label="More" class="flex h-11 w-11 items-center justify-center transition-transform sm:h-10 sm:w-10 duration-150 ease-out active:scale-[0.96]" @click="step(item, 1)"><Icon name="i-tabler-plus" class="h-3.5 w-3.5" /></button>
 							</div>
 							<ButtonsButton v-else size="sm" variant="ghost" class="!border-accent-100 !bg-accent-100 !text-accent-600" @click="step(item, 1)">
 								<Icon name="i-tabler-plus" class="h-3.5 w-3.5" />Add
@@ -72,7 +72,7 @@
 					<div v-if="cartLines.length"
 						class="sticky bottom-[calc(5.5rem+env(safe-area-inset-bottom,0px))] z-30 mt-3.5 flex items-center justify-between gap-3 rounded-2xl border border-stone-200 bg-white/85 px-3.5 py-3 shadow-[0_18px_44px_-18px_rgba(40,25,8,.45)] backdrop-blur-xl md:bottom-4 lg:hidden">
 						<div>
-							<p class="text-[12px] text-stone-400">Balance {{ points }} pts</p>
+							<p class="text-[12px] text-stone-500">Balance {{ points }} pts</p>
 							<b class="text-[15px] tabular-nums">{{ cartTotal }} pts · {{ cartCount }} item{{ cartCount === 1 ? '' : 's' }}</b>
 						</div>
 						<ButtonsButton class="!h-10" @click="reviewing = true">Review &amp; redeem</ButtonsButton>
@@ -108,12 +108,12 @@
 								<p class="truncate text-[14px] font-medium text-stone-900">{{ line.item.name }}</p>
 								<p class="text-[12px] text-stone-500 tabular-nums">{{ line.item.pointCost ? `${line.item.pointCost * line.quantity} pts` : 'Free' }}</p>
 							</div>
-							<div class="inline-flex h-8 shrink-0 items-center overflow-hidden rounded-[10px] bg-accent-100 text-accent-600">
-								<button type="button" :aria-label="`One fewer ${line.item.name}`" class="flex h-8 w-8 items-center justify-center transition-transform duration-150 ease-out active:scale-75" @click="step(line.item, -1)">
+							<div class="inline-flex h-11 sm:h-10 shrink-0 items-center overflow-hidden rounded-[10px] bg-accent-100 text-accent-600">
+								<button type="button" :aria-label="`One fewer ${line.item.name}`" class="flex h-11 w-11 items-center justify-center transition-transform sm:h-10 sm:w-10 duration-150 ease-out active:scale-[0.96]" @click="step(line.item, -1)">
 									<Icon :name="line.quantity === 1 ? 'i-tabler-trash' : 'i-tabler-minus'" class="h-3.5 w-3.5" />
 								</button>
 								<b class="min-w-5 text-center text-[14px] tabular-nums">{{ line.quantity }}</b>
-								<button type="button" :aria-label="`One more ${line.item.name}`" class="flex h-8 w-8 items-center justify-center transition-transform duration-150 ease-out active:scale-75" @click="step(line.item, 1)">
+								<button type="button" :aria-label="`One more ${line.item.name}`" class="flex h-11 w-11 items-center justify-center transition-transform sm:h-10 sm:w-10 duration-150 ease-out active:scale-[0.96]" @click="step(line.item, 1)">
 									<Icon name="i-tabler-plus" class="h-3.5 w-3.5" />
 								</button>
 							</div>
@@ -142,8 +142,8 @@
 					<span class="text-stone-900">{{ line.item.name }}{{ line.quantity > 1 ? ` ×${line.quantity}` : '' }}</span>
 					<b class="tabular-nums">{{ line.item.pointCost * line.quantity }} pts</b>
 				</div>
-				<div class="flex justify-between py-2.5 text-[14px]"><span class="text-stone-400">Balance now</span><b class="tabular-nums">{{ points }} pts</b></div>
-				<div class="flex justify-between py-2.5 text-[14px]"><span class="text-stone-400">Balance after</span><b class="tabular-nums text-accent-500">{{ points - cartTotal }} pts</b></div>
+				<div class="flex justify-between py-2.5 text-[14px]"><span class="text-stone-500">Balance now</span><b class="tabular-nums">{{ points }} pts</b></div>
+				<div class="flex justify-between py-2.5 text-[14px]"><span class="text-stone-500">Balance after</span><b class="tabular-nums text-accent-500">{{ points - cartTotal }} pts</b></div>
 			</div>
 			<p class="text-[13px] text-stone-500">A librarian will prepare your items. Collect them at the desk.</p>
 			<template #actions>

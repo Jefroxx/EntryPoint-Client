@@ -1,19 +1,21 @@
 <template>
-	<div class="relative overflow-hidden rounded-2xl border border-stone-200 bg-white">
-		<!-- Phones: a table that offers a `cards` slot shows those cards instead of the table. -->
+	<div class="relative rounded-2xl" :class="$slots.cards ? '' : 'overflow-hidden border border-stone-200 bg-white'">
+		<!-- A table that offers a `cards` slot shows one card per row, at every screen size: a single column on phones,
+			 a grid on wider screens. The table below is then kept hidden (its slot still holds the row drawers). -->
 		<template v-if="$slots.cards">
-			<ul class="divide-y divide-stone-100 sm:hidden">
+			<LibrarianCardSkeleton v-if="loading" />
+			<ul v-else class="grid gap-3 sm:grid-cols-2 2xl:grid-cols-3 [&>li]:overflow-hidden [&>li]:rounded-2xl [&>li]:border [&>li]:border-stone-200 [&>li]:bg-white">
 				<slot name="cards" />
 			</ul>
-			<p v-if="empty && !loading" class="px-4 py-10 text-center text-[15px] text-stone-400 sm:hidden">{{ emptyText }}</p>
+			<p v-if="empty && !loading" class="rounded-2xl border border-stone-200 bg-white px-4 py-10 text-center text-[15px] text-stone-500">{{ emptyText }}</p>
 		</template>
 
-		<div ref="scroller" class="max-h-[480px] overflow-auto" :class="$slots.cards ? 'max-sm:hidden' : ''" @scroll.passive="measure">
+		<div ref="scroller" class="max-h-[480px] overflow-auto" :class="$slots.cards ? 'hidden' : ''" @scroll.passive="measure">
 			<table class="shell-table w-full border-collapse text-left" :style="{ minWidth }">
 				<thead>
 					<tr>
 						<th v-for="(column, index) in columns" :key="`${index}-${column}`"
-							class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-stone-400">
+							class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-stone-500">
 							{{ column }}
 						</th>
 					</tr>
@@ -21,7 +23,7 @@
 				<tbody>
 					<slot />
 					<tr v-if="empty && !loading">
-						<td :colspan="columns.length" class="py-10 text-center text-[15px] text-stone-400">{{ emptyText }}</td>
+						<td :colspan="columns.length" class="py-10 text-center text-[15px] text-stone-500">{{ emptyText }}</td>
 					</tr>
 				</tbody>
 			</table>
@@ -30,9 +32,9 @@
 		<!-- A soft fade on the right edge while there is more to swipe to. -->
 		<div v-if="moreToRight" aria-hidden="true"
 			class="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-stone-300/40 to-transparent"
-			:class="$slots.cards ? 'max-sm:hidden' : ''" />
+			:class="$slots.cards ? 'hidden' : ''" />
 
-		<LibrarianLoadingOverlay :loading="loading" />
+		<LibrarianLoadingOverlay v-if="!$slots.cards" :loading="loading" />
 	</div>
 </template>
 

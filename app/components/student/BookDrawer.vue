@@ -11,7 +11,7 @@
 
 			<dl class="mt-4 rounded-2xl border border-stone-200 bg-white px-4 py-1 text-[13.5px]">
 				<div v-for="row in details" :key="row.label" class="flex justify-between gap-4 border-b border-stone-100 py-2.5 last:border-0">
-					<dt class="text-stone-400">{{ row.label }}</dt>
+					<dt class="text-stone-500">{{ row.label }}</dt>
 					<dd class="text-right text-stone-800" :class="row.mono ? 'font-data text-[12.5px]' : ''">{{ row.value }}</dd>
 				</div>
 			</dl>
@@ -19,7 +19,7 @@
 			<!-- Photos of the table of contents, index… so a student can check a book before borrowing it. -->
 			<BookPagesGallery v-if="book.pages?.length" class="mt-6" :pages="book.pages" />
 
-			<h4 class="mb-2.5 mt-6 px-0.5 text-[11px] font-semibold uppercase tracking-[.08em] text-stone-400">Availability</h4>
+			<h4 class="mb-2.5 mt-6 px-0.5 text-[11px] font-semibold uppercase tracking-[.08em] text-stone-500">Availability</h4>
 			<div class="rounded-2xl border border-stone-200 bg-white p-4">
 				<div class="flex items-center justify-between gap-2">
 					<b class="text-[14.5px] text-stone-900">
@@ -33,7 +33,7 @@
 					<i v-for="n in book.totalCopies" :key="n" class="h-2 w-6 rounded-full"
 						:class="n <= book.availableCopies ? 'bg-emerald-500' : 'bg-stone-200'" />
 				</div>
-				<p class="mt-2.5 text-[12.5px] text-stone-400">
+				<p class="mt-2.5 text-[12.5px] text-stone-500">
 					{{ book.availableCopies
 						? 'Reserve it and collect it at the desk once a librarian accepts.'
 						: `Reserve to join the queue. You'd be #${book.queueLength + 1}.` }}

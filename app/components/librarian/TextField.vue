@@ -2,7 +2,7 @@
 	<div>
 		<label :for="id" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">
 			{{ label }}<FieldRequired v-if="isRequired" />
-			<span v-if="optional" class="ml-1 font-normal text-stone-400">(optional)</span>
+			<span v-if="optional" class="ml-1 font-normal text-stone-500">(optional)</span>
 		</label>
 		<input :id="id" :value="modelValue" :type="type" :placeholder="placeholder" :min="min" :max="max" :step="step"
 			:autocomplete="autocomplete" :maxlength="maxlength" :aria-required="isRequired || undefined"
@@ -10,7 +10,7 @@
 			:class="[error ? 'border-red-400 bg-red-50' : 'border-stone-200', mono ? 'font-data text-[13.5px]' : '']"
 			@input="onInput" />
 		<p v-if="error" class="mt-1 text-[12.5px] text-red-500">{{ error }}</p>
-		<p v-else-if="hint" class="mt-1 text-[12.5px] text-stone-400">{{ hint }}</p>
+		<p v-else-if="hint" class="mt-1 text-[12.5px] text-stone-500">{{ hint }}</p>
 	</div>
 </template>
 

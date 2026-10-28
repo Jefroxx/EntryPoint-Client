@@ -43,7 +43,7 @@
 		<LibrarianRecordDrawer :open="!!selected" heading="Achievement details" :title="selected?.name ?? ''"
 			:subtitle="selected ? criteria(selected) : ''" :fields="fields" @close="selected = null">
 			<section class="mt-6 border-t border-stone-100 pt-5">
-				<h4 class="text-[12px] font-bold uppercase tracking-wide text-stone-400">Students</h4>
+				<h4 class="text-[12px] font-bold uppercase tracking-wide text-stone-500">Students</h4>
 
 				<div class="mt-2.5 flex flex-wrap gap-1.5">
 					<button v-for="chip in chips" :key="chip.value" type="button"
@@ -57,23 +57,25 @@
 				<input v-model="studentSearch" type="search" placeholder="Search name or student ID" aria-label="Search students"
 					class="mt-3 h-10 w-full rounded-xl border border-stone-200 bg-white px-3 text-[14px] text-stone-700 placeholder:text-stone-400 focus:border-accent-300 focus:outline-none" />
 
-				<p v-if="studentsLoading" class="py-6 text-center text-[13.5px] text-stone-400">Loading students…</p>
+				<p v-if="studentsLoading" class="py-6 text-center text-[13.5px] text-stone-500">Loading students…</p>
 				<p v-else-if="studentsError" class="py-6 text-center text-[13.5px] text-red-600">{{ studentsError }}</p>
-				<p v-else-if="visibleStudents.length === 0" class="py-6 text-center text-[13.5px] text-stone-400">
+				<p v-else-if="visibleStudents.length === 0" class="py-6 text-center text-[13.5px] text-stone-500">
 					{{ students.length === 0 ? 'No student has unlocked this yet.' : 'No students match.' }}
 				</p>
 				<ul v-else class="mt-2 divide-y divide-stone-100">
-					<li v-for="s in visibleStudents" :key="s.studentID" class="flex items-start justify-between gap-3 py-2.5">
+					<li v-for="s in pagedStudents" :key="s.studentID" class="flex items-start justify-between gap-3 py-2.5">
 						<div class="min-w-0">
 							<p class="truncate text-[14px] font-semibold text-stone-900">{{ s.name }}</p>
 							<p class="text-[12px] text-stone-500"><span class="font-data">{{ s.studentIDNumber ?? '—' }}</span><template v-if="s.earnedAt"> · Unlocked {{ formatDate(s.earnedAt) }}</template></p>
 						</div>
 						<div class="shrink-0 text-right">
 							<LibrarianStatusPill :label="s.redeemedAt ? 'Redeemed' : 'Not redeemed'" :tone="s.redeemedAt ? 'success' : 'neutral'" />
-							<p v-if="s.redeemedAt" class="mt-0.5 text-[11.5px] text-stone-400">{{ formatDate(s.redeemedAt) }}</p>
+							<p v-if="s.redeemedAt" class="mt-0.5 text-[11.5px] text-stone-500">{{ formatDate(s.redeemedAt) }}</p>
 						</div>
 					</li>
 				</ul>
+					<LibrarianPagination v-if="visibleStudents.length > STUDENTS_PER_PAGE" :shown="pagedStudents.length" :total="visibleStudents.length"
+						noun="students" :page="studentPage" :last-page="studentPages" @change="studentPage = $event" />
 			</section>
 		</LibrarianRecordDrawer>
 	</LibrarianTableShell>
@@ -143,6 +145,13 @@ const visibleStudents = computed(() => {
 		return !term || s.name.toLowerCase().includes(term) || (s.studentIDNumber ?? '').toLowerCase().includes(term)
 	})
 })
+
+// Five students at a time, so a long list never turns into a long scroll. Any change to the list starts again at page 1.
+const STUDENTS_PER_PAGE = 5
+const studentPage = ref(1)
+const studentPages = computed(() => Math.max(1, Math.ceil(visibleStudents.value.length / STUDENTS_PER_PAGE)))
+const pagedStudents = computed(() => visibleStudents.value.slice((studentPage.value - 1) * STUDENTS_PER_PAGE, studentPage.value * STUDENTS_PER_PAGE))
+watch([studentFilter, studentSearch, selected], () => { studentPage.value = 1 })
 
 const fields = computed(() => {
 	const a = selected.value

@@ -57,7 +57,7 @@
 
         <LibrarianAttendanceLogTable :logs="logs?.data ?? []" :loading="logsPending" />
 
-        <div v-if="logs" class="mt-3 flex items-center justify-between text-[13.5px] text-stone-400">
+        <div v-if="logs" class="mt-3 flex items-center justify-between text-[13.5px] text-stone-500">
             <span>Showing {{ logs.data.length }} of {{ logs.total }} logs</span>
             <span>Page {{ logs.current_page }} of {{ logs.last_page }}</span>
         </div>

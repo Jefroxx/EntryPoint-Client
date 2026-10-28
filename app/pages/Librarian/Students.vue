@@ -55,7 +55,7 @@
         <LibrarianStudentsTable :students="students?.data ?? []" :loading="studentsPending" :empty-text="emptyText" :members="isMembers"
             @view="openDrawer" @approve="handleApprove" @reject="handleReject" @reinstate="askReinstate" />
 
-        <div v-if="students" class="mt-3 flex items-center justify-between text-[13.5px] text-stone-400">
+        <div v-if="students" class="mt-3 flex items-center justify-between text-[13.5px] text-stone-500">
             <span>Showing {{ students.data.length }} of {{ students.total }} {{ isMembers ? 'members' : 'students' }}</span>
             <span>Page {{ students.current_page }} of {{ students.last_page }}</span>
         </div>

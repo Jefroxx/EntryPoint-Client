@@ -1,14 +1,15 @@
 <template>
-	<div class="relative overflow-hidden rounded-2xl border border-stone-200 bg-white">
-		<!-- Phones: one card per row, with the row's buttons on it. -->
-		<ul class="divide-y divide-stone-100 sm:hidden">
+	<div class="relative rounded-2xl">
+		<!-- Too narrow for the table: one card per row. -->
+		<LibrarianCardSkeleton v-if="loading" />
+		<ul v-else class="grid gap-3 sm:grid-cols-2 2xl:grid-cols-3 [&>li]:overflow-hidden [&>li]:rounded-2xl [&>li]:border [&>li]:border-stone-200 [&>li]:bg-white">
 			<li v-for="log in logs" :key="`card-${log.logID}`">
 				<div role="button" tabindex="0" class="px-4 py-3.5 transition-colors active:bg-accent-50" @click="selected = log" @keydown.enter.self="selected = log">
 					<div class="flex items-start gap-3">
 						<LibrarianStudentAvatar :name="studentName(log)" />
 						<div class="min-w-0 flex-1">
 							<p class="truncate text-[15px] font-semibold text-stone-900">{{ studentName(log) }}</p>
-							<p class="font-data text-[12px] text-stone-400">{{ log.student?.studentIDNumber ?? '—' }}</p>
+							<p class="font-data text-[12px] text-stone-500">{{ log.student?.studentIDNumber ?? '—' }}</p>
 							<p class="truncate text-[13px] text-stone-500">{{ log.student?.academicProgram ?? '—' }}</p>
 							<p class="font-data mt-1 text-[12.5px] text-stone-500">In {{ formatTime(log.entryTime) }} · Out {{ log.exitTime ? formatTime(log.exitTime) : '—' }} · {{ duration(log) }}</p>
 						</div>
@@ -20,18 +21,18 @@
 				</div>
 			</li>
 		</ul>
-		<p v-if="!loading && logs.length === 0" class="px-4 py-10 text-center text-[15px] text-stone-400 sm:hidden">No attendance logs match your search.</p>
+		<p v-if="!loading && logs.length === 0" class="rounded-2xl border border-stone-200 bg-white px-4 py-10 text-center text-[15px] text-stone-500">No attendance logs match your search.</p>
 
-		<div class="scroll-shadow-x max-h-[480px] overflow-auto max-sm:hidden">
+		<div class="scroll-shadow-x max-h-[480px] overflow-auto hidden">
 			<table class="w-full min-w-[760px] border-collapse text-left">
 				<thead>
 					<tr>
-						<th class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-stone-400">Student</th>
-						<th class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-stone-400">Program</th>
-						<th class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-stone-400">Entry Time</th>
-						<th class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-stone-400">Exit Time</th>
-						<th class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-stone-400">Duration</th>
-						<th class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-stone-400">Status</th>
+						<th class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-stone-500">Student</th>
+						<th class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-stone-500">Program</th>
+						<th class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-stone-500">Entry Time</th>
+						<th class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-stone-500">Exit Time</th>
+						<th class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-stone-500">Duration</th>
+						<th class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-stone-500">Status</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -43,7 +44,7 @@
 								<LibrarianStudentAvatar :name="studentName(log)" />
 								<div>
 									<p class="text-[15px] font-semibold text-stone-900">{{ studentName(log) }}</p>
-									<p class="font-data text-[12px] text-stone-400">{{ log.student?.studentIDNumber ?? '—' }}</p>
+									<p class="font-data text-[12px] text-stone-500">{{ log.student?.studentIDNumber ?? '—' }}</p>
 								</div>
 							</div>
 						</td>
@@ -63,13 +64,12 @@
 					</tr>
 
 					<tr v-if="!loading && logs.length === 0">
-						<td colspan="6" class="py-10 text-center text-[15px] text-stone-400">No attendance logs match your search.</td>
+						<td colspan="6" class="py-10 text-center text-[15px] text-stone-500">No attendance logs match your search.</td>
 					</tr>
 				</tbody>
 			</table>
 		</div>
 
-		<LibrarianLoadingOverlay :loading="loading" />
 
 		<LibrarianRecordDrawer :open="!!selected" heading="Visit details" :title="selected ? studentName(selected) : ''"
 			:subtitle="selected?.student?.studentIDNumber"
@@ -85,6 +85,7 @@ const props = defineProps<{
 	logs: AttendanceLog[]
 	loading: boolean
 }>()
+
 
 const selected = ref<AttendanceLog | null>(null)
 

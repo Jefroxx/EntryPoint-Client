@@ -7,7 +7,7 @@
 				class="h-10 w-full rounded-[10px] border bg-white pl-3 pr-11 text-[13.5px] text-stone-900 outline-none transition-colors placeholder:text-stone-400 focus:border-accent-500 focus:ring-2 focus:ring-accent-200"
 				:class="error ? 'border-red-400 bg-red-50' : 'border-stone-200'" @input="onInput" />
 			<button type="button" :aria-label="visible ? 'Hide password' : 'Show password'" :aria-pressed="visible"
-				class="absolute right-1 top-1 flex h-8 w-8 items-center justify-center rounded-lg text-stone-400 transition-[transform,background-color,color] duration-150 ease-out hover:bg-stone-100 hover:text-stone-700 active:scale-90"
+				class="absolute right-1 top-1 flex h-8 w-8 items-center justify-center rounded-lg text-stone-400 transition-[transform,background-color,color] duration-150 ease-out hover:bg-stone-100 hover:text-stone-700 active:scale-[0.96]"
 				@click="visible = !visible">
 				<Icon :name="visible ? 'i-tabler-eye-off' : 'i-tabler-eye'" class="h-4 w-4" />
 			</button>

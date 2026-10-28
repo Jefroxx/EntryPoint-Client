@@ -44,7 +44,7 @@
 						<path fill="currentColor" :d="STAR" />
 					</svg>
 
-					<svg class="auth-shelf pointer-events-none absolute inset-x-0 bottom-0 h-[34%] w-full" viewBox="0 0 800 380"
+					<svg class="auth-shelf pointer-events-none absolute inset-x-0 bottom-0 h-[calc(var(--shelf)*100%)] w-full" viewBox="0 0 800 380"
 						preserveAspectRatio="xMinYMax slice" aria-hidden="true">
 						<g v-for="shelf in shelves" :key="shelf.y">
 							<rect :x="shelf.x" :y="shelf.y" :width="shelf.w" height="9" rx="3" fill="#fff" fill-opacity=".2" />
@@ -54,17 +54,19 @@
 					</svg>
 
 					<!-- Headline up top, the steps as one row sitting just above the shelf (the bottom 34%). -->
-					<div class="relative flex h-full flex-col px-12 pb-[calc((100vh-24px)*0.34+28px)] pt-[11vh] xl:px-16">
+					<!-- `gap-8` keeps the button and the steps apart however short the screen is; on a short laptop screen
+						 the shelf, the top padding and the headline shrink (see --shelf below) so everything still fits. -->
+					<div class="relative flex h-full flex-col gap-8 px-12 pb-[calc((100vh-24px)*var(--shelf)+28px)] pt-[11vh] xl:px-16 [@media(max-height:720px)]:pt-[7vh]">
 						<Transition mode="out-in" enter-active-class="transition duration-300 ease-out delay-150"
 							enter-from-class="translate-y-2 opacity-0" leave-active-class="transition duration-200 ease-out"
 							leave-to-class="opacity-0">
 							<div :key="variant" class="max-w-[min(540px,68%)]">
-								<h2 class="text-balance text-[clamp(36px,3.7vw,58px)] font-extrabold leading-[1.02] tracking-[-.03em]">{{ copy.title }}</h2>
+								<h2 class="text-balance text-[clamp(30px,min(3.7vw,6.5vh),58px)] font-extrabold leading-[1.02] tracking-[-.03em]">{{ copy.title }}</h2>
 								<p class="mt-4 max-w-[420px] text-pretty text-[16px] leading-relaxed text-white/80">{{ copy.lead }}</p>
 								<!-- The switch between sign-in and registration lives here on wide screens (the forms show it on phones).
 									 The librarian page has none: its form already links to the student sign-in. -->
 								<NuxtLink v-if="copy.cta" :to="copy.to"
-									class="mt-8 inline-flex h-11 items-center gap-2 rounded-xl border-[1.5px] border-white/75 px-6 text-[14px] font-semibold transition-colors duration-200 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2"
+									class="mt-8 inline-flex h-11 items-center gap-2 rounded-xl border-[1.5px] [@media(max-height:720px)]:mt-5 border-white/75 px-6 text-[14px] font-semibold transition-colors duration-200 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2"
 									:class="variant === 'librarian' ? 'hover:text-stone-800 focus-visible:ring-offset-stone-800' : 'hover:text-accent-600 focus-visible:ring-offset-accent-500'">
 									{{ copy.cta }}
 									<Icon name="i-tabler-arrow-right" class="h-4 w-4" />
@@ -347,6 +349,15 @@ const shelves = [
 
 .auth-panel {
 	transition: transform 760ms var(--ease-in-out);
+	/* How much of the panel's height the book shelf takes (the steps sit just above it). A short laptop screen
+	   gets a thinner shelf, so the headline, the button and the steps have room and never touch. */
+	--shelf: 0.34;
+}
+
+@media (max-height: 720px) {
+	.auth-panel {
+		--shelf: 0.16;
+	}
 }
 
 .auth-panel[data-side='right'] {

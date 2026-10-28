@@ -13,7 +13,7 @@
 						class="flex items-center justify-between bg-gradient-to-br from-accent-600 to-accent-500 px-[22px] py-[18px] text-white">
 						<b class="dashboard-heading text-[18px]">EntryPoint</b>
 						<button v-if="printable" type="button"
-							class="inline-flex h-8 items-center gap-1.5 rounded-lg bg-white/15 px-2.5 text-[12.5px] font-semibold text-white transition-[background-color,transform] duration-150 hover:bg-white/25 active:scale-95"
+							class="inline-flex h-8 items-center gap-1.5 rounded-lg bg-white/15 px-2.5 text-[12.5px] font-semibold text-white transition-[background-color,transform] duration-150 hover:bg-white/25 active:scale-[0.96]"
 							@click="enlarged = true">
 							<Icon name="i-tabler-arrows-maximize" class="h-4 w-4" />Enlarge
 						</button>
@@ -27,7 +27,7 @@
 
 						<!-- Tapping the barcode enlarges it too: it's what people reach for at the door. -->
 						<button v-if="profile?.barcodeValue" type="button" aria-label="Enlarge your Library ID"
-							class="mt-[18px] block w-full rounded-2xl border border-stone-200 bg-white px-3 pb-2 pt-3.5 text-left transition-[border-color,transform] duration-150 hover:border-accent-200 active:scale-[.99]"
+							class="mt-[18px] block w-full rounded-2xl border border-stone-200 bg-white px-3 pb-2 pt-3.5 text-left transition-[border-color,transform] duration-150 hover:border-accent-200 active:scale-[0.96]"
 							@click="enlarged = true">
 							<svg :viewBox="`0 0 ${barcode.width} 64`" preserveAspectRatio="none" role="img"
 								:aria-label="`Barcode ${profile.barcodeValue}`" class="block h-16 w-full">

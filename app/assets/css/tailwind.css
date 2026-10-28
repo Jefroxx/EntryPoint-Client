@@ -330,3 +330,32 @@ body {
 		linear-gradient(to right, rgba(120, 100, 80, .22), rgba(120, 100, 80, 0)) left center / 12px 100% no-repeat scroll,
 		linear-gradient(to left, rgba(120, 100, 80, .22), rgba(120, 100, 80, 0)) right center / 12px 100% no-repeat scroll;
 }
+
+/* Crisper text on macOS, and kinder line breaks: balanced headings, and no one-word last lines in paragraphs.
+   text-wrap-style (not the text-wrap shorthand) so it never overrides truncate or whitespace-nowrap. */
+@layer base {
+	html {
+		-webkit-font-smoothing: antialiased;
+		-moz-osx-font-smoothing: grayscale;
+	}
+
+	h1,
+	h2,
+	h3 {
+		text-wrap-style: balance;
+	}
+
+	p {
+		text-wrap-style: pretty;
+	}
+}
+
+/* Anyone who asked their device for less motion gets instant slides and fades (spinners keep turning, so loading still reads). */
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		transition-duration: 0.01ms !important;
+		transition-delay: 0ms !important;
+	}
+}

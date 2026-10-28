@@ -14,7 +14,7 @@
 
         <section aria-label="Shortcuts" class="mb-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <NuxtLink v-for="s in shortcuts" :key="s.label" :to="s.to"
-                class="group flex items-center gap-3 rounded-2xl border border-stone-200 bg-white p-4 transition-[transform,border-color,box-shadow] duration-150 ease-out hover:border-accent-200 hover:shadow-card active:scale-[.98]">
+                class="group flex items-center gap-3 rounded-2xl border border-stone-200 bg-white p-4 transition-[transform,border-color,box-shadow] duration-150 ease-out hover:border-accent-200 hover:shadow-card active:scale-[0.96]">
                 <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent-50 text-accent-600 transition-colors duration-150 group-hover:bg-accent-100">
                     <Icon :name="s.icon" class="h-5 w-5" />
                 </span>
@@ -32,8 +32,18 @@
                     <NuxtLink to="/admin/audit-log" class="text-[13px] font-semibold text-accent-600 hover:underline">View all</NuxtLink>
                 </div>
 
-                <p v-if="pending && !overview" class="py-6 text-center text-[14px] text-stone-400">Loading…</p>
-                <p v-else-if="!overview?.recentActivity.length" class="py-6 text-center text-[14px] text-stone-400">Nothing has been recorded yet.</p>
+                <ul v-if="pending && !overview" class="divide-y divide-stone-100" aria-busy="true" aria-label="Loading">
+
+                    <li v-for="n in 4" :key="n" class="space-y-2 py-3">
+
+                        <span class="block h-3.5 w-4/5 animate-pulse rounded-md bg-stone-100 motion-reduce:animate-none" />
+
+                        <span class="block h-3 w-1/3 animate-pulse rounded-md bg-stone-100 motion-reduce:animate-none" />
+
+                    </li>
+
+                </ul>
+                <p v-else-if="!overview?.recentActivity.length" class="py-6 text-center text-[14px] text-stone-500">Nothing has been recorded yet.</p>
                 <ul v-else class="divide-y divide-stone-100">
                     <li v-for="entry in overview.recentActivity" :key="entry.logID" class="py-3">
                         <p class="text-[14.5px] leading-snug text-stone-900">{{ entry.summary }}</p>

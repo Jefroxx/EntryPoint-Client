@@ -4,11 +4,11 @@
 		<div class="space-y-4">
 			<!-- Photo: optional; without one, students see the item type's icon. -->
 			<div>
-				<p class="mb-1.5 text-[13.5px] font-semibold text-stone-800">Photo <span class="font-normal text-stone-400">(optional)</span></p>
+				<p class="mb-1.5 text-[13.5px] font-semibold text-stone-800">Photo <span class="font-normal text-stone-500">(optional)</span></p>
 				<div class="flex items-center gap-4">
 					<!-- image/* lets a phone offer its camera as well as the gallery. `relative` keeps the sr-only input
 						 inside the tile, so focusing it doesn't scroll the window. -->
-					<label class="relative flex h-24 w-24 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-xl border border-dashed border-stone-300 text-stone-400 transition-colors hover:border-accent-300 hover:bg-accent-50 hover:text-accent-600"
+					<label class="relative flex h-24 w-24 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-xl border border-dashed border-stone-300 text-stone-500 transition-colors hover:border-accent-300 hover:bg-accent-50 hover:text-accent-600"
 						:class="[preparing ? 'pointer-events-none opacity-60' : '', previewURL ? 'border-solid' : '']">
 						<img v-if="previewURL" :src="previewURL" alt="" class="h-full w-full object-cover" />
 						<Icon v-else :name="preparing ? 'i-tabler-loader-2' : 'i-tabler-camera-plus'" class="h-6 w-6" :class="preparing ? 'animate-spin' : ''" />

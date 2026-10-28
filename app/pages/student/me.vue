@@ -28,13 +28,13 @@
 				</span>
 				<span class="min-w-0 flex-1">
 					<span class="block text-[14.5px] font-medium text-stone-900">{{ row.label }}</span>
-					<span v-if="row.sub" class="block text-[12.5px] text-stone-400">{{ row.sub }}</span>
+					<span v-if="row.sub" class="block text-[12.5px] text-stone-500">{{ row.sub }}</span>
 				</span>
 				<Icon name="i-tabler-chevron-right" class="h-4 w-4 text-stone-300" />
 			</component>
 		</div>
 
-		<h2 class="st-in mb-2.5 mt-6 px-0.5 text-[11px] font-semibold uppercase tracking-[.08em] text-stone-400"
+		<h2 class="st-in mb-2.5 mt-6 px-0.5 text-[11px] font-semibold uppercase tracking-[.08em] text-stone-500"
 			style="animation-delay: 70ms">Account</h2>
 		<div v-if="profile" class="st-in overflow-hidden rounded-2xl border border-stone-200 bg-white"
 			style="animation-delay: 70ms">
@@ -48,7 +48,7 @@
 			</div>
 		</div>
 		<div v-else class="h-32 animate-pulse rounded-2xl bg-stone-200/70" aria-busy="true" />
-		<p class="st-in mx-1 mt-2 text-[12.5px] text-stone-400" style="animation-delay: 70ms">Change your phone, address or password
+		<p class="st-in mx-1 mt-2 text-[12.5px] text-stone-500" style="animation-delay: 70ms">Change your phone, address or password
 			in Profile.</p>
 
 		<ButtonsButton variant="danger" class="st-in mt-6 !h-[46px] w-full !text-[15px]" style="animation-delay: 105ms"

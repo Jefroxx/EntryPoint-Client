@@ -1,7 +1,7 @@
 <template>
 	<!-- Same build as OverdueBooksCard (Student · Book · one pill), so the two read as a pair side by side.
 		 The pill carries the loan's state in its colour and the due date as its text. -->
-	<div class="flex h-full flex-col rounded-2xl border border-stone-200 bg-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-card">
+	<div class="flex h-full flex-col rounded-2xl border border-stone-200 bg-white p-5 shadow-sm transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-card">
 		<div class="mb-4 flex items-center justify-between gap-2">
 			<p class="font-bold text-crimson">Recent loans</p>
 			<NuxtLink to="/librarian/circulation" class="text-[13px] font-semibold text-accent-600 hover:underline">View all</NuxtLink>
@@ -22,7 +22,7 @@
 					</span>
 				</button>
 			</li>
-			<li v-if="loans.length === 0" class="py-6 text-center text-[15px] text-stone-400">No recent loans.</li>
+			<li v-if="loans.length === 0" class="py-6 text-center text-[15px] text-stone-500">No recent loans.</li>
 		</ul>
 
 		<div class="hidden flex-1 overflow-x-auto sm:block">
@@ -55,7 +55,7 @@
 					</tr>
 
 					<tr v-if="loans.length === 0">
-						<td colspan="3" class="py-6 text-center text-[15px] text-stone-400">No recent loans.</td>
+						<td colspan="3" class="py-6 text-center text-[15px] text-stone-500">No recent loans.</td>
 					</tr>
 				</tbody>
 			</table>

@@ -60,7 +60,7 @@
 							<span class="block h-1 rounded-full transition-colors duration-300"
 								:class="s.n <= step ? 'bg-accent-500' : 'bg-stone-200'" />
 							<span class="mt-2 flex items-center gap-1.5 text-[12.5px] font-semibold transition-colors duration-300"
-								:class="step === s.n ? 'text-accent-600' : s.n < step ? 'text-stone-700 group-hover:text-accent-600' : 'text-stone-400'">
+								:class="step === s.n ? 'text-accent-600' : s.n < step ? 'text-stone-700 group-hover:text-accent-600' : 'text-stone-500'">
 								<Icon v-if="s.n < step" name="i-tabler-check" class="h-3.5 w-3.5" />
 								<span v-else class="tabular-nums">{{ s.n }}.</span>
 								{{ s.label }}
@@ -115,18 +115,18 @@
 
 				<div v-else key="school">
 				<fieldset class="mb-5">
-					<legend class="mb-2.5 text-[10.5px] font-bold uppercase tracking-[.08em] text-stone-400">School</legend>
+					<legend class="mb-2.5 text-[10.5px] font-bold uppercase tracking-[.08em] text-stone-500">School</legend>
 					<div class="grid gap-3 sm:grid-cols-2" @focusout="touch">
 						<LibrarianTextField id="studentIDNumber" v-model="form.studentIDNumber" label="Student ID number" mono
 							placeholder="e.g. 2021-00042" hint="As printed on your school ID." :error="err('studentIDNumber')"
 							@update:model-value="clear('studentIDNumber')" />
 						<div>
 							<label for="academicProgram" class="mb-1.5 block text-[12.5px] font-semibold text-stone-800">
-								Program <span class="font-normal text-stone-400">(optional)</span>
+								Program <span class="font-normal text-stone-500">(optional)</span>
 							</label>
 							<select id="academicProgram" v-model="form.academicProgram"
 								class="h-10 w-full rounded-[10px] border border-stone-200 bg-white px-3 text-[13.5px] outline-none transition-colors focus:border-accent-500 focus:ring-2 focus:ring-accent-200"
-								:class="form.academicProgram ? 'text-stone-900' : 'text-stone-400'" @change="clear('academicProgram')">
+								:class="form.academicProgram ? 'text-stone-900' : 'text-stone-500'" @change="clear('academicProgram')">
 								<option value="">Select…</option>
 								<option v-for="program in programs" :key="program" :value="program" class="text-stone-900">{{ program }}</option>
 							</select>
@@ -136,7 +136,7 @@
 				</fieldset>
 
 				<fieldset class="mb-5">
-					<legend class="mb-2.5 text-[10.5px] font-bold uppercase tracking-[.08em] text-stone-400">Sign-in details</legend>
+					<legend class="mb-2.5 text-[10.5px] font-bold uppercase tracking-[.08em] text-stone-500">Sign-in details</legend>
 					<div @focusout="touch">
 						<LibrarianTextField id="email" v-model="form.email" label="Email" type="email" autocomplete="email"
 							:placeholder="emailDomain ? `you@${emailDomain}` : 'you@school.edu.ph'"
@@ -154,7 +154,7 @@
 					<ul class="mt-2.5 flex flex-wrap gap-x-4 gap-y-1.5 text-[11.5px]" aria-label="Password requirements">
 						<li v-for="rule in passwordRules" :key="rule.label"
 							class="inline-flex items-center gap-1.5 transition-colors duration-200"
-							:class="rule.met ? 'text-emerald-600' : 'text-stone-400'">
+							:class="rule.met ? 'text-emerald-600' : 'text-stone-500'">
 							<span class="h-[7px] w-[7px] rounded-full transition-colors duration-200"
 								:class="rule.met ? 'bg-emerald-500' : 'bg-stone-200'" />
 							{{ rule.label }}

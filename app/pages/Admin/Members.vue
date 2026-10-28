@@ -32,9 +32,9 @@
                         <LibrarianStudentAvatar :name="member.name" />
                         <div class="min-w-0 flex-1">
                             <p class="truncate text-[15px] font-semibold text-stone-900">{{ member.name }}</p>
-                            <p class="font-data text-[12px] text-stone-400">{{ member.employeeIDNumber }}</p>
+                            <p class="font-data text-[12px] text-stone-500">{{ member.employeeIDNumber }}</p>
                             <p class="truncate text-[13px] text-stone-500">{{ member.department || '—' }}</p>
-                            <p class="truncate text-[12.5px] text-stone-400">{{ member.email }}</p>
+                            <p class="truncate text-[12.5px] text-stone-500">{{ member.email }}</p>
                             <div class="mt-1.5 flex flex-wrap items-center gap-1.5">
                                 <LibrarianStatusPill :label="typeLabel[member.memberType]" tone="info" />
                                 <LibrarianStatusPill :label="member.isDisabled ? 'Disabled' : 'Active'" :tone="member.isDisabled ? 'danger' : 'success'" />
@@ -62,7 +62,7 @@
             </tr>
         </LibrarianTableShell>
 
-        <div v-if="page" class="mt-3 flex items-center justify-between text-[13.5px] text-stone-400">
+        <div v-if="page" class="mt-3 flex items-center justify-between text-[13.5px] text-stone-500">
             <span>Showing {{ rows.length }} of {{ page.total }} members</span>
             <span>Page {{ page.current_page }} of {{ page.last_page }}</span>
         </div>

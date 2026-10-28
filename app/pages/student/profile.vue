@@ -69,7 +69,7 @@
 							</div>
 							<ul class="flex flex-wrap gap-x-4 gap-y-1.5 text-[11.5px]" aria-label="Password requirements">
 								<li v-for="rule in pwRules" :key="rule.label" class="inline-flex items-center gap-1.5 transition-colors duration-200"
-									:class="rule.met ? 'text-emerald-600' : 'text-stone-400'">
+									:class="rule.met ? 'text-emerald-600' : 'text-stone-500'">
 									<span class="h-[7px] w-[7px] rounded-full transition-colors duration-200" :class="rule.met ? 'bg-emerald-500' : 'bg-stone-200'" />{{ rule.label }}
 								</li>
 							</ul>
@@ -115,7 +115,7 @@
 									<StudentMeter class="mt-2" :value="a.progress.current / a.progress.target" />
 									<p class="mt-1 text-[11.5px] tabular-nums text-stone-500">{{ Math.min(a.progress.current, a.progress.target) }} / {{ a.progress.target }}</p>
 								</template>
-								<p v-else-if="a.status === 'Redeemed' && a.redeemedAt" class="mt-0.5 text-[11.5px] text-stone-400">Claimed {{ formatDate(a.redeemedAt) }}</p>
+								<p v-else-if="a.status === 'Redeemed' && a.redeemedAt" class="mt-0.5 text-[11.5px] text-stone-500">Claimed {{ formatDate(a.redeemedAt) }}</p>
 							</div>
 							<div class="shrink-0 text-right">
 								<ButtonsButton v-if="a.status === 'Unlocked'" size="sm" :disabled="redeeming === a.achievementID" @click="redeem(a)">
@@ -154,7 +154,7 @@
 								<p class="truncate text-[14px] font-medium text-stone-900">{{ m.title }}</p>
 								<p class="text-[12.5px] text-stone-500">{{ m.sub }}</p>
 							</div>
-							<span class="font-data shrink-0 text-[14px] font-bold tabular-nums" :class="m.points > 0 ? 'text-emerald-700' : m.cancelled ? 'text-stone-400 line-through' : 'text-stone-900'">
+							<span class="font-data shrink-0 text-[14px] font-bold tabular-nums" :class="m.points > 0 ? 'text-emerald-700' : m.cancelled ? 'text-stone-500 line-through' : 'text-stone-900'">
 								{{ m.points === 0 ? 'Free' : `${m.points > 0 ? '+' : '−'}${Math.abs(m.points)}` }}
 							</span>
 						</div>
@@ -167,18 +167,19 @@
 						</div>
 						<p v-if="!data.penalties.length" class="px-5 pb-6 pt-2 text-[13.5px] text-stone-500">No fines, ever. Nice.</p>
 						<div v-for="f in data.penalties" :key="f.penaltyID" class="flex items-center gap-3.5 border-t border-stone-100 px-5 py-3">
-							<span class="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[10px]" :class="f.paymentStatus === 'Paid' ? TONE_SOFT.good : TONE_SOFT.bad">
-								<Icon :name="f.paymentStatus === 'Paid' ? 'i-tabler-check' : 'i-tabler-alert-circle'" class="h-[17px] w-[17px]" />
+							<span class="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[10px]" :class="f.paymentStatus !== 'Unpaid' ? TONE_SOFT.good : TONE_SOFT.bad">
+								<Icon :name="f.paymentStatus !== 'Unpaid' ? 'i-tabler-check' : 'i-tabler-alert-circle'" class="h-[17px] w-[17px]" />
 							</span>
 							<div class="min-w-0 flex-1">
 								<p class="truncate text-[14px] font-medium text-stone-900">{{ f.book.title }}</p>
 								<p class="text-[12.5px] text-stone-500">
-									{{ f.paymentStatus === 'Paid' && f.settledAt ? `Paid ${formatDate(f.settledAt)}` : `Charged ${formatDate(f.computedAt)}` }}
+									<template v-if="f.kind !== 'overdue'">{{ f.kind === 'lost' ? 'Lost' : 'Damaged' }} book · </template>
+									{{ f.paymentStatus === 'Replaced' && f.settledAt ? `Replaced ${formatDate(f.settledAt)}` : f.paymentStatus === 'Paid' && f.settledAt ? `Paid ${formatDate(f.settledAt)}` : `Charged ${formatDate(f.computedAt)}` }}
 								</p>
 							</div>
 							<div class="shrink-0 text-right">
-								<p class="font-data text-[14px] font-bold tabular-nums" :class="f.paymentStatus === 'Paid' ? 'text-stone-500' : 'text-red-600'">{{ formatPeso(f.amount) }}</p>
-								<StudentPill class="mt-0.5" :tone="f.paymentStatus === 'Paid' ? 'good' : 'bad'">{{ f.paymentStatus }}</StudentPill>
+								<p class="font-data text-[14px] font-bold tabular-nums" :class="f.paymentStatus !== 'Unpaid' ? 'text-stone-500' : 'text-red-600'">{{ formatPeso(f.amount) }}</p>
+								<StudentPill class="mt-0.5" :tone="f.paymentStatus !== 'Unpaid' ? 'good' : 'bad'">{{ f.paymentStatus }}</StudentPill>
 							</div>
 						</div>
 					</section>

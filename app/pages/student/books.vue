@@ -80,7 +80,7 @@
 								</div>
 								<Icon name="i-tabler-check" class="h-4 w-4 text-emerald-600 md:h-5 md:w-5" />
 								<button type="button" :aria-label="`Receipt for ${loan.book.title}`" title="Receipt"
-									class="flex h-9 w-9 md:h-10 md:w-10 shrink-0 items-center justify-center rounded-lg text-stone-500 transition-[background-color,transform] duration-150 hover:bg-stone-100 hover:text-stone-800 active:scale-90"
+									class="flex h-9 w-9 md:h-10 md:w-10 shrink-0 items-center justify-center rounded-lg text-stone-500 transition-[background-color,transform] duration-150 hover:bg-stone-100 hover:text-stone-800 active:scale-[0.96]"
 									@click="openReceipt(loan)">
 									<Icon name="i-tabler-receipt" class="h-[18px] w-[18px] md:h-5 md:w-5" />
 								</button>
@@ -162,19 +162,25 @@
 						<h2 class="mb-2.5 mt-7 px-0.5 text-[11px] md:mb-3 md:text-[12.5px] font-semibold uppercase tracking-[.08em] text-stone-500">History</h2>
 						<div class="overflow-hidden rounded-2xl border border-stone-200 bg-white">
 							<div v-for="f in data.penalties" :key="f.penaltyID" class="flex items-center gap-3.5 border-b border-stone-100 px-4 py-3.5 md:px-6 md:py-4 last:border-0">
-								<span class="flex h-[34px] w-[34px] md:h-10 md:w-10 shrink-0 items-center justify-center rounded-[10px]" :class="f.paymentStatus === 'Paid' ? TONE_SOFT.good : TONE_SOFT.bad">
-									<Icon :name="f.paymentStatus === 'Paid' ? 'i-tabler-check' : 'i-tabler-alert-circle'" class="h-[17px] w-[17px] md:h-5 md:w-5" />
+								<span class="flex h-[34px] w-[34px] md:h-10 md:w-10 shrink-0 items-center justify-center rounded-[10px]" :class="f.paymentStatus !== 'Unpaid' ? TONE_SOFT.good : TONE_SOFT.bad">
+									<Icon :name="f.paymentStatus !== 'Unpaid' ? 'i-tabler-check' : 'i-tabler-alert-circle'" class="h-[17px] w-[17px] md:h-5 md:w-5" />
 								</span>
 								<div class="min-w-0 flex-1">
 									<p class="truncate text-[14px] md:text-[16px] font-semibold text-stone-900">{{ f.book.title }}</p>
-									<p class="text-[12.5px] md:text-[14.5px] text-stone-500">
+									<!-- Lost or damaged book: the student pays its price at the desk or brings a replacement copy. -->
+									<p v-if="f.kind !== 'overdue'" class="text-[12.5px] md:text-[14.5px] text-stone-500">
+										<template v-if="f.paymentStatus === 'Replaced'">{{ f.kind === 'lost' ? 'Lost' : 'Damaged' }} book · replaced{{ f.settledAt ? ` ${formatDate(f.settledAt)}` : '' }}</template>
+										<template v-else-if="f.paymentStatus === 'Paid'">{{ f.kind === 'lost' ? 'Lost' : 'Damaged' }} book · paid{{ f.settledAt ? ` ${formatDate(f.settledAt)}` : '' }}</template>
+										<template v-else>{{ f.kind === 'lost' ? 'Lost' : 'Damaged' }} book · pay it at the desk, or bring a replacement copy</template>
+									</p>
+									<p v-else class="text-[12.5px] md:text-[14.5px] text-stone-500">
 										{{ f.unitsLate }} {{ f.rateUnit }}{{ f.unitsLate === 1 ? '' : 's' }} late{{ f.rate ? ` × ${formatPeso(f.rate)}` : '' }}{{ f.paymentStatus === 'Paid' && f.settledAt ? ` · paid ${formatDate(f.settledAt)}` : '' }}
 									</p>
-									<p v-if="f.paymentStatus !== 'Paid' && !f.loanReturned" class="mt-0.5 text-[12px] md:text-[13.5px] text-amber-700">Still counting until the book is returned.</p>
+									<p v-if="f.kind === 'overdue' && f.paymentStatus === 'Unpaid' && !f.loanReturned" class="mt-0.5 text-[12px] md:text-[13.5px] text-amber-700">Still counting until the book is returned.</p>
 								</div>
 								<div class="text-right">
 									<p class="text-[14px] md:text-[16px] font-bold tabular-nums">{{ formatPeso(f.amount) }}</p>
-									<StudentPill :tone="f.paymentStatus === 'Paid' ? 'good' : 'bad'" class="mt-1 md:!h-7 md:!px-3 md:!text-[13px]">{{ f.paymentStatus }}</StudentPill>
+									<StudentPill :tone="f.paymentStatus !== 'Unpaid' ? 'good' : 'bad'" class="mt-1 md:!h-7 md:!px-3 md:!text-[13px]">{{ f.paymentStatus }}</StudentPill>
 								</div>
 							</div>
 						</div>
@@ -280,7 +286,7 @@ const pastReservations = computed(() => (data.value?.reservations ?? []).filter(
 const tabs = computed(() => [
 	{ label: 'Reservations', value: 'reservations', badge: activeReservations.value.filter((r) => r.status === 'Accepted').length || undefined },
 	{ label: 'Loans', value: 'loans', badge: openLoans.value.filter((l) => l.status === 'Active' && l.daysLeft < 0).length || undefined },
-	{ label: 'Fines', value: 'fines', badge: (data.value?.penalties ?? []).filter((p) => p.paymentStatus !== 'Paid').length || undefined },
+	{ label: 'Fines', value: 'fines', badge: (data.value?.penalties ?? []).filter((p) => p.paymentStatus === 'Unpaid').length || undefined },
 ])
 
 function loanTone(loan: LoanRow): StudentTone {

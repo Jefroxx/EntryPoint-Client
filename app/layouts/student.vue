@@ -17,12 +17,12 @@
 					:style="pillStyle" />
 				<template v-for="link in links" :key="link.to">
 					<NuxtLink :ref="el => setLinkRef(link.to, el)" :to="link.to"
-						class="sb-item relative z-[1] flex h-11 items-center justify-center gap-3 rounded-xl text-[14.5px] font-medium transition-[transform,color,background-color] duration-150 ease-out active:scale-[.97] lg:justify-start lg:px-3.5"
+						class="sb-item relative z-[1] flex h-11 items-center justify-center gap-3 rounded-xl text-[14.5px] font-medium transition-[transform,color,background-color] duration-150 ease-out active:scale-[0.96] lg:justify-start lg:px-3.5"
 						:class="isActive(link.to) ? 'text-accent-700' : 'text-stone-500 hover:bg-stone-50 hover:text-stone-900'"
 						:aria-current="isActive(link.to) ? 'page' : undefined" :title="link.label">
 						<Icon :name="link.icon" class="h-[19px] w-[19px] shrink-0" />
 						<span class="sb-label hidden whitespace-nowrap lg:inline">{{ link.label }}</span>
-						<span v-if="link.to === '/student/wishlist' && wishlist.length" class="sb-label font-data ml-auto hidden text-[12px] text-stone-400 lg:inline">{{ wishlist.length }}</span>
+						<span v-if="link.to === '/student/wishlist' && wishlist.length" class="sb-label font-data ml-auto hidden text-[12px] text-stone-500 lg:inline">{{ wishlist.length }}</span>
 						<span v-if="link.to === '/student/books' && attention"
 							class="sb-badge absolute right-2 top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10.5px] font-semibold text-white lg:static lg:ml-auto">{{ attention }}</span>
 					</NuxtLink>
@@ -59,7 +59,7 @@
 			<!-- Tablets are always on the icon rail, so the toggle only exists where there's a full sidebar to fold. -->
 			<button type="button" aria-controls="student-sidebar" :aria-expanded="sidebarOpen"
 				:aria-label="sidebarOpen ? 'Collapse sidebar to icons' : 'Expand sidebar'" :title="sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'"
-				class="-ml-2 hidden h-10 w-10 shrink-0 lg:flex items-center justify-center rounded-xl text-stone-600 transition-[transform,background-color,color] duration-150 ease-out hover:bg-stone-900/5 hover:text-stone-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-200 active:scale-90"
+				class="-ml-2 hidden h-10 w-10 shrink-0 lg:flex items-center justify-center rounded-xl text-stone-600 transition-[transform,background-color,color] duration-150 ease-out hover:bg-stone-900/5 hover:text-stone-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-200 active:scale-[0.96]"
 				@click="sidebarOpen = !sidebarOpen">
 				<Icon name="i-tabler-menu-2" class="h-[22px] w-[22px]" />
 			</button>
@@ -69,7 +69,7 @@
 				<input ref="searchInput" v-model="search" type="search" placeholder="Search books by title or author" autocomplete="off"
 					class="h-[40px] w-full rounded-xl border border-stone-200 bg-white pl-9 pr-9 text-[15px] outline-none transition-[border-color,box-shadow] duration-150 placeholder:text-stone-400 focus:border-accent-500 focus:ring-[3px] focus:ring-accent-100"
 					@input="onSearch">
-				<kbd class="font-data pointer-events-none absolute right-2 top-[10px] rounded-md border border-stone-200 bg-stone-50 px-1.5 text-[11px] text-stone-400">/</kbd>
+				<kbd class="font-data pointer-events-none absolute right-2 top-[10px] rounded-md border border-stone-200 bg-stone-50 px-1.5 text-[11px] text-stone-500">/</kbd>
 			</label>
 
 			<span class="flex-1" />
@@ -77,7 +77,7 @@
 			<div class="flex items-center gap-2">
 				<!-- Same material as the search field (white, hairline border, h-40), so it reads as part of the bar. -->
 				<NuxtLink v-if="isStudent" to="/student/rewards" :aria-label="`${points} knowledge points. Open rewards`" title="Knowledge points"
-					class="flex h-10 items-center gap-2 rounded-xl border border-stone-200 bg-white pl-1.5 pr-3 transition-[border-color,transform] duration-150 ease-out hover:border-accent-200 active:scale-[.97]">
+					class="flex h-10 items-center gap-2 rounded-xl border border-stone-200 bg-white pl-1.5 pr-3 transition-[border-color,transform] duration-150 ease-out hover:border-accent-200 active:scale-[0.96]">
 					<span class="flex h-7 w-7 items-center justify-center rounded-lg bg-accent-100 text-accent-600">
 						<Icon name="i-tabler-coins" class="h-4 w-4" />
 					</span>
@@ -86,7 +86,7 @@
 				</NuxtLink>
 				<StudentNotificationsMenu />
 				<button type="button" :aria-label="cart.length ? `Cart, ${cart.length} book${cart.length === 1 ? '' : 's'}` : 'Cart'" title="Cart"
-					class="relative flex h-10 w-10 items-center justify-center rounded-xl border border-stone-200 bg-white text-stone-700 transition-[transform,border-color,color] duration-150 ease-out hover:border-accent-200 hover:text-accent-600 active:scale-95"
+					class="relative flex h-10 w-10 items-center justify-center rounded-xl border border-stone-200 bg-white text-stone-700 transition-[transform,border-color,color] duration-150 ease-out hover:border-accent-200 hover:text-accent-600 active:scale-[0.96]"
 					@click="drawer.open('cart')">
 					<StudentCartIcon class="h-[26px] w-[26px]" />
 					<span v-if="cart.length" :key="cart.length"
@@ -104,7 +104,7 @@
 			<div class="grid h-[52px] grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 px-3.5">
 				<!-- Pages opened from another page (Profile, Notifications, Wishlist…) name where Back goes: the logo gives way to it. -->
 				<button v-if="route.meta.back" type="button"
-					class="-ml-1.5 flex h-10 items-center gap-0.5 rounded-xl pl-1 pr-2.5 text-[15px] font-medium text-accent-500 transition-[transform,opacity] duration-150 ease-out active:scale-95 active:opacity-70"
+					class="-ml-1.5 flex h-10 items-center gap-0.5 rounded-xl pl-1 pr-2.5 text-[15px] font-medium text-accent-500 transition-[transform,opacity] duration-150 ease-out active:scale-[0.96] active:opacity-70"
 					@click="goBack">
 					<Icon name="i-tabler-chevron-left" class="h-5 w-5" aria-hidden="true" />Back
 				</button>
@@ -115,20 +115,20 @@
 					:class="scrolled ? 'translate-y-0 opacity-100' : 'translate-y-1 opacity-0'">{{ route.meta.title }}</p>
 				<div class="flex items-center justify-end">
 					<NuxtLink v-if="isStudent" to="/student/rewards" :aria-label="`${points} knowledge points. Open rewards`"
-						class="mr-1 flex h-8 items-center gap-1.5 rounded-lg border border-stone-200 bg-white pl-1 pr-2 transition-transform duration-150 ease-out active:scale-95">
+						class="mr-1 flex h-8 items-center gap-1.5 rounded-lg border border-stone-200 bg-white pl-1 pr-2 transition-transform duration-150 ease-out active:scale-[0.96]">
 						<span class="flex h-6 w-6 items-center justify-center rounded-md bg-accent-100 text-accent-600">
 							<Icon name="i-tabler-coins" class="h-3.5 w-3.5" />
 						</span>
 						<span class="text-[13.5px] font-semibold text-stone-900 tabular-nums">{{ shownPoints }}</span>
 					</NuxtLink>
 					<NuxtLink to="/student/notifications" :aria-label="unreadCount ? `Notifications, ${unreadCount} unread` : 'Notifications'"
-						class="relative flex h-10 w-10 items-center justify-center rounded-xl text-stone-800 transition-[transform,background-color] duration-150 ease-out active:scale-90 active:bg-stone-100">
+						class="relative flex h-10 w-10 items-center justify-center rounded-xl text-stone-800 transition-[transform,background-color] duration-150 ease-out active:scale-[0.96] active:bg-stone-100">
 						<Icon name="i-tabler-bell" class="h-6 w-6" />
 						<span v-if="unreadCount"
 							class="absolute -right-0.5 top-0 box-content flex h-[17px] min-w-[17px] items-center justify-center rounded-full border-2 border-white bg-red-500 px-1 text-[10.5px] font-bold leading-none text-white tabular-nums">{{ unreadCount > 9 ? '9+' : unreadCount }}</span>
 					</NuxtLink>
 					<button type="button" :aria-label="cart.length ? `Cart, ${cart.length} book${cart.length === 1 ? '' : 's'}` : 'Cart'"
-						class="relative flex h-10 w-10 items-center justify-center rounded-xl text-stone-800 transition-[transform,background-color] duration-150 ease-out active:scale-90 active:bg-stone-100"
+						class="relative flex h-10 w-10 items-center justify-center rounded-xl text-stone-800 transition-[transform,background-color] duration-150 ease-out active:scale-[0.96] active:bg-stone-100"
 						@click="drawer.open('cart')">
 						<StudentCartIcon class="h-7 w-7" />
 						<span v-if="cart.length" :key="cart.length"
@@ -155,7 +155,7 @@
 			<template v-for="tab in tabs" :key="tab.key">
 			<!-- The Library ID sits raised in the middle: it's what a student opens at the door to check in. -->
 			<NuxtLink v-if="tab.key === 'id'" :to="tab.to" aria-label="Library ID"
-				class="group relative flex flex-col items-center gap-1 text-[11.5px] font-bold text-accent-600 transition-transform duration-150 ease-out active:scale-90"
+				class="group relative flex flex-col items-center gap-1 text-[11.5px] font-bold text-accent-600 transition-transform duration-150 ease-out active:scale-[0.96]"
 				:aria-current="route.meta.tab === tab.key ? 'page' : undefined">
 				<!-- A round, raised button with a white ring and a soft brown halo, so it reads as the main action
 					 from any tab; the label stays brown and bold even when another tab is open. -->
@@ -166,8 +166,8 @@
 				<span>{{ tab.label }}</span>
 			</NuxtLink>
 			<NuxtLink v-else :to="tab.to"
-				class="relative flex flex-col items-center gap-1 py-1 text-[11px] font-medium transition-[transform,color] duration-150 ease-out active:scale-90"
-				:class="route.meta.tab === tab.key ? 'text-accent-500' : 'text-stone-400'" :aria-current="route.meta.tab === tab.key ? 'page' : undefined">
+				class="relative flex flex-col items-center gap-1 py-1 text-[11px] font-medium transition-[transform,color] duration-150 ease-out active:scale-[0.96]"
+				:class="route.meta.tab === tab.key ? 'text-accent-500' : 'text-stone-500'" :aria-current="route.meta.tab === tab.key ? 'page' : undefined">
 				<span class="flex h-[30px] w-[46px] items-center justify-center rounded-[11px] transition-colors duration-[240ms] ease-out"
 					:class="route.meta.tab === tab.key ? 'bg-accent-100' : 'bg-transparent'">
 					<Icon :name="tab.icon" class="h-[23px] w-[23px]" />

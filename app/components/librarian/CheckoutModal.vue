@@ -4,7 +4,7 @@
 			<Transition enter-active-class="transition-opacity duration-200 ease-out" enter-from-class="opacity-0"
 				enter-to-class="opacity-100" leave-active-class="transition-opacity duration-150 ease-out"
 				leave-from-class="opacity-100" leave-to-class="opacity-0">
-				<div v-if="open" class="absolute inset-0 bg-[#1c1712]/35 backdrop-blur-[3px]" @click="handleClose" />
+				<div v-if="open" class="absolute inset-0 bg-[#1c1712]/40" @click="handleClose" />
 			</Transition>
 
 			<Transition enter-active-class="transition-[transform,opacity] duration-[260ms] ease-out"
@@ -35,7 +35,7 @@
 
 					<div v-else class="space-y-4 px-6 py-5 max-sm:flex-1 max-sm:overflow-y-auto max-sm:px-4">
 						<form autocomplete="off" @submit.prevent="handlePickupCode">
-							<label for="checkout-pickup" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">Reservation pickup code <span class="font-normal text-stone-400">(optional)</span></label>
+							<label for="checkout-pickup" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">Reservation pickup code <span class="font-normal text-stone-500">(optional)</span></label>
 							<div class="flex gap-2">
 								<input id="checkout-pickup" v-model="pickupCode" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false"
 									placeholder="Scan the student's slip, or type R-000123" :disabled="lookingUp"

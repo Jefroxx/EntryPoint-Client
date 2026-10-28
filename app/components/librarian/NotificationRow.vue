@@ -9,7 +9,7 @@
 			<p class="text-[15px] leading-snug" :class="notification.isRead ? 'text-stone-500' : 'font-medium text-stone-900'">
 				{{ notification.message }}
 			</p>
-			<p class="mt-0.5 text-[12.5px] text-stone-400">{{ timeAgo(notification.sentAt) }}</p>
+			<p class="mt-0.5 text-[12.5px] text-stone-500">{{ timeAgo(notification.sentAt) }}</p>
 		</div>
 
 		<ButtonsButton v-if="meta.to" variant="ghost" size="sm" @click.stop="emit('go', notification)">

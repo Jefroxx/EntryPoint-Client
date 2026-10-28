@@ -2,7 +2,7 @@
 	<div ref="root" class="relative">
 		<!-- Same tile as the points pill and the cart beside it: white, hairline border, 40px. -->
 		<button type="button" :aria-label="unreadCount ? `Notifications, ${unreadCount} unread` : 'Notifications'" :aria-expanded="open" aria-haspopup="dialog"
-			class="relative flex h-10 w-10 items-center justify-center rounded-xl border bg-white transition-[transform,border-color,color] duration-150 ease-out active:scale-95"
+			class="relative flex h-10 w-10 items-center justify-center rounded-xl border bg-white transition-[transform,border-color,color] duration-150 ease-out active:scale-[0.96]"
 			:class="open ? 'border-accent-200 text-accent-600' : 'border-stone-200 text-stone-700 hover:border-accent-200 hover:text-accent-600'"
 			@click="open = !open">
 			<Icon name="i-tabler-bell" class="h-[22px] w-[22px]" />

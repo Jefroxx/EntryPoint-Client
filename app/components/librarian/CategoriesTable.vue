@@ -16,7 +16,7 @@
 						<div class="h-full rounded-full bg-accent-500" :style="{ width: `${maxBooks ? (subject.books_count / maxBooks) * 100 : 0}%` }" />
 					</div>
 					<div class="mt-2.5 flex items-center justify-between gap-2" @click.stop>
-						<p class="font-data text-[12.5px] text-stone-400">{{ subject.classificationCode ? `Dewey ${subject.classificationCode}` : 'No Dewey code' }}</p>
+						<p class="font-data text-[12.5px] text-stone-500">{{ subject.classificationCode ? `Dewey ${subject.classificationCode}` : 'No Dewey code' }}</p>
 						<div class="flex items-center gap-1.5">
 							<ButtonsButton variant="ghost" size="sm" @click="emit('edit', subject)">Edit</ButtonsButton>
 							<ButtonsButton variant="danger" size="sm" :disabled="subject.books_count > 0" @click="emit('delete', subject)">Delete</ButtonsButton>
@@ -61,7 +61,7 @@
 			:fields="fields" @close="selected = null">
 			<!-- The books that carry this category; tap one for its details. -->
 			<section class="mt-6" aria-labelledby="category-books-heading">
-				<h4 id="category-books-heading" class="mb-2 flex items-center justify-between text-[12px] font-bold uppercase tracking-wide text-stone-400">
+				<h4 id="category-books-heading" class="mb-2 flex items-center justify-between text-[12px] font-bold uppercase tracking-wide text-stone-500">
 					Books in this category<span class="tabular-nums">{{ selected?.books_count ?? 0 }}</span>
 				</h4>
 				<p v-if="booksLoading" class="rounded-xl bg-stone-50 px-4 py-5 text-center text-[13.5px] text-stone-500">Loading books…</p>

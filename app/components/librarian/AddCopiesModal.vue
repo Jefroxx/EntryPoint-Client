@@ -4,7 +4,7 @@
 		<div class="space-y-4">
 			<!-- Opened from a catalog row: the book is already known. -->
 			<div v-if="book" class="rounded-xl bg-stone-50 px-4 py-3">
-				<p class="text-[12px] font-semibold uppercase tracking-wide text-stone-400">Book</p>
+				<p class="text-[12px] font-semibold uppercase tracking-wide text-stone-500">Book</p>
 				<p class="text-[15px] font-semibold text-stone-900">{{ book.title }}</p>
 			</div>
 

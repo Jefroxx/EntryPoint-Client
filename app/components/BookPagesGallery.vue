@@ -21,7 +21,7 @@
 
 		<ul class="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
 			<li v-for="page in activePages" :key="page.pageID" class="shrink-0">
-				<button type="button" class="group block overflow-hidden rounded-lg border transition-[transform,border-color] duration-150 active:scale-95"
+				<button type="button" class="group block overflow-hidden rounded-lg border transition-[transform,border-color] duration-150 active:scale-[0.96]"
 					:class="dark ? 'border-white/15 bg-white/5 hover:border-white/40' : 'border-stone-200 bg-stone-100 hover:border-accent-300'"
 					:aria-label="`${labelOf(page.section)}, page ${page.position}. Open`" @click="openAt(page)">
 					<img :src="page.url" alt="" loading="lazy" class="h-[112px] w-[84px] object-cover transition-transform duration-300 group-hover:scale-105" />

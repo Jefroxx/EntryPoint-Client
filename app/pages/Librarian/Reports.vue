@@ -67,7 +67,7 @@
             <section class="report-card lg:col-span-2">
                 <header class="mb-3 flex items-center justify-between">
                     <h2 class="report-title">Books by category</h2>
-                    <span class="text-[12.5px] text-stone-400">Whole collection</span>
+                    <span class="text-[12.5px] text-stone-500">Whole collection</span>
                 </header>
                 <LibrarianRankedBars :items="categories" empty="No categories yet." />
             </section>

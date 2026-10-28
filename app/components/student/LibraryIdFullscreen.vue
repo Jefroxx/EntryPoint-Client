@@ -11,7 +11,7 @@
 				<div class="flex items-center justify-between">
 					<img src="~/assets/css/logo/EntryPointLogo.png" alt="EntryPoint" class="h-8 w-auto" />
 					<button type="button" aria-label="Close"
-						class="flex h-11 w-11 items-center justify-center rounded-full bg-stone-100 text-stone-700 transition-transform duration-150 active:scale-90"
+						class="flex h-11 w-11 items-center justify-center rounded-full bg-stone-100 text-stone-700 transition-transform duration-150 active:scale-[0.96]"
 						@click.stop="emit('close')">
 						<Icon name="i-tabler-x" class="h-5 w-5" />
 					</button>

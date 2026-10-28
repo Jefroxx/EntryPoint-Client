@@ -132,32 +132,48 @@
                 @verify="handleVerifySelfReturn" @reject="handleRejectSelfReturn" />
         </template>
 
-        <!-- Lost and damaged copies -->
+        <!-- Lost and damaged books: penalties for a student who lost or damaged one. They pay it, or replace the book. -->
         <template v-else-if="activeTab === 'lostdamaged'">
-            <div class="phone-stats mb-5 grid grid-cols-2 gap-3 sm:max-w-[560px]">
-                <LibrarianCatalogStatTile label="Lost" :value="lostDamaged?.stats.lost ?? '—'"
-                    icon="i-tabler-help-hexagon" tone="danger" />
-                <LibrarianCatalogStatTile label="Damaged" :value="lostDamaged?.stats.damaged ?? '—'"
-                    icon="i-tabler-book-off" tone="warning" />
+            <div class="phone-stats mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <LibrarianCatalogStatTile label="Unpaid" :value="copyStats?.unpaidCount ?? '—'"
+                    icon="i-tabler-alert-circle" tone="danger" />
+                <LibrarianCatalogStatTile label="Unpaid Total"
+                    :value="copyStats ? formatPeso(copyStats.unpaidTotal) : '—'"
+                    icon="i-tabler-coin" tone="warning" />
+                <LibrarianCatalogStatTile label="Paid" :value="copyStats?.paidCount ?? '—'"
+                    icon="i-tabler-circle-check" tone="success" />
+                <LibrarianCatalogStatTile label="Replaced" :value="copyStats?.replacedCount ?? '—'"
+                    icon="i-tabler-books" tone="accent" />
             </div>
 
             <div class="phone-toolbar mb-4 flex flex-wrap items-center gap-2">
-                <LibrarianSearchInput id="lost-damaged-search" v-model="lostDamagedSearch" placeholder="Search book, accession no. or student" />
+                <LibrarianSearchInput id="copy-penalty-search" v-model="copyPenaltySearch" placeholder="Search student or book" />
 
-                <select v-model="lostDamagedStatus" aria-label="Filter by status"
+                <select v-model="copyPenaltyStatus" aria-label="Filter by status"
                     class="h-[42px] rounded-xl border border-stone-200 bg-white px-3 text-[14px] text-stone-500 transition-colors hover:bg-stone-50">
-                    <option value="">Lost and damaged</option>
-                    <option value="lost">Lost only</option>
-                    <option value="damaged">Damaged only</option>
+                    <option value="">All penalties</option>
+                    <option value="Unpaid">Unpaid</option>
+                    <option value="Paid">Paid</option>
+                    <option value="Replaced">Replaced</option>
+                    <option value="longUnpaid">Unpaid {{ copyStats?.longUnpaidDays ?? 30 }}+ days</option>
                 </select>
 
                 <div class="flex-1"></div>
 
-                <LibrarianResetFiltersButton @click="lostDamagedSearch = ''; lostDamagedStatus = ''" />
+                <LibrarianResetFiltersButton @click="copyPenaltySearch = ''; copyPenaltyStatus = ''" />
+                <ButtonsButton variant="primary" class="toolbar-full" @click="openIssuePenalty">
+                    <Icon name="i-tabler-gavel" class="h-3.5 w-3.5" />Issue Penalty
+                </ButtonsButton>
             </div>
 
-            <LibrarianLostDamagedTable :copies="filteredLostDamaged" :loading="lostDamagedPending"
-                @restore="handleRestoreCopy" @remove="openRemoveCopy" />
+            <LibrarianPenaltiesTable :penalties="copyPenalties?.data ?? []" :loading="copyPenaltiesPending"
+                :long-unpaid-days="copyStats?.longUnpaidDays ?? 30"
+                empty-text="No lost or damaged books on record. Use Issue Penalty when a student loses or damages one."
+                @settle="handleSettle" @replace="handleReplace" @cancel="handleCancel" />
+
+            <LibrarianPagination v-if="copyPenalties" :shown="copyPenalties.data.length" :total="copyPenalties.total"
+                noun="penalties" :page="copyPenalties.current_page" :last-page="copyPenalties.last_page"
+                @change="goToCopyPenaltyPage" />
         </template>
 
         <!-- Penalties -->
@@ -214,8 +230,24 @@
         <LibrarianReturnLoanModal :open="isReturnOpen" :preview="returnPreview" :loading="returnLoading" :error="returnError"
             :busy="returnBusy" @close="isReturnOpen = false" @submit="confirmReturn" />
 
-        <LibrarianRemoveCopyModal :open="isRemoveCopyOpen" :copy="removingCopy" :busy="removeCopyBusy"
-            @close="isRemoveCopyOpen = false" @submit="saveRemoveCopy" />
+        <LibrarianIssuePenaltyModal :open="isIssueOpen" :busy="issueBusy"
+            @close="isIssueOpen = false" @submit="saveIssuePenalty" />
+
+        <LibrarianConfirmModal :open="isReservationDecisionOpen" :title="reservationDecisionText.title"
+            :message="reservationDecisionText.message" :confirm-label="reservationDecisionText.confirm"
+            :danger="reservationDecision?.action === 'reject'" :loading="reservationDecisionBusy"
+            @close="isReservationDecisionOpen = false" @confirm="confirmReservationDecision" />
+
+        <LibrarianConfirmModal :open="isReplaceOpen" title="Replacement received?" confirm-label="Yes, replacement received"
+            :danger="false" :loading="replaceBusy" :message="replaceMessage"
+            @close="isReplaceOpen = false" @confirm="confirmReplace" />
+
+        <LibrarianConfirmModal :open="isCancelOpen"
+            :title="cancellingPenalty?.penalty_type?.category === 'lost' ? 'Was the book found?' : 'Was the book repaired?'"
+            :confirm-label="cancellingPenalty?.penalty_type?.category === 'lost' ? 'Yes, it was found' : 'Yes, it was repaired'"
+            :danger="false" :loading="cancelBusy" :message="cancelMessage"
+            @close="isCancelOpen = false" @confirm="confirmCancel" />
+
         <LibrarianFinishReturnModal :open="isFinishOpen" :summary="finishSummary" :busy="finishBusy"
             @close="isFinishOpen = false" @submit="saveFinishReturn" />
 
@@ -234,8 +266,10 @@ import {
     type ReturnPreview,
     type PenaltyRecord,
     type PenaltyFilter,
+    type IssuePenaltyPayload,
+    penaltyCopy,
+    penaltyStudent,
 } from '~/services/circulationService'
-import { librarianService, type LostDamagedCopy, type RemoveReason } from '~/services/librarianService'
 import AlertToast from '~/api/alert/AlertToast.vue'
 
 definePageMeta({
@@ -420,13 +454,13 @@ function bookOptions(books: Array<{ bookID: number; title: string } | null | und
     return [...counts.values()].sort((a, b) => a.title.localeCompare(b.title))
 }
 
-// ---- Penalties ----
+// ---- Penalties (late fees) ----
 const penaltySearch = ref('')
 const penaltyStatus = ref<'' | PenaltyFilter>('')
 const penaltyPage = ref(1)
 
 const { data: penaltyStats, execute: refetchPenaltyStats } =
-    useLiveAsyncData('circ-penalty-stats', () => circulationService.fetchPenaltyStats(), { lazy: true })
+    useLiveAsyncData('circ-penalty-stats', () => circulationService.fetchPenaltyStats('late'), { lazy: true })
 
 // The server decides how long is "long unpaid"; 30 until the stats arrive.
 const longUnpaidDays = computed(() => penaltyStats.value?.longUnpaidDays ?? 30)
@@ -436,6 +470,7 @@ const { data: penalties, pending: penaltiesPending, execute: refetchPenalties } 
     () => circulationService.fetchPenalties({
         search: penaltySearch.value || undefined,
         status: penaltyStatus.value || undefined,
+        kind: 'late',
         page: penaltyPage.value,
         perPage: 10,
     }),
@@ -456,49 +491,115 @@ function goToPenaltyPage(next: number) {
     refetchPenalties()
 }
 
-// ---- Lost and damaged copies ----
-const lostDamagedSearch = ref('')
-const lostDamagedStatus = ref<'' | 'lost' | 'damaged'>('')
+// ---- Lost and damaged books ----
+// The same kind of list as the late fees, for penalties over a book that is lost or damaged.
+const copyPenaltySearch = ref('')
+const copyPenaltyStatus = ref<'' | PenaltyFilter>('')
+const copyPenaltyPage = ref(1)
 
-const { data: lostDamaged, pending: lostDamagedPending, execute: refetchLostDamaged } =
-    useLiveAsyncData('circ-lost-damaged', () => librarianService.fetchLostDamagedCopies(), { lazy: true })
+const { data: copyStats, execute: refetchCopyStats } =
+    useLiveAsyncData('circ-copy-penalty-stats', () => circulationService.fetchPenaltyStats('copy'), { lazy: true })
 
-const filteredLostDamaged = computed(() => {
-    const term = lostDamagedSearch.value.trim().toLowerCase()
-    return (lostDamaged.value?.copies ?? []).filter((copy) => {
-        if (lostDamagedStatus.value && copy.status !== lostDamagedStatus.value) return false
-        if (!term) return true
-        return copy.book.title.toLowerCase().includes(term)
-            || String(copy.accessionNumber) === term
-            || (copy.lastLoan?.studentName ?? '').toLowerCase().includes(term)
-            || (copy.lastLoan?.studentIDNumber ?? '').toLowerCase().includes(term)
-    })
+const { data: copyPenalties, pending: copyPenaltiesPending, execute: refetchCopyPenalties } = useLiveAsyncData(
+    'circ-copy-penalties',
+    () => circulationService.fetchPenalties({
+        search: copyPenaltySearch.value || undefined,
+        status: copyPenaltyStatus.value || undefined,
+        kind: 'copy',
+        page: copyPenaltyPage.value,
+        perPage: 10,
+    }),
+    { lazy: true },
+)
+
+watch(copyPenaltySearch, debounced(() => {
+    copyPenaltyPage.value = 1
+    refetchCopyPenalties()
+}))
+watch(copyPenaltyStatus, () => {
+    copyPenaltyPage.value = 1
+    refetchCopyPenalties()
 })
 
-// Found (lost) or repaired (damaged): the copy goes back on the shelf.
-async function handleRestoreCopy(copy: LostDamagedCopy) {
-    await perform(() => librarianService.updateCopy(copy.uuid, { status: 'available' }),
-        `Accession no. ${copy.accessionNumber} is back on the shelf`, 'Could not update this copy', [refetchLostDamaged])
+function goToCopyPenaltyPage(next: number) {
+    copyPenaltyPage.value = next
+    refetchCopyPenalties()
 }
 
-// Removing it takes it out of the catalog for good, with a reason, through the same window as the Library page.
-const isRemoveCopyOpen = ref(false)
-const removingCopy = ref<LostDamagedCopy | null>(null)
-const removeCopyBusy = ref(false)
+// Whatever changes a penalty can change either list and either set of numbers.
+const refetchPenaltyData = () => [refetchPenalties, refetchPenaltyStats, refetchCopyPenalties, refetchCopyStats]
 
-function openRemoveCopy(copy: LostDamagedCopy) {
-    removingCopy.value = copy
-    isRemoveCopyOpen.value = true
+// Issuing: the librarian picks Lost or Damaged, then a loan or a student and a book. The copy is marked, a loan that was
+// still out is closed, and the student is charged. They then pay it (Mark paid) or replace the book (Replaced).
+const isIssueOpen = ref(false)
+const issueBusy = ref(false)
+
+function openIssuePenalty() {
+    isIssueOpen.value = true
 }
 
-async function saveRemoveCopy(payload: { reason: RemoveReason; note: string | undefined }) {
-    const copy = removingCopy.value
-    if (!copy) return
-    removeCopyBusy.value = true
-    const ok = await perform(() => librarianService.removeCopy(copy.uuid, payload),
-        `Accession no. ${copy.accessionNumber} removed`, 'Could not remove this copy', [refetchLostDamaged])
-    removeCopyBusy.value = false
-    if (ok) isRemoveCopyOpen.value = false
+async function saveIssuePenalty(payload: IssuePenaltyPayload) {
+    issueBusy.value = true
+    const ok = await perform(() => circulationService.issueCopyPenalty(payload),
+        `Penalty of ${formatPeso(payload.amount)} issued`, 'Could not issue the penalty',
+        [...refetchPenaltyData(), refetchLoans, refetchLoanStats])
+    issueBusy.value = false
+    if (ok) isIssueOpen.value = false
+}
+
+// "Replaced": the student brought a new copy instead of paying. The penalty closes with no payment, the new copy is
+// added to the catalog (with its own accession number) and the lost or damaged one is removed.
+const isReplaceOpen = ref(false)
+const replacingPenalty = ref<PenaltyRecord | null>(null)
+const replaceBusy = ref(false)
+
+const replaceMessage = computed(() => {
+    const p = replacingPenalty.value
+    if (!p) return ''
+    const title = penaltyCopy(p)?.book?.title ?? 'this book'
+    return `${personName(penaltyStudent(p)?.user)} brought a replacement for "${title}". The ${formatPeso(p.amount)} penalty is closed with no payment, a new copy is added to the catalog and the ${p.penalty_type?.category} copy is removed.`
+})
+
+function handleReplace(penalty: PenaltyRecord) {
+    replacingPenalty.value = penalty
+    isReplaceOpen.value = true
+}
+
+async function confirmReplace() {
+    const penalty = replacingPenalty.value
+    if (!penalty) return
+    replaceBusy.value = true
+    const ok = await perform(() => circulationService.replacePenalty(penalty.uuid),
+        'Replacement received. The new copy is in the catalog', 'Could not record the replacement', refetchPenaltyData())
+    replaceBusy.value = false
+    if (ok) isReplaceOpen.value = false
+}
+
+// The book turned up (lost) or was repaired (damaged): cancel the unpaid penalty and put the copy back on the shelf.
+const isCancelOpen = ref(false)
+const cancellingPenalty = ref<PenaltyRecord | null>(null)
+const cancelBusy = ref(false)
+
+const cancelMessage = computed(() => {
+    const p = cancellingPenalty.value
+    if (!p) return ''
+    const copy = penaltyCopy(p)
+    return `"${copy?.book?.title ?? 'This book'}" (accession no. ${copy?.accessionNumber}) goes back on the shelf as available, and the unpaid ${formatPeso(p.amount)} penalty for ${personName(penaltyStudent(p)?.user)} is cancelled, because they no longer owe for it.`
+})
+
+function handleCancel(penalty: PenaltyRecord) {
+    cancellingPenalty.value = penalty
+    isCancelOpen.value = true
+}
+
+async function confirmCancel() {
+    const penalty = cancellingPenalty.value
+    if (!penalty) return
+    cancelBusy.value = true
+    const ok = await perform(() => circulationService.cancelCopyPenalty(penalty.uuid),
+        'Penalty cancelled. The copy is back on the shelf', 'Could not cancel the penalty', refetchPenaltyData())
+    cancelBusy.value = false
+    if (ok) isCancelOpen.value = false
 }
 
 // ---- Tabs ----
@@ -506,7 +607,7 @@ const tabs = computed(() => [
     { label: 'Active Loans', short: 'Loans', value: 'loans', badge: loanStats.value?.received || undefined },
     { label: 'Reservations', short: 'Reserved', value: 'reservations', badge: reservationStats.value.waiting },
     { label: 'Self-Return Reports', short: 'Self-returns', value: 'selfreturn', badge: selfReturns.value.length },
-    { label: 'Lost & Damaged', short: 'Lost', value: 'lostdamaged', badge: lostDamaged.value?.copies.length || undefined },
+    { label: 'Lost & Damaged', short: 'Lost', value: 'lostdamaged', badge: copyStats.value?.unpaidCount || undefined },
     { label: 'Penalties', short: 'Fines', value: 'penalties' },
 ])
 
@@ -514,7 +615,7 @@ const tabs = computed(() => [
 const { perform } = useAction()
 
 // A return can leave a copy marked damaged, so the Lost and damaged tab refreshes with the loans.
-const refreshLoanData = () => [refetchLoans, refetchLoanStats, refetchPenalties, refetchPenaltyStats, refetchLostDamaged]
+const refreshLoanData = () => [refetchLoans, refetchLoanStats, refetchPenalties, refetchPenaltyStats]
 
 // Returning a book asks first: the window shows the loan, the book and the student, and for a late book it
 // asks whether the fee has been paid.
@@ -581,8 +682,44 @@ async function saveFinishReturn(payload: { condition: 'good' | 'damaged'; note: 
     if (ok) isFinishOpen.value = false
 }
 
+// Accepting or rejecting a reservation asks first: the student is told either way, and neither can be taken back.
+const reservationDecision = ref<{ reservation: ReservationRecord; action: 'accept' | 'reject' } | null>(null)
+const isReservationDecisionOpen = ref(false)
+const reservationDecisionBusy = ref(false)
+
+const reservationDecisionText = computed(() => {
+    const d = reservationDecision.value
+    if (!d) return { title: '', message: '', confirm: '' }
+    const who = personName(d.reservation.student?.user)
+    const book = d.reservation.book?.title ?? 'this book'
+    return d.action === 'accept'
+        ? {
+            title: 'Accept this reservation?',
+            message: `Accept ${who}'s reservation for "${book}"? A copy is held for them and they are told it is ready for pickup.`,
+            confirm: 'Yes, accept',
+        }
+        : {
+            title: 'Reject this reservation?',
+            message: `Reject ${who}'s reservation for "${book}"? They are told it was declined and no copy is held for them. This can't be undone.`,
+            confirm: 'Yes, reject',
+        }
+})
+
 function handleAcceptReservation(reservation: ReservationRecord) {
-    return perform(() => circulationService.acceptReservation(reservation.uuid), 'Reservation accepted', 'Could not accept reservation', [refetchReservations])
+    reservationDecision.value = { reservation, action: 'accept' }
+    isReservationDecisionOpen.value = true
+}
+
+async function confirmReservationDecision() {
+    const decision = reservationDecision.value
+    if (!decision) return
+    const { reservation, action } = decision
+    reservationDecisionBusy.value = true
+    const ok = action === 'accept'
+        ? await perform(() => circulationService.acceptReservation(reservation.uuid), 'Reservation accepted', 'Could not accept reservation', [refetchReservations])
+        : await perform(() => circulationService.rejectReservation(reservation.uuid), 'Reservation rejected', 'Could not reject reservation', [refetchReservations])
+    reservationDecisionBusy.value = false
+    if (ok) isReservationDecisionOpen.value = false
 }
 
 // Same path as scanning the student's slip: the checkout opens with the student and book filled in.
@@ -608,7 +745,8 @@ function handleCheckoutManually() {
 }
 
 function handleRejectReservation(reservation: ReservationRecord) {
-    return perform(() => circulationService.rejectReservation(reservation.uuid), 'Reservation rejected', 'Could not reject reservation', [refetchReservations])
+    reservationDecision.value = { reservation, action: 'reject' }
+    isReservationDecisionOpen.value = true
 }
 
 // Verifying or rejecting a student's self-return report asks first, in the same window as returning a book:
@@ -668,7 +806,7 @@ async function confirmSettle(payload: { receiptNumber: string }) {
     const penalty = settlingPenalty.value
     if (!penalty) return
     settleBusy.value = true
-    const ok = await perform(() => circulationService.settlePenalty(penalty.uuid, { receiptNumber: payload.receiptNumber }), 'Fine settled', 'Could not settle fine', [refetchPenalties, refetchPenaltyStats])
+    const ok = await perform(() => circulationService.settlePenalty(penalty.uuid, { receiptNumber: payload.receiptNumber }), 'Fine settled', 'Could not settle fine', refetchPenaltyData())
     settleBusy.value = false
     if (ok) isSettleOpen.value = false
 }

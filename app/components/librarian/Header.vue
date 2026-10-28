@@ -2,14 +2,14 @@
     <!-- backdrop-blur makes the header its own stacking layer; without an explicit z-index the
          dropdowns inside it get painted over by page content (sticky table heads, cards, sidebar). -->
     <!-- Sticky, so the menu button and the bell stay reachable on long pages (the sidebar sits beside it). -->
-    <header class="sticky top-0 z-40 flex h-[68px] w-full items-center justify-between border-b border-stone-200 bg-white/90 px-4 backdrop-blur-sm sm:px-6">
+    <header class="sticky top-0 z-40 flex h-[68px] w-full items-center justify-between border-b border-stone-200 bg-parchment/85 px-4 backdrop-blur-sm sm:px-6">
         <!-- Left: the sidebar toggle (the logo lives at the top of the sidebar, as on the student side) -->
         <div class="flex items-center gap-4">
             <!-- On desktop this folds the sidebar to icons and back; on a phone it opens and closes the menu drawer. -->
             <button type="button" aria-controls="librarian-sidebar" :aria-expanded="isSidebarOpen"
                 :aria-label="isDesktop ? (isSidebarOpen ? 'Collapse sidebar to icons' : 'Expand sidebar') : (isSidebarOpen ? 'Close menu' : 'Open menu')"
                 :title="isDesktop ? (isSidebarOpen ? 'Collapse sidebar' : 'Expand sidebar') : undefined"
-                class="-ml-2 flex h-10 w-10 items-center justify-center rounded-xl text-stone-600 transition-[transform,background-color,color] duration-150 ease-out hover:bg-stone-900/5 hover:text-stone-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-200 active:scale-90"
+                class="-ml-2 flex h-10 w-10 items-center justify-center rounded-xl text-stone-600 transition-[transform,background-color,color] duration-150 ease-out hover:bg-stone-900/5 hover:text-stone-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-200 active:scale-[0.96]"
                 @click="$emit('toggle-sidebar')">
                 <Icon name="i-tabler-menu-2" class="h-[22px] w-[22px]" />
             </button>
@@ -27,18 +27,18 @@
                 <!-- Same tile as the student bell: white, hairline border, 40px, a 22px bell that reads at a glance. -->
                 <button type="button" :aria-label="unreadCount ? `Notifications, ${unreadCount} unread` : 'Notifications'"
                     :aria-expanded="isBellOpen" aria-haspopup="dialog"
-                    class="relative flex h-10 w-10 items-center justify-center rounded-xl border bg-white transition-[transform,border-color,color] duration-150 ease-out active:scale-95"
+                    class="relative flex h-10 w-10 items-center justify-center rounded-xl border bg-white transition-[transform,border-color,color] duration-150 ease-out active:scale-[0.96]"
                     :class="isBellOpen ? 'border-accent-200 text-accent-600' : 'border-stone-200 text-stone-700 hover:border-accent-200 hover:text-accent-600'"
                     @click.stop="toggleBell">
                     <Icon name="i-tabler-bell" class="h-[22px] w-[22px]" />
                 </button>
                 <span v-if="unreadCount > 0"
-                    class="pointer-events-none absolute -right-1.5 -top-1.5 box-content flex h-[18px] min-w-[18px] items-center justify-center rounded-full border-2 border-white bg-red-500 px-1 text-[11px] font-bold leading-none text-white tabular-nums">
+                    class="pointer-events-none absolute -right-1.5 -top-1.5 box-content flex h-[18px] min-w-[18px] items-center justify-center rounded-full border-2 border-parchment bg-red-500 px-1 text-[11px] font-bold leading-none text-white tabular-nums">
                     {{ unreadCount > 9 ? '9+' : unreadCount }}
                 </span>
 
                 <div
-                    class="absolute right-0 top-[calc(100%+10px)] z-50 w-[380px] max-w-[calc(100vw-2rem)] origin-top-right max-sm:fixed max-sm:inset-x-3 max-sm:right-3 max-sm:top-[76px] max-sm:w-auto max-sm:max-w-none overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-card transition-all duration-150"
+                    class="absolute right-0 top-[calc(100%+10px)] z-50 w-[380px] max-w-[calc(100vw-2rem)] origin-top-right max-sm:fixed max-sm:inset-x-3 max-sm:right-3 max-sm:top-[76px] max-sm:w-auto max-sm:max-w-none overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-card transition-[opacity,transform] duration-150"
                     :class="isBellOpen ? 'scale-100 opacity-100' : 'pointer-events-none scale-95 opacity-0'">
                     <div class="flex items-center justify-between border-b border-stone-100 px-4 py-3">
                         <p class="text-[15px] font-bold text-stone-900">Notifications</p>
@@ -52,7 +52,7 @@
                     <div class="max-h-[420px] overflow-y-auto [scrollbar-width:thin]">
                         <LibrarianNotificationRow v-for="(notification, index) in recent" :key="notification.notificationID"
                             :notification="notification" :index="index" @open="markOneRead" @go="openNotification" />
-                        <p v-if="recent.length === 0" class="px-4 py-10 text-center text-[14px] text-stone-400">
+                        <p v-if="recent.length === 0" class="px-4 py-10 text-center text-[14px] text-stone-500">
                             {{ loaded ? 'No notifications yet.' : 'Loading notifications…' }}
                         </p>
                     </div>
@@ -67,7 +67,7 @@
 
             <div class="relative" ref="menuRootRef">
                 <button type="button"
-                    class="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full ring-1 ring-stone-200 transition-transform duration-150 active:scale-90"
+                    class="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full ring-1 ring-stone-200 transition-transform duration-150 active:scale-[0.96]"
                     aria-label="User menu" :aria-expanded="isMenuOpen" @click.stop="toggleUserMenu">
                     <span class="flex h-full w-full items-center justify-center bg-gradient-to-br from-accent-500 to-accent-700 text-[14px] font-bold text-white">
                         {{ initials }}
@@ -75,7 +75,7 @@
                 </button>
 
                 <div
-                    class="absolute right-0 top-[calc(100%+10px)] z-50 w-56 origin-top-right rounded-2xl border border-stone-200 bg-white p-2 shadow-card transition-all duration-150"
+                    class="absolute right-0 top-[calc(100%+10px)] z-50 w-56 origin-top-right rounded-2xl border border-stone-200 bg-white p-2 shadow-card transition-[opacity,transform] duration-150"
                     :class="isMenuOpen ? 'scale-100 opacity-100' : 'pointer-events-none scale-95 opacity-0'">
                     <div class="flex items-center gap-3 px-2 pb-2.5 pt-1">
                         <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-accent-500 to-accent-700 text-[13px] font-bold text-white">
@@ -83,7 +83,7 @@
                         </span>
                         <div class="min-w-0">
                             <p class="truncate text-[15px] font-bold text-stone-900">{{ fullName }}</p>
-                            <p class="text-[12.5px] text-stone-400">{{ roleLabel }}</p>
+                            <p class="text-[12.5px] text-stone-500">{{ roleLabel }}</p>
                         </div>
                     </div>
                     <hr class="mx-1 mb-1.5 border-stone-100" />

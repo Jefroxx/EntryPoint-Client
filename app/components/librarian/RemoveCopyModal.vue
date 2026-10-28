@@ -1,5 +1,5 @@
 <template>
-	<LibrarianModalShell :open="open" size="sm" :title="copy ? `Remove Accession No. ${copy.accessionNumber}` : 'Remove Copy'"
+	<LibrarianModalShell :open="open" size="lg" :title="copy ? `Remove Accession No. ${copy.accessionNumber}` : 'Remove Copy'"
 		:subtitle="copy?.book.title" :busy="busy" @close="emit('close')">
 		<!-- A copy out on loan only leaves through check-in. -->
 		<div v-if="copy?.status === 'borrowed'" class="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-[14px] text-amber-800">
@@ -8,8 +8,8 @@
 		</div>
 
 		<div v-else class="space-y-4">
-			<fieldset class="space-y-2">
-				<legend class="mb-2 text-[13px] font-semibold text-stone-700">Why is it being removed?<FieldRequired /></legend>
+			<fieldset class="grid gap-2 sm:grid-cols-2">
+				<legend class="mb-2 text-[13px] font-semibold text-stone-700 sm:col-span-2">Why is it being removed?<FieldRequired /></legend>
 				<label v-for="option in OPTIONS" :key="option.value"
 					class="flex cursor-pointer items-start gap-3 rounded-xl border px-4 py-3 transition-colors"
 					:class="reason === option.value ? 'border-red-300 bg-red-50' : 'border-stone-200 hover:bg-stone-50'">
