@@ -162,7 +162,7 @@
 					:class="subjectID === s.id ? 'bg-accent-100 font-semibold text-accent-700' : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900'"
 					@click="setParam({ subject: s.id ? String(s.id) : undefined })">
 					<span class="min-w-0 truncate">{{ s.name }}</span>
-					<span class="font-data shrink-0 text-[12px]" :class="subjectID === s.id ? 'text-accent-700/70' : 'text-stone-400'">{{ s.books }}</span>
+					<span class="font-data shrink-0 text-[12px]" :class="subjectID === s.id ? 'text-accent-700/70' : 'text-stone-500'">{{ s.books }}</span>
 				</button>
 			</div>
 		</aside>

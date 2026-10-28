@@ -13,7 +13,7 @@
 			<span class="w-7 shrink-0 text-right font-bold tabular-nums text-stone-900">{{ item.value }}</span>
 		</div>
 	</div>
-	<p v-else class="py-6 text-center text-[15px] text-stone-400">{{ empty }}</p>
+	<p v-else class="py-6 text-center text-[15px] text-stone-500">{{ empty }}</p>
 </template>
 
 <script setup lang="ts">

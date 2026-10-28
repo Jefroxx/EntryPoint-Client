@@ -15,7 +15,7 @@
 				<span v-else class="h-2.5 w-2.5 translate-y-[-1px] self-center rounded-full" :style="{ backgroundColor: s.color }" />
 				<span class="text-[13px] text-stone-500">{{ s.label }}</span>
 				<span class="text-[18px] font-bold tabular-nums text-stone-900">{{ s.total }}</span>
-				<span v-if="s.totalNote" class="text-[12px] text-stone-400">{{ s.totalNote }}</span>
+				<span v-if="s.totalNote" class="text-[12px] text-stone-500">{{ s.totalNote }}</span>
 			</span>
 		</div>
 

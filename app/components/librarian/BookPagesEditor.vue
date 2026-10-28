@@ -13,7 +13,7 @@
 				<h4 class="flex items-center gap-2 text-[14px] font-semibold text-stone-800">
 					<Icon :name="s.icon" class="h-4 w-4 text-accent-500" />{{ s.label }}
 				</h4>
-				<span class="text-[12px] tabular-nums text-stone-400">{{ inSection(s.key).length }} / {{ MAX_PAGES_PER_SECTION }}</span>
+				<span class="text-[12px] tabular-nums text-stone-500">{{ inSection(s.key).length }} / {{ MAX_PAGES_PER_SECTION }}</span>
 			</div>
 
 			<ul class="flex flex-wrap gap-2.5">

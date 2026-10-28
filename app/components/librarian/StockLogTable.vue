@@ -11,7 +11,7 @@
 						<div class="min-w-0 flex-1">
 							<p class="line-clamp-2 text-[14.5px] font-semibold leading-snug text-stone-900">{{ log.bookTitle }}</p>
 							<p class="mt-0.5 truncate text-[12.5px] text-stone-500">{{ [log.reason, log.librarianName].filter(Boolean).join(' · ') || '—' }}</p>
-							<p class="font-data mt-0.5 text-[12px] text-stone-400">{{ formatDateTime(log.created_at) }}</p>
+							<p class="font-data mt-0.5 text-[12px] text-stone-500">{{ formatDateTime(log.created_at) }}</p>
 						</div>
 						<LibrarianStatusPill :label="log.action === 'added' ? 'Added' : 'Removed'" :tone="log.action === 'added' ? 'success' : 'danger'" class="shrink-0" />
 					</div>

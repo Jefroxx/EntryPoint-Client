@@ -31,7 +31,7 @@
 
             <NuxtLink v-for="(link, index) in navLinks" :key="link.to" :ref="(el) => setLinkRef(el, index)" :to="link.to"
                 :title="open ? undefined : link.label" :aria-current="index === activeIndex ? 'page' : undefined"
-                class="relative z-10 flex h-11 items-center gap-3 rounded-xl text-[14.5px] font-medium transition-[transform,color,background-color] duration-150 ease-out active:scale-[.97]"
+                class="relative z-10 flex h-11 items-center gap-3 rounded-xl text-[14.5px] font-medium transition-[transform,color,background-color] duration-150 ease-out active:scale-[0.96]"
                 :class="[open ? 'px-3.5' : 'justify-center px-0', index === displayIndex ? 'text-white' : 'text-stone-500 hover:bg-stone-50 hover:text-stone-900']"
                 @click="pendingIndex = index">
                 <Icon :name="link.icon" class="h-[19px] w-[19px] shrink-0" />

@@ -35,7 +35,7 @@
 					<p class="font-data text-[13.5px] text-stone-700">{{ formatDate(report.loan.dueDate) }}</p>
 					<p class="text-[12.5px] font-semibold" :class="lateness(report) ? 'text-red-600' : 'text-emerald-700'">{{ lateness(report) ?? 'On time' }}</p>
 				</template>
-				<span v-else class="text-stone-400">—</span>
+				<span v-else class="text-stone-500">—</span>
 			</td>
 			<td class="font-data px-4 py-3 text-[13.5px] text-stone-500">{{ formatDateTime(report.reportedAt) }}</td>
 			<td class="px-4 py-3">

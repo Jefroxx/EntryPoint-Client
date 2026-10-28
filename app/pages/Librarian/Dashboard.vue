@@ -15,7 +15,7 @@
             <!-- The scanner is the desk's one standing tool, so it sits on its own up here instead of
                  being the odd one out in the row of quick actions below. -->
             <button type="button"
-                class="group flex shrink-0 items-center gap-3.5 rounded-2xl p-4 text-left transition-[transform,background-color,box-shadow] duration-150 ease-out active:scale-[.98] md:min-w-[22rem]"
+                class="group flex shrink-0 items-center gap-3.5 rounded-2xl p-4 text-left transition-[transform,background-color,box-shadow] duration-150 ease-out active:scale-[0.96] md:min-w-[22rem]"
                 :class="stationOpen
                     ? 'border border-emerald-200 bg-emerald-50 hover:bg-emerald-100/70'
                     : 'bg-accent-500 text-white shadow-[0_8px_20px_-10px_rgba(83,44,46,.7)] hover:bg-accent-600'"
@@ -49,7 +49,7 @@
         <section aria-label="Quick actions" class="mb-5 grid gap-2 [grid-template-columns:repeat(var(--cols),minmax(0,1fr))] sm:grid-cols-2 sm:gap-3 xl:[grid-template-columns:repeat(var(--cols),minmax(0,1fr))]"
             :style="{ '--cols': Math.max(actions.length, 1) }">
             <NuxtLink v-for="action in actions" :key="action.label" :to="action.to"
-                class="group relative flex flex-col items-center gap-1.5 rounded-2xl border border-stone-200 bg-white p-2.5 text-center transition-[transform,border-color,box-shadow] duration-150 ease-out hover:border-accent-200 hover:shadow-card active:scale-[.98] sm:flex-row sm:gap-3 sm:p-4 sm:text-left">
+                class="group relative flex flex-col items-center gap-1.5 rounded-2xl border border-stone-200 bg-white p-2.5 text-center transition-[transform,border-color,box-shadow] duration-150 ease-out hover:border-accent-200 hover:shadow-card active:scale-[0.96] sm:flex-row sm:gap-3 sm:p-4 sm:text-left">
                 <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent-50 text-accent-600 transition-colors duration-150 group-hover:bg-accent-100">
                     <Icon :name="action.icon" class="h-5 w-5" />
                 </span>
@@ -78,7 +78,7 @@
         <section aria-labelledby="attention-heading" class="mb-5 overflow-hidden rounded-2xl border border-stone-200 bg-white" :class="{ 'max-sm:hidden': mobileTab !== 'today' }">
             <div class="flex items-center justify-between gap-3 border-b border-stone-100 px-5 py-3">
                 <h2 id="attention-heading" class="font-bold text-crimson">Needs your attention</h2>
-                <span v-if="!today" class="text-[13px] text-stone-400">Loading…</span>
+                <span v-if="!today" class="text-[13px] text-stone-500">Loading…</span>
                 <span v-else-if="attentionTotal" class="rounded-full bg-amber-100 px-2.5 py-0.5 text-[12.5px] font-bold tabular-nums text-amber-800">{{ attentionTotal }} waiting</span>
                 <span v-else class="inline-flex items-center gap-1.5 text-[13px] font-semibold text-emerald-700">
                     <Icon name="i-tabler-check" class="h-4 w-4" />All caught up
@@ -92,7 +92,7 @@
                     </span>
                     <span class="col-start-2 row-span-2 row-start-1 block text-2xl font-bold leading-none tracking-[-0.02em] tabular-nums sm:mt-1 sm:text-[28px]"
                         :class="cell.count ? cell.valueClass : 'text-stone-300'">{{ today ? cell.count : '—' }}</span>
-                    <span class="mt-0.5 block truncate text-[12.5px] text-stone-400 sm:mt-1.5 sm:text-[12px]">{{ cell.count ? cell.hint : 'nothing waiting' }}</span>
+                    <span class="mt-0.5 block truncate text-[12.5px] text-stone-500 sm:mt-1.5 sm:text-[12px]">{{ cell.count ? cell.hint : 'nothing waiting' }}</span>
                 </NuxtLink>
             </div>
         </section>
@@ -112,7 +112,7 @@
                     </span>
                     <span class="mt-1 block text-2xl font-bold leading-none tracking-[-0.02em] tabular-nums sm:text-[28px]"
                         :class="cell.valueClass">{{ cell.value }}</span>
-                    <span class="mt-1.5 block text-[12px] leading-snug text-stone-400">{{ cell.note }}</span>
+                    <span class="mt-1.5 block text-[12px] leading-snug text-stone-500">{{ cell.note }}</span>
                 </component>
             </div>
         </section>
@@ -131,7 +131,7 @@
 
         <!-- 4 · Trends: for looking back and reporting, not for acting on right now. -->
         <section aria-labelledby="trends-heading" class="mb-5" :class="{ 'max-sm:hidden': mobileTab !== 'trends' }">
-            <h2 id="trends-heading" class="mb-3 mt-8 flex items-center gap-3 text-[12px] font-semibold uppercase tracking-[.1em] text-stone-400">
+            <h2 id="trends-heading" class="mb-3 mt-8 flex items-center gap-3 text-[12px] font-semibold uppercase tracking-[.1em] text-stone-500">
                 Trends<span class="h-px flex-1 bg-stone-200" />
             </h2>
             <div class="grid grid-cols-1 gap-4 xl:grid-cols-3">
@@ -143,13 +143,13 @@
                         <LibrarianMiniToggle v-model="chartView" label="Chart data" :options="CHART_VIEWS" />
                         <div class="flex items-center gap-1 rounded-xl border border-stone-200 p-0.5" role="group" aria-label="Month">
                             <button type="button" aria-label="Previous month"
-                                class="flex h-8 w-8 items-center justify-center rounded-lg text-stone-500 transition-[transform,background-color] duration-150 ease-out hover:bg-stone-100 hover:text-stone-900 active:scale-90"
+                                class="flex h-8 w-8 items-center justify-center rounded-lg text-stone-500 transition-[transform,background-color] duration-150 ease-out hover:bg-stone-100 hover:text-stone-900 active:scale-[0.96]"
                                 @click="shiftMonth(-1)">
                                 <Icon name="i-tabler-chevron-left" class="h-4 w-4" />
                             </button>
                             <span class="min-w-[118px] text-center text-[13.5px] font-semibold tabular-nums text-stone-800" aria-live="polite">{{ monthLabel }}</span>
                             <button type="button" aria-label="Next month" :disabled="isCurrentMonth"
-                                class="flex h-8 w-8 items-center justify-center rounded-lg text-stone-500 transition-[transform,background-color] duration-150 ease-out hover:bg-stone-100 hover:text-stone-900 active:scale-90 disabled:pointer-events-none disabled:opacity-30"
+                                class="flex h-8 w-8 items-center justify-center rounded-lg text-stone-500 transition-[transform,background-color] duration-150 ease-out hover:bg-stone-100 hover:text-stone-900 active:scale-[0.96] disabled:pointer-events-none disabled:opacity-30"
                                 @click="shiftMonth(1)">
                                 <Icon name="i-tabler-chevron-right" class="h-4 w-4" />
                             </button>
@@ -197,7 +197,7 @@
                             <span class="h-2.5 w-2.5 rounded-full" :style="{ backgroundColor: c.color }" />{{ c.label }}
                         </span>
                         <span class="mt-1 block text-[26px] font-bold leading-none tracking-[-0.02em] tabular-nums text-stone-900">{{ c.value }}</span>
-                        <span class="mt-1 block text-[12px] tabular-nums text-stone-400">{{ copiesTotal ? Math.round((c.value / copiesTotal) * 100) : 0 }}% of copies</span>
+                        <span class="mt-1 block text-[12px] tabular-nums text-stone-500">{{ copiesTotal ? Math.round((c.value / copiesTotal) * 100) : 0 }}% of copies</span>
                     </li>
                 </ul>
             </section>
@@ -402,16 +402,16 @@ const ledger = computed<LedgerCell[]>(() => {
     const dueToday = t?.dueToday ?? 0
     return [
         { label: 'In the library', value: n(t?.inLibrary), note: 'checked in, not out yet', icon: 'i-tabler-door-enter', iconClass: 'text-emerald-600', valueClass: 'text-stone-900', to: '/librarian/attendance' },
-        { label: 'Visits today', value: n(t?.visitsToday), note: 'scans at the entrance', icon: 'i-tabler-user-check', iconClass: 'text-stone-400', valueClass: 'text-stone-900', to: '/librarian/attendance' },
-        { label: 'Checked out', value: n(t?.checkedOut), note: 'loans started today', icon: 'i-tabler-book-upload', iconClass: 'text-stone-400', valueClass: 'text-stone-900', to: '/librarian/circulation' },
-        { label: 'Returned', value: n(t?.returned), note: 'books back today', icon: 'i-tabler-book-download', iconClass: 'text-stone-400', valueClass: 'text-stone-900', to: '/librarian/circulation' },
+        { label: 'Visits today', value: n(t?.visitsToday), note: 'scans at the entrance', icon: 'i-tabler-user-check', iconClass: 'text-stone-500', valueClass: 'text-stone-900', to: '/librarian/attendance' },
+        { label: 'Checked out', value: n(t?.checkedOut), note: 'loans started today', icon: 'i-tabler-book-upload', iconClass: 'text-stone-500', valueClass: 'text-stone-900', to: '/librarian/circulation' },
+        { label: 'Returned', value: n(t?.returned), note: 'books back today', icon: 'i-tabler-book-download', iconClass: 'text-stone-500', valueClass: 'text-stone-900', to: '/librarian/circulation' },
         {
             label: 'Due today', value: n(t?.dueToday), note: dueToday ? 'still out, due before closing' : 'nothing due later today',
-            icon: 'i-tabler-clock', iconClass: dueToday ? 'text-amber-600' : 'text-stone-400', valueClass: dueToday ? 'text-amber-700' : 'text-stone-900', to: '/librarian/circulation',
+            icon: 'i-tabler-clock', iconClass: dueToday ? 'text-amber-600' : 'text-stone-500', valueClass: dueToday ? 'text-amber-700' : 'text-stone-900', to: '/librarian/circulation',
         },
         {
             label: 'Overdue', value: n(t?.overdue), note: overdue ? 'past their due date' : 'all loans on time',
-            icon: 'i-tabler-alert-triangle', iconClass: overdue ? 'text-red-600' : 'text-stone-400', valueClass: overdue ? 'text-red-600' : 'text-stone-900', to: '/librarian/circulation', anchor: overdue ? 'overdue-books' : undefined,
+            icon: 'i-tabler-alert-triangle', iconClass: overdue ? 'text-red-600' : 'text-stone-500', valueClass: overdue ? 'text-red-600' : 'text-stone-900', to: '/librarian/circulation', anchor: overdue ? 'overdue-books' : undefined,
         },
     ]
 })

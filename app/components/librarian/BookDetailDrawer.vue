@@ -1,11 +1,11 @@
 <template>
 	<Teleport to="body">
-		<div class="fixed inset-0 z-[60] bg-stone-900/35 backdrop-blur-[2px] transition-opacity duration-200"
+		<div class="fixed inset-0 z-[60] bg-stone-900/40 transition-opacity duration-200"
 			:class="open ? 'opacity-100' : 'pointer-events-none opacity-0'" @click="emit('close')" />
 
 		<aside role="dialog" aria-modal="true" aria-labelledby="bookDetailTitle" :aria-hidden="!open" @keydown.esc="emit('close')"
-			class="fixed right-0 top-0 z-[61] flex h-full w-full max-w-[440px] flex-col bg-white shadow-overlay transition-transform duration-300 ease-[cubic-bezier(.32,.72,0,1)]"
-			:class="open ? 'translate-x-0' : 'translate-x-full'">
+			class="fixed right-0 top-0 z-[61] flex h-full w-full max-w-[440px] flex-col bg-white shadow-overlay transition-transform ease-[cubic-bezier(.32,.72,0,1)]"
+			:class="open ? 'translate-x-0 duration-300' : 'translate-x-full duration-200'">
 			<div class="flex items-center justify-between border-b border-stone-100 px-5 py-4">
 				<h3 id="bookDetailTitle" class="text-[17px] font-bold text-accent-700">Book details</h3>
 				<ButtonsButton variant="icon" aria-label="Close" @click="emit('close')">
@@ -31,7 +31,7 @@
 						<p class="text-[17px] font-bold leading-snug text-stone-900">{{ book.title }}</p>
 						<p class="mt-1 text-[13.5px] text-stone-500">
 							<template v-for="(a, i) in book.authors" :key="a.authorID">{{ i ? ', ' : '' }}{{ a.name }}<span
-									v-if="a.role && a.role !== 'Author'" class="text-stone-400"> ({{ a.role.toLowerCase() }})</span></template>
+									v-if="a.role && a.role !== 'Author'" class="text-stone-500"> ({{ a.role.toLowerCase() }})</span></template>
 							<template v-if="!book.authors.length">No author recorded</template>
 						</p>
 						<span v-if="book.subject"
@@ -47,7 +47,7 @@
 				<div class="mt-5 grid grid-cols-3 divide-x divide-stone-100 rounded-2xl border border-stone-200 py-3 text-center">
 					<div>
 						<p class="text-[20px] font-bold tabular-nums" :class="onShelf ? 'text-stone-900' : 'text-red-500'">{{ onShelf }}<span
-								class="text-[14px] font-medium text-stone-400"> / {{ book.copies.length }}</span></p>
+								class="text-[14px] font-medium text-stone-500"> / {{ book.copies.length }}</span></p>
 						<p class="text-[12px] text-stone-500">On the shelf</p>
 					</div>
 					<div>
@@ -62,22 +62,22 @@
 
 				<dl class="mt-5 grid grid-cols-2 gap-x-4 gap-y-3.5">
 					<div v-for="field in fields" :key="field.label" :class="field.wide ? 'col-span-2' : ''">
-						<dt class="mb-0.5 text-[12px] font-bold uppercase tracking-wide text-stone-400">{{ field.label }}</dt>
+						<dt class="mb-0.5 text-[12px] font-bold uppercase tracking-wide text-stone-500">{{ field.label }}</dt>
 						<dd class="text-[14.5px] font-medium text-stone-800" :class="field.mono ? 'font-data text-[13.5px]' : ''">{{ field.value }}</dd>
 					</div>
 				</dl>
 
 				<BookPagesGallery v-if="book.pages?.length" class="mt-6" :pages="book.pages" />
 
-				<h4 class="mb-2 mt-6 text-[12px] font-bold uppercase tracking-wide text-stone-400">
-					Copies <span class="font-medium normal-case tracking-normal text-stone-400">({{ book.copies.length }})</span>
+				<h4 class="mb-2 mt-6 text-[12px] font-bold uppercase tracking-wide text-stone-500">
+					Copies <span class="font-medium normal-case tracking-normal text-stone-500">({{ book.copies.length }})</span>
 				</h4>
 				<ul v-if="book.copies.length" class="overflow-hidden rounded-2xl border border-stone-200">
 					<li v-for="copy in book.copies" :key="copy.copyID"
 						class="flex items-center justify-between gap-3 border-b border-stone-100 px-3.5 py-2.5 last:border-0">
 						<div class="min-w-0">
 							<p class="font-data text-[13.5px] font-medium text-stone-800">{{ copy.accessionNumber }}</p>
-							<p class="font-data truncate text-[12px] text-stone-400">{{ copy.barcodeValue }}</p>
+							<p class="font-data truncate text-[12px] text-stone-500">{{ copy.barcodeValue }}</p>
 						</div>
 						<LibrarianStatusPill :label="COPY_STATUS[copy.status]?.label ?? copy.status" :tone="COPY_STATUS[copy.status]?.tone ?? 'neutral'" />
 					</li>

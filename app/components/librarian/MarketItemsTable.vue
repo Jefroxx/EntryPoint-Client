@@ -30,7 +30,7 @@
 			<td class="px-4 py-3">
 				<div class="flex items-center gap-3">
 					<img v-if="item.photoURL" :src="item.photoURL" alt="" loading="lazy" class="h-10 w-10 shrink-0 rounded-lg object-cover" />
-					<div v-else class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-stone-100 text-stone-400">
+					<div v-else class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-stone-100 text-stone-500">
 						<Icon name="i-tabler-gift" class="h-5 w-5" />
 					</div>
 					<span class="text-[15px] font-semibold text-stone-900">{{ item.name }}</span>

@@ -17,7 +17,7 @@
 
 				<ul class="flex flex-wrap gap-x-4 gap-y-1.5 text-[11.5px]" aria-label="Password requirements">
 					<li v-for="rule in rules" :key="rule.label" class="inline-flex items-center gap-1.5 transition-colors duration-200"
-						:class="rule.met ? 'text-emerald-600' : 'text-stone-400'">
+						:class="rule.met ? 'text-emerald-600' : 'text-stone-500'">
 						<span class="h-[7px] w-[7px] rounded-full transition-colors duration-200" :class="rule.met ? 'bg-emerald-500' : 'bg-stone-200'" />{{ rule.label }}
 					</li>
 				</ul>

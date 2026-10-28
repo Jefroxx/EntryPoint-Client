@@ -38,14 +38,14 @@
 					<p class="mt-1 text-[13px] text-emerald-800">will be created</p>
 				</div>
 				<div class="rounded-2xl border p-4" :class="check.skipped ? 'border-amber-200 bg-amber-50' : 'border-stone-200 bg-stone-50'">
-					<p class="text-[28px] font-bold leading-none tabular-nums" :class="check.skipped ? 'text-amber-800' : 'text-stone-400'">{{ check.skipped }}</p>
+					<p class="text-[28px] font-bold leading-none tabular-nums" :class="check.skipped ? 'text-amber-800' : 'text-stone-500'">{{ check.skipped }}</p>
 					<p class="mt-1 text-[13px]" :class="check.skipped ? 'text-amber-800' : 'text-stone-500'">will be skipped</p>
 				</div>
 			</div>
 
 			<ul class="divide-y divide-stone-100 overflow-hidden rounded-2xl border border-stone-200">
 				<li v-for="r in check.rows" :key="r.row" class="flex items-start gap-3 px-4 py-2.5" :class="r.ok ? '' : 'bg-amber-50/60'">
-					<span class="font-data mt-0.5 w-8 shrink-0 text-[12px] text-stone-400">{{ r.row }}</span>
+					<span class="font-data mt-0.5 w-8 shrink-0 text-[12px] text-stone-500">{{ r.row }}</span>
 					<div class="min-w-0 flex-1">
 						<p class="truncate text-[14px] font-semibold text-stone-900">{{ [r.data.firstName, r.data.lastName].filter(Boolean).join(' ') || '(no name)' }}
 							<span class="ml-1 text-[12.5px] font-normal capitalize text-stone-500">{{ r.data.type }}</span></p>

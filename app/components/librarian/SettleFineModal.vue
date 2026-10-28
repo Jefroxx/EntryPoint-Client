@@ -12,7 +12,7 @@
 					for <b class="text-stone-900">{{ bookTitle }}</b>.
 				</p>
 				<p class="mt-2 text-[13.5px] text-emerald-900">
-					The fine is marked <b>paid</b> as of now, and it can't be undone from here. Only continue if the money has been collected at the desk.
+					The {{ copyKind ? 'penalty' : 'fine' }} is marked <b>paid</b> as of now, and it can't be undone from here. Only continue if the money has been collected at the desk.<template v-if="copyKind"> The {{ copyKind }} copy is then removed from the catalog.</template>
 				</p>
 			</section>
 
@@ -29,7 +29,7 @@
 			<section class="rounded-2xl border border-amber-300 bg-amber-50 p-4">
 				<div class="flex flex-wrap items-center justify-between gap-3">
 					<div>
-						<p class="text-[12px] font-bold uppercase tracking-wide text-amber-800">Late fee</p>
+						<p class="text-[12px] font-bold uppercase tracking-wide text-amber-800">{{ copyKind ? `${copyKind === 'lost' ? 'Lost' : 'Damaged'} book` : 'Late fee' }}</p>
 						<p class="text-[26px] font-extrabold tabular-nums text-stone-900">{{ formatPeso(penalty.amount) }}</p>
 						<p class="text-[13.5px] text-stone-700">{{ reason }}</p>
 					</div>
@@ -69,7 +69,7 @@
 
 				<section class="rounded-xl border border-stone-200 p-4">
 					<h3 class="mb-2.5 flex items-center gap-2 text-[12px] font-bold uppercase tracking-wide text-stone-500">
-						<Icon name="i-tabler-calendar-time" class="h-4 w-4" aria-hidden="true" />Loan #{{ penalty.loan?.loanID }}
+						<Icon name="i-tabler-calendar-time" class="h-4 w-4" aria-hidden="true" />{{ penalty.loan ? `Loan #${penalty.loan.loanID}` : 'Loan' }}
 					</h3>
 					<dl class="grid grid-cols-1 gap-y-2.5">
 						<div v-for="f in loanFields" :key="f.label">
@@ -103,7 +103,7 @@
 </template>
 
 <script setup lang="ts">
-import type { PenaltyRecord } from '~/services/circulationService'
+import { isCopyPenalty, penaltyCopy, penaltyStudent, type PenaltyRecord } from '~/services/circulationService'
 
 const props = defineProps<{
 	open: boolean
@@ -123,13 +123,18 @@ const receiptNumber = ref('')
 watch(() => [props.open, props.penalty?.penaltyID], () => { step.value = 'details'; receiptNumber.value = '' })
 
 const loan = computed(() => props.penalty?.loan ?? null)
-const student = computed(() => loan.value?.student ?? null)
+const student = computed(() => (props.penalty ? penaltyStudent(props.penalty) : null))
+const copy = computed(() => (props.penalty ? penaltyCopy(props.penalty) : null))
 const studentName = computed(() => personName(student.value?.user))
-const bookTitle = computed(() => loan.value?.copy?.book?.title ?? 'Removed book')
+const bookTitle = computed(() => copy.value?.book?.title ?? 'Removed book')
+
+// 'lost' or 'damaged' when the student is paying for the book itself; null for a late fee.
+const copyKind = computed(() => (props.penalty && isCopyPenalty(props.penalty) ? props.penalty.penalty_type!.category : null))
 
 const reason = computed(() => {
 	const p = props.penalty
 	if (!p) return ''
+	if (copyKind.value) return `Paying for the ${copyKind.value} copy · the copy leaves the catalog once this is recorded`
 	const category = p.penalty_type?.category
 	const lateBy = loan.value?.returnDate ? daysBetween(loan.value.dueDate, loan.value.returnDate) : null
 	return [category ? `${category.charAt(0).toUpperCase()}${category.slice(1)} collection` : null, lateBy ? `returned ${lateBy} late` : null]
@@ -142,13 +147,18 @@ function daysBetween(from: string, to: string): string | null {
 }
 
 const bookFields = computed(() => [
-	{ label: 'Accession no.', value: loan.value?.copy?.accessionNumber != null ? String(loan.value.copy.accessionNumber) : '', mono: true },
+	{ label: 'Accession no.', value: copy.value?.accessionNumber != null ? String(copy.value.accessionNumber) : '', mono: true },
 ])
 
 const loanFields = computed(() => {
 	const l = loan.value
 	const p = props.penalty
-	if (!l || !p) return []
+	if (!p) return []
+	// A book lost or damaged inside the library has no loan behind it.
+	if (!l) return [
+		{ label: 'Loan', value: 'None. Lost or damaged in the library.' },
+		{ label: 'Issued', value: formatDateTime(p.computedAt) },
+	]
 	return [
 		{ label: 'Checked out', value: formatDateTime(l.checkoutDate) },
 		{ label: 'Due', value: formatDateTime(l.dueDate) },

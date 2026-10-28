@@ -1,10 +1,10 @@
 <template>
 	<Teleport to="body">
-		<div class="fixed inset-0 z-[60] bg-stone-900/35 backdrop-blur-[2px] transition-opacity duration-200"
+		<div class="fixed inset-0 z-[60] bg-stone-900/40 transition-opacity duration-200"
 			:class="open ? 'opacity-100' : 'pointer-events-none opacity-0'" @click="emit('close')" />
 
-		<aside class="fixed right-0 top-0 z-[61] flex h-full w-full max-w-[400px] flex-col bg-white shadow-overlay transition-transform duration-300 ease-[cubic-bezier(.32,.72,0,1)]"
-			:class="open ? 'translate-x-0' : 'translate-x-full'" role="dialog" :aria-label="heading" :aria-hidden="!open">
+		<aside class="fixed right-0 top-0 z-[61] flex h-full w-full max-w-[400px] flex-col bg-white shadow-overlay transition-transform ease-[cubic-bezier(.32,.72,0,1)]"
+			:class="open ? 'translate-x-0 duration-300' : 'translate-x-full duration-200'" role="dialog" :aria-label="heading" :aria-hidden="!open">
 			<div class="flex items-center justify-between border-b border-stone-100 px-5 py-4">
 				<h3 class="text-[17px] font-bold text-accent-700">{{ heading }}</h3>
 				<ButtonsButton variant="icon" aria-label="Close" @click="emit('close')">
@@ -21,7 +21,7 @@
 
 				<dl class="mt-5 grid grid-cols-2 gap-x-4 gap-y-3.5">
 					<div v-for="field in fields" :key="field.label" :class="field.wide ? 'col-span-2' : ''">
-						<dt class="mb-0.5 text-[12px] font-bold uppercase tracking-wide text-stone-400">{{ field.label }}</dt>
+						<dt class="mb-0.5 text-[12px] font-bold uppercase tracking-wide text-stone-500">{{ field.label }}</dt>
 						<dd class="break-words text-[14.5px] font-medium text-stone-800" :class="field.mono ? 'font-data text-[13.5px]' : ''">
 							{{ field.value === null || field.value === undefined || field.value === '' ? '—' : field.value }}
 						</dd>

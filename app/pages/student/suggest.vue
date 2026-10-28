@@ -14,7 +14,7 @@
 						:error="serverErrors.author" />
 					<div>
 						<label for="s-reason" class="mb-1.5 block text-[12.5px] font-semibold text-stone-800">
-							Why should we get it? <span class="font-normal text-stone-400">(optional)</span>
+							Why should we get it? <span class="font-normal text-stone-500">(optional)</span>
 						</label>
 						<textarea id="s-reason" v-model="form.reason" rows="4" maxlength="1000" placeholder="It's on our syllabus for Software Engineering 2."
 							class="w-full resize-none rounded-[10px] border border-stone-200 bg-white px-3 py-2.5 text-[13.5px] leading-relaxed outline-none transition-colors placeholder:text-stone-400 focus:border-accent-500 focus:ring-2 focus:ring-accent-200" />
@@ -27,7 +27,7 @@
 			</form>
 
 			<section class="st-in mt-6 md:mt-0" style="animation-delay: 70ms">
-				<h2 class="mb-2.5 px-0.5 text-[11px] font-semibold uppercase tracking-[.08em] text-stone-400">Your suggestions</h2>
+				<h2 class="mb-2.5 px-0.5 text-[11px] font-semibold uppercase tracking-[.08em] text-stone-500">Your suggestions</h2>
 
 				<div v-if="pending && !data" class="h-24 animate-pulse rounded-2xl bg-stone-200/70" aria-busy="true" />
 				<p v-else-if="!data?.suggestions.length" class="rounded-2xl bg-stone-100 px-4 py-6 text-center text-[13.5px] text-stone-500">
@@ -41,7 +41,7 @@
 						</span>
 						<div class="min-w-0 flex-1">
 							<p class="truncate text-[14px] font-medium text-stone-900">{{ s.title }}</p>
-							<p class="truncate text-[12.5px] text-stone-400">{{ s.author || 'Unknown author' }} · {{ formatDate(s.submittedAt) }}</p>
+							<p class="truncate text-[12.5px] text-stone-500">{{ s.author || 'Unknown author' }} · {{ formatDate(s.submittedAt) }}</p>
 						</div>
 						<StudentPill :tone="s.status === 'Approved' ? 'good' : s.status === 'Rejected' ? 'bad' : 'warn'">{{ s.status }}</StudentPill>
 					</div>

@@ -6,7 +6,7 @@
              page, a link or Escape closes it. From 1024px up it is the docked sidebar that folds to icons. -->
         <Transition enter-active-class="transition-opacity duration-200 ease-out" enter-from-class="opacity-0"
             leave-active-class="transition-opacity duration-150 ease-out" leave-to-class="opacity-0">
-            <div v-if="drawerOpen" class="fixed inset-0 z-[55] bg-[#1c1712]/35 backdrop-blur-[3px] lg:hidden" aria-hidden="true"
+            <div v-if="drawerOpen" class="fixed inset-0 z-[55] bg-[#1c1712]/40 lg:hidden" aria-hidden="true"
                 @click="drawerOpen = false" />
         </Transition>
         <LibrarianSideBar :open="isDesktop ? sidebarOpen : true" :drawer-open="drawerOpen" :is-desktop="isDesktop"

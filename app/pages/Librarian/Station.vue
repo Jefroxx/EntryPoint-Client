@@ -23,7 +23,7 @@
 					<span class="font-data hidden px-1 text-[15px] font-semibold tabular-nums text-stone-700 md:inline">{{ time }}</span>
 
 					<button v-if="canFullscreen" type="button"
-						class="flex h-9 w-9 items-center justify-center rounded-lg text-stone-500 transition-[transform,background-color] duration-150 ease-out hover:bg-stone-100 active:scale-90"
+						class="flex h-9 w-9 items-center justify-center rounded-lg text-stone-500 transition-[transform,background-color] duration-150 ease-out hover:bg-stone-100 active:scale-[0.96]"
 						:aria-label="isFullscreen ? 'Exit full screen' : 'Full screen'" @click="toggleFullscreen">
 						<Icon :name="isFullscreen ? 'i-tabler-minimize' : 'i-tabler-maximize'" class="h-4 w-4" />
 					</button>

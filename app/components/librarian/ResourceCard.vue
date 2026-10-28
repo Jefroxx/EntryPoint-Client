@@ -1,6 +1,6 @@
 <template>
 	<div
-		class="row-fade-in flex flex-col gap-3.5 rounded-2xl border border-stone-200 bg-white p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-card"
+		class="row-fade-in flex flex-col gap-3.5 rounded-2xl border border-stone-200 bg-white p-4 transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-card"
 		:style="{ animationDelay: `${index * 40}ms` }">
 		<div class="flex items-center gap-3">
 			<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl" :class="iconTone">
@@ -8,7 +8,7 @@
 			</div>
 			<div class="min-w-0 flex-1">
 				<p class="truncate text-[15px] font-bold text-stone-900">{{ resource.name }}</p>
-				<p class="truncate text-[12.5px] text-stone-400">{{ resource.resourceType }}</p>
+				<p class="truncate text-[12.5px] text-stone-500">{{ resource.resourceType }}</p>
 			</div>
 			<LibrarianStatusPill :label="resource.status" :tone="statusTone" />
 
@@ -86,7 +86,7 @@ const statusTone = computed(() => ({ Available: 'success', 'In Use': 'warning', 
 const iconTone = computed(() => ({
 	Available: 'bg-emerald-100 text-emerald-600',
 	'In Use': 'bg-amber-100 text-amber-600',
-	Unavailable: 'bg-stone-100 text-stone-400',
+	Unavailable: 'bg-stone-100 text-stone-500',
 }[props.resource.status]))
 
 const typeIcon = computed(() => {

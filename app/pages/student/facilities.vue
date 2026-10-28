@@ -58,7 +58,7 @@
 								<div class="min-w-0">
 									<p class="truncate text-[14px] font-semibold text-stone-900">{{ r.name }}</p>
 									<p class="mt-0.5 flex items-center gap-1.5 text-[12.5px]" :class="textOf(r.status)">
-										<i class="h-[7px] w-[7px] rounded-full" :class="dotOf(r.status)" />{{ r.status }}<span class="text-stone-400">· {{ plural(keyOf(r.resourceType)).replace(/s$/, "") }}</span>
+										<i class="h-[7px] w-[7px] rounded-full" :class="dotOf(r.status)" />{{ r.status }}<span class="text-stone-500">· {{ plural(keyOf(r.resourceType)).replace(/s$/, "") }}</span>
 									</p>
 								</div>
 							</div>
@@ -98,7 +98,7 @@
 							<Icon :name="c.icon" class="h-4 w-4 shrink-0 opacity-70" />
 							<span class="truncate">{{ c.label }}</span>
 						</span>
-						<span class="font-data shrink-0 text-[12px]" :class="type === c.value ? 'text-accent-700/70' : 'text-stone-400'"
+						<span class="font-data shrink-0 text-[12px]" :class="type === c.value ? 'text-accent-700/70' : 'text-stone-500'"
 							:title="`${c.free} of ${c.count} free`">{{ c.free }}/{{ c.count }}</span>
 					</button>
 				</div>
@@ -154,6 +154,6 @@ const freeInView = computed(() => inType.value.filter((r) => isFree(r.status)).l
 const list = computed(() => inType.value.filter((r) => !availableOnly.value || isFree(r.status)))
 
 const toneOf = (status: string) => (status === 'Available' ? TONE_SOFT.good : status === 'In Use' ? TONE_SOFT.warn : TONE_SOFT.neutral)
-const textOf = (status: string) => (status === 'Available' ? 'text-emerald-700' : status === 'In Use' ? 'text-amber-700' : 'text-stone-400')
+const textOf = (status: string) => (status === 'Available' ? 'text-emerald-700' : status === 'In Use' ? 'text-amber-700' : 'text-stone-500')
 const dotOf = (status: string) => (status === 'Available' ? 'bg-emerald-600' : status === 'In Use' ? 'bg-amber-600' : 'bg-stone-400')
 </script>

@@ -1,7 +1,8 @@
 <template>
-	<div class="relative overflow-hidden rounded-2xl border border-stone-200 bg-white">
-		<!-- Phones: one card per row, with the row's buttons on it. -->
-		<ul class="divide-y divide-stone-100 sm:hidden">
+	<div class="relative rounded-2xl">
+		<!-- Too narrow for the table (phones, tablets, small windows): one card per row, with the row's buttons on it. -->
+		<LibrarianCardSkeleton v-if="loading" />
+		<ul v-else class="grid gap-3 sm:grid-cols-2 2xl:grid-cols-3 [&>li]:overflow-hidden [&>li]:rounded-2xl [&>li]:border [&>li]:border-stone-200 [&>li]:bg-white">
 			<li v-for="suggestion in suggestions" :key="`card-${suggestion.suggestionID}`">
 				<div role="button" tabindex="0" class="px-4 py-3.5 transition-colors active:bg-accent-50" @click="emit('review', suggestion)" @keydown.enter.self="emit('review', suggestion)">
 					<div class="flex items-start gap-3">
@@ -11,7 +12,7 @@
 						<div class="min-w-0 flex-1">
 							<p class="line-clamp-2 text-[15px] font-semibold leading-snug text-stone-900">{{ suggestion.title }}</p>
 							<p class="truncate text-[13px] text-stone-500">{{ suggestion.author || 'No author listed' }}</p>
-							<p class="mt-1 truncate text-[12.5px] text-stone-400">By {{ requesterName(suggestion) }} · {{ formatDate(suggestion.submittedAt) }}</p>
+							<p class="mt-1 truncate text-[12.5px] text-stone-500">By {{ requesterName(suggestion) }} · {{ formatDate(suggestion.submittedAt) }}</p>
 						</div>
 						<LibrarianRequestStatusPill :status="suggestion.status" class="shrink-0" />
 					</div>
@@ -22,18 +23,18 @@
 				</div>
 			</li>
 		</ul>
-		<p v-if="!loading && suggestions.length === 0" class="px-4 py-10 text-center text-[15px] text-stone-400 sm:hidden">No book requests match your filters.</p>
+		<p v-if="!loading && suggestions.length === 0" class="rounded-2xl border border-stone-200 bg-white px-4 py-10 text-center text-[15px] text-stone-500">No book requests match your filters.</p>
 
-		<div class="scroll-shadow-x max-h-[480px] overflow-auto max-sm:hidden">
+		<div class="scroll-shadow-x max-h-[480px] overflow-auto hidden">
 			<table class="w-full min-w-[860px] border-collapse text-left">
 				<thead>
 					<tr>
-						<th class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-stone-400">Title</th>
-						<th class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-stone-400">Author</th>
-						<th class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-stone-400">Reason</th>
-						<th class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-stone-400">Requested By</th>
-						<th class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-stone-400">Date Requested</th>
-						<th class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-stone-400">Status</th>
+						<th class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-stone-500">Title</th>
+						<th class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-stone-500">Author</th>
+						<th class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-stone-500">Reason</th>
+						<th class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-stone-500">Requested By</th>
+						<th class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-stone-500">Date Requested</th>
+						<th class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-stone-500">Status</th>
 						<th class="sticky top-0 z-10 border-b border-stone-100 bg-stone-50 px-4 py-3"></th>
 					</tr>
 				</thead>
@@ -58,7 +59,7 @@
 						</td>
 						<td class="px-4 py-3">
 							<p class="text-[14px] font-medium text-stone-800">{{ requesterName(suggestion) }}</p>
-							<p v-if="suggestion.student?.academicProgram" class="text-[12.5px] text-stone-400">{{ suggestion.student.academicProgram }}</p>
+							<p v-if="suggestion.student?.academicProgram" class="text-[12.5px] text-stone-500">{{ suggestion.student.academicProgram }}</p>
 						</td>
 						<td class="px-4 py-3 text-[13.5px] text-stone-500">{{ formatDate(suggestion.submittedAt) }}</td>
 						<td class="px-4 py-3">
@@ -75,13 +76,12 @@
 					</tr>
 
 					<tr v-if="!loading && suggestions.length === 0">
-						<td colspan="7" class="py-10 text-center text-[15px] text-stone-400">No book requests match your filters.</td>
+						<td colspan="7" class="py-10 text-center text-[15px] text-stone-500">No book requests match your filters.</td>
 					</tr>
 				</tbody>
 			</table>
 		</div>
 
-		<LibrarianLoadingOverlay :loading="loading" />
 	</div>
 </template>
 
@@ -98,6 +98,7 @@ const emit = defineEmits<{
 	(e: 'approve', suggestion: BookSuggestion): void
 	(e: 'reject', suggestion: BookSuggestion): void
 }>()
+
 
 function menuItems(suggestion: BookSuggestion) {
 	const locked = suggestion.status !== 'Pending'

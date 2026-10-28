@@ -1,7 +1,7 @@
 <template>
 	<div ref="root" class="relative">
 		<button type="button" aria-label="Account menu" :aria-expanded="open" aria-haspopup="menu"
-			class="ml-1 flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-accent-500 to-accent-700 text-[13px] font-bold text-white ring-1 ring-stone-200 transition-transform duration-150 ease-out active:scale-90"
+			class="ml-1 flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-accent-500 to-accent-700 text-[13px] font-bold text-white ring-1 ring-stone-200 transition-transform duration-150 ease-out active:scale-[0.96]"
 			@click="open = !open">
 			<span class="dashboard-heading">{{ initialsText }}</span>
 		</button>
@@ -16,7 +16,7 @@
 					</div>
 					<div class="min-w-0">
 						<p class="truncate text-[15px] font-semibold text-stone-900">{{ profile?.fullName ?? `${firstName} ${lastName}` }}</p>
-						<p class="font-data mt-0.5 truncate text-[12px] text-stone-400">{{ profile?.studentIDNumber }}{{ profile?.academicProgram ? ` · ${profile.academicProgram}` : '' }}</p>
+						<p class="font-data mt-0.5 truncate text-[12px] text-stone-500">{{ profile?.studentIDNumber }}{{ profile?.academicProgram ? ` · ${profile.academicProgram}` : '' }}</p>
 						<StudentPill tone="good" class="mt-1.5"><Icon name="i-tabler-check" class="h-3 w-3" />Approved</StudentPill>
 					</div>
 				</div>
@@ -26,10 +26,10 @@
 					class="flex w-full items-center gap-3 px-4 py-3 text-left text-[14px] text-stone-800 transition-colors duration-150 hover:bg-stone-50 active:bg-stone-100"
 					@click="pick(link)">
 					<span class="flex h-8 w-8 items-center justify-center rounded-[10px] bg-accent-100 text-accent-600"><Icon :name="link.icon" class="h-4 w-4" /></span>
-					<span class="flex-1">{{ link.label }}<span v-if="link.hint" class="block text-[12px] text-stone-400">{{ link.hint }}</span></span>
+					<span class="flex-1">{{ link.label }}<span v-if="link.hint" class="block text-[12px] text-stone-500">{{ link.hint }}</span></span>
 				</component>
 
-				<div v-if="profile" class="space-y-1.5 border-t border-stone-100 px-4 py-3 text-[12.5px] text-stone-400">
+				<div v-if="profile" class="space-y-1.5 border-t border-stone-100 px-4 py-3 text-[12.5px] text-stone-500">
 					<p class="flex items-center gap-2"><Icon name="i-tabler-mail" class="h-3.5 w-3.5" />{{ profile.email }}</p>
 					<p v-if="profile.phoneNumber" class="flex items-center gap-2"><Icon name="i-tabler-phone" class="h-3.5 w-3.5" />{{ profile.phoneNumber }}</p>
 					<p v-if="profile.address" class="flex items-center gap-2"><Icon name="i-tabler-map-pin" class="h-3.5 w-3.5" />{{ profile.address }}</p>

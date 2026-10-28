@@ -39,13 +39,13 @@
                 <td class="font-data whitespace-nowrap px-4 py-3 text-[13px] text-stone-500">{{ formatDateTime(entry.created_at) }}</td>
                 <td class="px-4 py-3">
                     <p class="text-[14.5px] font-semibold text-stone-900">{{ entry.actorName }}</p>
-                    <p class="text-[12.5px] text-stone-400">{{ roleLabel(entry.actorRole) }}</p>
+                    <p class="text-[12.5px] text-stone-500">{{ roleLabel(entry.actorRole) }}</p>
                 </td>
                 <td class="px-4 py-3 text-[14.5px] text-stone-800">{{ entry.summary }}</td>
             </tr>
         </LibrarianTableShell>
 
-        <div v-if="logs" class="mt-3 flex items-center justify-between text-[13.5px] text-stone-400">
+        <div v-if="logs" class="mt-3 flex items-center justify-between text-[13.5px] text-stone-500">
             <span>Showing {{ rows.length }} of {{ logs.total }} entries</span>
             <span>Page {{ logs.current_page }} of {{ logs.last_page }}</span>
         </div>

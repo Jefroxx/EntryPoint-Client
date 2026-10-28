@@ -1,7 +1,8 @@
 <template>
-	<div class="relative overflow-hidden rounded-2xl border border-stone-200 bg-white">
-		<!-- Phones: one card per book; edit and the rest of the actions are on the card. -->
-		<ul class="divide-y divide-stone-100 sm:hidden">
+	<div class="relative rounded-2xl">
+		<!-- Too narrow for the table: one card per book; edit and the rest of the actions are on the card. -->
+		<LibrarianCardSkeleton v-if="loading" />
+		<ul v-else class="grid gap-3 sm:grid-cols-2 2xl:grid-cols-3 [&>li]:overflow-hidden [&>li]:rounded-2xl [&>li]:border [&>li]:border-stone-200 [&>li]:bg-white">
 			<li v-for="book in books" :key="`card-${book.bookID}`">
 				<div role="button" tabindex="0" class="flex gap-3 px-4 py-3.5 transition-colors active:bg-accent-50"
 					@click="emit('view', book)" @keydown.enter.self="emit('view', book)">
@@ -15,7 +16,7 @@
 								:style="{ backgroundColor: `${subjectSwatch(book.subject.name)}1f` }">
 								<span class="h-2 w-2 shrink-0 rounded-[3px]" :style="{ backgroundColor: subjectSwatch(book.subject.name) }" />{{ book.subject.name }}
 							</span>
-							<span class="font-data text-[12px] text-stone-400">{{ book.callNumber }}</span>
+							<span class="font-data text-[12px] text-stone-500">{{ book.callNumber }}</span>
 						</div>
 						<p class="mt-1.5 text-[13px] tabular-nums text-stone-500">
 							<b :class="availableCopies(book) === 0 ? 'text-red-500' : 'text-stone-900'">{{ availableCopies(book) }}</b> of {{ book.copies.length }} on the shelf
@@ -30,20 +31,20 @@
 				</div>
 			</li>
 		</ul>
-		<p v-if="!loading && books.length === 0" class="px-4 py-10 text-center text-[15px] text-stone-400 sm:hidden">
+		<p v-if="!loading && books.length === 0" class="rounded-2xl border border-stone-200 bg-white px-4 py-10 text-center text-[15px] text-stone-500">
 			{{ filtered ? 'No books match these filters.' : 'No books in the catalog yet.' }}
 		</p>
 
-		<div class="max-h-[480px] overflow-auto max-sm:hidden">
+		<div class="max-h-[480px] overflow-auto hidden">
 			<table class="w-full min-w-[860px] border-collapse text-left">
 				<thead>
 					<tr>
-						<th class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-stone-400">Book</th>
-						<th class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-stone-400">Author</th>
-						<th class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-stone-400">Category</th>
-						<th class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-stone-400">Call No.</th>
-						<th class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-stone-400">Accession No.</th>
-						<th class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-stone-400">Copies</th>
+						<th class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-stone-500">Book</th>
+						<th class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-stone-500">Author</th>
+						<th class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-stone-500">Category</th>
+						<th class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-stone-500">Call No.</th>
+						<th class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-stone-500">Accession No.</th>
+						<th class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-stone-500">Copies</th>
 						<th class="sticky top-0 z-10 border-b border-stone-100 bg-stone-50 px-4 py-3"></th>
 					</tr>
 				</thead>
@@ -57,7 +58,7 @@
 								<div>
 									<button type="button" class="text-left text-[15px] font-semibold text-stone-900 hover:text-accent-600 hover:underline"
 										@click="emit('view', book)">{{ book.title }}</button>
-									<p v-if="book.isbn" class="font-data text-[12px] text-stone-400">ISBN {{ book.isbn }}</p>
+									<p v-if="book.isbn" class="font-data text-[12px] text-stone-500">ISBN {{ book.isbn }}</p>
 								</div>
 							</div>
 						</td>
@@ -95,7 +96,7 @@
 							<span class="font-bold" :class="availableCopies(book) === 0 ? 'text-red-500' : 'text-stone-900'">
 								{{ availableCopies(book) }}
 							</span>
-							<span class="text-stone-400"> / {{ book.copies.length }}</span>
+							<span class="text-stone-500"> / {{ book.copies.length }}</span>
 						</td>
 						<td class="px-4 py-3" @click.stop>
 							<div class="flex items-center justify-end gap-1">
@@ -109,7 +110,7 @@
 					</tr>
 
 					<tr v-if="!loading && books.length === 0">
-						<td colspan="7" class="py-10 text-center text-[15px] text-stone-400">
+						<td colspan="7" class="py-10 text-center text-[15px] text-stone-500">
 							{{ filtered ? 'No books match these filters.' : 'No books in the catalog yet.' }}
 						</td>
 					</tr>
@@ -117,7 +118,6 @@
 			</table>
 		</div>
 
-		<LibrarianLoadingOverlay :loading="loading" />
 	</div>
 </template>
 
@@ -134,6 +134,7 @@ const props = defineProps<{
 const emit = defineEmits<{
 	(e: 'view' | 'edit' | 'remove', book: CatalogBook): void
 }>()
+
 
 const BOOK_MENU = [
 	{ key: 'view', label: 'View details', icon: 'i-tabler-eye' },

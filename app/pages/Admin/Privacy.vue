@@ -27,7 +27,7 @@
         <p v-if="term.trim().length < 2" class="rounded-2xl border border-dashed border-stone-300 bg-white px-4 py-10 text-center text-[14.5px] text-stone-500">
             Type at least two letters to find a member: a student, a faculty member or a staff member.
         </p>
-        <p v-else-if="searching && !results.length" class="py-6 text-center text-[14px] text-stone-400">Searching…</p>
+        <p v-else-if="searching && !results.length" class="py-6 text-center text-[14px] text-stone-500">Searching…</p>
         <p v-else-if="!results.length" class="rounded-2xl border border-stone-200 bg-white px-4 py-10 text-center text-[14.5px] text-stone-500">Nobody matches “{{ term.trim() }}”.</p>
 
         <ul v-else class="space-y-3">

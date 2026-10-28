@@ -15,13 +15,13 @@
 				<header
 					class="flex shrink-0 items-center justify-between gap-2 border-b border-stone-200/80 bg-parchment/85 px-3 pb-2 pt-[calc(0.5rem+env(safe-area-inset-top,0px))] backdrop-blur-xl md:px-5 md:py-3.5">
 					<button type="button"
-						class="flex h-10 items-center gap-0.5 rounded-xl pr-2 text-[15px] font-medium text-accent-500 transition-[transform,opacity] duration-150 ease-out active:scale-95 active:opacity-70 md:hidden"
+						class="flex h-10 items-center gap-0.5 rounded-xl pr-2 text-[15px] font-medium text-accent-500 transition-[transform,opacity] duration-150 ease-out active:scale-[0.96] active:opacity-70 md:hidden"
 						@click="emit('close')">
 						<Icon name="i-tabler-chevron-left" class="h-5 w-5" />Back
 					</button>
 					<h2 class="dashboard-heading truncate text-[15px] font-semibold text-stone-900 md:text-[17px] md:font-bold md:text-crimson">{{ title }}</h2>
 					<button type="button" aria-label="Close"
-						class="hidden h-9 w-9 items-center justify-center rounded-xl text-stone-500 transition-[transform,background-color] duration-150 ease-out hover:bg-stone-100 active:scale-90 md:flex"
+						class="hidden h-9 w-9 items-center justify-center rounded-xl text-stone-500 transition-[transform,background-color] duration-150 ease-out hover:bg-stone-100 active:scale-[0.96] md:flex"
 						@click="emit('close')">
 						<Icon name="i-tabler-x" class="h-[18px] w-[18px]" />
 					</button>

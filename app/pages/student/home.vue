@@ -26,7 +26,7 @@
 							<p class="dashboard-heading mt-1 text-[40px] font-extrabold leading-none tracking-tight tabular-nums">{{ points }}</p>
 						</div>
 						<NuxtLink to="/student/rewards"
-							class="relative mt-1 inline-flex h-8 items-center gap-1.5 rounded-lg bg-white px-3 text-[12.5px] font-semibold text-accent-600 transition-transform duration-150 ease-out active:scale-95">
+							class="relative mt-1 inline-flex h-8 items-center gap-1.5 rounded-lg bg-white px-3 text-[12.5px] font-semibold text-accent-600 transition-transform duration-150 ease-out active:scale-[0.96]">
 							<Icon name="i-tabler-gift" class="h-3.5 w-3.5" />Spend
 						</NuxtLink>
 					</div>
@@ -90,7 +90,7 @@
 			<!-- Quick tiles (phones: the sidebar holds these on wider screens) -->
 			<section class="st-in mt-4 grid grid-cols-4 gap-2 md:hidden" style="animation-delay: 105ms">
 				<component :is="tile.to ? NuxtLink : 'button'" v-for="tile in tiles" :key="tile.label" :to="tile.to" :type="tile.to ? undefined : 'button'"
-					class="flex flex-col items-center gap-2 rounded-2xl border border-stone-200 bg-white px-1 py-3 text-[12px] font-medium transition-transform duration-150 ease-out active:scale-95"
+					class="flex flex-col items-center gap-2 rounded-2xl border border-stone-200 bg-white px-1 py-3 text-[12px] font-medium transition-transform duration-150 ease-out active:scale-[0.96]"
 					@click="tile.action?.()">
 					<span class="flex h-9 w-9 items-center justify-center rounded-[10px] bg-accent-100 text-accent-600"><Icon :name="tile.icon" class="h-[18px] w-[18px]" /></span>
 					{{ tile.label }}
@@ -240,7 +240,7 @@
 							<Icon name="i-tabler-check" class="h-4 w-4" />In cart · View cart
 						</button>
 						<button v-else type="button"
-							class="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-white text-[14.5px] font-semibold text-accent-800 transition-[transform,background-color] duration-150 ease-out hover:bg-accent-50 active:scale-[.98]"
+							class="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-white text-[14.5px] font-semibold text-accent-800 transition-[transform,background-color] duration-150 ease-out hover:bg-accent-50 active:scale-[0.96]"
 							@click="addToCart(selected.bookID)">
 							<StudentCartIcon class="h-5 w-5" />{{ selected.availableCopies ? 'Add to cart' : 'Join the queue' }}
 						</button>

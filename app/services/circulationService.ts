@@ -19,7 +19,9 @@ export interface LoanRecord {
   copy: {
     copyID: number;
     accessionNumber: number;
-    book: { bookID: number; title: string } | null;
+    /** What this copy cost, if recorded (a lost/damaged penalty starts from it). */
+    cost?: string | number | null;
+    book: { bookID: number; title: string; cost?: string | number | null } | null;
   } | null;
 }
 
@@ -106,24 +108,58 @@ export interface PenaltyRecord {
   amount: string;
   computedAt: string;
   settledAt: string | null;
-  paymentStatus: "Unpaid" | "Paid";
+  /** `Replaced`: a lost/damaged book that the student replaced instead of paying for. */
+  paymentStatus: "Unpaid" | "Paid" | "Replaced";
   /** The cashier's official receipt number, written down when the fine was marked paid. */
   receiptNumber: string | null;
+  /** The loan behind it: always for a late fee; none for a book lost or damaged inside the library. */
   loan: LoanRecord | null;
+  /** Who owes it and for which copy: set on every penalty, with or without a loan. */
+  student: PersonRef | null;
+  copy: { copyID: number; accessionNumber: number; book: { bookID: number; title: string } | null } | null;
   penalty_type: { category: string } | null;
+}
+
+/** Who a penalty is charged to (read from the penalty itself, or from its loan on older rows). */
+export function penaltyStudent(penalty: PenaltyRecord): PersonRef | null {
+  return penalty.student ?? penalty.loan?.student ?? null;
+}
+
+/** The copy a penalty is for, with its book. */
+export function penaltyCopy(penalty: PenaltyRecord): PenaltyRecord["copy"] {
+  return penalty.copy ?? penalty.loan?.copy ?? null;
 }
 
 export interface PenaltyStats {
   unpaidCount: number;
   unpaidTotal: number;
   paidCount: number;
+  /** Lost/damaged books the student replaced instead of paying. */
+  replacedCount: number;
   /** Unpaid fines whose book came back more than `longUnpaidDays` days ago. */
   longUnpaidCount: number;
   longUnpaidDays: number;
 }
 
 /** `longUnpaid`: unpaid long after the book came back (see PenaltyStats.longUnpaidDays). */
-export type PenaltyFilter = "Unpaid" | "Paid" | "longUnpaid";
+export type PenaltyFilter = "Unpaid" | "Paid" | "Replaced" | "longUnpaid";
+
+/** `copy`: a lost or damaged book (the Lost & Damaged tab); `late`: a late fee (the Penalties tab). */
+export type PenaltyKind = "copy" | "late";
+
+/** Issue a penalty for a lost or damaged book: for a `loan`, or for a `studentID` and a `copyID` (no loan needed). */
+export interface IssuePenaltyPayload {
+  type: "lost" | "damaged";
+  amount: number;
+  loan?: string;
+  studentID?: number;
+  copyID?: number;
+}
+
+/** A penalty over a lost or damaged copy (the student pays the book's price or replaces it), not a late fee. */
+export function isCopyPenalty(penalty: { penalty_type: { category: string } | null }): boolean {
+  return penalty.penalty_type?.category === "lost" || penalty.penalty_type?.category === "damaged";
+}
 
 export interface CheckoutPayload {
   studentID: number;
@@ -240,17 +276,36 @@ class CirculationServiceClass extends BaseService {
     return this.request<{ message: string }>(`/librarian/self-return-reports/${reportUuid}/reject`, { method: "POST", body: payload });
   }
 
-  fetchPenalties(params: { search?: string; status?: PenaltyFilter; page?: number; perPage?: number } = {}) {
+  fetchPenalties(params: { search?: string; status?: PenaltyFilter; kind?: PenaltyKind; page?: number; perPage?: number } = {}) {
     return this.request<Paginated<PenaltyRecord>>("/librarian/penalties", { query: params });
   }
 
-  fetchPenaltyStats() {
-    return this.request<PenaltyStats>("/librarian/penalties/stats");
+  fetchPenaltyStats(kind?: PenaltyKind) {
+    return this.request<PenaltyStats>("/librarian/penalties/stats", { query: kind ? { kind } : {} });
   }
 
   /** `receiptNumber`: the cashier's official receipt for the payment. */
   settlePenalty(penaltyUuid: string, payload: { receiptNumber: string }) {
     return this.request<{ message: string }>(`/librarian/penalties/${penaltyUuid}/settle`, { method: "POST", body: payload });
+  }
+
+  /**
+   * Charges a student for a lost or damaged book, for a loan or for a student and a copy. The copy is marked lost or
+   * damaged too, and a loan that was still out is closed.
+   */
+  issueCopyPenalty(payload: IssuePenaltyPayload) {
+    return this.request<{ message: string; penalty: PenaltyRecord }>("/librarian/penalties", { method: "POST", body: payload });
+  }
+
+  /** The book turned up or was repaired: cancels the unpaid penalty and puts the copy back on the shelf. */
+  cancelCopyPenalty(penaltyUuid: string) {
+    return this.request<{ message: string }>(`/librarian/penalties/${penaltyUuid}/cancel`, { method: "POST" });
+  }
+
+  /** The student brought a replacement book instead of paying: closes the penalty and adds the new copy. */
+  replacePenalty(penaltyUuid: string) {
+    return this.request<{ message: string; replacement: { uuid: string; accessionNumber: number } }>(
+      `/librarian/penalties/${penaltyUuid}/replace`, { method: "POST" });
   }
 }
 

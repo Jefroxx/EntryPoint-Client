@@ -4,7 +4,7 @@
 			<Transition enter-active-class="transition-opacity duration-200 ease-out" enter-from-class="opacity-0"
 				enter-to-class="opacity-100" leave-active-class="transition-opacity duration-150 ease-out"
 				leave-from-class="opacity-100" leave-to-class="opacity-0">
-				<div v-if="open" class="absolute inset-0 bg-[#1c1712]/35 backdrop-blur-[3px]" @click="requestClose" />
+				<div v-if="open" class="absolute inset-0 bg-[#1c1712]/40" @click="requestClose" />
 			</Transition>
 
 			<Transition enter-active-class="transition-[transform,opacity] duration-[260ms] ease-out"

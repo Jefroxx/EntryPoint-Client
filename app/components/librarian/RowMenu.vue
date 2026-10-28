@@ -19,10 +19,10 @@
 					<template v-for="item in items" :key="item.key">
 						<div v-if="item.separator" class="mx-1.5 my-1.5 h-px bg-stone-100" />
 						<button type="button" role="menuitem" :disabled="item.disabled"
-							class="group flex w-full items-center gap-2.5 rounded-[10px] px-2.5 py-2.5 text-left text-[14px] font-medium transition-[background-color,color,transform] duration-150 ease-out active:scale-[.975] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
+							class="group flex w-full items-center gap-2.5 rounded-[10px] px-2.5 py-2.5 text-left text-[14px] font-medium transition-[background-color,color,transform] duration-150 ease-out active:scale-[0.96] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
 							:class="TONES[item.tone ?? 'default']" @click="choose(item)">
 							<Icon :name="item.icon" class="h-[15px] w-[15px] shrink-0"
-								:class="item.tone && item.tone !== 'default' ? '' : 'text-stone-400 group-hover:text-stone-600'" />
+								:class="item.tone && item.tone !== 'default' ? '' : 'text-stone-500 group-hover:text-stone-600'" />
 							{{ item.label }}
 						</button>
 					</template>

@@ -157,6 +157,8 @@ export interface BookCopySummary {
   uuid: string;
   accessionNumber: number;
   status: string;
+  /** What this copy cost, if recorded. Only a book's full details carry it (the shared catalog list does not). */
+  cost?: string | number | null;
 }
 
 export interface CatalogBook {
@@ -268,19 +270,6 @@ export interface PaginatedStockLogs {
   last_page: number;
   total: number;
   per_page: number;
-}
-
-/** GET /librarian/copies/lost-damaged: one copy off the shelf as lost or damaged. */
-export interface LostDamagedCopy {
-  copyID: number;
-  uuid: string;
-  accessionNumber: number;
-  status: "lost" | "damaged";
-  /** When the copy was last changed, i.e. when it was marked. */
-  markedAt: string;
-  book: { bookID: number | null; uuid: string | null; title: string; callNumber: string | null };
-  /** Who had it last; null if it was never lent. */
-  lastLoan: { loanID: number; returnDate: string | null; studentName: string | null; studentIDNumber: string | null } | null;
 }
 
 /** Why a copy leaves the catalog (the server accepts exactly these). */
@@ -555,11 +544,6 @@ class LibrarianServiceClass extends BaseService {
   /** The Book Catalog tab: every copy on its own row, in accession order. */
   fetchCopies(params: { search?: string; subjectID?: number; status?: CopyStatus; area?: LibraryArea; page?: number; perPage?: number } = {}) {
     return this.apiRequest<PaginatedCopies>("/librarian/copies", { query: params });
-  }
-
-  /** The Circulation "Lost and damaged" tab, with its counts. */
-  fetchLostDamagedCopies() {
-    return this.apiRequest<{ copies: LostDamagedCopy[]; stats: { lost: number; damaged: number } }>("/librarian/copies/lost-damaged");
   }
 
   /** One copy's status. Borrowed copies change only through check-in; "retired" removes the copy. */

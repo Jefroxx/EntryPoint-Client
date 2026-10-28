@@ -11,7 +11,7 @@
 					class="w-full rounded-[10px] border bg-white px-3 py-2.5 text-[15px] leading-snug text-stone-900 outline-none transition-colors placeholder:text-stone-400 focus:border-accent-500 focus:ring-2 focus:ring-accent-200"
 					:class="errors.body ? 'border-red-400 bg-red-50' : 'border-stone-200'" @input="errors.body = ''" />
 				<p v-if="errors.body" class="mt-1 text-[12.5px] text-red-500">{{ errors.body }}</p>
-				<p v-else class="mt-1 text-right text-[12px] tabular-nums text-stone-400">{{ form.body.length }}/1000</p>
+				<p v-else class="mt-1 text-right text-[12px] tabular-nums text-stone-500">{{ form.body.length }}/1000</p>
 			</div>
 
 			<fieldset>

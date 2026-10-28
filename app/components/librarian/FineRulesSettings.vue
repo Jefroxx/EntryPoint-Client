@@ -8,12 +8,12 @@
 
 		<section class="rounded-2xl border border-stone-200 bg-white p-5">
 			<h2 class="text-[15px] font-bold text-stone-900">Fine rules</h2>
-			<p class="mb-3 text-[13.5px] text-stone-400">Charged per unit of lateness, after the grace period.</p>
+			<p class="mb-3 text-[13.5px] text-stone-500">Charged per unit of lateness, after the grace period.</p>
 
 			<div class="overflow-x-auto">
 				<table class="w-full min-w-[560px] border-collapse text-left">
 					<thead>
-						<tr class="text-[11.5px] font-semibold uppercase tracking-wide text-stone-400">
+						<tr class="text-[11.5px] font-semibold uppercase tracking-wide text-stone-500">
 							<th class="pb-2 pr-3">Collection</th>
 							<th class="pb-2 pr-3">Rate (₱)<FieldRequired /></th>
 							<th class="pb-2 pr-3">Per<FieldRequired /></th>

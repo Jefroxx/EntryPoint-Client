@@ -43,7 +43,7 @@
 						<StudentCover :book="briefOf(row.book)" :width="44" />
 						<div class="min-w-0 flex-1">
 							<p class="text-[14px] font-semibold leading-tight text-stone-900">{{ row.book.title }}</p>
-							<p class="mt-0.5 truncate text-[12.5px] text-stone-400">{{ authorLine(briefOf(row.book)) }}</p>
+							<p class="mt-0.5 truncate text-[12.5px] text-stone-500">{{ authorLine(briefOf(row.book)) }}</p>
 							<div class="mt-1.5">
 								<StudentAvailability :available="availableOf(row)" :total="copyCounts(row.book.copies).total" />
 							</div>

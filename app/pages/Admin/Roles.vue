@@ -35,7 +35,7 @@
                 </ul>
 
                 <div v-if="role.editable" class="mt-4 flex items-center justify-between gap-3">
-                    <p class="text-[12.5px]" :class="isDirty(role) ? 'font-semibold text-amber-700' : 'text-stone-400'">{{ isDirty(role) ? 'Unsaved changes' : 'Saved' }}</p>
+                    <p class="text-[12.5px]" :class="isDirty(role) ? 'font-semibold text-amber-700' : 'text-stone-500'">{{ isDirty(role) ? 'Unsaved changes' : 'Saved' }}</p>
                     <div class="flex gap-2">
                         <ButtonsButton variant="ghost" size="sm" :disabled="!isDirty(role) || savingRole === role.role" @click="undo(role)">Undo</ButtonsButton>
                         <ButtonsButton variant="primary" size="sm" :disabled="!isDirty(role) || savingRole === role.role" @click="save(role)">

@@ -41,12 +41,12 @@
 
             <div v-if="filteredResources.length" class="relative grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
                 <LibrarianResourceCard v-for="(resource, index) in filteredResources" :key="resource.resID"
-                    :resource="resource" :index="index" :now-ms="nowMs" @start="openStart" @end="handleEnd"
-                    @edit="openForm" @label="openLabel" @toggle="handleToggle" @delete="askDelete" />
+                    :resource="resource" :index="index" :now-ms="nowMs" @start="openStart" @end="askEnd"
+                    @edit="openForm" @label="openLabel" @toggle="askToggle" @delete="askDelete" />
             </div>
             <div v-else
                 class="flex min-h-[220px] items-center justify-center rounded-2xl border border-dashed border-stone-200 bg-white">
-                <p class="text-[15px] text-stone-400">
+                <p class="text-[15px] text-stone-500">
                     {{ resourcesPending ? 'Loading resources…' : 'No resources match your filters.' }}
                 </p>
             </div>
@@ -93,6 +93,15 @@
             @submit="handleSave" />
         <LibrarianStartSessionModal :open="isStartOpen" :resource="startTarget" :busy="busy" @close="isStartOpen = false"
             @submit="handleStart" />
+        <LibrarianConfirmModal :open="endOpen" title="End this session?"
+            :message="`${endTarget?.active_usage?.student?.user?.firstName ?? 'The student'}'s session on “${endTarget?.name ?? 'this resource'}” will be ended now.`"
+            confirm-label="End session" :danger="false" :loading="busy" @close="endOpen = false" @confirm="handleEnd" />
+        <LibrarianConfirmModal :open="toggleOpen" :title="toggleNext === 'Unavailable' ? 'Mark as unavailable?' : 'Mark as available?'"
+            :message="toggleNext === 'Unavailable'
+                ? `“${toggleTarget?.name ?? 'This resource'}” can't be used until you mark it available again.`
+                : `“${toggleTarget?.name ?? 'This resource'}” can be used again.`"
+            :confirm-label="toggleNext === 'Unavailable' ? 'Mark unavailable' : 'Mark available'" :danger="toggleNext === 'Unavailable'"
+            :loading="busy" @close="toggleOpen = false" @confirm="handleToggle" />
         <LibrarianConfirmModal :open="deleteOpen" title="Delete resource?"
             :message="`“${deleteTarget?.name ?? 'This resource'}” will be removed from the library. Its past sessions stay in the log.`"
             confirm-label="Delete" :loading="busy" @close="deleteOpen = false" @confirm="handleDelete" />
@@ -238,14 +247,39 @@ async function handleStart(studentID: number) {
     if (ok) isStartOpen.value = false
 }
 
-function handleEnd(resource: ResourceRecord) {
+const endTarget = ref<ResourceRecord | null>(null)
+const endOpen = ref(false)
+function askEnd(resource: ResourceRecord) {
     if (!resource.active_usage) return
-    return perform(() => resourceService.endSession(resource.active_usage!.uuid), 'Session ended', 'Could not end session', refreshAll())
+    endTarget.value = resource
+    endOpen.value = true
 }
 
-function handleToggle(resource: ResourceRecord) {
-    const next = resource.status === 'Unavailable' ? 'Available' : 'Unavailable'
-    return perform(() => resourceService.updateResource(resource.uuid, { status: next }), `Marked ${next.toLowerCase()}`, 'Could not update resource', [refetchResources])
+async function handleEnd() {
+    const usage = endTarget.value?.active_usage
+    if (!usage) return
+    busy.value = true
+    const ok = await perform(() => resourceService.endSession(usage.uuid), 'Session ended', 'Could not end session', refreshAll())
+    busy.value = false
+    if (ok) endOpen.value = false
+}
+
+const toggleTarget = ref<ResourceRecord | null>(null)
+const toggleOpen = ref(false)
+const toggleNext = computed(() => toggleTarget.value?.status === 'Unavailable' ? 'Available' : 'Unavailable')
+function askToggle(resource: ResourceRecord) {
+    toggleTarget.value = resource
+    toggleOpen.value = true
+}
+
+async function handleToggle() {
+    const resource = toggleTarget.value
+    if (!resource) return
+    const next = toggleNext.value
+    busy.value = true
+    const ok = await perform(() => resourceService.updateResource(resource.uuid, { status: next }), `Marked ${next.toLowerCase()}`, 'Could not update resource', [refetchResources])
+    busy.value = false
+    if (ok) toggleOpen.value = false
 }
 
 const deleteTarget = ref<ResourceRecord | null>(null)

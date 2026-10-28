@@ -9,7 +9,7 @@
 		</div>
 
 		<div v-if="total === 0" class="flex flex-1 flex-col items-center justify-center py-8 text-center">
-			<span class="mb-2.5 flex h-11 w-11 items-center justify-center rounded-full bg-stone-100 text-stone-400">
+			<span class="mb-2.5 flex h-11 w-11 items-center justify-center rounded-full bg-stone-100 text-stone-500">
 				<Icon name="i-tabler-chart-donut" class="h-5 w-5" />
 			</span>
 			<p class="text-[14px] text-stone-500">{{ emptyText }}</p>
@@ -40,7 +40,7 @@
 						<span class="h-2.5 w-2.5 shrink-0 rounded-full" :style="{ backgroundColor: slice.color }" />
 						<span class="min-w-0 flex-1 truncate text-[13.5px] text-stone-700">{{ slice.label }}</span>
 						<b class="text-[13.5px] font-semibold tabular-nums text-stone-900">{{ slice.count }}</b>
-						<span class="w-10 text-right text-[12.5px] tabular-nums text-stone-400">{{ percent(slice.count) }}</span>
+						<span class="w-10 text-right text-[12.5px] tabular-nums text-stone-500">{{ percent(slice.count) }}</span>
 					</button>
 				</li>
 			</ul>

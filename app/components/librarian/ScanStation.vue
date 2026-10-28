@@ -8,7 +8,7 @@
 					<span class="mr-1 inline-flex items-center gap-1.5 text-[13px] font-medium" :class="status.class">
 						<i class="h-2 w-2 rounded-full" :class="status.dot" />{{ status.label }}
 					</span>
-					<button type="button" class="flex h-8 w-8 items-center justify-center rounded-lg text-stone-500 transition-[transform,background-color] duration-150 ease-out hover:bg-stone-100 active:scale-90"
+					<button type="button" class="flex h-8 w-8 items-center justify-center rounded-lg text-stone-500 transition-[transform,background-color] duration-150 ease-out hover:bg-stone-100 active:scale-[0.96]"
 						:aria-label="sound ? 'Turn sound off' : 'Turn sound on'" :aria-pressed="sound" @click="sound = !sound">
 						<Icon :name="sound ? 'i-tabler-volume' : 'i-tabler-volume-off'" class="h-4 w-4" />
 					</button>
@@ -44,12 +44,12 @@
 
 						<div class="absolute right-2.5 top-2.5 flex gap-1.5">
 							<button v-if="torchAvailable" type="button" aria-label="Torch" :aria-pressed="torchOn"
-								class="flex h-9 w-9 items-center justify-center rounded-full transition-[transform,background-color] duration-150 ease-out active:scale-90"
+								class="flex h-9 w-9 items-center justify-center rounded-full transition-[transform,background-color] duration-150 ease-out active:scale-[0.96]"
 								:class="torchOn ? 'bg-amber-300 text-stone-900' : 'bg-black/45 text-white'" @click="toggleTorch">
 								<Icon name="i-tabler-bolt" class="h-4 w-4" />
 							</button>
 							<button v-if="mode === 'phone'" type="button" aria-label="Flip camera"
-								class="flex h-9 w-9 items-center justify-center rounded-full bg-black/45 text-white transition-transform duration-150 ease-out active:scale-90" @click="flip">
+								class="flex h-9 w-9 items-center justify-center rounded-full bg-black/45 text-white transition-transform duration-150 ease-out active:scale-[0.96]" @click="flip">
 								<Icon name="i-tabler-refresh" class="h-4 w-4" />
 							</button>
 						</div>
