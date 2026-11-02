@@ -185,6 +185,25 @@
 													:placeholder="isEdit ? 'Leave blank to keep the current one' : 'Auto-generated if left blank'"
 													:class="[inputClass, 'border-stone-200']" class="font-data !text-[13.5px]" />
 											</div>
+											<div class="sm:col-span-2">
+												<label for="bookDewey" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">
+													Dewey number <span class="font-normal text-stone-500">(optional)</span>
+												</label>
+												<div class="flex gap-2">
+													<input id="bookDewey" v-model="form.deweyNumber" type="text" inputmode="decimal" maxlength="14" placeholder="e.g. 005.1"
+														:class="[inputClass, 'border-stone-200']" class="font-data !text-[13.5px]" @input="deweyHint = ''" />
+													<ButtonsButton variant="ghost" class="shrink-0" :disabled="lookingUp || !form.isbn.trim()"
+														:title="form.isbn.trim() ? undefined : 'Enter the ISBN first'" @click="lookUpDewey">
+														<Icon :name="lookingUp ? 'i-tabler-loader-2' : 'i-tabler-search'" class="h-4 w-4" :class="{ 'animate-spin': lookingUp }" />Look up
+													</ButtonsButton>
+												</div>
+												<p class="mt-1 text-[12.5px] leading-snug" :class="deweyIsError ? 'text-red-500' : 'text-stone-500'">{{ deweyHint || deweyDefaultHint }}</p>
+												<!-- Editing a book whose number is only a guess: if the guess is right, one tap confirms it (no retyping). -->
+												<ButtonsButton v-if="isEdit && guessedDewey" variant="ghost" class="mt-2.5 w-full !h-11 !border-emerald-300 !bg-emerald-50 !text-emerald-800 hover:!bg-emerald-100 sm:!h-10"
+													:disabled="confirmingDewey" @click="confirmGuessedDewey">
+													<Icon :name="confirmingDewey ? 'i-tabler-loader-2' : 'i-tabler-circle-check'" class="h-[18px] w-[18px]" :class="{ 'animate-spin': confirmingDewey }" />This number is correct: keep {{ guessedDewey }}
+												</ButtonsButton>
+											</div>
 										</div>
 									</fieldset>
 
@@ -291,6 +310,14 @@
 										<textarea id="bookRemarks" v-model="form.remarks" rows="3" maxlength="1000"
 											placeholder="e.g. Donated copy, minor cover wear"
 											class="w-full resize-y rounded-[10px] border border-stone-200 bg-white px-3 py-2 text-[14px] text-stone-900 outline-none focus:border-accent-500 focus:ring-2 focus:ring-accent-200" />
+										<!-- Only for books that just arrived: the library also catalogues old books. -->
+										<label v-if="!isEdit" class="mt-4 flex cursor-pointer items-start gap-3 rounded-xl border border-stone-200 bg-stone-50 px-3.5 py-3">
+											<input v-model="form.isNewArrival" type="checkbox" class="mt-0.5 h-4 w-4 shrink-0 accent-accent-500" />
+											<span class="min-w-0">
+												<span class="block text-[14px] font-semibold text-stone-900">This is a new arrival</span>
+												<span class="block text-[12.5px] leading-snug text-stone-500">Marks the book as new and notifies everyone. Leave it unticked for older books you are only now cataloguing.</span>
+											</span>
+										</label>
 									</div>
 								</div>
 							</Transition>
@@ -330,7 +357,7 @@
 </template>
 
 <script setup lang="ts">
-import { librarianService, type BookDetail, type LibraryArea, type NewBookPayload } from '~/services/librarianService'
+import { DEWEY_SOURCE_LABEL, librarianService, type BookDetail, type LibraryArea, type NewBookPayload } from '~/services/librarianService'
 import { useAlert } from '~/api/alert/useAlert'
 
 const alert = useAlert()
@@ -358,12 +385,69 @@ const inputClass =
 
 const coverInputRef = ref<HTMLInputElement | null>(null)
 
+/* ---------- Dewey number: typed, or looked up from the ISBN (Library of Congress, then Open Library) ---------- */
+const deweyHint = ref('')
+const deweyIsError = ref(false)
+const lookingUp = ref(false)
+// What the book already has, so saving an edit only sends the number when it was changed (and so counts as "typed in").
+let originalDewey = ''
+// A ref (not a plain variable): the "This number is correct" button appears and goes away with it.
+const guessedDewey = ref('')
+const confirmingDewey = ref(false)
+
+/** Edit form: the number the book has is only a guess and it is right, so save it as checked without retyping it. */
+async function confirmGuessedDewey() {
+	if (!props.book || !guessedDewey.value) return
+	confirmingDewey.value = true
+	try {
+		const result = await librarianService.setBookDewey(props.book.uuid, guessedDewey.value)
+		alert.success('Marked as checked', result.message)
+		originalDewey = guessedDewey.value
+		form.deweyNumber = guessedDewey.value
+		guessedDewey.value = ''
+		emit('updated')
+	} catch (error: any) {
+		alert.error('Could not confirm the number', apiErrorMessage(error))
+	} finally {
+		confirmingDewey.value = false
+	}
+}
+
+const deweyDefaultHint = computed(() => {
+	if (props.book && guessedDewey.value) return `The current number (${guessedDewey.value}) is a guess from the category. Look it up or type the right one.`
+	return props.book
+		? 'Leave it as it is to keep the current number.'
+		: "Left blank, it is looked up from the ISBN. If the catalogues don't have the book, a librarian is asked to check it later."
+})
+
+async function lookUpDewey() {
+	const isbn = form.isbn.trim()
+	if (!isbn) return
+	lookingUp.value = true
+	deweyIsError.value = false
+	try {
+		const result = await librarianService.lookupIsbnDewey(isbn)
+		if (result.found && result.deweyNumber) {
+			form.deweyNumber = result.deweyNumber
+			deweyHint.value = `Found ${result.deweyNumber} in ${result.source ? DEWEY_SOURCE_LABEL[result.source] : 'a library catalogue'}.`
+		} else {
+			deweyHint.value = 'No Dewey number found for this ISBN. Type one if you know it (often printed on the copyright page as "DDC").'
+		}
+	} catch {
+		deweyIsError.value = true
+		deweyHint.value = "Couldn't reach the catalogues. Try again, or type the number."
+	} finally {
+		lookingUp.value = false
+	}
+}
+
 const form = reactive({
 	title: '',
 	isbn: '',
 	publicationYear: '' as string | number,
 	subjectName: '',
 	callNumber: '',
+	deweyNumber: '',
 	areaOfLibrary: 'circulation' as LibraryArea,
 	shelfLocation: '',
 	coverImageURL: '',
@@ -374,6 +458,7 @@ const form = reactive({
 	sourceOfFund: '',
 	cost: '' as string | number,
 	remarks: '',
+	isNewArrival: false,
 })
 
 /* Steps, as on the registration page: short sections instead of one long scroll. */
@@ -473,6 +558,11 @@ function resetForm() {
 	form.publicationYear = ''
 	form.subjectName = ''
 	form.callNumber = ''
+	form.deweyNumber = ''
+	deweyHint.value = ''
+	deweyIsError.value = false
+	originalDewey = ''
+	guessedDewey.value = ''
 	form.areaOfLibrary = 'circulation'
 	form.shelfLocation = ''
 	form.coverImageURL = ''
@@ -483,6 +573,7 @@ function resetForm() {
 	form.sourceOfFund = ''
 	form.cost = ''
 	form.remarks = ''
+	form.isNewArrival = false
 	authors.value = [blankAuthor()]
 	quantity.value = 1
 	coverLoadFailed.value = false
@@ -501,6 +592,12 @@ function fillFromBook(book: BookDetail) {
 	form.publicationYear = book.publicationYear ?? ''
 	form.subjectName = book.subject?.name ?? ''
 	form.callNumber = book.callNumber ?? ''
+	// A checked number is shown as it is; a guessed one is left blank so it can't be saved by accident as "typed in".
+	originalDewey = book.deweyStatus === 'ok' ? (book.deweyNumber ?? '') : ''
+	guessedDewey.value = book.deweyStatus === 'ok' ? '' : (book.deweyNumber ?? '')
+	form.deweyNumber = originalDewey
+	deweyHint.value = ''
+	deweyIsError.value = false
 	form.areaOfLibrary = book.areaOfLibrary ?? 'circulation'
 	form.shelfLocation = book.shelfLocation ?? ''
 	form.coverImageURL = book.coverImageURL ?? ''
@@ -595,6 +692,8 @@ async function handleSubmit() {
 		isbn: form.isbn.trim() || null,
 		publicationYear: form.publicationYear ? Number(form.publicationYear) : null,
 		callNumber: form.callNumber.trim() || null,
+		// New book: whatever was typed or looked up. Edit: only when it changed from what the book had.
+		deweyNumber: form.deweyNumber.trim() && form.deweyNumber.trim() !== originalDewey ? form.deweyNumber.trim() : undefined,
 		areaOfLibrary: form.areaOfLibrary,
 		shelfLocation: form.shelfLocation.trim() || null,
 		coverImageURL: form.coverImageURL.trim() || null,
@@ -606,12 +705,14 @@ async function handleSubmit() {
 		sourceOfFund: form.sourceOfFund.trim() || null,
 		cost: form.cost !== '' ? Number(form.cost) : null,
 		remarks: form.remarks.trim() || null,
+		isNewArrival: isEdit.value ? undefined : form.isNewArrival,
 	}
 
 	const failTitle = isEdit.value ? 'Could not save changes' : 'Could not add book'
 
 	try {
 		let bookUuid: string
+		let unchecked = false
 		if (props.book) {
 			// A blank call number means "keep the one it has"; the server won't take an empty one.
 			// The copy count isn't edited here (copies are added and removed from the Book Catalog), so it isn't sent.
@@ -619,7 +720,10 @@ async function handleSubmit() {
 			await librarianService.updateBook(props.book.uuid, callNumber ? { ...changes, callNumber } : changes)
 			bookUuid = props.book.uuid
 		} else {
-			bookUuid = (await librarianService.createBook(payload)).book.uuid
+			const created = await librarianService.createBook(payload)
+			bookUuid = created.book.uuid
+			// No number typed and none found by ISBN: the book was saved with a guess and is on the "Check Dewey numbers" list.
+			unchecked = created.book.deweyStatus === 'needs_review'
 		}
 
 		// Page photos go once the book exists (a new one only has an ID now).
@@ -629,7 +733,12 @@ async function handleSubmit() {
 			alert.success('Book updated', `Changes to "${payload.title}" are saved.`)
 			emit('updated')
 		} else {
-			alert.success('Book added', `"${payload.title}" is now in the catalog.`)
+			alert.success(
+				unchecked ? 'Book added, Dewey number not checked' : 'Book added',
+				unchecked
+					? `"${payload.title}" is in the catalog, but no Dewey number was found for it. Confirm one under Library → Check Dewey numbers.`
+					: `"${payload.title}" is now in the catalog.`,
+			)
 			emit('created')
 		}
 		if (failed) alert.error('Some page photos didn\'t save', 'Open the book again to check its photos and add any that are missing.')

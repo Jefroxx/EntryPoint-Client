@@ -10,6 +10,7 @@
             { label: 'Book Catalog', short: 'Catalog', value: 'catalog' },
             { label: 'Book Requests', short: 'Requests', value: 'requests' },
             { label: 'Categories / Genres', short: 'Categories', value: 'categories' },
+            { label: 'Check Dewey numbers', short: 'Dewey', value: 'dewey', badge: deweyReviewCount },
         ]" />
 
         <!-- Accession Record (a row per book, its copies' accession numbers listed) and Book Catalog
@@ -193,6 +194,11 @@
             </template>
         </template>
 
+        <!-- Books whose Dewey number nobody has checked yet -->
+        <template v-else-if="activeTab === 'dewey'">
+            <LibrarianDeweyReviewPanel @changed="refetchDeweyCount(); refetchBooks()" />
+        </template>
+
         <template v-else-if="activeTab === 'requests'">
             <div class="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <LibrarianCatalogStatTile label="Total Requests" :value="requestStats.total"
@@ -330,7 +336,12 @@ useHead({ title: 'Library' })
 
 
 const route = useRoute()
-const activeTab = ref(['accession', 'catalog', 'requests', 'categories'].includes(String(route.query.tab)) ? String(route.query.tab) : 'accession')
+const activeTab = ref(['accession', 'catalog', 'requests', 'categories', 'dewey'].includes(String(route.query.tab)) ? String(route.query.tab) : 'accession')
+
+// How many books still wait for a Dewey check: the badge on the tab, so it can't be forgotten.
+const { data: deweyCount, execute: refetchDeweyCount } =
+    useLiveAsyncData('dewey-review-count', () => librarianService.fetchDeweyReview({ perPage: 1 }), { lazy: true })
+const deweyReviewCount = computed(() => deweyCount.value?.needsReview ?? 0)
 const search = ref('')
 const page = ref(1)
 

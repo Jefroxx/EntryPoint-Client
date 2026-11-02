@@ -23,5 +23,7 @@
 <script setup lang="ts">
 import { useAlert } from '~/api/alert/useAlert'
 
-const { alerts, dismiss } = useAlert()
+const { alerts: all, dismiss } = useAlert()
+// Errors are a dialog now (ErrorDialog); this only shows the small confirmations.
+const alerts = computed(() => all.value.filter((a) => a.variant === 'success'))
 </script>

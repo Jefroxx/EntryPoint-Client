@@ -1,8 +1,6 @@
 import { studentService, type ProfileResponse, type WishlistRow } from '~/services/studentService'
 import { useAlert } from '~/api/alert/useAlert'
 
-const MAX_CART_ITEMS = 3
-
 /**
  * Everything the student shell keeps in sync across screens: profile counters
  * (points, streak, slots), and the wishlist rows that also carry the cart.
@@ -78,8 +76,14 @@ export function useStudent() {
       alert.error('Already in your cart')
       return false
     }
-    if (cart.value.length >= MAX_CART_ITEMS) {
-      alert.error('Your cart is full', `You can hold up to ${MAX_CART_ITEMS} books at a time.`)
+    // The cart can't hold more than the slots the student has left (loans and reservations use some).
+    if (cart.value.length >= slotsLeft.value) {
+      alert.error(
+        slotsLeft.value === 0 ? 'No slots left' : 'Your cart is full',
+        slotsLeft.value === 0
+          ? 'You have no slots left, so you can\'t add more books to your cart.'
+          : `You only have ${slotsLeft.value} slot(s) left, so your cart can hold ${slotsLeft.value} book(s).`,
+      )
       return false
     }
 

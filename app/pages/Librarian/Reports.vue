@@ -40,6 +40,9 @@
                 icon="i-tabler-coin" tone="danger" />
         </div>
 
+        <!-- The same analytics as the Dashboard (one shared component, so the two always agree). -->
+        <LibrarianDashboardAnalytics class="mb-5" />
+
         <div class="relative grid grid-cols-1 gap-3 lg:grid-cols-2">
             <section class="report-card lg:col-span-2">
                 <header class="mb-3 flex items-center justify-between">

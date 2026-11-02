@@ -88,8 +88,23 @@ export interface ReservationRecord {
   pickupCode?: string;
   /** Why Accept is unavailable right now (no free copy, or not first in line for the free copies); null if it can be accepted. */
   acceptBlock?: string | null;
+  /** Copies of this book free to promise right now (on the shelf, not held for an accepted reservation). */
+  copiesFree?: number;
+  /** All copies of this book in the catalog (retired ones left out). */
+  copiesTotal?: number;
   student: PersonRef | null;
-  book: { bookID: number; title: string } | null;
+  book: ReservedBook | null;
+}
+
+/** The book on a reservation: enough to recognise it at the desk (cover, author, shelf number). */
+export interface ReservedBook {
+  bookID: number;
+  title: string;
+  coverImageURL?: string | null;
+  classNumber?: string | null;
+  /** Plain author names, in book order. */
+  authorNames?: string[];
+  subject?: { name: string } | null;
 }
 
 export interface SelfReturnReportRecord {

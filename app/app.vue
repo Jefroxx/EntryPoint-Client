@@ -5,6 +5,8 @@
 	<!-- Full screen only where there's no frame; the student and librarian layouts show their own,
 		 over the page area alone. -->
 	<AppLoader :show="loader.active && !framed" />
+	<!-- Every error message in the app shows here, as a dialog, on every page. -->
+	<ErrorDialog />
 </template>
 
 <script setup lang="ts">

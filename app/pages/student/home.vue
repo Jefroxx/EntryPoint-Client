@@ -214,7 +214,7 @@
 					<dl class="mt-4 grid gap-2 text-[13px]">
 						<div class="flex justify-between gap-4">
 							<dt class="text-accent-100/75">Call number</dt>
-							<dd class="font-data text-right text-[12.5px]">{{ selected.callNumber ?? '—' }}</dd>
+							<dd class="font-data text-right text-[12.5px]">{{ selected.callNumber ?? 'Pending' }}</dd>
 						</div>
 						<div class="flex justify-between gap-4">
 							<dt class="text-accent-100/75">Where</dt>

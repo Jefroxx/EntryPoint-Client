@@ -33,5 +33,7 @@
 <script setup lang="ts">
 import { useAlert } from './useAlert'
 
-const { alerts, dismiss } = useAlert()
+const { alerts: all, dismiss } = useAlert()
+// Errors are a dialog now (ErrorDialog, mounted once in app.vue); toasts are only the small confirmations.
+const alerts = computed(() => all.value.filter((a) => a.variant === 'success'))
 </script>

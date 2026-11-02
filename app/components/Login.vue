@@ -21,15 +21,6 @@
 			<AuthPasswordField id="password" v-model="password" label="Password" autocomplete="current-password"
 				placeholder="••••••••" @update:model-value="errorMessage = ''" />
 
-			<Transition enter-active-class="transition duration-200 ease-out"
-				enter-from-class="-translate-y-1 opacity-0" leave-active-class="transition duration-150 ease-out"
-				leave-to-class="opacity-0">
-				<div v-if="errorMessage" role="alert"
-					class="flex items-start gap-2 rounded-xl border border-red-100 bg-red-50 px-3 py-2.5 text-[12.5px] leading-snug text-red-600">
-					<Icon name="i-tabler-alert-circle" class="mt-px h-4 w-4 shrink-0" />
-					<span>{{ errorMessage }}</span>
-				</div>
-			</Transition>
 
 			<!-- Stays after the error clears: an expired link means typing the email in first, then asking. -->
 			<p v-if="canResend" class="-mt-1 text-[12.5px] text-stone-500">
@@ -158,4 +149,9 @@ async function handleLogin() {
 		isLoading.value = false
 	}
 }
+
+// Problems pop up as a dialog (the shared one in app.vue) instead of a red box inside the form.
+import { useAlert } from '~/api/alert/useAlert'
+const popupAlert = useAlert()
+watch(errorMessage, (message) => { if (message) popupAlert.error('Could not sign in', message) }, { immediate: true })
 </script>

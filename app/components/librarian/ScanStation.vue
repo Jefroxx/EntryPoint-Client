@@ -76,7 +76,7 @@
 				<div class="relative min-w-0 flex-1">
 					<Icon name="i-tabler-keyboard" class="pointer-events-none absolute left-3.5 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-stone-400" />
 					<input v-model="code" type="text" inputmode="text" enterkeyhint="go" autocomplete="off" autocapitalize="off" spellcheck="false"
-						placeholder="Barcode won't read? Type the code or student number" aria-label="Type a code" :disabled="busy"
+						placeholder="Barcode won't read? Type the account code or student number" aria-label="Type a code" :disabled="busy"
 						class="h-11 w-full rounded-xl border border-stone-200 bg-stone-50 pl-11 pr-3 text-[15px] text-stone-900 outline-none transition-[border-color,box-shadow,background-color] duration-150 placeholder:text-stone-400 focus:border-accent-500 focus:bg-white focus:ring-2 focus:ring-accent-200 disabled:opacity-70">
 				</div>
 				<ButtonsButton type="submit" variant="ghost" :disabled="busy || !code.trim()">Scan</ButtonsButton>

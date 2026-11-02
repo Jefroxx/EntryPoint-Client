@@ -10,6 +10,8 @@ export interface BookBrief {
   uuid: string;
   title: string;
   coverImageURL: string | null;
+  /** The librarian ticked "new arrival" when adding it. */
+  isNewArrival?: boolean;
   subject: { subjectID: number; name: string } | null;
   authors: string[];
 }

@@ -167,6 +167,8 @@ export interface CatalogBook {
   title: string;
   isbn: string | null;
   callNumber: string;
+  /** "needs_review" until a catalogue or a librarian has confirmed the Dewey number. */
+  deweyStatus?: DeweyStatus;
   coverImageURL: string | null;
   subject: { subjectID: number; name: string } | null;
   authors: BookAuthor[];
@@ -194,6 +196,10 @@ export interface BookDetail {
   remarks: string | null;
   coverImageURL: string | null;
   shelfLocation: string | null;
+  deweyNumber?: string | null;
+  deweySource?: DeweySource | null;
+  deweyStatus?: DeweyStatus;
+  spineLabel?: SpineLabelData;
   subject: { subjectID: number; name: string } | null;
   authors: (BookAuthor & { role: string | null })[];
   /** Retired copies are left out. */
@@ -243,6 +249,9 @@ export interface CopyCatalogRow {
     publisher: string | null;
     sourceOfFund: string | null;
     cost: string | number | null;
+    /** The book's own remarks; a copy's remarks (if any) take priority in the export. */
+    remarks?: string | null;
+    deweyStatus?: DeweyStatus;
     shelfLocation: string | null;
     coverImageURL: string | null;
     subject: { subjectID: number; name: string } | null;
@@ -286,6 +295,10 @@ export interface PaginatedCopies {
 
 export interface AttendanceLog {
   logID: number;
+  uuid: string;
+  /** Set for a walk-in with no account (then `student` is null). */
+  visitorName: string | null;
+  visitorPurpose: string | null;
   entryTime: string;
   exitTime: string | null;
   student: {
@@ -395,6 +408,62 @@ export const LIBRARY_AREAS: Record<LibraryArea, string> = {
   dissertation: "Dissertation",
 };
 
+/** Where a book's Dewey number came from. "guessed" is the keyword guess and always needs a librarian's check. */
+export type DeweySource = "library_of_congress" | "open_library" | "manual" | "guessed";
+export type DeweyStatus = "ok" | "needs_review";
+
+export const DEWEY_SOURCE_LABEL: Record<DeweySource, string> = {
+  library_of_congress: "Library of Congress",
+  open_library: "Open Library",
+  manual: "Typed in",
+  guessed: "Guessed from the category",
+};
+
+/** POST /librarian/dewey/lookup */
+export interface DeweyIsbnLookup {
+  found: boolean;
+  deweyNumber?: string;
+  source?: DeweySource;
+  cutter?: string | null;
+  year?: number | null;
+}
+
+/** POST /librarian/books/{uuid}/dewey/lookup and PUT .../dewey */
+export interface DeweyApplied {
+  found?: boolean;
+  message: string;
+  deweyNumber?: string;
+  classNumber?: string;
+  deweySource?: DeweySource;
+}
+
+export interface DeweyReviewBook {
+  bookID: number;
+  uuid: string;
+  title: string;
+  isbn: string | null;
+  authors: string[];
+  subject: string | null;
+  classNumber: string;
+  deweyNumber: string | null;
+  deweySource: DeweySource | null;
+}
+
+export interface DeweyReviewResponse {
+  books: { data: DeweyReviewBook[]; current_page: number; last_page: number; total: number; per_page: number };
+  /** Every book still waiting for a check, whatever the search. */
+  needsReview: number;
+}
+
+/** The four lines of the spine label, top to bottom. While `pending`, the Dewey and Cutter lines are empty. */
+export interface SpineLabelData {
+  area: string;
+  dewey: string | null;
+  cutter: string | null;
+  year: number | null;
+  pending: boolean;
+}
+
 export interface NewBookPayload {
   title: string;
   authors: NewBookAuthor[];
@@ -413,6 +482,10 @@ export interface NewBookPayload {
   sourceOfFund?: string | null;
   cost?: number | null;
   remarks?: string | null;
+  /** Ticked for a book that just arrived: marks it new and notifies everyone. */
+  isNewArrival?: boolean;
+  /** The Dewey number alone ("005.1"). Left out, the server looks it up by ISBN. */
+  deweyNumber?: string | null;
 }
 
 class LibrarianServiceClass extends BaseService {
@@ -608,6 +681,47 @@ class LibrarianServiceClass extends BaseService {
     return this.apiRequest<AttendanceScanResult>("/librarian/attendance-logs/scan", {
       method: "POST",
       body: { barcodeValue },
+    });
+  }
+
+  /** What the catalogues say about an ISBN (Library of Congress, then Open Library). Saves nothing. */
+  lookupIsbnDewey(isbn: string) {
+    return this.apiRequest<DeweyIsbnLookup>("/librarian/dewey/lookup", { method: "POST", body: { isbn } });
+  }
+
+  /** The "check these Dewey numbers" list. */
+  fetchDeweyReview(params: { search?: string; page?: number; perPage?: number } = {}) {
+    const runtimeConfig = useRuntimeConfig();
+
+    return $fetch<DeweyReviewResponse>("/librarian/books/dewey-review", {
+      baseURL: runtimeConfig.public.apiBaseURL,
+      method: "GET",
+      query: params,
+      headers: { Accept: "application/json", ...this.authHeaders() },
+    });
+  }
+
+  /** Looks one book's ISBN up and applies the number if one is found. */
+  lookupBookDewey(bookUuid: string) {
+    return this.apiRequest<DeweyApplied>(`/librarian/books/${bookUuid}/dewey/lookup`, { method: "POST" });
+  }
+
+  /** A librarian typed the right number: used as is, and counted as checked. */
+  setBookDewey(bookUuid: string, deweyNumber: string) {
+    return this.apiRequest<DeweyApplied>(`/librarian/books/${bookUuid}/dewey`, { method: "PUT", body: { deweyNumber } });
+  }
+
+  /** A walk-in without an account: just a typed name and purpose. */
+  logVisitor(payload: { name: string; purpose: string }) {
+    return this.apiRequest<{ message: string; log: AttendanceLog }>("/librarian/attendance-logs/visitor", {
+      method: "POST",
+      body: payload,
+    });
+  }
+
+  checkOutVisitor(uuid: string) {
+    return this.apiRequest<{ message: string; log: AttendanceLog }>(`/librarian/attendance-logs/${uuid}/visitor-checkout`, {
+      method: "POST",
     });
   }
 

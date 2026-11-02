@@ -52,10 +52,17 @@
 
             <div class="flex-1"></div>
 
+            <ButtonsButton variant="ghost" @click="visitorOpen = true">
+                <Icon name="i-tabler-user-plus" class="h-4 w-4" />Log a visitor
+            </ButtonsButton>
             <LibrarianResetFiltersButton class="toolbar-full" @click="search = ''" />
         </div>
 
-        <LibrarianAttendanceLogTable :logs="logs?.data ?? []" :loading="logsPending" />
+        <LibrarianAttendanceLogTable :logs="logs?.data ?? []" :loading="logsPending" :checking-out="checkingOut"
+            @check-out="checkOutVisitor" />
+
+        <LibrarianVisitorLogModal :open="visitorOpen" :busy="visitorBusy" @close="visitorOpen = false"
+            @submit="submitVisitor" />
 
         <div v-if="logs" class="mt-3 flex items-center justify-between text-[13.5px] text-stone-500">
             <span>Showing {{ logs.data.length }} of {{ logs.total }} logs</span>
@@ -79,6 +86,7 @@
 
 <script setup lang="ts">
 import { librarianService } from '~/services/librarianService'
+import { useAlert } from '~/api/alert/useAlert'
 
 definePageMeta({
     middleware: 'librarian',
@@ -128,6 +136,39 @@ const { post } = useStationChannel((message) => {
 })
 
 onMounted(() => post({ type: 'ping' }))
+
+/* ---------- walk-in visitors (no account) ---------- */
+const alert = useAlert()
+const visitorOpen = ref(false)
+const visitorBusy = ref(false)
+const checkingOut = ref<string | null>(null)
+
+async function submitVisitor(payload: { name: string; purpose: string }) {
+    visitorBusy.value = true
+    try {
+        await librarianService.logVisitor(payload)
+        visitorOpen.value = false
+        alert.success('Visitor checked in', payload.name)
+        await Promise.all([refetchLogs(), refetchStats()])
+    } catch (error: any) {
+        alert.error('Could not log the visitor', apiErrorMessage(error))
+    } finally {
+        visitorBusy.value = false
+    }
+}
+
+async function checkOutVisitor(uuid: string) {
+    checkingOut.value = uuid
+    try {
+        await librarianService.checkOutVisitor(uuid)
+        alert.success('Visitor checked out')
+        await Promise.all([refetchLogs(), refetchStats()])
+    } catch (error: any) {
+        alert.error('Could not check them out', apiErrorMessage(error))
+    } finally {
+        checkingOut.value = null
+    }
+}
 
 function goToPage(next: number) {
     if (next < 1 || (logs.value && next > logs.value.last_page)) return

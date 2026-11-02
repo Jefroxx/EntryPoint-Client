@@ -13,7 +13,6 @@
 						<Icon name="i-tabler-upload" class="h-4 w-4" />Choose file
 					</span>
 				</label>
-				<p v-if="problem" role="alert" class="mt-3 text-[13px] font-medium text-red-600">{{ problem }}</p>
 			</div>
 
 			<div class="rounded-2xl border border-stone-200 p-4">
@@ -208,4 +207,9 @@ function downloadPasswords() {
 		...(result.value?.created ?? []).map((c) => [c.name, c.email, c.type, c.idNumber, c.temporaryPassword]),
 	])
 }
+
+// Problems pop up as a dialog (the shared one in app.vue) instead of a red box inside the form.
+import { useAlert } from '~/api/alert/useAlert'
+const popupAlert = useAlert()
+watch(problem, (message) => { if (message) popupAlert.error('Could not import', message) }, { immediate: true })
 </script>

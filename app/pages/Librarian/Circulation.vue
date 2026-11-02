@@ -49,27 +49,20 @@
 
         <!-- Reservations -->
         <template v-else-if="activeTab === 'reservations'">
+            <!-- The old stat tiles were the filter in disguise: the counts live on the tabs now, so one tap narrows the list. -->
+            <!-- The three counts are also the filter: tap one to show only those, tap it again to go back to everything open. -->
             <div class="phone-stats mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
-                <LibrarianCatalogStatTile label="Waiting" :value="reservationStats.waiting"
-                    icon="i-tabler-clock" tone="warning" />
-                <LibrarianCatalogStatTile label="Accepted" :value="reservationStats.accepted"
-                    icon="i-tabler-circle-check" tone="success" />
-                <LibrarianCatalogStatTile label="Fulfilled" :value="reservationStats.fulfilled"
-                    icon="i-tabler-book" tone="accent" />
+                <button v-for="tile in reservationTiles" :key="tile.status" type="button"
+                    class="rounded-2xl text-left outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-accent-200 sm:rounded-[18px]"
+                    :class="reservationStatus === tile.status ? 'ring-2 ring-accent-500' : ''"
+                    :aria-pressed="reservationStatus === tile.status"
+                    @click="reservationStatus = reservationStatus === tile.status ? 'open' : tile.status">
+                    <LibrarianCatalogStatTile :label="tile.label" :value="tile.value" :icon="tile.icon" :tone="tile.tone" />
+                </button>
             </div>
 
             <div class="phone-toolbar mb-4 flex flex-wrap items-center gap-2">
                 <LibrarianSearchInput id="reservation-search" v-model="reservationSearch" placeholder="Search student or book" />
-
-                <select v-model="reservationStatus"
-                    class="h-[42px] rounded-xl border border-stone-200 bg-white px-3 text-[14px] text-stone-500 transition-colors hover:bg-stone-50">
-                    <option value="">All statuses</option>
-                    <option value="open">Waiting &amp; accepted</option>
-                    <option value="Waiting">Waiting</option>
-                    <option value="Accepted">Accepted</option>
-                    <option value="Rejected">Rejected</option>
-                    <option value="Fulfilled">Fulfilled</option>
-                </select>
 
                 <select v-model="reservationBook" aria-label="Filter by book"
                     class="h-[42px] max-w-[260px] rounded-xl border border-stone-200 bg-white px-3 text-[14px] text-stone-500 transition-colors hover:bg-stone-50">
@@ -90,12 +83,10 @@
                 </button>
             </p>
 
-            <LibrarianReservationsTable :reservations="pagedReservations" :queue-positions="queuePositions"
-                :loading="reservationsPending" @accept="handleAcceptReservation"
-                @reject="handleRejectReservation" @checkout="handleCheckoutReservation" />
+            <LibrarianReservationsTable :reservations="pagedReservations" :queue-positions="queuePositions" :loading="reservationsPending" @review="openReview" />
 
-            <LibrarianPagination :shown="pagedReservations.length" :total="filteredReservations.length"
-                noun="reservations" :page="reservationPage" :last-page="reservationTotalPages"
+            <LibrarianPagination :shown="pagedStudentKeys.length" :total="reservationStudentKeys.length"
+                noun="students" :page="reservationPage" :last-page="reservationTotalPages"
                 @change="reservationPage = $event" />
         </template>
 
@@ -215,6 +206,9 @@
         </template>
     
 
+        <LibrarianReservationReviewModal :open="isReviewOpen" :items="reviewItems" :queue-positions="queuePositions" :busy="reviewBusy"
+            @close="isReviewOpen = false" @accept="acceptMany" @reject="rejectMany" @checkout="checkoutFromReview" />
+
         <LibrarianReservationScanModal :open="isScanOpen" :reservation="scanReservation" @close="isScanOpen = false"
             @matched="handleSlipScanned" @manual="handleCheckoutManually" />
 
@@ -232,11 +226,6 @@
 
         <LibrarianIssuePenaltyModal :open="isIssueOpen" :busy="issueBusy"
             @close="isIssueOpen = false" @submit="saveIssuePenalty" />
-
-        <LibrarianConfirmModal :open="isReservationDecisionOpen" :title="reservationDecisionText.title"
-            :message="reservationDecisionText.message" :confirm-label="reservationDecisionText.confirm"
-            :danger="reservationDecision?.action === 'reject'" :loading="reservationDecisionBusy"
-            @close="isReservationDecisionOpen = false" @confirm="confirmReservationDecision" />
 
         <LibrarianConfirmModal :open="isReplaceOpen" title="Replacement received?" confirm-label="Yes, replacement received"
             :danger="false" :loading="replaceBusy" :message="replaceMessage"
@@ -271,6 +260,7 @@ import {
     penaltyStudent,
 } from '~/services/circulationService'
 import AlertToast from '~/api/alert/AlertToast.vue'
+import { useAlert } from '~/api/alert/useAlert'
 
 definePageMeta({
     middleware: 'librarian',
@@ -354,13 +344,20 @@ const reservationStatus = ref<'' | 'open' | ReservationStatus>('open')
 const reservationPage = ref(1)
 // Filter by one book ('' = every book).
 const reservationBook = ref<number | ''>('')
-const RESERVATIONS_PER_PAGE = 10
+const RESERVATIONS_PER_PAGE = 9 // students per page: three full rows of cards
 
 const reservationStats = computed(() => ({
     waiting: reservations.value.filter((r) => r.status === 'Waiting').length,
     accepted: reservations.value.filter((r) => r.status === 'Accepted').length,
     fulfilled: reservations.value.filter((r) => r.status === 'Fulfilled').length,
 }))
+
+// The three counts at the top, which double as filters. With none picked the list shows everything open (waiting + accepted).
+const reservationTiles = computed(() => [
+    { status: 'Waiting' as const, label: 'Waiting', value: reservationStats.value.waiting, icon: 'i-tabler-clock', tone: 'warning' as const },
+    { status: 'Accepted' as const, label: 'Accepted', value: reservationStats.value.accepted, icon: 'i-tabler-circle-check', tone: 'success' as const },
+    { status: 'Fulfilled' as const, label: 'Fulfilled', value: reservationStats.value.fulfilled, icon: 'i-tabler-book', tone: 'accent' as const },
+])
 
 // The API returns reservations oldest-first, so the running count per book is its FIFO queue position.
 const queuePositions = computed(() => {
@@ -396,12 +393,21 @@ const filteredReservations = computed(() => {
     })
 })
 
+// A card is one student, so pages hold whole students: a student's books are never split across two pages.
+const studentKeyOfReservation = (r: ReservationRecord) => r.student?.studentIDNumber ?? `reservation-${r.reservationID}`
+const reservationStudentKeys = computed(() => [...new Set(filteredReservations.value.map(studentKeyOfReservation))])
+
 const reservationTotalPages = computed(() =>
-    Math.max(1, Math.ceil(filteredReservations.value.length / RESERVATIONS_PER_PAGE)))
+    Math.max(1, Math.ceil(reservationStudentKeys.value.length / RESERVATIONS_PER_PAGE)))
+
+const pagedStudentKeys = computed(() => {
+    const start = (reservationPage.value - 1) * RESERVATIONS_PER_PAGE
+    return reservationStudentKeys.value.slice(start, start + RESERVATIONS_PER_PAGE)
+})
 
 const pagedReservations = computed(() => {
-    const start = (reservationPage.value - 1) * RESERVATIONS_PER_PAGE
-    return filteredReservations.value.slice(start, start + RESERVATIONS_PER_PAGE)
+    const keys = new Set(pagedStudentKeys.value)
+    return filteredReservations.value.filter((r) => keys.has(studentKeyOfReservation(r)))
 })
 
 watch([reservationSearch, reservationStatus, reservationBook], () => {
@@ -682,44 +688,54 @@ async function saveFinishReturn(payload: { condition: 'good' | 'damaged'; note: 
     if (ok) isFinishOpen.value = false
 }
 
-// Accepting or rejecting a reservation asks first: the student is told either way, and neither can be taken back.
-const reservationDecision = ref<{ reservation: ReservationRecord; action: 'accept' | 'reject' } | null>(null)
-const isReservationDecisionOpen = ref(false)
-const reservationDecisionBusy = ref(false)
+// ---- One student's pop-up: accept or reject several of their reservations in one go ----
+const isReviewOpen = ref(false)
+const reviewKey = ref('')
+const reviewBusy = ref(false)
+const popupAlert = useAlert()
 
-const reservationDecisionText = computed(() => {
-    const d = reservationDecision.value
-    if (!d) return { title: '', message: '', confirm: '' }
-    const who = personName(d.reservation.student?.user)
-    const book = d.reservation.book?.title ?? 'this book'
-    return d.action === 'accept'
-        ? {
-            title: 'Accept this reservation?',
-            message: `Accept ${who}'s reservation for "${book}"? A copy is held for them and they are told it is ready for pickup.`,
-            confirm: 'Yes, accept',
-        }
-        : {
-            title: 'Reject this reservation?',
-            message: `Reject ${who}'s reservation for "${book}"? They are told it was declined and no copy is held for them. This can't be undone.`,
-            confirm: 'Yes, reject',
-        }
-})
+const studentKeyOf = (r: ReservationRecord) => r.student?.studentIDNumber ?? `reservation-${r.reservationID}`
 
-function handleAcceptReservation(reservation: ReservationRecord) {
-    reservationDecision.value = { reservation, action: 'accept' }
-    isReservationDecisionOpen.value = true
+// Read from the live list, so the pop-up shows the new state as soon as the list reloads after accepting.
+const reviewItems = computed(() => reservations.value.filter((r) =>
+    studentKeyOf(r) === reviewKey.value && (r.status === 'Waiting' || r.status === 'Accepted')))
+
+function openReview(key: string) {
+    reviewKey.value = key
+    isReviewOpen.value = true
 }
 
-async function confirmReservationDecision() {
-    const decision = reservationDecision.value
-    if (!decision) return
-    const { reservation, action } = decision
-    reservationDecisionBusy.value = true
-    const ok = action === 'accept'
-        ? await perform(() => circulationService.acceptReservation(reservation.uuid), 'Reservation accepted', 'Could not accept reservation', [refetchReservations])
-        : await perform(() => circulationService.rejectReservation(reservation.uuid), 'Reservation rejected', 'Could not reject reservation', [refetchReservations])
-    reservationDecisionBusy.value = false
-    if (ok) isReservationDecisionOpen.value = false
+/** Runs one request per reservation, one after the other (each accept changes how many copies are free for the next). */
+async function decideMany(list: ReservationRecord[], action: 'accept' | 'reject') {
+    reviewBusy.value = true
+    const failed: string[] = []
+    let done = 0
+    for (const r of list) {
+        try {
+            if (action === 'accept') await circulationService.acceptReservation(r.uuid)
+            else await circulationService.rejectReservation(r.uuid)
+            done++
+        } catch (error: any) {
+            failed.push(`${r.book?.title ?? 'A book'}: ${apiErrorMessage(error)}`)
+        }
+    }
+    await refetchReservations()
+    reviewBusy.value = false
+
+    const verb = action === 'accept' ? 'accepted' : 'rejected'
+    if (done) popupAlert.success(`${done} ${done === 1 ? 'reservation' : 'reservations'} ${verb}`, 'The student has been told.')
+    if (failed.length) popupAlert.error(`Could not ${action} ${failed.length === 1 ? 'one reservation' : `${failed.length} reservations`}`, failed.join('\n'))
+    if (!reviewItems.value.length) isReviewOpen.value = false
+}
+
+// The pop-up asks for the confirmation itself (as a second step inside the same window), so these just do the work.
+const acceptMany = (list: ReservationRecord[]) => decideMany(list, 'accept')
+const rejectMany = (list: ReservationRecord[]) => decideMany(list, 'reject')
+
+// Checking out opens the slip scanner, so the pop-up steps aside first.
+function checkoutFromReview(reservation: ReservationRecord) {
+    isReviewOpen.value = false
+    handleCheckoutReservation(reservation)
 }
 
 // Same path as scanning the student's slip: the checkout opens with the student and book filled in.
@@ -742,11 +758,6 @@ function handleCheckoutManually() {
     checkoutCode.value = scanReservation.value?.pickupCode
     checkoutAuto.value = false
     isCheckoutOpen.value = true
-}
-
-function handleRejectReservation(reservation: ReservationRecord) {
-    reservationDecision.value = { reservation, action: 'reject' }
-    isReservationDecisionOpen.value = true
 }
 
 // Verifying or rejecting a student's self-return report asks first, in the same window as returning a book:
