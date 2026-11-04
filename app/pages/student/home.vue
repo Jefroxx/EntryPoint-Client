@@ -100,6 +100,30 @@
 			<!-- Hall of Fame: the students who use the library best, for everyone to see -->
 			<StudentHallOfFameStrip v-if="isStudent" class="st-in mt-5" style="animation-delay: 122ms" :board="hallOfFame ?? null" :loading="hallOfFamePending" />
 
+			<!-- New arrivals: the books the library marked as new when it added them (or marked later). -->
+			<section class="st-in mt-5 rounded-[22px] border border-stone-200 bg-white p-5 md:p-6" style="animation-delay: 131ms">
+				<div class="mb-4 flex items-start justify-between gap-4">
+					<div class="min-w-0">
+						<h2 class="text-[18px] font-bold text-stone-900">New arrivals</h2>
+						<p class="mt-0.5 truncate text-[13px] text-stone-500">Just added to the library.</p>
+					</div>
+					<NuxtLink :to="{ path: '/student/discover', query: { new: '1' } }"
+						class="inline-flex h-8 shrink-0 items-center gap-1 rounded-lg bg-accent-50 px-3 text-[13px] font-semibold text-accent-600 transition-colors duration-150 hover:bg-accent-100">
+						See all<Icon name="i-tabler-chevron-right" class="h-4 w-4" />
+					</NuxtLink>
+				</div>
+
+				<div v-if="newArrivalsPending && !newArrivalsData" class="grid grid-cols-2 gap-4 md:grid-cols-4" aria-busy="true">
+					<div v-for="n in 4" :key="n" class="h-[250px] animate-pulse rounded-2xl bg-stone-100" />
+				</div>
+
+				<p v-else-if="!newArrivals.length" class="rounded-2xl bg-stone-50 px-4 py-8 text-center text-[13.5px] text-stone-500">
+					No new arrivals right now. Books the library has just added show up here.
+				</p>
+
+				<StudentBookShelfRow v-else :books="newArrivals" :is-selected="isSelected" :tint="tileTint" show-new @pick="pick" />
+			</section>
+
 			<!-- Recommended -->
 			<section class="st-in mt-5 rounded-[22px] border border-stone-200 bg-white p-5 md:p-6" style="animation-delay: 140ms">
 				<div class="mb-4 flex items-start justify-between gap-4">
@@ -121,19 +145,7 @@
 					Nothing on the shelf to suggest yet. New books show up here as the library adds them.
 				</p>
 
-				<div v-else class="no-scrollbar -mx-5 flex snap-x scroll-pl-5 gap-4 overflow-x-auto px-5 pb-1 md:mx-0 md:scroll-pl-0 md:grid md:grid-cols-4 md:overflow-visible md:px-0">
-					<button v-for="book in recommended" :key="book.bookID" type="button"
-						class="group w-[148px] shrink-0 snap-start rounded-2xl text-left focus-visible:outline-none md:w-auto md:[&:nth-child(n+5)]:hidden"
-						:aria-pressed="isSelected(book.bookID)" @click="pick(book)">
-						<span class="flex h-[200px] items-center justify-center rounded-2xl transition-shadow duration-200 group-focus-visible:ring-2 group-focus-visible:ring-accent-500"
-							:class="isSelected(book.bookID) ? 'ring-2 ring-accent-500 ring-offset-2' : ''"
-							:style="{ background: tileTint(book) }">
-							<StudentCover :book="book" :width="112" class="transition-transform duration-300 ease-out group-hover:-translate-y-1.5" />
-						</span>
-						<span class="mt-2.5 block truncate px-0.5 text-[14px] font-semibold text-stone-900">{{ book.title }}</span>
-						<span class="block truncate px-0.5 text-[12.5px] text-stone-500">{{ book.authors[0] ?? 'Unknown author' }}</span>
-					</button>
-				</div>
+				<StudentBookShelfRow v-else :books="recommended" :is-selected="isSelected" :tint="tileTint" @pick="pick" />
 			</section>
 
 			<!-- Categories -->
@@ -276,30 +288,21 @@ const { summary, points, streak, wishlist, isWished, isInCart, toggleWish, addTo
 const profile = computed(() => summary.value?.profile ?? null)
 const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })
 
+// The most books either card (New arrivals, Recommended) shows; "See all" has the rest.
+const MAX_ON_CARD = 10
+
 const { data, pending } = useStudentData('student-home', async () => {
-	const [loans, reservations, attendance, achievements, subjects] = await Promise.all([
+	const [loans, reservations, attendance, achievements, subjects, picks] = await Promise.all([
 		studentService.loans(),
 		studentService.reservations(),
 		studentService.attendance(),
 		// Points and achievements are for students; a faculty or staff member's request would be refused.
 		isStudent.value ? studentService.achievements() : Promise.resolve({ achievements: [] as AchievementRow[] }),
 		studentService.subjects(),
+		// The server ranks these (the student's favourite subjects, then what everyone borrows); a failure just
+		// means an empty card, not a broken Home.
+		studentService.recommendations().catch(() => ({ books: [] as CatalogBook[], subjects: [] as string[], loanCount: 0 })),
 	])
-
-	// "Recommended" is honest about where it comes from: more of the subject the student last
-	// borrowed, topped up with whatever is on the shelf. Books they already have are left out.
-	const borrowed = new Set(loans.loans.map((l) => l.book.bookID))
-	const basis = loans.loans.find((l) => l.book.subject)?.book ?? null
-	let picks: CatalogBook[] = []
-	if (basis?.subject) {
-		picks = (await studentService.catalog({ subjectID: basis.subject.subjectID, availableOnly: true, perPage: 12 })).data
-			.filter((b) => !borrowed.has(b.bookID))
-	}
-	const bySubject = picks.length
-	if (picks.length < 4) {
-		const shelf = (await studentService.catalog({ availableOnly: true, perPage: 12 })).data
-		for (const b of shelf) if (!borrowed.has(b.bookID) && !picks.some((p) => p.bookID === b.bookID)) picks.push(b)
-	}
 
 	return {
 		loans: loans.loans,
@@ -307,8 +310,8 @@ const { data, pending } = useStudentData('student-home', async () => {
 		visitedDates: attendance.recentDates,
 		achievements: achievements.achievements,
 		subjects: subjects.subjects,
-		recommended: picks.slice(0, 8),
-		basis: bySubject ? basis : null,
+		recommended: picks.books.slice(0, MAX_ON_CARD),
+		favouriteSubjects: picks.subjects,
 	}
 })
 
@@ -318,10 +321,16 @@ const { data: announcements } = useStudentData('student-announcements', () => an
 // Its own request, so the rest of Home doesn't wait on the rankings.
 const { data: hallOfFame, pending: hallOfFamePending } = useStudentData('student-hall-of-fame', () => (isStudent.value ? studentService.hallOfFame() : Promise.resolve(null)))
 
+// New arrivals: the books marked new when they were catalogued, newest first. Its own request, like the Hall of Fame,
+// so the rest of Home doesn't wait on it.
+const { data: newArrivalsData, pending: newArrivalsPending } = useStudentData('student-new-arrivals', async () => (await studentService.catalog({ newArrivalsOnly: true, perPage: MAX_ON_CARD })).data)
+const newArrivals = computed(() => newArrivalsData.value ?? [])
+
 const recommended = computed(() => data.value?.recommended ?? [])
 const recommendedReason = computed(() => {
-	const basis = data.value?.basis
-	return basis?.subject ? `More ${basis.subject.name}, since you borrowed ${basis.title}.` : 'On the shelf right now, ready to borrow.'
+	const subjects = data.value?.favouriteSubjects ?? []
+	if (!subjects.length) return 'Popular right now, and ready to borrow.'
+	return `Based on what you borrow most: ${subjects.join(' and ')}.`
 })
 
 /* ---- categories ---- */
@@ -346,7 +355,7 @@ const { data: shelf, pending: shelfPending } = useAsyncData(
 /* ---- the book panel ---- */
 const selectedId = ref<number | null>(null)
 const selected = computed<CatalogBook | null>(() => {
-	const pool = [...recommended.value, ...(shelf.value ?? [])]
+	const pool = [...newArrivals.value, ...recommended.value, ...(shelf.value ?? [])]
 	return pool.find((b) => b.bookID === selectedId.value) ?? pool[0] ?? null
 })
 const isSelected = (id: number) => selected.value?.bookID === id && wideScreen.value

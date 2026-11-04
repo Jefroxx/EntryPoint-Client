@@ -8,7 +8,7 @@
 			<div class="min-w-0">
 				<h1 class="dashboard-heading truncate text-[22px] font-extrabold leading-tight text-crimson">{{
 					profile?.fullName ?? `${firstName} ${lastName}` }}</h1>
-				<p class="font-data mb-1.5 mt-0.5 truncate text-[12.5px] text-stone-500">{{ profile?.studentIDNumber
+				<p class="font-data mb-1.5 mt-0.5 truncate text-[12.5px] text-stone-500">{{ profile?.memberIDNumber
 					}}{{ profile?.academicProgram ? ` · ${profile.academicProgram}` : '' }}</p>
 				<StudentPill tone="good">
 					<Icon name="i-tabler-check" class="h-3 w-3" />Approved

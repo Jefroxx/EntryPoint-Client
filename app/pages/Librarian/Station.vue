@@ -27,7 +27,7 @@
 						:aria-label="isFullscreen ? 'Exit full screen' : 'Full screen'" @click="toggleFullscreen">
 						<Icon :name="isFullscreen ? 'i-tabler-minimize' : 'i-tabler-maximize'" class="h-4 w-4" />
 					</button>
-					<ButtonsButton variant="ghost" size="sm" @click="endSession">
+					<ButtonsButton variant="ghost" size="sm" @click="askEndSession">
 						<Icon name="i-tabler-player-stop" class="h-3.5 w-3.5" />End session
 					</ButtonsButton>
 				</div>
@@ -39,11 +39,15 @@
 		</main>
 
 		<!-- A reservation slip was scanned: the checkout opens with the student and book filled in. -->
-		<LibrarianCheckoutModal :open="isCheckoutOpen" :initial-code="checkoutCode" @close="isCheckoutOpen = false" @created="onScanned" />
+		<LibrarianCheckoutModal :open="isCheckoutOpen" :initial-code="checkoutCode" :camera="false" @close="isCheckoutOpen = false" @created="onScanned" />
 
 		<!-- A borrowing receipt was scanned: check the book, then finish the return. -->
 		<LibrarianFinishReturnModal :open="isFinishOpen" :summary="finishSummary" :busy="finishBusy"
 			@close="isFinishOpen = false" @submit="saveFinish" />
+
+		<!-- Ending the station logs everyone still inside out, so it asks first (with the numbers). -->
+		<LibrarianConfirmModal :open="isEndOpen" title="End the session?" :message="endMessage" confirm-label="Yes, log everyone out"
+			:loading="endBusy" @close="isEndOpen = false" @confirm="confirmEndSession" />
 
 		<AlertToast />
 	</div>
@@ -130,6 +134,38 @@ async function toggleFullscreen() {
 /* ---------- ending ---------- */
 function announceClosed() {
 	post({ type: 'closed' })
+}
+
+// "End session" asks first: it logs out everyone still in the library. The count is read fresh when it opens.
+const isEndOpen = ref(false)
+const endBusy = ref(false)
+
+const endMessage = computed(() => {
+	const students = stats.value?.inside.students ?? 0
+	const visitors = stats.value?.inside.visitors ?? 0
+	const who = [
+		students ? `${students} ${students === 1 ? 'student' : 'students'}` : '',
+		visitors ? `${visitors} ${visitors === 1 ? 'visitor' : 'visitors'}` : '',
+	].filter(Boolean).join(' and ')
+
+	return who
+		? `${who} ${students + visitors === 1 ? 'is' : 'are'} still in the library. Ending the session logs ${students + visitors === 1 ? 'them' : 'all of them'} out and ends any computer or room session they have running.`
+		: 'Nobody is in the library right now. End the scan station?'
+})
+
+async function askEndSession() {
+	await refetchStats()
+	isEndOpen.value = true
+}
+
+async function confirmEndSession() {
+	endBusy.value = true
+	const ok = await perform(() => librarianService.closeAllVisits(), 'Everyone is logged out', 'Could not log everyone out', [refetchStats])
+	endBusy.value = false
+	if (!ok) return
+	isEndOpen.value = false
+	post({ type: 'scanned' })   // the Attendance tab refreshes its log and numbers
+	endSession()
 }
 
 function endSession() {

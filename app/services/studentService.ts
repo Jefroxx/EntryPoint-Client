@@ -45,7 +45,7 @@ export interface StudentProfile {
   address: string | null;
   /** YYYY-MM-DD */
   birthDate: string | null;
-  studentIDNumber: string;
+  memberIDNumber: string;
   academicProgram: string | null;
   /** Faculty and staff members have a department instead of a program, and no points or rewards. */
   memberType?: "student" | "faculty" | "staff";
@@ -168,7 +168,7 @@ export interface HallOfFameLeader {
   initials: string;
   program: string | null;
   /** Librarian Dashboard only. */
-  studentIDNumber?: string | null;
+  memberIDNumber?: string | null;
   value: number;
   isYou: boolean;
 }
@@ -247,6 +247,8 @@ export interface CatalogQuery {
   search?: string;
   subjectID?: number;
   availableOnly?: boolean;
+  /** Only the books the library marked as new arrivals, the most recently added first. */
+  newArrivalsOnly?: boolean;
   page?: number;
   perPage?: number;
 }
@@ -316,6 +318,7 @@ class StudentServiceClass extends BaseService {
         search: query.search || undefined,
         subjectID: query.subjectID || undefined,
         availableOnly: query.availableOnly ? 1 : undefined,
+        newArrivalsOnly: query.newArrivalsOnly ? 1 : undefined,
         page: query.page,
         perPage: query.perPage,
       },
@@ -329,6 +332,11 @@ class StudentServiceClass extends BaseService {
 
   subjects() {
     return this.apiRequest<{ subjects: { subjectID: number; name: string; books: number }[] }>("/student/catalog/subjects");
+  }
+
+  /** "Recommended for you": ranked by the subjects the student borrows most, then by what everyone borrows. */
+  recommendations() {
+    return this.apiRequest<{ books: CatalogBook[]; subjects: string[]; loanCount: number }>("/student/recommendations");
   }
 
   wishlist() {

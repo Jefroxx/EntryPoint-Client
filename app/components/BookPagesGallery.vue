@@ -30,7 +30,7 @@
 		</ul>
 
 		<!-- The viewer -->
-		<Teleport to="body">
+		<AppTeleport>
 			<Transition enter-active-class="transition-opacity duration-200 ease-out" enter-from-class="opacity-0"
 				leave-active-class="transition-opacity duration-150 ease-out" leave-to-class="opacity-0">
 				<div v-if="current" ref="viewer" role="dialog" aria-modal="true" :aria-label="`${labelOf(current.section)}, page photo`" tabindex="-1"
@@ -68,7 +68,7 @@
 					</div>
 				</div>
 			</Transition>
-		</Teleport>
+		</AppTeleport>
 	</section>
 </template>
 

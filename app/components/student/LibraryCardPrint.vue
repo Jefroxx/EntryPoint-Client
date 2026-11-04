@@ -3,7 +3,7 @@
 		 page: front and back at ID-card size (CR80, 85.6 × 54 mm), side by side with dashed cut lines, so the
 		 two halves can be cut out and glued back to back (or folded along the middle line) and laminated.
 		 Teleported to <body>; print() sends it to the printer on its own (utils/printOnly.ts). -->
-	<Teleport to="body">
+	<AppTeleport>
 		<div ref="printCopy" class="print-only library-card-print" aria-hidden="true">
 			<div class="lcp-sheet">
 				<!-- Front -->
@@ -16,7 +16,7 @@
 					<div class="lcp-who">
 						<p class="lcp-name">{{ profile.fullName }}</p>
 						<p class="lcp-meta">
-							<span class="lcp-id">{{ profile.studentIDNumber }}</span>
+							<span class="lcp-id">{{ profile.memberIDNumber }}</span>
 							<template v-if="profile.academicProgram"> · {{ profile.academicProgram }}</template>
 						</p>
 					</div>
@@ -58,14 +58,14 @@
 				back, and laminate the card if you can.
 			</p>
 		</div>
-	</Teleport>
+	</AppTeleport>
 </template>
 
 <script setup lang="ts">
 const props = defineProps<{
 	profile: {
 		fullName: string
-		studentIDNumber: string
+		memberIDNumber: string
 		academicProgram: string | null
 		barcodeValue: string
 	}

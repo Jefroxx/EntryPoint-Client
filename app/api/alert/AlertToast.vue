@@ -1,5 +1,5 @@
 <template>
-	<Teleport to="body">
+	<AppTeleport>
 		<div class="pointer-events-none fixed right-5 top-5 z-[200] flex w-full max-w-[360px] flex-col gap-2">
 			<TransitionGroup enter-active-class="transition-[transform,opacity] duration-200 ease-out"
 				enter-from-class="translate-x-3 opacity-0" enter-to-class="translate-x-0 opacity-100"
@@ -27,7 +27,7 @@
 				</div>
 			</TransitionGroup>
 		</div>
-	</Teleport>
+	</AppTeleport>
 </template>
 
 <script setup lang="ts">

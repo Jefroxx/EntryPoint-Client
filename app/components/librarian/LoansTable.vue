@@ -7,7 +7,7 @@
 				<div role="button" tabindex="0" class="flex flex-col gap-2.5 px-4 py-3.5 transition-colors active:bg-accent-50"
 					@click="selected = loan" @keydown.enter.self="selected = loan">
 					<div class="flex items-start justify-between gap-3">
-						<LibrarianPersonCell :name="personName(loan.student?.user)" :sub="loan.student?.studentIDNumber" />
+						<LibrarianPersonCell :name="personName(loan.student?.user)" :sub="loan.student?.memberIDNumber" />
 						<LibrarianStatusPill v-bind="pill(loan)" class="shrink-0" />
 					</div>
 					<LibrarianBookCell :title="loan.copy?.book?.title ?? 'Removed book'" :sub="loan.copy?.accessionNumber" />
@@ -27,7 +27,7 @@
 			@click="selected = loan" @keydown.enter.self="selected = loan"
 			:style="{ animationDelay: `${index * 40}ms` }">
 			<td class="px-4 py-3">
-				<LibrarianPersonCell :name="personName(loan.student?.user)" :sub="loan.student?.studentIDNumber" />
+				<LibrarianPersonCell :name="personName(loan.student?.user)" :sub="loan.student?.memberIDNumber" />
 			</td>
 			<td class="px-4 py-3">
 				<LibrarianBookCell :title="loan.copy?.book?.title ?? 'Removed book'" :sub="loan.copy?.accessionNumber" />
@@ -87,7 +87,7 @@ const loanFields = computed(() => {
 	const student = loan.student
 	return [
 		{ label: 'Student', value: personName(student?.user), wide: true },
-		{ label: 'Student ID', value: student?.studentIDNumber, mono: true },
+		{ label: 'Student ID', value: student?.memberIDNumber, mono: true },
 		{ label: 'Program', value: student?.academicProgram },
 		{ label: 'Accession no.', value: loan.copy?.accessionNumber, mono: true },
 		{ label: 'Copy ID', value: loan.copy?.copyID, mono: true },

@@ -5,13 +5,16 @@
             <p class="dashboard-heading mt-1 text-crimson">Manage attendance records and related activities.</p>
         </div>
 
+        <!-- Today: who is in right now. Any other day: that day's own numbers. -->
         <div class="phone-stats mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
-            <LibrarianCatalogStatTile label="Currently in library" :value="stats?.currentlyInLibrary ?? '—'"
+            <LibrarianCatalogStatTile v-if="isToday" label="Currently in library" :value="stats?.currentlyInLibrary ?? '—'"
                 icon="i-tabler-circle-check" tone="success" />
-            <LibrarianCatalogStatTile label="Total visits today" :value="stats?.totalVisitsToday ?? '—'"
+            <LibrarianCatalogStatTile v-else label="Different students" :value="stats?.day.students ?? '—'"
+                icon="i-tabler-users" tone="success" />
+            <LibrarianCatalogStatTile :label="isToday ? 'Total visits today' : 'Visits that day'" :value="stats?.day.visits ?? '—'"
                 icon="i-tabler-user-check" tone="accent" />
             <LibrarianCatalogStatTile label="Average time inside"
-                :value="stats?.averageMinutesToday != null ? `${stats.averageMinutesToday}m` : '—'"
+                :value="stats ? `${stats.day.averageMinutes}m` : '—'"
                 icon="i-tabler-clock" tone="warning" />
         </div>
 
@@ -50,13 +53,23 @@
                     class="w-full border-none bg-transparent text-[15px] text-stone-800 outline-none placeholder:text-stone-400" />
             </div>
 
+            <!-- Day by day: step back through the log, pick a date from a calendar, or jump back to today. -->
+            <LibrarianDayPicker v-model="day" :max="todayYmd" :empty-value="todayYmd" reset-label="Today" />
+
             <div class="flex-1"></div>
 
             <ButtonsButton variant="ghost" @click="visitorOpen = true">
                 <Icon name="i-tabler-user-plus" class="h-4 w-4" />Log a visitor
             </ButtonsButton>
-            <LibrarianResetFiltersButton class="toolbar-full" @click="search = ''" />
+            <LibrarianResetFiltersButton class="toolbar-full" @click="search = ''; day = todayYmd" />
         </div>
+
+        <p class="mb-3 text-[15px] font-semibold text-stone-800">
+            {{ dayHeading }}
+            <span v-if="stats" class="font-normal text-stone-500">
+                · {{ stats.day.visits }} {{ stats.day.visits === 1 ? 'visit' : 'visits' }}<span v-if="stats.day.visitors"> ({{ stats.day.visitors }} walk-in {{ stats.day.visitors === 1 ? 'visitor' : 'visitors' }})</span>
+            </span>
+        </p>
 
         <LibrarianAttendanceLogTable :logs="logs?.data ?? []" :loading="logsPending" :checking-out="checkingOut"
             @check-out="checkOutVisitor" />
@@ -99,17 +112,40 @@ useHead({ title: 'Attendance' })
 const search = ref('')
 const page = ref(1)
 
-const { data: stats, execute: refetchStats } = useLiveAsyncData('attendance-stats', () => librarianService.fetchAttendanceStats(), { lazy: true })
+/* ---------- day by day ---------- */
+// Local Y-m-d (not toISOString, which is UTC and can land on the wrong day in the evening).
+const ymd = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+const todayYmd = ymd(new Date())
+const day = ref(todayYmd)
+const isToday = computed(() => day.value === todayYmd)
+
+const dayHeading = computed(() => {
+    const [y, m, d] = day.value.split('-').map(Number)
+    if (!y || !m || !d) return 'Attendance'
+    const label = new Date(y, m - 1, d).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
+    return isToday.value ? `Today · ${label}` : label
+})
+
+const { data: stats, execute: refetchStats } = useLiveAsyncData('attendance-stats', () => librarianService.fetchAttendanceStats(day.value), { lazy: true })
 
 const { data: logs, pending: logsPending, execute: refetchLogs } = useLiveAsyncData(
     'attendance-logs',
     () => librarianService.fetchAttendanceLogs({
         search: search.value || undefined,
+        date: day.value,
         page: page.value,
         perPage: 10,
     }),
     { lazy: true },
 )
+
+// A cleared or half-typed date box means "back to today".
+watch(day, (value) => {
+    if (!value) { day.value = todayYmd; return }
+    page.value = 1
+    void refetchLogs()
+    void refetchStats()
+})
 
 let searchTimeout: ReturnType<typeof setTimeout>
 watch(search, () => {

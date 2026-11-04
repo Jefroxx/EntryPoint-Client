@@ -24,8 +24,8 @@
 							<span class="min-w-0 flex-1">
 								<span class="block text-[16px] font-semibold leading-snug text-stone-900">{{ r.book?.title ?? 'Removed book' }}</span>
 								<span v-if="reservedAuthors(r.book)" class="mt-0.5 block text-[13.5px] text-stone-500">{{ reservedAuthors(r.book) }}</span>
-								<span v-if="r.book?.classNumber || r.book?.subject" class="mt-0.5 block text-[12.5px] text-stone-500">
-									<span v-if="r.book?.subject">{{ r.book.subject.name }}</span><template v-if="r.book?.subject && r.book?.classNumber"> · </template><span v-if="r.book?.classNumber" class="font-data">{{ r.book.classNumber }}</span>
+								<span v-if="r.book?.callNumber || r.book?.subject" class="mt-0.5 block text-[12.5px] text-stone-500">
+									<span v-if="r.book?.subject">{{ r.book.subject.name }}</span><template v-if="r.book?.subject && r.book?.callNumber"> · </template><span v-if="r.book?.callNumber" class="font-data">{{ r.book.callNumber }}</span>
 								</span>
 								<span class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px]">
 									<span v-if="queuePositions[r.reservationID]" class="inline-flex h-5 items-center rounded-full bg-accent-100 px-2 text-[12px] font-bold text-accent-700">#{{ queuePositions[r.reservationID] }} in line</span>
@@ -135,7 +135,7 @@ const shownWaiting = computed(() => (confirming.value ? pickedItems.value : wait
 // The same title and subtitle in both steps.
 const title = computed(() => (student.value ? personName(student.value.user) : 'Reservations'))
 const subtitle = computed(() => {
-	const id = student.value?.studentIDNumber
+	const id = student.value?.memberIDNumber
 	const open = props.items.length
 	return `${id ? `${id} · ` : ''}${open} open ${open === 1 ? 'reservation' : 'reservations'}`
 })

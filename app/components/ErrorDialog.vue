@@ -1,7 +1,7 @@
 <template>
 	<!-- Every error in the app lands here (they all go through useAlert().error), so it is mounted once in app.vue.
 		 One error at a time; pressing OK shows the next, if any. -->
-	<Teleport to="body">
+	<AppTeleport>
 		<Transition enter-active-class="transition-opacity duration-200 ease-out" enter-from-class="opacity-0"
 			leave-active-class="transition-opacity duration-150 ease-out" leave-to-class="opacity-0">
 			<div v-if="current" class="fixed inset-0 z-[300] flex items-center justify-center p-4">
@@ -27,7 +27,7 @@
 				</div>
 			</div>
 		</Transition>
-	</Teleport>
+	</AppTeleport>
 </template>
 
 <script setup lang="ts">

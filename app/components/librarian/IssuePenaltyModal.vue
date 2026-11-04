@@ -172,7 +172,7 @@ const loanLabel = (l: LoanRecord) => l.copy?.book?.title ?? 'Removed book'
 const loanSublabel = (l: LoanRecord) =>
 	`${personName(l.student?.user)} · acc. ${l.copy?.accessionNumber ?? '?'} · ${l.status === 'Returned' ? `returned ${formatDate(l.returnDate ?? l.dueDate)}` : `${l.status}, due ${formatDate(l.dueDate)}`}`
 const studentLabel = (s: StudentRecord) => (s.user ? `${s.user.firstName} ${s.user.lastName}` : 'Unknown student')
-const studentSublabel = (s: StudentRecord) => `${s.studentIDNumber} · ${s.academicProgram ?? '—'}`
+const studentSublabel = (s: StudentRecord) => `${s.memberIDNumber} · ${s.academicProgram ?? '—'}`
 const bookSublabel = (b: CatalogBook) => b.authors.map((a) => a.name).join(', ') || 'Unknown author'
 
 // Choosing a book loads its full details: the copies still in the catalog, and what each cost.

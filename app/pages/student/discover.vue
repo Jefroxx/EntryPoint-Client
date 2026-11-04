@@ -76,6 +76,16 @@
 						<span class="absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform duration-[250ms] ease-drawer" :class="availableOnly ? 'translate-x-3.5' : ''" />
 					</span>
 				</button>
+
+				<button type="button" role="switch" :aria-checked="newOnly"
+					class="flex h-9 shrink-0 items-center gap-2.5 rounded-xl border bg-white pl-3 pr-2 text-[13.5px] font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-200"
+					:class="newOnly ? 'border-accent-200 text-accent-700' : 'border-stone-200 text-stone-600 hover:border-stone-300'"
+					@click="setParam({ new: newOnly ? undefined : '1' })">
+					<span>New</span>
+					<span class="relative h-[20px] w-[34px] shrink-0 rounded-full transition-colors duration-200 ease-out" :class="newOnly ? 'bg-accent-500' : 'bg-stone-200'">
+						<span class="absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform duration-[250ms] ease-drawer" :class="newOnly ? 'translate-x-3.5' : ''" />
+					</span>
+				</button>
 			</div>
 		</div>
 
@@ -93,7 +103,7 @@
 				<div class="mb-3 flex min-h-7 flex-wrap items-center gap-x-3 gap-y-1 px-0.5">
 					<p class="text-[13px] text-stone-500">
 						<span class="font-semibold text-stone-800 tabular-nums">{{ data.total }}</span>
-						book{{ data.total === 1 ? '' : 's' }}<template v-if="q"> for <span class="font-semibold text-stone-800">“{{ q }}”</span></template><template v-if="activeSubject"> in {{ activeSubject }}</template><template v-if="availableOnly">, on the shelf now</template>
+						book{{ data.total === 1 ? '' : 's' }}<template v-if="q"> for <span class="font-semibold text-stone-800">“{{ q }}”</span></template><template v-if="activeSubject"> in {{ activeSubject }}</template><template v-if="availableOnly">, on the shelf now</template><template v-if="newOnly">, new arrivals</template>
 					</p>
 					<button v-if="hasFilters" type="button" class="inline-flex items-center gap-1 text-[12.5px] font-semibold text-accent-600 hover:underline" @click="reset">
 						<Icon name="i-tabler-x" class="h-3.5 w-3.5" />Clear filters
@@ -153,6 +163,18 @@
 						<span class="absolute left-0.5 top-0.5 h-[18px] w-[18px] rounded-full bg-white shadow transition-transform duration-[250ms] ease-drawer" :class="availableOnly ? 'translate-x-4' : ''" />
 					</span>
 				</button>
+				<button type="button" role="switch" :aria-checked="newOnly"
+					class="flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-left text-[14px] font-semibold transition-colors duration-150 hover:bg-stone-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-200"
+					:class="newOnly ? 'text-accent-700' : 'text-stone-700'"
+					@click="setParam({ new: newOnly ? undefined : '1' })">
+					<span>
+						New arrivals
+						<span class="block text-[12px] font-normal text-stone-500">Only books the library just added</span>
+					</span>
+					<span class="relative h-[22px] w-[38px] shrink-0 rounded-full transition-colors duration-200 ease-out" :class="newOnly ? 'bg-accent-500' : 'bg-stone-200'">
+						<span class="absolute left-0.5 top-0.5 h-[18px] w-[18px] rounded-full bg-white shadow transition-transform duration-[250ms] ease-drawer" :class="newOnly ? 'translate-x-4' : ''" />
+					</span>
+				</button>
 			</div>
 
 			<h2 class="px-6 pb-1.5 pt-4 text-[15px] font-bold text-stone-900">Genres</h2>
@@ -187,8 +209,10 @@ const str = (v: unknown) => (typeof v === 'string' ? v : '')
 const q = computed(() => str(route.query.q))
 const subjectID = computed(() => Number(str(route.query.subject)) || 0)
 const availableOnly = computed(() => str(route.query.available) === '1')
+// "New arrivals" on Home links here with ?new=1: only the books the library just added, newest first.
+const newOnly = computed(() => str(route.query.new) === '1')
 const page = computed(() => Number(str(route.query.page)) || 1)
-const hasFilters = computed(() => !!(q.value || subjectID.value || availableOnly.value))
+const hasFilters = computed(() => !!(q.value || subjectID.value || availableOnly.value || newOnly.value))
 
 function setParam(patch: Record<string, string | undefined>, keepPage = false) {
 	void router.replace({ query: { ...route.query, ...(keepPage ? {} : { page: undefined }), ...patch } })
@@ -225,8 +249,8 @@ const activeSubject = computed(() => (subjectID.value ? subjectOptions.value.fin
 const { dataVersion } = useStudent()
 const { data, pending, refresh } = useLiveAsyncData(
 	'student-catalog',
-	() => studentService.catalog({ search: q.value, subjectID: subjectID.value || undefined, availableOnly: availableOnly.value, page: page.value, perPage: PER_PAGE }),
-	{ lazy: true, watch: [q, subjectID, availableOnly, page] },
+	() => studentService.catalog({ search: q.value, subjectID: subjectID.value || undefined, availableOnly: availableOnly.value, newArrivalsOnly: newOnly.value, page: page.value, perPage: PER_PAGE }),
+	{ lazy: true, watch: [q, subjectID, availableOnly, newOnly, page] },
 )
 watch(dataVersion, () => { void refresh() })
 
@@ -238,7 +262,7 @@ watch(page, () => {
 })
 
 // A new key restarts the short cross-fade whenever the result set changes.
-const resultsKey = computed(() => `${q.value}|${subjectID.value}|${availableOnly.value}|${page.value}`)
+const resultsKey = computed(() => `${q.value}|${subjectID.value}|${availableOnly.value}|${newOnly.value}|${page.value}`)
 
 /* The toolbar gets a backing only once it's actually stuck under the top bar. */
 const sentinel = ref<HTMLElement | null>(null)

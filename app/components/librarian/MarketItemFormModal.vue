@@ -1,7 +1,36 @@
 <template>
-	<LibrarianModalShell :open="open" :title="item ? 'Edit Item' : 'Add Item'"
-		subtitle="Students spend knowledge points on these rewards." :busy="busy" @close="emit('close')">
-		<div class="space-y-4">
+	<LibrarianModalShell :open="open" :title="confirming ? 'Confirm Changes' : item ? 'Edit Item' : 'Add Item'"
+		:subtitle="confirming ? 'Check the changes before they are saved.' : 'Students spend knowledge points on these rewards.'" :busy="busy" @close="emit('close')">
+		<!-- Step 2 (editing only): what will change. It replaces the form in this same window (no second pop-up). -->
+		<div v-if="confirming" class="space-y-4">
+			<div class="rounded-xl bg-stone-50 px-4 py-3">
+				<p class="text-[12px] font-semibold uppercase tracking-wide text-stone-500">Item</p>
+				<p class="text-[15px] font-semibold text-stone-900">{{ item?.name }}</p>
+			</div>
+			<dl class="divide-y divide-stone-100 rounded-xl border border-stone-200 text-[14px]">
+				<div v-for="change in changes" :key="change.label" class="px-4 py-2.5">
+					<dt class="text-[12.5px] text-stone-500">{{ change.label }}</dt>
+					<dd class="mt-0.5 flex flex-wrap items-center gap-x-2 text-stone-900">
+						<span class="text-stone-500 line-through decoration-stone-300">{{ change.from }}</span>
+						<Icon name="i-tabler-arrow-right" class="h-3.5 w-3.5 shrink-0 text-stone-400" />
+						<span class="font-semibold">{{ change.to }}</span>
+					</dd>
+				</div>
+				<div v-if="photoChange" class="px-4 py-2.5">
+					<dt class="text-[12.5px] text-stone-500">Photo</dt>
+					<dd class="mt-1 flex flex-wrap items-center gap-3 text-stone-900">
+						<img v-if="item?.photoURL" :src="item.photoURL" alt="Current photo" class="h-14 w-14 rounded-lg border border-stone-200 object-cover" />
+						<span v-else class="text-stone-500">No photo</span>
+						<Icon name="i-tabler-arrow-right" class="h-3.5 w-3.5 shrink-0 text-stone-400" />
+						<img v-if="localURL" :src="localURL" alt="New photo" class="h-14 w-14 rounded-lg border border-stone-200 object-cover" />
+						<span v-else class="font-semibold">Removed</span>
+					</dd>
+				</div>
+			</dl>
+			<p v-if="Number(form.stock) === 0 && Number(item?.stock) > 0" class="rounded-xl bg-amber-50 px-3.5 py-2.5 text-[13.5px] text-amber-900">A stock of 0 retires the item: students can no longer redeem it.</p>
+		</div>
+
+		<div v-else class="space-y-4">
 			<!-- Photo: optional; without one, students see the item type's icon. -->
 			<div>
 				<p class="mb-1.5 text-[13.5px] font-semibold text-stone-800">Photo <span class="font-normal text-stone-500">(optional)</span></p>
@@ -38,11 +67,22 @@
 		</div>
 
 		<template #footer>
-			<ButtonsButton variant="ghost" :disabled="busy" @click="emit('close')">Cancel</ButtonsButton>
-			<ButtonsButton variant="primary" :disabled="busy || preparing" @click="submit">
-				<Icon v-if="busy" name="i-tabler-loader-2" class="h-3.5 w-3.5 animate-spin" />
-				{{ item ? 'Save changes' : 'Add Item' }}
-			</ButtonsButton>
+			<template v-if="confirming">
+				<ButtonsButton variant="ghost" :disabled="busy" @click="confirming = false">Back</ButtonsButton>
+				<ButtonsButton variant="primary" :disabled="busy" @click="confirm">
+					<Icon v-if="busy" name="i-tabler-loader-2" class="h-3.5 w-3.5 animate-spin" />
+					<Icon v-else name="i-tabler-check" class="h-3.5 w-3.5" />
+					Yes, save changes
+				</ButtonsButton>
+			</template>
+			<template v-else>
+				<ButtonsButton variant="ghost" :disabled="busy" @click="emit('close')">Cancel</ButtonsButton>
+				<ButtonsButton variant="primary" :disabled="busy || preparing || (!!item && !hasChanges)" @click="submit">
+					<Icon v-if="busy" name="i-tabler-loader-2" class="h-3.5 w-3.5 animate-spin" />
+					<Icon v-else-if="item" name="i-tabler-arrow-right" class="h-3.5 w-3.5" />
+					{{ item ? 'Review' : 'Add Item' }}
+				</ButtonsButton>
+			</template>
 		</template>
 	</LibrarianModalShell>
 </template>
@@ -76,6 +116,27 @@ const photoError = ref('')
 
 const previewURL = computed(() => localURL.value ?? (removeCurrent.value ? null : props.item?.photoURL ?? null))
 
+// Editing asks once more before saving: this is the summary of what is about to change.
+const confirming = ref(false)
+
+// A new photo, or the current one taken away; null when the photo is left as it is.
+const photoChange = computed<'changed' | 'removed' | null>(() => {
+	if (newPhoto.value) return 'changed'
+	return removeCurrent.value && props.item?.photoURL ? 'removed' : null
+})
+
+const changes = computed(() => {
+	const it = props.item
+	if (!it) return []
+	const rows: { label: string; from: string; to: string }[] = []
+	if (form.name.trim() !== it.name) rows.push({ label: 'Name', from: it.name, to: form.name.trim() })
+	if (form.type.trim() !== (it.type ?? '')) rows.push({ label: 'Type', from: it.type || '—', to: form.type.trim() || '—' })
+	if (Number(form.pointCost) !== Number(it.pointCost)) rows.push({ label: 'Cost (points)', from: String(it.pointCost), to: String(Number(form.pointCost)) })
+	if (Number(form.stock) !== Number(it.stock)) rows.push({ label: 'Stock', from: String(it.stock), to: String(Number(form.stock)) })
+	return rows
+})
+const hasChanges = computed(() => changes.value.length > 0 || photoChange.value !== null)
+
 function setLocalPhoto(blob: Blob | null) {
 	if (localURL.value) URL.revokeObjectURL(localURL.value)
 	newPhoto.value = blob
@@ -84,6 +145,7 @@ function setLocalPhoto(blob: Blob | null) {
 
 watch(() => props.open, (isOpen) => {
 	setLocalPhoto(null)
+	confirming.value = false
 	if (!isOpen) return
 	form.name = props.item?.name ?? ''
 	form.type = props.item?.type ?? ''
@@ -126,6 +188,12 @@ function submit() {
 	errors.stock = isWhole(form.stock) ? '' : 'Enter a whole number, 0 or more.'
 	if (errors.name || errors.pointCost || errors.stock) return
 
+	// Adding saves straight away; editing shows what will change and asks first.
+	if (props.item) confirming.value = true
+	else confirm()
+}
+
+function confirm() {
 	emit('submit', {
 		name: form.name.trim(),
 		type: form.type.trim() || null,

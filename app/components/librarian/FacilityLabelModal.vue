@@ -6,11 +6,11 @@
 			<LibrarianFacilityLabelBody :resource="resource" />
 		</div>
 
-		<Teleport to="body">
+		<AppTeleport>
 			<div v-if="resource" ref="printCopy" class="print-only" aria-hidden="true">
 				<LibrarianFacilityLabelBody :resource="resource" />
 			</div>
-		</Teleport>
+		</AppTeleport>
 
 		<template #footer>
 			<ButtonsButton variant="ghost" @click="emit('close')">Close</ButtonsButton>

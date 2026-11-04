@@ -133,18 +133,19 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-	(e: 'view' | 'edit' | 'remove', book: CatalogBook): void
+	(e: 'view' | 'edit' | 'remove' | 'print-labels', book: CatalogBook): void
 }>()
 
 
 const BOOK_MENU = [
 	{ key: 'view', label: 'View details', icon: 'i-tabler-eye' },
 	{ key: 'edit', label: 'Edit book', icon: 'i-tabler-pencil' },
+	{ key: 'print-labels', label: 'Print barcode labels', icon: 'i-tabler-printer' },
 	{ key: 'remove', label: 'Remove', icon: 'i-tabler-trash', tone: 'danger', separator: true },
 ] as const
 
 function onMenu(key: string, book: CatalogBook) {
-	if (key === 'view' || key === 'edit' || key === 'remove') emit(key, book)
+	if (key === 'view' || key === 'edit' || key === 'remove' || key === 'print-labels') emit(key, book)
 }
 
 function authorNames(book: CatalogBook): string {

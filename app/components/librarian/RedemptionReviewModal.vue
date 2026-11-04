@@ -6,7 +6,7 @@
 			<section class="rounded-2xl border p-4" :class="words.confirmBox">
 				<p class="text-[12px] font-bold uppercase tracking-wide" :class="words.tone">{{ words.about }}</p>
 				<p class="mt-1.5 text-[20px] font-extrabold leading-snug text-stone-900">{{ quantityText }}{{ itemName }}</p>
-				<p class="text-[14px] text-stone-700">for <b class="text-stone-900">{{ studentName }}</b> ({{ student?.studentIDNumber || 'no ID' }}) · {{ redemption.pointsSpent }} pts</p>
+				<p class="text-[14px] text-stone-700">for <b class="text-stone-900">{{ studentName }}</b> ({{ student?.memberIDNumber || 'no ID' }}) · {{ redemption.pointsSpent }} pts</p>
 
 				<ul v-if="mode === 'cancel'" class="mt-3 space-y-1.5 text-[14px] text-amber-950">
 					<li class="flex items-start gap-2"><Icon name="i-tabler-coins" class="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
@@ -49,7 +49,7 @@
 						<Icon name="i-tabler-user" class="h-4 w-4" aria-hidden="true" />Student
 					</h3>
 					<p class="text-[15.5px] font-bold leading-snug text-stone-900">{{ studentName }}</p>
-					<p class="font-data text-[13px] text-stone-600">{{ student?.studentIDNumber || '—' }}</p>
+					<p class="font-data text-[13px] text-stone-600">{{ student?.memberIDNumber || '—' }}</p>
 					<dl class="mt-3 grid grid-cols-1 gap-y-2.5">
 						<div v-for="f in studentFields" :key="f.label">
 							<dt class="text-[11.5px] font-semibold uppercase tracking-wide text-stone-500">{{ f.label }}</dt>

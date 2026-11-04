@@ -10,7 +10,7 @@
 						<LibrarianStudentAvatar :name="studentName(student)" />
 						<div class="min-w-0 flex-1">
 							<p class="truncate text-[15px] font-semibold text-stone-900">{{ studentName(student) }}</p>
-							<p class="font-data text-[12px] text-stone-500">{{ student.studentIDNumber }}</p>
+							<p class="font-data text-[12px] text-stone-500">{{ student.memberIDNumber }}</p>
 							<p class="mt-0.5 truncate text-[13px] text-stone-500">{{ student.academicProgram ?? student.department ?? '—' }}</p>
 							<p v-if="!members" class="mt-1 flex items-center gap-3 text-[12.5px] text-stone-500">
 								<span class="inline-flex items-center gap-1"><Icon name="i-tabler-flame" class="h-3 w-3 text-amber-500" />{{ student.visitStreak }} day streak</span>
@@ -56,7 +56,7 @@
 								<LibrarianStudentAvatar :name="studentName(student)" />
 								<div>
 									<p class="text-[15px] font-semibold text-stone-900">{{ studentName(student) }}</p>
-									<p class="font-data text-[12px] text-stone-500">{{ student.studentIDNumber }}</p>
+									<p class="font-data text-[12px] text-stone-500">{{ student.memberIDNumber }}</p>
 								</div>
 							</div>
 						</td>

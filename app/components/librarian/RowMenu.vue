@@ -8,7 +8,7 @@
 		</span>
 
 		<!-- Rendered at the body so a table's `overflow-hidden` can never clip it. -->
-		<Teleport to="body">
+		<AppTeleport>
 			<Transition enter-active-class="transition-[transform,opacity] duration-[180ms] ease-out"
 				enter-from-class="scale-[.96] opacity-0" enter-to-class="scale-100 opacity-100"
 				leave-active-class="transition-[transform,opacity] duration-[130ms] ease-out"
@@ -28,7 +28,7 @@
 					</template>
 				</div>
 			</Transition>
-		</Teleport>
+		</AppTeleport>
 	</div>
 </template>
 

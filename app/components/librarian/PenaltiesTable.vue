@@ -7,12 +7,12 @@
 				<div role="button" tabindex="0" class="px-4 py-3.5 transition-colors active:bg-accent-50" :class="{ 'bg-red-50/60': isLongUnpaid(penalty) }"
 					@click="selected = penalty" @keydown.enter.self="selected = penalty">
 					<div class="flex items-start justify-between gap-3">
-						<LibrarianPersonCell :name="personName(penaltyStudent(penalty)?.user)" :sub="penaltyStudent(penalty)?.studentIDNumber" />
+						<LibrarianPersonCell :name="personName(penaltyStudent(penalty)?.user)" :sub="penaltyStudent(penalty)?.memberIDNumber" />
 						<LibrarianStatusPill :label="penalty.paymentStatus" :tone="statusTone(penalty)" class="shrink-0" />
 					</div>
 					<p class="mt-2 text-[14.5px] font-semibold leading-snug text-stone-900">{{ bookTitle(penalty) }}</p>
 					<div class="mt-1 flex items-center justify-between gap-3">
-						<p class="text-[12.5px] capitalize text-stone-500">{{ penalty.penalty_type?.category ?? '—' }}<template v-if="penaltyCopy(penalty)"> · acc. {{ penaltyCopy(penalty)!.accessionNumber }}</template> · {{ formatDate(penalty.computedAt) }}<template v-if="penalty.receiptNumber"> · <span class="font-data normal-case">{{ penalty.receiptNumber }}</span></template></p>
+						<p class="text-[12.5px] capitalize text-stone-500">{{ penalty.penalty_type?.label ?? '—' }}<template v-if="penaltyCopy(penalty)"> · acc. {{ penaltyCopy(penalty)!.accessionNumber }}</template> · {{ formatDate(penalty.computedAt) }}<template v-if="penalty.receiptNumber"> · <span class="font-data normal-case">{{ penalty.receiptNumber }}</span></template></p>
 						<p class="font-data text-[16px] font-bold text-stone-900">{{ formatPeso(penalty.amount) }}</p>
 					</div>
 					<p v-if="unpaidLabel(penalty)" class="mt-1 text-[12.5px]"
@@ -35,12 +35,12 @@
 			@click="selected = penalty" @keydown.enter.self="selected = penalty"
 			:style="{ animationDelay: `${index * 40}ms` }">
 			<td class="px-4 py-3">
-				<LibrarianPersonCell :name="personName(penaltyStudent(penalty)?.user)" :sub="penaltyStudent(penalty)?.studentIDNumber" />
+				<LibrarianPersonCell :name="personName(penaltyStudent(penalty)?.user)" :sub="penaltyStudent(penalty)?.memberIDNumber" />
 			</td>
 			<td class="px-4 py-3">
 				<LibrarianBookCell :title="bookTitle(penalty)" :sub="penaltyCopy(penalty) ? `Accession no. ${penaltyCopy(penalty)!.accessionNumber}` : undefined" />
 			</td>
-			<td class="px-4 py-3 text-[14px] capitalize text-stone-600">{{ penalty.penalty_type?.category ?? '—' }}</td>
+			<td class="px-4 py-3 text-[14px] capitalize text-stone-600">{{ penalty.penalty_type?.label ?? '—' }}</td>
 			<td class="font-data px-4 py-3 text-[14px] font-semibold text-stone-900">{{ formatPeso(penalty.amount) }}</td>
 			<td class="font-data px-4 py-3 text-[13.5px] text-stone-500">{{ formatDate(penalty.computedAt) }}</td>
 			<td class="px-4 py-3">
@@ -114,7 +114,7 @@ function statusTone(p: PenaltyRecord): 'success' | 'info' | 'danger' {
 function menu(p: PenaltyRecord) {
 	return [{
 		key: 'cancel',
-		label: p.penalty_type?.category === 'lost' ? 'Book was found: cancel penalty' : 'Book was repaired: cancel penalty',
+		label: p.penalty_type?.kind === 'lost' ? 'Book was found: cancel penalty' : 'Book was repaired: cancel penalty',
 		icon: 'i-tabler-arrow-back-up',
 		tone: 'success' as const,
 	}]
@@ -152,8 +152,8 @@ const penaltyFields = computed(() => {
 	const copy = penaltyCopy(p)
 	return [
 		{ label: 'Student', value: personName(student?.user), wide: true },
-		{ label: 'Student ID', value: student?.studentIDNumber, mono: true },
-		{ label: 'Reason', value: p.penalty_type?.category },
+		{ label: 'Student ID', value: student?.memberIDNumber, mono: true },
+		{ label: 'Reason', value: p.penalty_type?.label },
 		{ label: 'Accession no.', value: copy ? String(copy.accessionNumber) : null, mono: true },
 		{ label: 'Issued', value: formatDateTime(p.computedAt) },
 		{ label: p.paymentStatus === 'Replaced' ? 'Replaced' : 'Settled', value: p.settledAt ? formatDateTime(p.settledAt) : null },

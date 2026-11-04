@@ -2,6 +2,11 @@
 	<div class="grid gap-4 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] lg:items-start">
 		<!-- Camera -->
 		<section class="rounded-2xl border border-stone-200 bg-white p-4 md:p-5" aria-label="Camera">
+			<!-- A Checkout window is open in another tab and is reading this same camera for the book. -->
+			<p v-if="checkoutActive" class="mb-3 flex items-center gap-2 rounded-xl bg-amber-50 px-3 py-2 text-[13.5px] font-medium text-amber-900" role="status">
+				<Icon name="i-tabler-book-upload" class="h-4 w-4 shrink-0" />
+				Another window (Checkout, or Start Session) is open in another tab and is using the camera. Attendance scanning is paused until it closes.
+			</p>
 			<div class="mb-3 flex flex-wrap items-center justify-between gap-2">
 				<LibrarianSegmentedTabs v-model="mode" :tabs="MODES" />
 				<div class="flex items-center gap-1.5">
@@ -15,16 +20,10 @@
 				</div>
 			</div>
 
-			<div class="flex gap-3.5">
-				<div v-if="mode === 'phone'" class="hidden w-[200px] shrink-0 rounded-2xl bg-stone-100 p-4 text-center text-[13px] leading-snug text-stone-500 sm:block">
-					<Icon name="i-tabler-device-mobile" class="mx-auto mb-2 h-8 w-8 text-stone-400" />
-					<b class="mb-0.5 block text-[13.5px] text-stone-900">Scanning with a phone?</b>
-					Open this station link on the phone and sign in as a librarian. The back camera opens by itself.
-					<ButtonsButton variant="ghost" size="sm" class="mt-3 w-full" @click="copyLink">
-						<Icon name="i-tabler-copy" class="h-3.5 w-3.5" />{{ copied ? 'Copied' : 'Copy link' }}
-					</ButtonsButton>
-				</div>
+			<!-- On a desk computer the phone is paired by QR and sends what it scans here; on a phone itself, its own camera is used. -->
+			<LibrarianPhoneScanner v-if="useRelay" v-model:open="relayOpen" as="station" :active="true" @code="onPhoneCode" />
 
+			<div v-else class="flex gap-3.5">
 				<div class="relative min-w-0 flex-1 overflow-hidden rounded-2xl bg-stone-900 text-white"
 					:class="mode === 'phone' ? 'mx-auto aspect-[3/4] max-w-[340px]' : 'aspect-video'">
 					<video ref="video" muted playsinline autoplay class="absolute inset-0 h-full w-full object-cover" :class="facing === 'user' ? '-scale-x-100' : ''" />
@@ -184,10 +183,18 @@ interface ResultView { key: number; tone: Tone; icon: string; verdict: string; t
 interface FeedItem { key: number; tone: Tone; icon: string; title: string; sub: string; at: string; via: Via }
 
 const mode = ref<Mode>('webcam')
+// On a phone itself the station uses that phone's camera. On a desk computer, the Phone camera tab pairs a phone by QR
+// and takes the barcodes it scans (see PhoneScanner), so the computer's own webcam is switched off while it is chosen.
+const onPhoneDevice = ref(false)
+const useRelay = computed(() => mode.value === 'phone' && !onPhoneDevice.value)
+const relayOpen = computed({
+	get: () => useRelay.value,
+	// "Use the webcam" inside the panel.
+	set: (open: boolean) => { if (!open) mode.value = 'webcam' },
+})
 const sound = ref(true)
 const code = ref('')
 const busy = ref(false)
-const copied = ref(false)
 const flash = ref(false)
 const result = ref<ResultView | null>(null)
 const feed = ref<FeedItem[]>([])
@@ -197,6 +204,7 @@ let lastRaw = ''
 let lastRawAt = 0
 let clearTimer: ReturnType<typeof setTimeout> | undefined
 const paused = ref(false)
+const { active: checkoutActive } = useCheckoutDeskWatcher()
 
 /* ---------- camera ---------- */
 // The target box, as fractions of the camera view. Wide and short like a barcode, and smaller than the
@@ -214,9 +222,19 @@ const frameStyle = computed(() => {
 const { video, state: camState, facing, torchAvailable, torchOn, start, stop, flip, toggleTorch } =
 	useCameraScanner(onCameraCode, () => REGIONS[mode.value])
 
+// What the paired phone scanned is handled exactly like a webcam read.
+function onPhoneCode(value: string) {
+	if (paused.value || checkoutActive.value) return
+	paused.value = true
+	flash.value = true
+	void scan(value, 'phone')
+	setTimeout(() => { flash.value = false; paused.value = false }, 1600)
+}
+
 // A read flashes the frame and pauses for a moment, so one ID held up is never counted twice.
 function onCameraCode(value: string) {
-	if (paused.value) return
+	// The camera stays on (it shows the library is open), but while Checkout is scanning a book the code is not an ID.
+	if (paused.value || checkoutActive.value) return
 	paused.value = true
 	flash.value = true
 	void scan(value, mode.value)
@@ -235,13 +253,16 @@ const camMessage = computed(() => {
 })
 
 const status = computed(() => {
+	if (useRelay.value) return { label: 'Using a phone', class: 'text-stone-500', dot: 'bg-stone-400' }
 	if (busy.value) return { label: 'Checking…', class: 'text-amber-700', dot: 'bg-amber-600' }
 	if (camState.value === 'live') return { label: paused.value ? 'Paused' : 'Camera live', class: 'text-emerald-700', dot: 'bg-emerald-600' }
 	if (camState.value === 'starting') return { label: 'Starting camera…', class: 'text-amber-700', dot: 'bg-amber-600' }
 	return camState.value === 'idle' ? { label: 'Camera off', class: 'text-stone-400', dot: 'bg-stone-400' } : { label: 'Camera unavailable', class: 'text-red-600', dot: 'bg-red-500' }
 })
 
-const hint = computed(() => mode.value === 'webcam'
+const hint = computed(() => useRelay.value
+	? 'The phone reads the barcodes and sends them here. Each one is handled like a webcam scan, and the phone stays connected for hours, so the next session needs no new QR.'
+	: mode.value === 'webcam'
 	? 'Hold the barcode about 15–25 cm from the webcam. It reads on its own and pauses for a moment after each scan, so one code is never counted twice.'
 	: 'On a phone the camera fills the screen, the phone vibrates on a good read, and the screen stays awake. The torch helps in dim rooms.')
 
@@ -310,7 +331,7 @@ function fromResult(res: ScanResult): ResultView {
 			const notes: ResultView['notes'] = [{ icon: 'i-tabler-checklist', text: 'Check the book for damage' }]
 			if (l.wasLate) notes.push({ icon: 'i-tabler-alert-circle', text: l.fineAmount > 0 ? `Late · fine ${formatPeso(l.fineAmount)}` : 'Returned late' })
 			return {
-				key, tone: 'warn', icon: 'i-tabler-book-download', verdict: 'Book received', name: l.studentName, sid: l.studentIDNumber,
+				key, tone: 'warn', icon: 'i-tabler-book-download', verdict: 'Book received', name: l.studentName, sid: l.memberIDNumber,
 				message: l.bookTitle, notes, sub: `Received · ${l.bookTitle}`,
 				action: { label: 'Check the book now', icon: 'i-tabler-checklist', run: () => emit('check-loan', { loanUuid: l.uuid, bookTitle: l.bookTitle, accessionNumber: l.accessionNumber, studentName: l.studentName }) },
 			}
@@ -319,7 +340,7 @@ function fromResult(res: ScanResult): ResultView {
 		case 'reservation': {
 			const r = res.reservation
 			return {
-				key, tone: 'in', icon: 'i-tabler-bookmark', verdict: 'Reservation found', name: r.studentName, sid: r.studentIDNumber,
+				key, tone: 'in', icon: 'i-tabler-bookmark', verdict: 'Reservation found', name: r.studentName, sid: r.memberIDNumber,
 				message: r.bookTitle, notes: [], sub: `Reservation · ${r.bookTitle}`,
 				action: { label: 'Open checkout', icon: 'i-tabler-arrow-right', run: () => emit('open-checkout', r.pickupCode) },
 			}
@@ -333,7 +354,7 @@ function fromResult(res: ScanResult): ResultView {
 			disarm()
 			return {
 				key, tone: 'in', icon: 'i-tabler-player-play', verdict: `${res.resource.name} started`, name: res.student.name, program: res.student.program,
-				sid: res.student.studentIDNumber, notes: [], sub: `Started ${res.resource.name}`,
+				sid: res.student.memberIDNumber, notes: [], sub: `Started ${res.resource.name}`,
 			}
 
 		case 'facility_ended':
@@ -351,12 +372,13 @@ function fromAttendance(res: AttendanceScanResult): ResultView {
 
 	if (!checkIn && res.durationMinutes != null) notes.push({ icon: 'i-tabler-clock', text: `Stayed ${formatMinutes(res.durationMinutes)}` })
 	if (checkIn && res.student.visitStreak > 1) notes.push({ icon: 'i-tabler-flame', text: `${res.student.visitStreak}-day streak` })
+	if (!checkIn && res.endedSession) notes.push({ icon: 'i-tabler-device-desktop', text: `${res.endedSession.name} session ended · ${formatMinutes(res.endedSession.minutes)}` })
 	for (const closed of res.autoClosed) notes.push({ icon: 'i-tabler-alert-circle', text: `Yesterday's visit was closed at ${formatTime(closed.exitTime)}` })
 
 	return {
 		key: ++seq, tone: checkIn ? 'in' : 'out', icon: checkIn ? 'i-tabler-login' : 'i-tabler-logout', verdict: checkIn ? 'Checked in' : 'Checked out',
 		time: formatTime(checkIn ? res.log.entryTime : (res.log.exitTime ?? res.log.entryTime)),
-		name: res.student.name, program: res.student.program, sid: res.student.studentIDNumber, notes,
+		name: res.student.name, program: res.student.program, sid: res.student.memberIDNumber, notes,
 		sub: checkIn ? 'Checked in' : `Checked out · ${formatMinutes(res.durationMinutes ?? 0)}`,
 	}
 }
@@ -412,25 +434,20 @@ function feedback(tone_: Tone) {
 	if ('vibrate' in navigator) navigator.vibrate(tone_ === 'in' || tone_ === 'out' ? 60 : [40, 60, 40])
 }
 
-async function copyLink() {
-	try {
-		await navigator.clipboard.writeText(location.href)
-		copied.value = true
-		setTimeout(() => { copied.value = false }, 1800)
-	} catch {
-		// Clipboard blocked: the address bar still has the link.
-	}
-}
-
 /* ---------- mode + lifecycle ---------- */
 const STORAGE_KEY = 'librarian-scan-mode'
 
-watch(mode, (next) => {
+watch(mode, async (next) => {
 	try { localStorage.setItem(STORAGE_KEY, next) } catch { /* private window */ }
+	if (useRelay.value) { stop(); return }
+	// The camera view is not on the page while the phone panel is, so wait for it to come back before starting.
+	await nextTick()
 	void start()
 })
 
 onMounted(() => {
+	onPhoneDevice.value = window.matchMedia('(pointer: coarse)').matches
+
 	// Phones start on the phone layout; a desk keeps whichever mode it used last.
 	let saved: string | null = null
 	try { saved = localStorage.getItem(STORAGE_KEY) } catch { /* private window */ }

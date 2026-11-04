@@ -43,10 +43,14 @@ export function useCameraScanner(onCode: (code: string) => void, region?: () => 
   let session = 0 // bumped by stop(), so slow async work from an old session can't act
   let last = { code: '', at: 0 }
 
+  // A code held steadily in front of the camera is reported once. The quiet period counts from the last time the code
+  // was SEEN (not the last time it was reported), so it re-arms only after it has been out of view for 2.5 seconds.
+  // Counting from the report made a held ID report itself every 2.5 seconds, and each one could flip a student in or out.
   function emit(code: string) {
     const now = Date.now()
-    if (code === last.code && now - last.at < 2500) return
+    const repeat = code === last.code && now - last.at < 2500
     last = { code, at: now }
+    if (repeat) return
     onCode(code)
   }
 

@@ -7,7 +7,7 @@
 				<p class="text-[12px] font-bold uppercase tracking-wide" :class="words.confirmLabelTone">{{ words.about }}</p>
 				<p class="mt-1.5 text-[20px] font-extrabold leading-snug text-stone-900">{{ fullName }}</p>
 				<p class="text-[14px] text-stone-700">
-					<span class="font-data">{{ student.studentIDNumber }}</span> · {{ student.academicProgram || 'No program' }} · {{ email || 'no email' }}
+					<span class="font-data">{{ student.memberIDNumber }}</span> · {{ student.academicProgram || 'No program' }} · {{ email || 'no email' }}
 				</p>
 				<p class="mt-2.5 text-[14px]" :class="words.confirmLabelTone">{{ words.outcome }}</p>
 			</section>
@@ -40,7 +40,7 @@
 						<LibrarianStudentAvatar :name="fullName" />
 						<div class="min-w-0">
 							<p class="text-[15.5px] font-bold leading-snug text-stone-900">{{ fullName }}</p>
-							<p class="font-data text-[13px] text-stone-600">{{ student.studentIDNumber }}</p>
+							<p class="font-data text-[13px] text-stone-600">{{ student.memberIDNumber }}</p>
 						</div>
 					</div>
 					<dl class="mt-3 grid grid-cols-1 gap-y-2.5">

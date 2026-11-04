@@ -8,7 +8,7 @@
 				<p class="text-[12px] font-bold uppercase tracking-wide text-emerald-800">You are about to record a payment</p>
 				<p class="mt-1 text-[26px] font-extrabold tabular-nums text-stone-900">{{ formatPeso(penalty.amount) }}</p>
 				<p class="text-[14px] text-stone-700">
-					paid by <b class="text-stone-900">{{ studentName }}</b> ({{ student?.studentIDNumber || 'no ID' }})
+					paid by <b class="text-stone-900">{{ studentName }}</b> ({{ student?.memberIDNumber || 'no ID' }})
 					for <b class="text-stone-900">{{ bookTitle }}</b>.
 				</p>
 				<p class="mt-2 text-[13.5px] text-emerald-900">
@@ -58,7 +58,7 @@
 						<Icon name="i-tabler-user" class="h-4 w-4" aria-hidden="true" />Student
 					</h3>
 					<p class="text-[15.5px] font-bold leading-snug text-stone-900">{{ studentName }}</p>
-					<p class="font-data text-[13px] text-stone-600">{{ student?.studentIDNumber || '—' }}</p>
+					<p class="font-data text-[13px] text-stone-600">{{ student?.memberIDNumber || '—' }}</p>
 					<dl class="mt-3 grid grid-cols-1 gap-y-2.5">
 						<div>
 							<dt class="text-[11.5px] font-semibold uppercase tracking-wide text-stone-500">Program</dt>
@@ -129,13 +129,13 @@ const studentName = computed(() => personName(student.value?.user))
 const bookTitle = computed(() => copy.value?.book?.title ?? 'Removed book')
 
 // 'lost' or 'damaged' when the student is paying for the book itself; null for a late fee.
-const copyKind = computed(() => (props.penalty && isCopyPenalty(props.penalty) ? props.penalty.penalty_type!.category : null))
+const copyKind = computed(() => (props.penalty && isCopyPenalty(props.penalty) ? props.penalty.penalty_type!.kind : null))
 
 const reason = computed(() => {
 	const p = props.penalty
 	if (!p) return ''
 	if (copyKind.value) return `Paying for the ${copyKind.value} copy · the copy leaves the catalog once this is recorded`
-	const category = p.penalty_type?.category
+	const category = p.penalty_type?.areaOfLibrary
 	const lateBy = loan.value?.returnDate ? daysBetween(loan.value.dueDate, loan.value.returnDate) : null
 	return [category ? `${category.charAt(0).toUpperCase()}${category.slice(1)} collection` : null, lateBy ? `returned ${lateBy} late` : null]
 		.filter(Boolean).join(' · ') || 'Late return'

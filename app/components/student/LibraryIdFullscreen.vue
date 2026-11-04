@@ -2,7 +2,7 @@
 	<!-- The Library ID, enlarged for the door: plain white (scanners read best on it), the barcode as wide as the
 		 screen allows, name and ID number big enough to read at arm's length. While it's open the screen is asked
 		 to stay awake, so it doesn't dim mid-queue. Tap anywhere, the close button or Escape to go back. -->
-	<Teleport to="body">
+	<AppTeleport>
 		<Transition enter-active-class="transition-opacity duration-200 ease-out" enter-from-class="opacity-0"
 			leave-active-class="transition-opacity duration-150 ease-out" leave-to-class="opacity-0">
 			<div v-if="open" ref="panel" role="dialog" aria-modal="true" aria-label="Library ID, enlarged" tabindex="-1"
@@ -19,7 +19,7 @@
 
 				<div class="mx-auto flex w-full max-w-[900px] flex-1 flex-col items-center justify-center text-center">
 					<p class="dashboard-heading text-[clamp(26px,6vw,48px)] font-extrabold leading-tight text-crimson">{{ profile.fullName }}</p>
-					<p class="font-data mt-1 text-[clamp(16px,3.4vw,24px)] font-semibold text-stone-600">{{ profile.studentIDNumber }}</p>
+					<p class="font-data mt-1 text-[clamp(16px,3.4vw,24px)] font-semibold text-stone-600">{{ profile.memberIDNumber }}</p>
 
 					<div class="mt-[6vh] w-full">
 						<svg :viewBox="`0 0 ${barcode.width} 64`" preserveAspectRatio="none" role="img"
@@ -35,13 +35,13 @@
 				</p>
 			</div>
 		</Transition>
-	</Teleport>
+	</AppTeleport>
 </template>
 
 <script setup lang="ts">
 const props = defineProps<{
 	open: boolean
-	profile: { fullName: string; studentIDNumber: string; barcodeValue: string }
+	profile: { fullName: string; memberIDNumber: string; barcodeValue: string }
 }>()
 
 const emit = defineEmits<{ (e: 'close'): void }>()

@@ -6,7 +6,7 @@
 			<li v-for="report in reports" :key="`card-${report.reportID}`">
 				<div role="button" tabindex="0" class="px-4 py-3.5 transition-colors active:bg-accent-50" @click="selected = report" @keydown.enter.self="selected = report">
 					<div class="flex items-start justify-between gap-3">
-						<LibrarianPersonCell :name="personName(report.loan?.student?.user)" :sub="report.loan?.student?.studentIDNumber" />
+						<LibrarianPersonCell :name="personName(report.loan?.student?.user)" :sub="report.loan?.student?.memberIDNumber" />
 						<LibrarianStatusPill label="Pending" tone="warning" class="shrink-0" />
 					</div>
 					<p class="mt-2 text-[14.5px] font-semibold leading-snug text-stone-900">{{ report.loan?.copy?.book?.title ?? 'Removed book' }}</p>
@@ -25,7 +25,7 @@
 			class="row-fade-in cursor-pointer border-b border-stone-100 transition-colors duration-150 last:border-0 hover:bg-accent-50"
 			:style="{ animationDelay: `${index * 40}ms` }">
 			<td class="px-4 py-3">
-				<LibrarianPersonCell :name="personName(report.loan?.student?.user)" :sub="report.loan?.student?.studentIDNumber" />
+				<LibrarianPersonCell :name="personName(report.loan?.student?.user)" :sub="report.loan?.student?.memberIDNumber" />
 			</td>
 			<td class="px-4 py-3">
 				<LibrarianBookCell :title="report.loan?.copy?.book?.title ?? 'Removed book'" :sub="report.loan?.copy?.accessionNumber" />
@@ -103,7 +103,7 @@ const fields = computed(() => {
 	if (!selected.value) return []
 	return [
 		{ label: 'Student', value: personName(loan?.student?.user), wide: true },
-		{ label: 'Student ID', value: loan?.student?.studentIDNumber, mono: true },
+		{ label: 'Student ID', value: loan?.student?.memberIDNumber, mono: true },
 		{ label: 'Program', value: loan?.student?.academicProgram },
 		{ label: 'Accession no.', value: loan?.copy?.accessionNumber, mono: true },
 		{ label: 'Returned', value: formatDateTime(selected.value.reportedAt) },

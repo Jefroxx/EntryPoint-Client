@@ -8,7 +8,7 @@
 						<p class="text-[15.5px] font-bold leading-snug text-stone-900">{{ reservation.book?.title ?? 'Removed book' }}</p>
 						<p class="text-[14px] text-stone-600">
 							for <b class="text-stone-800">{{ personName(reservation.student?.user) }}</b>
-							<span class="font-data text-[13px]"> · {{ reservation.student?.studentIDNumber }}</span>
+							<span class="font-data text-[13px]"> · {{ reservation.student?.memberIDNumber }}</span>
 						</p>
 					</div>
 					<span class="font-data shrink-0 rounded-lg bg-white px-2.5 py-1 text-[13px] font-semibold text-stone-700 ring-1 ring-stone-200">{{ reservation.pickupCode }}</span>

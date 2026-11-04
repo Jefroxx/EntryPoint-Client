@@ -4,10 +4,20 @@
 	<div class="relative rounded-2xl">
 		<!-- Too narrow for the wide grid: one card per row, with the row's buttons on it. -->
 		<LibrarianCardSkeleton v-if="loading" />
-		<ul v-else class="grid gap-3 sm:grid-cols-2 2xl:grid-cols-3 [&>li]:overflow-hidden [&>li]:rounded-2xl [&>li]:border [&>li]:border-stone-200 [&>li]:bg-white">
-			<li v-for="copy in copies" :key="`card-${copy.copyID}`">
+
+		<!-- Tick copies to print their barcode labels together (the toolbar's Print labels button). -->
+		<label v-if="!loading && copies.length" class="mb-2.5 flex w-fit cursor-pointer items-center gap-2.5 text-[13.5px] font-medium text-stone-600">
+			<input type="checkbox" class="h-[18px] w-[18px] accent-accent-500" :checked="allOnPage" :indeterminate="someOnPage && !allOnPage" @change="emit('toggle-page')" />
+			Select all on this page
+			<span v-if="selected.length" class="font-normal text-stone-500">· {{ selected.length }} selected</span>
+		</label>
+
+		<ul v-if="!loading" class="grid gap-3 sm:grid-cols-2 2xl:grid-cols-3 [&>li]:overflow-hidden [&>li]:rounded-2xl [&>li]:border [&>li]:border-stone-200 [&>li]:bg-white">
+			<li v-for="copy in copies" :key="`card-${copy.copyID}`" :class="selected.includes(copy.uuid) ? '!border-accent-300 !bg-accent-50/50' : ''">
 				<div role="button" tabindex="0" class="px-4 py-3.5 transition-colors active:bg-accent-50" @click="emit('view', copy)" @keydown.enter.self="emit('view', copy)">
 					<div class="flex items-start gap-3">
+						<input type="checkbox" class="mt-3.5 h-[18px] w-[18px] shrink-0 cursor-pointer accent-accent-500" :checked="selected.includes(copy.uuid)"
+							:aria-label="`Select accession no. ${copy.accessionNumber}`" @click.stop @change="emit('toggle', copy)" />
 						<span class="font-data flex h-11 min-w-11 shrink-0 items-center justify-center rounded-xl bg-stone-100 px-2 text-[15px] font-bold text-stone-900">{{ copy.accessionNumber }}</span>
 						<div class="min-w-0 flex-1">
 							<p class="line-clamp-2 text-[15px] font-semibold leading-snug text-stone-900">{{ copy.book.title }}</p>
@@ -67,7 +77,7 @@
 						<td class="whitespace-nowrap px-4 py-3 group-hover:bg-accent-50">{{ copy.book.volume || '—' }}</td>
 						<td class="max-w-[200px] px-4 py-3 group-hover:bg-accent-50">{{ copy.book.publisher || '—' }}</td>
 						<td class="px-4 py-3 tabular-nums group-hover:bg-accent-50">{{ copy.book.publicationYear ?? '—' }}</td>
-						<td class="px-4 py-3 tabular-nums group-hover:bg-accent-50">{{ copy.book.pages ?? '—' }}</td>
+						<td class="px-4 py-3 tabular-nums group-hover:bg-accent-50">{{ copy.book.pageCount ?? '—' }}</td>
 						<td class="whitespace-nowrap px-4 py-3 group-hover:bg-accent-50">{{ copy.sourceOfFund || copy.book.sourceOfFund || '—' }}</td>
 						<td class="whitespace-nowrap px-4 py-3 tabular-nums group-hover:bg-accent-50">{{ (copy.cost ?? copy.book.cost) != null ? formatPeso(copy.cost ?? copy.book.cost) : '—' }}</td>
 						<td class="whitespace-nowrap px-4 py-3 group-hover:bg-accent-50">{{ copy.book.shelfLocation || '—' }}</td>
@@ -104,16 +114,22 @@
 <script setup lang="ts">
 import { LIBRARY_AREAS, type CopyCatalogRow, type CopyStatus, type LibraryArea } from '~/services/librarianService'
 
-defineProps<{
+const props = withDefaults(defineProps<{
 	copies: CopyCatalogRow[]
 	loading: boolean
 	/** Filters or a search are narrowing the list, so an empty table means "no match", not "no copies". */
 	filtered?: boolean
-}>()
+	/** The uuids of the copies ticked for printing labels. */
+	selected?: string[]
+}>(), { selected: () => [] })
 
 const emit = defineEmits<{
-	(e: 'view' | 'edit-book' | 'edit-copy' | 'add-copy' | 'remove-copy', copy: CopyCatalogRow): void
+	(e: 'view' | 'edit-book' | 'edit-copy' | 'add-copy' | 'remove-copy' | 'print-label' | 'toggle', copy: CopyCatalogRow): void
+	(e: 'toggle-page'): void
 }>()
+
+const allOnPage = computed(() => props.copies.length > 0 && props.copies.every((c) => props.selected.includes(c.uuid)))
+const someOnPage = computed(() => props.copies.some((c) => props.selected.includes(c.uuid)))
 
 
 // The row buttons add or remove a copy (logged in the stock log). The menu keeps the other edits: this copy's status
@@ -122,11 +138,12 @@ const COPY_MENU = [
 	{ key: 'edit-copy', label: 'Edit this copy', icon: 'i-tabler-pencil' },
 	{ key: 'view', label: 'View book details', icon: 'i-tabler-eye' },
 	{ key: 'edit-book', label: 'Edit book', icon: 'i-tabler-book' },
+	{ key: 'print-label', label: 'Print barcode label', icon: 'i-tabler-printer' },
 	{ key: 'remove-copy', label: 'Remove this copy', icon: 'i-tabler-circle-minus', tone: 'danger', separator: true },
 ] as const
 
 function onMenu(key: string, copy: CopyCatalogRow) {
-	if (key === 'view' || key === 'edit-book' || key === 'edit-copy' || key === 'remove-copy') emit(key, copy)
+	if (key === 'view' || key === 'edit-book' || key === 'edit-copy' || key === 'remove-copy' || key === 'print-label') emit(key, copy)
 }
 
 const COLUMNS = [

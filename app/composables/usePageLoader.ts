@@ -16,6 +16,8 @@ export function usePageLoader() {
 		active: true, // true on first paint, so the server-rendered HTML already shows it
 		routing: false, // between a route change starting and its page finishing
 		pending: 0, // page data still loading
+		total: 0, // requests the page has made while loading, and how many of them have answered: the loading bar
+		done: 0,
 		since: 0,
 	}))
 }
@@ -30,7 +32,11 @@ export function trackPageRequest<T>(loader: ReturnType<typeof usePageLoader>, re
 	if (!loader.value.active) return request
 
 	loader.value.pending++
-	const done = () => { loader.value.pending = Math.max(0, loader.value.pending - 1) }
+	loader.value.total++
+	const done = () => {
+		loader.value.pending = Math.max(0, loader.value.pending - 1)
+		loader.value.done++
+	}
 	request.then(done, done)
 	return request
 }
@@ -48,7 +54,12 @@ export function setupPageLoader() {
 
 	function show() {
 		clearTimeout(hideTimer)
-		if (!loader.value.active) loader.value.since = performance.now()
+		if (!loader.value.active) {
+			loader.value.since = performance.now()
+			// A new load starts its bar from the beginning.
+			loader.value.total = 0
+			loader.value.done = 0
+		}
 		loader.value.active = true
 		clearTimeout(capTimer)
 		capTimer = setTimeout(() => { loader.value.pending = 0; loader.value.routing = false; tryHide() }, MAX_VISIBLE_MS)

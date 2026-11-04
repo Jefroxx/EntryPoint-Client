@@ -1,5 +1,5 @@
 <template>
-	<Teleport to="body">
+	<AppTeleport>
 		<!-- Sits above the tab bar on phones; bottom-centre on wide screens. -->
 		<div class="pointer-events-none fixed inset-x-4 bottom-[calc(5.5rem+env(safe-area-inset-bottom,0px))] z-[200] flex flex-col items-center gap-2 md:bottom-6">
 			<TransitionGroup enter-active-class="transition-[transform,opacity] duration-[260ms] ease-out"
@@ -17,7 +17,7 @@
 				</div>
 			</TransitionGroup>
 		</div>
-	</Teleport>
+	</AppTeleport>
 </template>
 
 <script setup lang="ts">

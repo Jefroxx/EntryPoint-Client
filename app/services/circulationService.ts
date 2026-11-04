@@ -2,7 +2,7 @@ import { BaseService, type RequestOptions } from "./BaseService";
 
 interface PersonRef {
   studentID: number;
-  studentIDNumber?: string;
+  memberIDNumber?: string;
   academicProgram?: string | null;
   user: { firstName: string; lastName: string } | null;
 }
@@ -41,7 +41,7 @@ export interface ReturnPreview {
   };
   student: {
     name: string;
-    studentIDNumber: string | null;
+    memberIDNumber: string | null;
     academicProgram: string | null;
     email: string | null;
     phoneNumber: string | null;
@@ -101,7 +101,7 @@ export interface ReservedBook {
   bookID: number;
   title: string;
   coverImageURL?: string | null;
-  classNumber?: string | null;
+  callNumber?: string | null;
   /** Plain author names, in book order. */
   authorNames?: string[];
   subject?: { name: string } | null;
@@ -132,7 +132,7 @@ export interface PenaltyRecord {
   /** Who owes it and for which copy: set on every penalty, with or without a loan. */
   student: PersonRef | null;
   copy: { copyID: number; accessionNumber: number; book: { bookID: number; title: string } | null } | null;
-  penalty_type: { category: string } | null;
+  penalty_type: { kind: "overdue" | "lost" | "damaged"; areaOfLibrary: string | null; label: string } | null;
 }
 
 /** Who a penalty is charged to (read from the penalty itself, or from its loan on older rows). */
@@ -172,8 +172,8 @@ export interface IssuePenaltyPayload {
 }
 
 /** A penalty over a lost or damaged copy (the student pays the book's price or replaces it), not a late fee. */
-export function isCopyPenalty(penalty: { penalty_type: { category: string } | null }): boolean {
-  return penalty.penalty_type?.category === "lost" || penalty.penalty_type?.category === "damaged";
+export function isCopyPenalty(penalty: { penalty_type: { kind: string } | null }): boolean {
+  return penalty.penalty_type?.kind === "lost" || penalty.penalty_type?.kind === "damaged";
 }
 
 export interface CheckoutPayload {
@@ -191,7 +191,7 @@ export interface LoanReceipt {
   dueDate: string | null;
   /** Set once the book is back; the slip then says so. */
   returnDate: string | null;
-  student: { name: string; studentIDNumber: string; program: string | null };
+  student: { name: string; memberIDNumber: string; program: string | null };
   book: {
     title: string;
     authors: string[];

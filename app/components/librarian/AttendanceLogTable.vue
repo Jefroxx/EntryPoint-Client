@@ -9,7 +9,7 @@
 						<LibrarianStudentAvatar :name="studentName(log)" />
 						<div class="min-w-0 flex-1">
 							<p class="truncate text-[15px] font-semibold text-stone-900">{{ studentName(log) }}</p>
-							<p class="font-data text-[12px] text-stone-500">{{ log.student?.studentIDNumber ?? '—' }}</p>
+							<p class="font-data text-[12px] text-stone-500">{{ log.student?.memberIDNumber ?? '—' }}</p>
 							<p class="truncate text-[13px] text-stone-500">{{ isVisitor(log) ? `Visitor · ${log.visitorPurpose}` : (log.student?.academicProgram ?? '—') }}</p>
 								<!-- A visitor has no card to scan on the way out, so the librarian checks them out here. -->
 								<ButtonsButton v-if="isVisitor(log) && !log.exitTime" variant="ghost" size="sm" class="mt-2"
@@ -26,7 +26,7 @@
 				</div>
 			</li>
 		</ul>
-		<p v-if="!loading && logs.length === 0" class="rounded-2xl border border-stone-200 bg-white px-4 py-10 text-center text-[15px] text-stone-500">No attendance logs match your search.</p>
+		<p v-if="!loading && logs.length === 0" class="rounded-2xl border border-stone-200 bg-white px-4 py-10 text-center text-[15px] text-stone-500">No attendance was logged for this day, or nothing matches your search.</p>
 
 		<div class="scroll-shadow-x max-h-[480px] overflow-auto hidden">
 			<table class="w-full min-w-[760px] border-collapse text-left">
@@ -49,7 +49,7 @@
 								<LibrarianStudentAvatar :name="studentName(log)" />
 								<div>
 									<p class="text-[15px] font-semibold text-stone-900">{{ studentName(log) }}</p>
-									<p class="font-data text-[12px] text-stone-500">{{ log.student?.studentIDNumber ?? '—' }}</p>
+									<p class="font-data text-[12px] text-stone-500">{{ log.student?.memberIDNumber ?? '—' }}</p>
 								</div>
 							</div>
 						</td>
@@ -77,7 +77,7 @@
 
 
 		<LibrarianRecordDrawer :open="!!selected" heading="Visit details" :title="selected ? studentName(selected) : ''"
-			:subtitle="selected?.student?.studentIDNumber"
+			:subtitle="selected?.student?.memberIDNumber"
 			:status="selected ? (selected.exitTime ? { label: 'Checked out', tone: 'neutral' } : { label: 'In library', tone: 'success' }) : undefined"
 			:fields="fields" @close="selected = null" />
 	</div>

@@ -4,13 +4,13 @@
 
 		<!-- One card per student. Each book they reserved gets a row with enough to recognise it (cover, author, where it
 			 stands); the button opens the pop-up where the desk accepts, rejects and checks out. -->
-		<ul v-else-if="groups.length" class="grid gap-3 lg:grid-cols-2 2xl:grid-cols-3">
+		<ul v-else-if="groups.length" class="grid auto-rows-fr gap-3 lg:grid-cols-2 2xl:grid-cols-3">
 			<li v-for="group in groups" :key="group.key" class="flex flex-col overflow-hidden rounded-2xl border border-stone-200 bg-white">
 				<div class="flex items-center gap-3 px-4 pb-2.5 pt-3.5">
 					<LibrarianStudentAvatar :name="personName(group.student?.user)" />
 					<div class="min-w-0 flex-1">
 						<p class="truncate text-[15.5px] font-semibold leading-tight text-stone-900">{{ personName(group.student?.user) }}</p>
-						<p class="font-data truncate text-[12px] text-stone-500">{{ group.student?.studentIDNumber ?? '—' }}</p>
+						<p class="font-data truncate text-[12px] text-stone-500">{{ group.student?.memberIDNumber ?? '—' }}</p>
 					</div>
 					<span class="shrink-0 rounded-full bg-stone-100 px-2.5 py-1 text-[12.5px] font-semibold text-stone-600">
 						{{ group.items.length }} {{ group.items.length === 1 ? 'book' : 'books' }}
@@ -29,7 +29,7 @@
 									{{ reservationLook[reservation.status].short }}
 									<template v-if="queuePositions[reservation.reservationID]"><span class="font-medium text-stone-500">· #{{ queuePositions[reservation.reservationID] }}</span></template>
 									<template v-if="(reservation.status === 'Waiting' || reservation.status === 'Accepted') && reservation.copiesTotal !== undefined">
-										<span class="font-medium" :class="reservation.copiesFree ? 'text-stone-500' : 'text-red-600'">· {{ reservation.copiesFree ? `${reservation.copiesFree} of ${reservation.copiesTotal} free` : 'none free' }}</span>
+										<span class="font-medium" :class="reservation.copiesFree ? 'text-stone-500' : 'text-red-600'">· {{ reservation.copiesFree ? `${reservation.copiesFree} of ${reservation.copiesTotal} available` : `0 of ${reservation.copiesTotal} available` }}</span>
 									</template>
 								</span>
 							</p>
@@ -66,7 +66,7 @@ const emit = defineEmits<{
 
 /** What makes two reservations "the same student's"; the page uses the same rule to find a card's reservations again. */
 function studentKey(reservation: ReservationRecord): string {
-	return reservation.student?.studentIDNumber ?? `reservation-${reservation.reservationID}`
+	return reservation.student?.memberIDNumber ?? `reservation-${reservation.reservationID}`
 }
 
 // One card per student, in the order each student first appears in the list (oldest reservation first).

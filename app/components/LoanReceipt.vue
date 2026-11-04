@@ -5,11 +5,11 @@
 		<ReceiptSlip :receipt="receipt" />
 	</div>
 
-	<Teleport to="body">
+	<AppTeleport>
 		<div ref="printCopy" class="print-only" aria-hidden="true">
 			<ReceiptSlip :receipt="receipt" />
 		</div>
-	</Teleport>
+	</AppTeleport>
 </template>
 
 <script setup lang="ts">

@@ -12,7 +12,7 @@
 		<section class="rs-block">
 			<p class="rs-label">Borrower</p>
 			<p class="rs-strong">{{ receipt.student.name }}</p>
-			<p class="rs-num">{{ receipt.student.studentIDNumber }}<template v-if="receipt.student.program"> · {{ receipt.student.program }}</template></p>
+			<p class="rs-num">{{ receipt.student.memberIDNumber }}<template v-if="receipt.student.program"> · {{ receipt.student.program }}</template></p>
 		</section>
 
 		<section class="rs-block">

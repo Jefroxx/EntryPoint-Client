@@ -11,6 +11,9 @@
                 { label: 'Unread', value: 'unread', badge: unreadCount },
             ]" />
 
+            <!-- Sort through them by date: pick a day, or step back and forward through them. -->
+            <LibrarianDayPicker v-model="day" :max="todayYmd" empty-value="" reset-label="All dates" />
+
             <div class="flex-1"></div>
 
             <ButtonsButton variant="ghost" class="toolbar-full" :disabled="unreadCount === 0" @click="markAll">
@@ -29,7 +32,7 @@
             </template>
 
             <p v-if="visible.length === 0" class="px-5 py-12 text-center text-[15px] text-stone-500">
-                {{ !loaded ? 'Loading notifications…' : filter === 'unread' ? 'You\'re all caught up.' : 'No notifications yet.' }}
+                {{ !loaded ? 'Loading notifications…' : day ? 'No notifications on this day.' : filter === 'unread' ? 'You\'re all caught up.' : 'No notifications yet.' }}
             </p>
 
             <LibrarianLoadingOverlay :loading="!loaded && items.length === 0" />
@@ -61,9 +64,22 @@ const filter = ref('all')
 const { items, loaded, unreadCount, refresh, markRead: markNotificationRead, markAllRead } = useNotifications()
 onMounted(refresh)
 
-const visible = computed(() => items.value.filter((n) => filter.value === 'all' || !n.isRead))
+// One day (Y-m-d); empty shows every date. Local dates, so an evening notification lands on the right day.
+const ymd = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+const todayYmd = ymd(new Date())
+const day = ref('')
+
+const visible = computed(() => items.value.filter((n) =>
+    (filter.value === 'all' || !n.isRead) && (!day.value || ymd(new Date(n.sentAt)) === day.value)))
 
 const groups = computed(() => {
+    // A chosen day is one group, headed with that date.
+    if (day.value) {
+        const [y, m, d] = day.value.split('-').map(Number)
+        const label = new Date(y!, m! - 1, d!).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
+        return visible.value.length ? [{ label, items: visible.value }] : []
+    }
+
     const today = new Date()
     const todays = visible.value.filter((n) => isSameDay(new Date(n.sentAt), today))
     const earlier = visible.value.filter((n) => !isSameDay(new Date(n.sentAt), today))

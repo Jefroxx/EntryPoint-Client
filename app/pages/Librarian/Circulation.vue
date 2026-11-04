@@ -232,8 +232,8 @@
             @close="isReplaceOpen = false" @confirm="confirmReplace" />
 
         <LibrarianConfirmModal :open="isCancelOpen"
-            :title="cancellingPenalty?.penalty_type?.category === 'lost' ? 'Was the book found?' : 'Was the book repaired?'"
-            :confirm-label="cancellingPenalty?.penalty_type?.category === 'lost' ? 'Yes, it was found' : 'Yes, it was repaired'"
+            :title="cancellingPenalty?.penalty_type?.kind === 'lost' ? 'Was the book found?' : 'Was the book repaired?'"
+            :confirm-label="cancellingPenalty?.penalty_type?.kind === 'lost' ? 'Yes, it was found' : 'Yes, it was repaired'"
             :danger="false" :loading="cancelBusy" :message="cancelMessage"
             @close="isCancelOpen = false" @confirm="confirmCancel" />
 
@@ -394,7 +394,7 @@ const filteredReservations = computed(() => {
 })
 
 // A card is one student, so pages hold whole students: a student's books are never split across two pages.
-const studentKeyOfReservation = (r: ReservationRecord) => r.student?.studentIDNumber ?? `reservation-${r.reservationID}`
+const studentKeyOfReservation = (r: ReservationRecord) => r.student?.memberIDNumber ?? `reservation-${r.reservationID}`
 const reservationStudentKeys = computed(() => [...new Set(filteredReservations.value.map(studentKeyOfReservation))])
 
 const reservationTotalPages = computed(() =>
@@ -563,7 +563,7 @@ const replaceMessage = computed(() => {
     const p = replacingPenalty.value
     if (!p) return ''
     const title = penaltyCopy(p)?.book?.title ?? 'this book'
-    return `${personName(penaltyStudent(p)?.user)} brought a replacement for "${title}". The ${formatPeso(p.amount)} penalty is closed with no payment, a new copy is added to the catalog and the ${p.penalty_type?.category} copy is removed.`
+    return `${personName(penaltyStudent(p)?.user)} brought a replacement for "${title}". The ${formatPeso(p.amount)} penalty is closed with no payment, a new copy is added to the catalog and the ${p.penalty_type?.kind} copy is removed.`
 })
 
 function handleReplace(penalty: PenaltyRecord) {
@@ -694,7 +694,7 @@ const reviewKey = ref('')
 const reviewBusy = ref(false)
 const popupAlert = useAlert()
 
-const studentKeyOf = (r: ReservationRecord) => r.student?.studentIDNumber ?? `reservation-${r.reservationID}`
+const studentKeyOf = (r: ReservationRecord) => r.student?.memberIDNumber ?? `reservation-${r.reservationID}`
 
 // Read from the live list, so the pop-up shows the new state as soon as the list reloads after accepting.
 const reviewItems = computed(() => reservations.value.filter((r) =>

@@ -1,5 +1,5 @@
 <template>
-	<Teleport to="body">
+	<AppTeleport>
 		<div class="fixed inset-0 z-[60] bg-stone-900/40 transition-opacity duration-200"
 			:class="open ? 'opacity-100' : 'pointer-events-none opacity-0'" @click="emit('close')" />
 
@@ -63,7 +63,7 @@
 				</ButtonsButton>
 			</div>
 		</aside>
-	</Teleport>
+	</AppTeleport>
 </template>
 
 <script setup lang="ts">

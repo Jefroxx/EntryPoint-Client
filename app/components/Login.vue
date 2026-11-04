@@ -88,7 +88,8 @@ const notice = ref(
 			: '',
 )
 const errorMessage = ref(
-	route.query.expired === '1' ? 'Your session ended. Please sign in again.'
+	route.query.expired === 'elsewhere' ? 'You were signed out because this account was signed in somewhere else. Sign in again to use it here.'
+		: route.query.expired === '1' ? 'Your session ended. Please sign in again.'
 		: verified === 'expired' ? 'That confirmation link has expired. Enter your email below and send yourself a new one.'
 			: verified === 'invalid' ? "That confirmation link isn't valid. Enter your email below and send yourself a new one."
 				: '',
@@ -153,5 +154,11 @@ async function handleLogin() {
 // Problems pop up as a dialog (the shared one in app.vue) instead of a red box inside the form.
 import { useAlert } from '~/api/alert/useAlert'
 const popupAlert = useAlert()
-watch(errorMessage, (message) => { if (message) popupAlert.error('Could not sign in', message) }, { immediate: true })
+// The message the page opened with (as opposed to one from a sign-in attempt made on it).
+const initialMessage = errorMessage.value
+// Arriving here because the sign-in ended (not because a sign-in attempt failed) says so in the title.
+const endedSession = route.query.expired === 'elsewhere' || route.query.expired === '1'
+watch(errorMessage, (message) => {
+	if (message) popupAlert.error(endedSession && message === initialMessage ? 'You were signed out' : 'Could not sign in', message)
+}, { immediate: true })
 </script>

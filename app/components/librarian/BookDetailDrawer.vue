@@ -1,5 +1,5 @@
 <template>
-	<Teleport to="body">
+	<AppTeleport>
 		<div class="fixed inset-0 z-[60] bg-stone-900/40 transition-opacity duration-200"
 			:class="open ? 'opacity-100' : 'pointer-events-none opacity-0'" @click="emit('close')" />
 
@@ -69,7 +69,7 @@
 								<p class="mt-1 font-semibold text-amber-700">Dewey number not checked yet</p>
 								<p class="mt-0.5 text-stone-500">
 									{{ book.deweyNumber ? `It is a guess (${book.deweyNumber}) from the category, so students don't see it.` : 'No number yet.' }}
-									Confirm it under Library &rarr; Check Dewey numbers.
+									Edit the book to confirm it: the number is accepted on the last page.
 								</p>
 							</template>
 							<template v-else>
@@ -115,7 +115,7 @@
 				</ButtonsButton>
 			</div>
 		</aside>
-	</Teleport>
+	</AppTeleport>
 </template>
 
 <script setup lang="ts">
