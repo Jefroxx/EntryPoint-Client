@@ -15,6 +15,7 @@ const META: Record<string, NotificationMeta> = {
   new_book_suggestion: { icon: 'i-tabler-bulb', tone: 'accent', action: 'Review', to: '/librarian/library?tab=requests' },
   self_return_reported: { icon: 'i-tabler-arrow-back-up', tone: 'warning', action: 'Verify', to: '/librarian/circulation?tab=selfreturn' },
   new_reservation: { icon: 'i-tabler-bookmark', tone: 'info', action: 'Open', to: '/librarian/circulation?tab=reservations' },
+  student_checked_in: { icon: 'i-tabler-door-enter', tone: 'info', action: 'Open', to: '/librarian/attendance' },
   new_redemption: REDEMPTION,
   redemption_requested: REDEMPTION,
 }
