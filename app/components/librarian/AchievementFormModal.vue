@@ -1,7 +1,29 @@
 <template>
-	<LibrarianModalShell :open="open" size="xl" :title="achievement ? 'Edit Achievement' : 'Add Achievement'"
-		subtitle="Students unlock it automatically once they reach the goal." :busy="busy" @close="emit('close')">
-		<div class="space-y-4">
+	<LibrarianModalShell :open="open" size="xl" :title="confirming ? 'Confirm Changes' : achievement ? 'Edit Achievement' : 'Add Achievement'"
+		:subtitle="confirming ? 'Check the changes before they are saved.' : 'Students unlock it automatically once they reach the goal.'" :busy="busy" @close="emit('close')">
+		<!-- Step 2 (editing only): what will change. It replaces the form in this same window (no second pop-up). -->
+		<div v-if="confirming" class="space-y-4">
+			<div class="rounded-xl bg-stone-50 px-4 py-3">
+				<p class="text-[12px] font-semibold uppercase tracking-wide text-stone-500">Achievement</p>
+				<p class="text-[15px] font-semibold text-stone-900">{{ achievement?.name }}</p>
+			</div>
+			<dl class="divide-y divide-stone-100 rounded-xl border border-stone-200 text-[14px]">
+				<div v-for="change in changes" :key="change.label" class="px-4 py-2.5">
+					<dt class="text-[12.5px] text-stone-500">{{ change.label }}</dt>
+					<dd class="mt-0.5 flex flex-wrap items-center gap-x-2 text-stone-900">
+						<span class="text-stone-500 line-through decoration-stone-300">{{ change.from }}</span>
+						<Icon name="i-tabler-arrow-right" class="h-3.5 w-3.5 shrink-0 text-stone-400" />
+						<span class="font-semibold">{{ change.to }}</span>
+					</dd>
+				</div>
+			</dl>
+			<p class="flex items-start gap-2 rounded-xl bg-stone-100 px-3.5 py-2.5 text-[13.5px] text-stone-700">
+				<Icon name="i-tabler-target-arrow" class="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+				<span>Students will see: <b class="text-stone-900">{{ preview }}</b></span>
+			</p>
+		</div>
+
+		<div v-else class="space-y-4">
 			<LibrarianTextField id="ach-name" v-model="form.name" label="Name" placeholder="e.g. Regular"
 				:error="errors.name" @update:model-value="errors.name = ''" />
 
@@ -36,11 +58,22 @@
 		</div>
 
 		<template #footer>
-			<ButtonsButton variant="ghost" :disabled="busy" @click="emit('close')">Cancel</ButtonsButton>
-			<ButtonsButton variant="primary" :disabled="busy" @click="submit">
-				<Icon v-if="busy" name="i-tabler-loader-2" class="h-3.5 w-3.5 animate-spin" />
-				{{ achievement ? 'Save changes' : 'Add Achievement' }}
-			</ButtonsButton>
+			<template v-if="confirming">
+				<ButtonsButton variant="ghost" :disabled="busy" @click="confirming = false">Back</ButtonsButton>
+				<ButtonsButton variant="primary" :disabled="busy" @click="emit('submit', buildPayload())">
+					<Icon v-if="busy" name="i-tabler-loader-2" class="h-3.5 w-3.5 animate-spin" />
+					<Icon v-else name="i-tabler-check" class="h-3.5 w-3.5" />
+					Yes, save changes
+				</ButtonsButton>
+			</template>
+			<template v-else>
+				<ButtonsButton variant="ghost" :disabled="busy" @click="emit('close')">Cancel</ButtonsButton>
+				<ButtonsButton variant="primary" :disabled="busy || (!!achievement && !hasChanges)" @click="submit">
+					<Icon v-if="busy" name="i-tabler-loader-2" class="h-3.5 w-3.5 animate-spin" />
+					<Icon v-else-if="achievement" name="i-tabler-arrow-right" class="h-3.5 w-3.5" />
+					{{ achievement ? 'Review' : 'Add Achievement' }}
+				</ButtonsButton>
+			</template>
 		</template>
 	</LibrarianModalShell>
 </template>
@@ -83,9 +116,30 @@ const preview = computed(() => {
 
 const form = reactive({ name: '', metric: 'visitStreak' as AchievementMetric, threshold: '', pointsReward: '' })
 const errors = reactive({ name: '', threshold: '', pointsReward: '' })
+// Editing asks once more before saving: this is the summary of what is about to change.
+const confirming = ref(false)
+
+// What differs from the saved achievement, as "from → to" rows.
+const changes = computed(() => {
+	const a = props.achievement
+	if (!a) return []
+	const label = (key: AchievementMetric) => shortLabel(choices.value.find((m) => m.key === key)?.label ?? key)
+	const unitOf = (key: AchievementMetric) => choices.value.find((m) => m.key === key)?.unit ?? 'Amount'
+	const rows: { label: string; from: string; to: string }[] = []
+
+	if (form.name.trim() !== a.name) rows.push({ label: 'Name', from: a.name, to: form.name.trim() })
+	if (form.metric !== a.criteriaJSON.metric) rows.push({ label: 'Unlocks when', from: label(a.criteriaJSON.metric), to: label(form.metric) })
+	if (Number(form.threshold) !== Number(a.criteriaJSON.threshold)) {
+		rows.push({ label: unitOf(form.metric), from: String(a.criteriaJSON.threshold), to: String(Number(form.threshold)) })
+	}
+	if (Number(form.pointsReward) !== Number(a.pointsReward)) rows.push({ label: 'Reward points', from: String(a.pointsReward), to: String(Number(form.pointsReward)) })
+	return rows
+})
+const hasChanges = computed(() => changes.value.length > 0)
 
 watch(() => props.open, (isOpen) => {
 	if (!isOpen) return
+	confirming.value = false
 	form.name = props.achievement?.name ?? ''
 	form.metric = props.achievement?.criteriaJSON.metric ?? 'visitStreak'
 	form.threshold = String(props.achievement?.criteriaJSON.threshold ?? '')
@@ -102,10 +156,16 @@ function submit() {
 	errors.pointsReward = form.pointsReward !== '' && Number.isInteger(points) && points >= 0 ? '' : 'Enter a whole number, 0 or more.'
 	if (errors.name || errors.threshold || errors.pointsReward) return
 
-	emit('submit', {
+	// Adding saves straight away; editing shows what will change and asks first.
+	if (props.achievement) confirming.value = true
+	else emit('submit', buildPayload())
+}
+
+function buildPayload(): AchievementPayload {
+	return {
 		name: form.name.trim(),
-		criteriaJSON: { metric: form.metric, threshold },
-		pointsReward: points,
-	})
+		criteriaJSON: { metric: form.metric, threshold: Number(form.threshold) },
+		pointsReward: Number(form.pointsReward),
+	}
 }
 </script>

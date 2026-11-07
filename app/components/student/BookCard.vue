@@ -2,10 +2,11 @@
 	<article
 		class="flex flex-col overflow-hidden rounded-[20px] border border-stone-200 bg-white transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-[3px] hover:shadow-[0_18px_34px_-22px_rgba(60,35,10,.5)]">
 		<button type="button" :aria-label="`View ${book.title}`"
-			class="flex w-full justify-center pb-[18px] pt-[22px] transition-transform duration-150 ease-out active:scale-[0.96]"
+			class="relative flex w-full justify-center pb-[18px] pt-[22px] transition-transform duration-150 ease-out active:scale-[0.96]"
 			:style="{ background: `linear-gradient(180deg, color-mix(in srgb, ${swatch} 18%, white), white)` }"
 			@click="drawer.open('book', book.uuid)">
 			<StudentCover :book="book" :width="112" />
+				<span v-if="book.isNewArrival" class="absolute left-3 top-3 rounded-full bg-accent-500 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-white">New</span>
 		</button>
 		<div class="px-4">
 			<!-- Always two lines tall, so availability and the buttons line up across a row of cards. -->

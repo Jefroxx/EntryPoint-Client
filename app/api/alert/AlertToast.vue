@@ -1,5 +1,5 @@
 <template>
-	<Teleport to="body">
+	<AppTeleport>
 		<div class="pointer-events-none fixed right-5 top-5 z-[200] flex w-full max-w-[360px] flex-col gap-2">
 			<TransitionGroup enter-active-class="transition-[transform,opacity] duration-200 ease-out"
 				enter-from-class="translate-x-3 opacity-0" enter-to-class="translate-x-0 opacity-100"
@@ -27,11 +27,13 @@
 				</div>
 			</TransitionGroup>
 		</div>
-	</Teleport>
+	</AppTeleport>
 </template>
 
 <script setup lang="ts">
 import { useAlert } from './useAlert'
 
-const { alerts, dismiss } = useAlert()
+const { alerts: all, dismiss } = useAlert()
+// Errors are a dialog now (ErrorDialog, mounted once in app.vue); toasts are only the small confirmations.
+const alerts = computed(() => all.value.filter((a) => a.variant === 'success'))
 </script>

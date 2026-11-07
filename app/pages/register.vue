@@ -69,15 +69,6 @@
 					</li>
 				</ol>
 
-				<Transition enter-active-class="transition duration-200 ease-out" enter-from-class="-translate-y-1 opacity-0"
-					leave-active-class="transition duration-150 ease-out" leave-to-class="opacity-0">
-					<div v-if="formError" role="alert"
-						class="mb-4 flex items-start gap-2 rounded-xl border border-red-100 bg-red-50 px-3 py-2.5 text-[12.5px] leading-snug text-red-600">
-						<Icon name="i-tabler-alert-circle" class="mt-px h-4 w-4 shrink-0" />
-						<span>{{ formError }}</span>
-					</div>
-				</Transition>
-
 				<Transition mode="out-in" enter-active-class="transition duration-300 ease-out"
 					:enter-from-class="direction > 0 ? 'translate-x-3 opacity-0' : '-translate-x-3 opacity-0'"
 					leave-active-class="transition duration-150 ease-out" leave-to-class="opacity-0"
@@ -117,9 +108,9 @@
 				<fieldset class="mb-5">
 					<legend class="mb-2.5 text-[10.5px] font-bold uppercase tracking-[.08em] text-stone-500">School</legend>
 					<div class="grid gap-3 sm:grid-cols-2" @focusout="touch">
-						<LibrarianTextField id="studentIDNumber" v-model="form.studentIDNumber" label="Student ID number" mono
-							placeholder="e.g. 2021-00042" hint="As printed on your school ID." :error="err('studentIDNumber')"
-							@update:model-value="clear('studentIDNumber')" />
+						<LibrarianTextField id="memberIDNumber" v-model="form.memberIDNumber" label="Student ID number" mono
+							placeholder="e.g. 2021-00042" hint="As printed on your school ID." :error="err('memberIDNumber')"
+							@update:model-value="clear('memberIDNumber')" />
 						<div>
 							<label for="academicProgram" class="mb-1.5 block text-[12.5px] font-semibold text-stone-800">
 								Program <span class="font-normal text-stone-500">(optional)</span>
@@ -231,7 +222,7 @@ const form = reactive({
 	birthDate: '',
 	phoneNumber: '',
 	address: '',
-	studentIDNumber: '',
+	memberIDNumber: '',
 	academicProgram: '',
 	email: '',
 	password: '',
@@ -258,7 +249,7 @@ const clientErrors = computed<Partial<Record<Field, string>>>(() => {
 	if (f.birthDate && f.birthDate > today()) e.birthDate = "Birth date can't be in the future."
 	if (f.phoneNumber.length > 20) e.phoneNumber = 'Use 20 characters or fewer.'
 	if (f.address.length > 255) e.address = 'Use 255 characters or fewer.'
-	if (!f.studentIDNumber.trim()) e.studentIDNumber = 'Enter your student ID number.'
+	if (!f.memberIDNumber.trim()) e.memberIDNumber = 'Enter your student ID number.'
 	if (!f.email.trim()) e.email = 'Enter your email.'
 	else if (!emailPattern.test(f.email.trim())) e.email = "That doesn't look like an email address."
 	else if (emailDomain && !f.email.trim().toLowerCase().endsWith(`@${emailDomain}`)) e.email = `Use your school email (ending in @${emailDomain}).`
@@ -286,7 +277,7 @@ type Step = (typeof stepList)[number]['n']
 
 const stepFields: Record<Step, Field[]> = {
 	1: ['firstName', 'middleInitial', 'lastName', 'birthDate', 'phoneNumber', 'address'],
-	2: ['studentIDNumber', 'academicProgram', 'email', 'password', 'password_confirmation'],
+	2: ['memberIDNumber', 'academicProgram', 'email', 'password', 'password_confirmation'],
 }
 const stepOf = (field: Field): Step => (stepFields[1].includes(field) ? 1 : 2)
 
@@ -354,7 +345,7 @@ async function submit() {
 		email: form.email.trim(),
 		password: form.password,
 		password_confirmation: form.password_confirmation,
-		studentIDNumber: form.studentIDNumber.trim(),
+		memberIDNumber: form.memberIDNumber.trim(),
 		middleInitial: form.middleInitial.trim() || undefined,
 		phoneNumber: form.phoneNumber.trim() || undefined,
 		birthDate: form.birthDate || undefined,
@@ -383,4 +374,9 @@ async function submit() {
 		submitting.value = false
 	}
 }
+
+// Problems pop up as a dialog (the shared one in app.vue) instead of a red box inside the form.
+import { useAlert } from '~/api/alert/useAlert'
+const popupAlert = useAlert()
+watch(formError, (message) => { if (message) popupAlert.error('Could not register', message) }, { immediate: true })
 </script>

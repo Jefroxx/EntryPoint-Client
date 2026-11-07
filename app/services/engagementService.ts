@@ -29,7 +29,7 @@ export interface AchievementRecord {
 export interface AchievementStudent {
   studentID: number;
   name: string;
-  studentIDNumber: string | null;
+  memberIDNumber: string | null;
   academicProgram: string | null;
   earnedAt: string | null;
   /** When the reward was redeemed; null while it is not. */
@@ -77,7 +77,7 @@ export interface RedemptionRecord {
   redeemedAt: string;
   student: {
     studentID: number;
-    studentIDNumber?: string;
+    memberIDNumber?: string;
     academicProgram?: string | null;
     /** The student's points balance now. */
     knowledgeScore?: number;

@@ -1,5 +1,5 @@
 <template>
-	<Teleport to="body">
+	<AppTeleport>
 		<div class="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-6" :class="open ? '' : 'pointer-events-none'">
 			<Transition enter-active-class="transition-opacity duration-200 ease-out" enter-from-class="opacity-0"
 				enter-to-class="opacity-100" leave-active-class="transition-opacity duration-150 ease-out"
@@ -37,7 +37,7 @@
 				</div>
 			</Transition>
 		</div>
-	</Teleport>
+	</AppTeleport>
 </template>
 
 <script setup lang="ts">

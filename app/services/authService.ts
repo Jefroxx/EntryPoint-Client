@@ -38,7 +38,7 @@ export interface RegisterPayload {
   phoneNumber?: string;
   birthDate?: string;
   address?: string;
-  studentIDNumber: string;
+  memberIDNumber: string;
   academicProgram?: string;
 }
 

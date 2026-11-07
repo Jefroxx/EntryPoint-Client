@@ -14,9 +14,22 @@ export default defineNuxtConfig({
 		'/student/**': { ssr: false },
 		// "Spaces" was renamed "Facilities"; old links and bookmarks still land on it.
 		'/student/spaces': { redirect: '/student/facilities' },
+		// Tunnel hosting: the browser only sees one origin (the tunnel URL), so Nuxt forwards
+		// the API and uploaded files to Laravel. Used when NUXT_PUBLIC_API_BASE_URL=/api.
+		'/api/**': { proxy: `${process.env.LARAVEL_ORIGIN || 'http://127.0.0.1:8000'}/api/**` },
+		'/storage/**': { proxy: `${process.env.LARAVEL_ORIGIN || 'http://127.0.0.1:8000'}/storage/**` },
 	},
+	// The dev server rejects unknown Host headers, and a quick tunnel's hostname is random.
+	vite: { server: { allowedHosts: ['.trycloudflare.com'] } },
 	css: ['~/assets/css/tailwind.css'],
 	modules: ['@nuxt/ui', '@nuxt/icon', '@nuxt/fonts'],
+	// Icons are looked up by name at runtime. Their default address (/api/_nuxt_icon) sits under /api, which the
+	// rules above forward to Laravel, so any icon not already on the page came back blank. It lives outside /api now,
+	// and every icon the code uses is also bundled into the page up front, so most never need a lookup at all.
+	icon: {
+		localApiEndpoint: '/_nuxt_icon',
+		clientBundle: { scan: true },
+	},
 	// Raleway (words) and Montserrat (numbers) are self-hosted by @nuxt/fonts. The
 	// weights are listed because the UI uses 500/600/800 as well as 400/700, and an
 	// absent weight would otherwise be faked by the browser.

@@ -16,7 +16,7 @@
 				<p class="mt-1.5 text-[17px] font-bold leading-snug text-stone-900">{{ preview.book.title }}</p>
 				<p class="text-[14px] text-stone-600">
 					Accession no. <span class="font-data">{{ preview.book.accessionNumber }}</span> · borrowed by
-					<b class="text-stone-800">{{ preview.student.name }}</b> ({{ preview.student.studentIDNumber || 'no ID' }})
+					<b class="text-stone-800">{{ preview.student.name }}</b> ({{ preview.student.memberIDNumber || 'no ID' }})
 				</p>
 				<p v-if="preview.report" class="mt-2 text-[13.5px] text-stone-600">
 					The student returned it on {{ formatDateTime(preview.report.reportedAt) }}.
@@ -156,7 +156,7 @@
 						<Icon name="i-tabler-user" class="h-4 w-4" aria-hidden="true" />Student
 					</h3>
 					<p class="text-[15.5px] font-bold leading-snug text-stone-900">{{ preview.student.name }}</p>
-					<p class="font-data text-[13px] text-stone-600">{{ preview.student.studentIDNumber || '—' }}</p>
+					<p class="font-data text-[13px] text-stone-600">{{ preview.student.memberIDNumber || '—' }}</p>
 					<dl class="mt-3 grid grid-cols-1 gap-y-2.5">
 						<div v-for="f in studentFields" :key="f.label">
 							<dt class="text-[11.5px] font-semibold uppercase tracking-wide text-stone-500">{{ f.label }}</dt>

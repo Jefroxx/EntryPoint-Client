@@ -19,7 +19,7 @@
 					</div>
 					<div class="mt-2.5 flex justify-end gap-1.5" @click.stop>
 						<ButtonsButton variant="ghost" size="sm" @click="emit('edit', item)">Edit</ButtonsButton>
-						<ButtonsButton variant="danger" size="sm" :disabled="item.redemptions_count > 0" @click="emit('delete', item)">Delete</ButtonsButton>
+						<ButtonsButton variant="danger" size="sm" @click="emit('delete', item)">Delete</ButtonsButton>
 					</div>
 				</div>
 			</li>
@@ -47,9 +47,7 @@
 			<td class="px-4 py-3" @click.stop>
 				<div class="flex items-center justify-end gap-1.5">
 					<ButtonsButton variant="ghost" size="sm" @click="emit('edit', item)">Edit</ButtonsButton>
-					<ButtonsButton variant="danger" size="sm" :disabled="item.redemptions_count > 0"
-						:title="item.redemptions_count > 0 ? 'Has redemption history — set stock to 0 to retire it' : undefined"
-						@click="emit('delete', item)">
+					<ButtonsButton variant="danger" size="sm" @click="emit('delete', item)">
 						Delete
 					</ButtonsButton>
 				</div>
@@ -58,23 +56,62 @@
 	<!-- Teleports to <body>; it lives in the slot only so the table keeps a single root element. -->
 		<LibrarianRecordDrawer :open="!!selected" heading="Item details" :title="selected?.name ?? ''" :subtitle="selected?.type ?? undefined"
 			:status="selected ? (selected.stock === 0 ? { label: 'Retired', tone: 'neutral' } : selected.stock <= 3 ? { label: `${selected.stock} left`, tone: 'warning' } : { label: 'In stock', tone: 'success' }) : undefined"
-			:fields="fields" @close="selected = null" />
+			:fields="fields" @close="selected = null">
+				<!-- Everyone who has redeemed this item, newest first. -->
+				<section class="mt-6 border-t border-stone-100 pt-5">
+					<h4 class="text-[12px] font-bold uppercase tracking-wide text-stone-500">Redemptions</h4>
+
+					<div v-if="itemRedemptions.length" class="mt-2.5 flex flex-wrap gap-1.5 text-[12.5px] font-semibold">
+						<span v-if="countOf('Pending')" class="rounded-full bg-amber-100 px-3 py-1 text-amber-800">{{ countOf('Pending') }} pending</span>
+						<span v-if="countOf('Fulfilled')" class="rounded-full bg-emerald-100 px-3 py-1 text-emerald-800">{{ countOf('Fulfilled') }} fulfilled</span>
+						<span v-if="countOf('Cancelled')" class="rounded-full bg-stone-100 px-3 py-1 text-stone-600">{{ countOf('Cancelled') }} cancelled</span>
+					</div>
+
+					<p v-if="!itemRedemptions.length" class="mt-3 rounded-xl border border-stone-200 px-4 py-6 text-center text-[14px] text-stone-500">Nobody has redeemed this item yet.</p>
+					<ul v-else class="mt-3 divide-y divide-stone-100 rounded-xl border border-stone-200">
+						<li v-for="r in itemRedemptions" :key="r.uuid" class="flex items-center gap-3 px-3.5 py-2.5">
+							<div class="min-w-0 flex-1">
+								<p class="truncate text-[14px] font-semibold text-stone-900">{{ personName(r.student?.user) }}</p>
+								<p class="text-[12.5px] text-stone-500">
+									<span class="font-data">{{ r.student?.memberIDNumber ?? '—' }}</span> · {{ r.quantity }} × · {{ r.pointsSpent }} pts · {{ formatDate(r.redeemedAt) }}
+								</p>
+							</div>
+							<LibrarianStatusPill :label="r.fulfillmentStatus" :tone="REDEMPTION_TONE[r.fulfillmentStatus]" class="shrink-0" />
+						</li>
+					</ul>
+				</section>
+			</LibrarianRecordDrawer>
 	</LibrarianTableShell>
 </template>
 
 <script setup lang="ts">
-import type { MarketItemRecord } from '~/services/engagementService'
+import type { FulfillmentStatus, MarketItemRecord, RedemptionRecord } from '~/services/engagementService'
 
-defineProps<{
+const props = defineProps<{
 	items: MarketItemRecord[]
 	loading: boolean
+	/** Every redemption (the page already loads them); the drawer shows the ones for the item that was clicked. */
+	redemptions: RedemptionRecord[]
 }>()
+
+const REDEMPTION_TONE: Record<FulfillmentStatus, 'warning' | 'success' | 'neutral'> = {
+	Pending: 'warning', Fulfilled: 'success', Cancelled: 'neutral',
+}
 
 const emit = defineEmits<{
 	(e: 'edit', item: MarketItemRecord): void
 	(e: 'delete', item: MarketItemRecord): void
 }>()
 const selected = ref<MarketItemRecord | null>(null)
+
+const itemRedemptions = computed(() => {
+	const item = selected.value
+	if (!item) return []
+	return props.redemptions
+		.filter((r) => r.item?.itemID === item.itemID)
+		.sort((a, b) => new Date(b.redeemedAt).getTime() - new Date(a.redeemedAt).getTime())
+})
+const countOf = (status: FulfillmentStatus) => itemRedemptions.value.filter((r) => r.fulfillmentStatus === status).length
 
 const fields = computed(() => {
 	const item = selected.value

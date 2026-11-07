@@ -16,7 +16,7 @@
 					</div>
 					<div class="min-w-0">
 						<p class="truncate text-[15px] font-semibold text-stone-900">{{ profile?.fullName ?? `${firstName} ${lastName}` }}</p>
-						<p class="font-data mt-0.5 truncate text-[12px] text-stone-500">{{ profile?.studentIDNumber }}{{ profile?.academicProgram ? ` · ${profile.academicProgram}` : '' }}</p>
+						<p class="font-data mt-0.5 truncate text-[12px] text-stone-500">{{ profile?.memberIDNumber }}{{ profile?.academicProgram ? ` · ${profile.academicProgram}` : '' }}</p>
 						<StudentPill tone="good" class="mt-1.5"><Icon name="i-tabler-check" class="h-3 w-3" />Approved</StudentPill>
 					</div>
 				</div>

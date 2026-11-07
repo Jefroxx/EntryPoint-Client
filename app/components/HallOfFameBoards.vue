@@ -43,8 +43,8 @@
 							<span class="truncate font-semibold text-stone-900" :class="leader.rank === 1 ? 'text-[14.5px]' : 'text-[13.5px]'">{{ leader.name }}</span>
 							<span v-if="leader.isYou" class="shrink-0 rounded-full bg-accent-500 px-1.5 py-px text-[10.5px] font-bold uppercase tracking-wide text-white">You</span>
 						</span>
-						<span v-if="leader.program || leader.studentIDNumber" class="block truncate text-[12px] text-stone-500">
-							{{ leader.program }}<template v-if="leader.studentIDNumber"><template v-if="leader.program"> · </template><span class="font-data">{{ leader.studentIDNumber }}</span></template>
+						<span v-if="leader.program || leader.memberIDNumber" class="block truncate text-[12px] text-stone-500">
+							{{ leader.program }}<template v-if="leader.memberIDNumber"><template v-if="leader.program"> · </template><span class="font-data">{{ leader.memberIDNumber }}</span></template>
 						</span>
 					</span>
 					<span class="shrink-0 text-right text-[12.5px] font-semibold tabular-nums text-stone-700">{{ hallOfFameAmount(leader.value, category.unit) }}</span>

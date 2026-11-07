@@ -1,5 +1,5 @@
 <template>
-	<Teleport to="body">
+	<AppTeleport>
 		<Transition enter-active-class="transition-opacity duration-[280ms] ease-out" enter-from-class="opacity-0"
 			leave-active-class="transition-opacity duration-200 ease-out" leave-to-class="opacity-0">
 			<div v-if="open" class="fixed inset-0 z-[110] bg-stone-900/40" aria-hidden="true" @click="emit('close')" />
@@ -28,7 +28,7 @@
 				</div>
 			</Transition>
 		</div>
-	</Teleport>
+	</AppTeleport>
 </template>
 
 <script setup lang="ts">

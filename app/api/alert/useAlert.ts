@@ -1,5 +1,3 @@
-import { ref } from 'vue'
-
 export type AlertVariant = 'success' | 'error'
 
 export interface AlertMessage {
@@ -9,26 +7,46 @@ export interface AlertMessage {
   description?: string
 }
 
-const alerts = ref<AlertMessage[]>([])
-let seq = 0
+/**
+ * The app's messages (success toasts and the error dialog).
+ *
+ * The list lives in Nuxt's `useState`, not in a variable at the top of this file. A top-level variable is created
+ * once per server process, so on the server every visitor's page would share it: a message raised while rendering one
+ * person's sign-in page ("You were signed out") stayed in memory and was drawn into every page rendered after it,
+ * which also made the browser report a hydration mismatch. `useState` is a fresh list for each request, and whatever
+ * was raised during server rendering is handed to the browser so both sides agree.
+ *
+ * Call this while a component is being set up (as every caller does) and keep the result: the functions it returns
+ * can then be used later, from click handlers and after awaits.
+ */
+export function useAlert() {
+  const alerts = useState<AlertMessage[]>('alerts', () => [])
+  const seq = useState<number>('alerts-seq', () => 0)
 
-function push(variant: AlertVariant, title: string, description?: string, duration = 4000) {
-  const id = ++seq
-  alerts.value.push({ id, variant, title, description })
-
-  if (duration > 0) {
-    setTimeout(() => dismiss(id), duration)
+  function dismiss(id: number) {
+    const index = alerts.value.findIndex((a) => a.id === id)
+    if (index !== -1) alerts.value.splice(index, 1)
   }
 
-  return id
-}
+  function push(variant: AlertVariant, title: string, description?: string, duration = 4000) {
+    // Errors show in a dialog the user has to dismiss. If the very same error is already waiting there
+    // (say, a button tapped over and over), don't stack another copy of it.
+    if (variant === 'error') {
+      const same = alerts.value.find((a) => a.variant === 'error' && a.title === title && a.description === description)
+      if (same) return same.id
+    }
 
-function dismiss(id: number) {
-  const index = alerts.value.findIndex((a) => a.id === id)
-  if (index !== -1) alerts.value.splice(index, 1)
-}
+    const id = ++seq.value
+    alerts.value.push({ id, variant, title, description })
 
-export function useAlert() {
+    // Only success toasts disappear by themselves; an error stays until it is dismissed.
+    if (variant === 'success' && duration > 0 && import.meta.client) {
+      setTimeout(() => dismiss(id), duration)
+    }
+
+    return id
+  }
+
   return {
     alerts,
     success: (title: string, description?: string) => push('success', title, description),

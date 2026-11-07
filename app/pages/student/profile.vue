@@ -9,7 +9,7 @@
 				<div class="min-w-0">
 					<h1 class="dashboard-heading truncate text-[26px] font-extrabold leading-tight text-crimson">{{ profile?.fullName ?? `${firstName} ${lastName}` }}</h1>
 					<p class="font-data mt-0.5 truncate text-[13px] text-stone-500">
-						{{ profile?.studentIDNumber }}{{ (profile?.academicProgram ?? profile?.department) ? ` · ${profile?.academicProgram ?? profile?.department}` : '' }}
+						{{ profile?.memberIDNumber }}{{ (profile?.academicProgram ?? profile?.department) ? ` · ${profile?.academicProgram ?? profile?.department}` : '' }}
 					</p>
 				</div>
 			</div>
@@ -282,7 +282,7 @@ async function saveContact() {
 
 const lockedRows = computed(() => [
 	{ label: 'Name', value: profile.value?.fullName },
-	{ label: isStudent.value ? 'Student ID' : 'Employee ID', value: profile.value?.studentIDNumber, mono: true },
+	{ label: isStudent.value ? 'Student ID' : 'Employee ID', value: profile.value?.memberIDNumber, mono: true },
 	{ label: isStudent.value ? 'Program' : 'Department', value: isStudent.value ? profile.value?.academicProgram : profile.value?.department },
 	{ label: 'Email', value: profile.value?.email },
 ])

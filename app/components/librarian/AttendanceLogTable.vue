@@ -9,8 +9,13 @@
 						<LibrarianStudentAvatar :name="studentName(log)" />
 						<div class="min-w-0 flex-1">
 							<p class="truncate text-[15px] font-semibold text-stone-900">{{ studentName(log) }}</p>
-							<p class="font-data text-[12px] text-stone-500">{{ log.student?.studentIDNumber ?? '—' }}</p>
-							<p class="truncate text-[13px] text-stone-500">{{ log.student?.academicProgram ?? '—' }}</p>
+							<p class="font-data text-[12px] text-stone-500">{{ log.student?.memberIDNumber ?? '—' }}</p>
+							<p class="truncate text-[13px] text-stone-500">{{ isVisitor(log) ? `Visitor · ${log.visitorPurpose}` : (log.student?.academicProgram ?? '—') }}</p>
+								<!-- A visitor has no card to scan on the way out, so the librarian checks them out here. -->
+								<ButtonsButton v-if="isVisitor(log) && !log.exitTime" variant="ghost" size="sm" class="mt-2"
+									:disabled="checkingOut === log.uuid" @click.stop="emit('checkOut', log.uuid)">
+									<Icon :name="checkingOut === log.uuid ? 'i-tabler-loader-2' : 'i-tabler-logout'" class="h-3.5 w-3.5" :class="{ 'animate-spin': checkingOut === log.uuid }" />Check out
+								</ButtonsButton>
 							<p class="font-data mt-1 text-[12.5px] text-stone-500">In {{ formatTime(log.entryTime) }} · Out {{ log.exitTime ? formatTime(log.exitTime) : '—' }} · {{ duration(log) }}</p>
 						</div>
 						<span v-if="!log.exitTime" class="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[12px] font-semibold text-emerald-600">
@@ -21,7 +26,7 @@
 				</div>
 			</li>
 		</ul>
-		<p v-if="!loading && logs.length === 0" class="rounded-2xl border border-stone-200 bg-white px-4 py-10 text-center text-[15px] text-stone-500">No attendance logs match your search.</p>
+		<p v-if="!loading && logs.length === 0" class="rounded-2xl border border-stone-200 bg-white px-4 py-10 text-center text-[15px] text-stone-500">No attendance was logged for this day, or nothing matches your search.</p>
 
 		<div class="scroll-shadow-x max-h-[480px] overflow-auto hidden">
 			<table class="w-full min-w-[760px] border-collapse text-left">
@@ -44,7 +49,7 @@
 								<LibrarianStudentAvatar :name="studentName(log)" />
 								<div>
 									<p class="text-[15px] font-semibold text-stone-900">{{ studentName(log) }}</p>
-									<p class="font-data text-[12px] text-stone-500">{{ log.student?.studentIDNumber ?? '—' }}</p>
+									<p class="font-data text-[12px] text-stone-500">{{ log.student?.memberIDNumber ?? '—' }}</p>
 								</div>
 							</div>
 						</td>
@@ -72,7 +77,7 @@
 
 
 		<LibrarianRecordDrawer :open="!!selected" heading="Visit details" :title="selected ? studentName(selected) : ''"
-			:subtitle="selected?.student?.studentIDNumber"
+			:subtitle="selected?.student?.memberIDNumber"
 			:status="selected ? (selected.exitTime ? { label: 'Checked out', tone: 'neutral' } : { label: 'In library', tone: 'success' }) : undefined"
 			:fields="fields" @close="selected = null" />
 	</div>
@@ -84,7 +89,13 @@ import type { AttendanceLog } from '~/services/librarianService'
 const props = defineProps<{
 	logs: AttendanceLog[]
 	loading: boolean
+	/** uuid of the visitor whose check-out is in flight. */
+	checkingOut?: string | null
 }>()
+
+const emit = defineEmits<{ (e: 'checkOut', uuid: string): void }>()
+
+const isVisitor = (log: AttendanceLog) => !log.student && !!log.visitorName
 
 
 const selected = ref<AttendanceLog | null>(null)
@@ -93,7 +104,9 @@ const fields = computed(() => {
 	const log = selected.value
 	if (!log) return []
 	return [
-		{ label: 'Program', value: log.student?.academicProgram, wide: true },
+		isVisitor(log)
+			? { label: 'Purpose of visit', value: log.visitorPurpose, wide: true }
+			: { label: 'Program', value: log.student?.academicProgram, wide: true },
 		{ label: 'Entered', value: formatDateTime(log.entryTime), wide: true },
 		{ label: 'Left', value: log.exitTime ? formatDateTime(log.exitTime) : null, wide: true },
 		{ label: 'Time in library', value: log.exitTime ? duration(log) : 'Still inside' },
@@ -102,6 +115,7 @@ const fields = computed(() => {
 })
 
 function studentName(log: AttendanceLog): string {
+	if (log.visitorName && !log.student) return log.visitorName
 	const user = log.student?.user
 	return user ? `${user.firstName} ${user.lastName}` : 'Unknown student'
 }

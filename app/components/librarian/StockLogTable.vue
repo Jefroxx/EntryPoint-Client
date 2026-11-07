@@ -1,7 +1,7 @@
 <template>
 	<!-- The stock log: when copies were added to or removed from the catalog, why, and by whom. -->
 	<LibrarianTableShell :columns="['When', 'Action', 'Acc. No.', 'Title', 'Reason', 'Note', 'By']" :loading="loading"
-		:empty="logs.length === 0" :empty-text="filtered ? 'No log entries match these filters.' : 'Nothing has been added or removed yet.'" min-width="900px">
+		:empty="logs.length === 0" :empty-text="filtered ? 'No log entries match these filters.' : 'Nothing has been added, removed or edited yet.'" min-width="900px">
 		<!-- Phones: one card per row, with the row's buttons on it. -->
 		<template #cards>
 			<li v-for="log in logs" :key="`card-${log.logID}`">
@@ -13,7 +13,7 @@
 							<p class="mt-0.5 truncate text-[12.5px] text-stone-500">{{ [log.reason, log.librarianName].filter(Boolean).join(' · ') || '—' }}</p>
 							<p class="font-data mt-0.5 text-[12px] text-stone-500">{{ formatDateTime(log.created_at) }}</p>
 						</div>
-						<LibrarianStatusPill :label="log.action === 'added' ? 'Added' : 'Removed'" :tone="log.action === 'added' ? 'success' : 'danger'" class="shrink-0" />
+						<LibrarianStatusPill :label="ACTION[log.action].label" :tone="ACTION[log.action].tone" class="shrink-0" />
 					</div>
 				</div>
 			</li>
@@ -23,7 +23,7 @@
 			:style="{ animationDelay: `${index * 30}ms` }">
 			<td class="font-data whitespace-nowrap px-4 py-3 text-[13.5px] text-stone-500">{{ formatDateTime(log.created_at) }}</td>
 			<td class="px-4 py-3">
-				<LibrarianStatusPill :label="log.action === 'added' ? 'Added' : 'Removed'" :tone="log.action === 'added' ? 'success' : 'danger'" />
+				<LibrarianStatusPill :label="ACTION[log.action].label" :tone="ACTION[log.action].tone" />
 			</td>
 			<td class="font-data px-4 py-3 text-[14px] font-bold text-stone-900">{{ log.accessionNumber ?? '—' }}</td>
 			<td class="max-w-[280px] px-4 py-3 text-[14.5px] font-semibold text-stone-900"><span class="line-clamp-2">{{ log.bookTitle }}</span></td>
@@ -34,7 +34,7 @@
 	<!-- Teleports to <body>; it lives in the slot only so the table keeps a single root element. -->
 		<LibrarianRecordDrawer :open="!!selected" heading="Stock log entry" :title="selected?.bookTitle ?? ''"
 			:subtitle="selected ? `Entry #${selected.logID}` : ''"
-			:status="selected ? { label: selected.action === 'added' ? 'Added' : 'Removed', tone: selected.action === 'added' ? 'success' : 'danger' } : undefined"
+			:status="selected ? ACTION[selected.action] : undefined"
 			:fields="fields" @close="selected = null" />
 	</LibrarianTableShell>
 </template>
@@ -49,6 +49,12 @@ defineProps<{
 	filtered?: boolean
 }>()
 const selected = ref<StockLogRow | null>(null)
+
+const ACTION: Record<StockLogRow['action'], { label: string; tone: 'success' | 'danger' | 'neutral' }> = {
+	added: { label: 'Added', tone: 'success' },
+	removed: { label: 'Removed', tone: 'danger' },
+	edited: { label: 'Edited', tone: 'neutral' },
+}
 
 const fields = computed(() => {
 	const log = selected.value

@@ -52,13 +52,19 @@
                 <div class="flex-1"></div>
 
                 <LibrarianResetFiltersButton @click="clearBookFilters" />
+                <!-- Only while some books still lack a confirmed number: one go at looking them all up. -->
+                <ButtonsButton v-if="deweyUnchecked > 0" variant="ghost" @click="isFindDeweyOpen = true">
+                    <Icon name="i-tabler-checks" class="h-3.5 w-3.5" />Accept Dewey numbers
+                    <span class="rounded-full bg-amber-100 px-1.5 text-[11.5px] font-bold text-amber-800">{{ deweyUnchecked }}</span>
+                </ButtonsButton>
                 <ButtonsButton variant="primary" @click="openAddBook">
                     <Icon name="i-tabler-plus" class="h-3.5 w-3.5" />Add New Book
                 </ButtonsButton>
             </div>
 
             <LibrarianAccessionRecordTable :books="books?.data ?? []" :loading="booksPending" :filtered="hasBookFilters"
-                @view="openBookDetail" @edit="openEditBook" @remove="askRemoveBook" />
+                @view="openBookDetail" @edit="openEditBook" @remove="askRemoveBook"
+                @print-labels="(book) => openLabels({ book: book.uuid })" />
 
             <div v-if="books" class="mt-3 flex items-center justify-between text-[13.5px] text-stone-500">
                 <span>Showing {{ books.data.length }} of {{ books.total }} books</span>
@@ -122,15 +128,21 @@
                     <ButtonsButton variant="ghost" :disabled="exportingCopies" @click="exportCopies">
                         <Icon :name="exportingCopies ? 'i-tabler-loader-2' : 'i-tabler-file-spreadsheet'" class="h-3.5 w-3.5" :class="{ 'animate-spin': exportingCopies }" />Export to Excel
                     </ButtonsButton>
+                    <!-- Prints the ticked copies; with none ticked, every copy the search and filters match. -->
+                    <ButtonsButton variant="ghost" @click="printCatalogLabels">
+                        <Icon name="i-tabler-printer" class="h-3.5 w-3.5" />{{ selectedCopies.length ? `Print labels (${selectedCopies.length})` : 'Print labels' }}
+                    </ButtonsButton>
+                    <ButtonsButton v-if="selectedCopies.length" variant="ghost" @click="selectedCopies = []">Clear selection</ButtonsButton>
                     <ButtonsButton variant="primary" @click="openAddCopies()">
                         <Icon name="i-tabler-copy-plus" class="h-3.5 w-3.5" />Add Book Copy
                     </ButtonsButton>
                 </div>
 
                 <LibrarianBookCatalogTable :copies="copies?.data ?? []" :loading="copiesPending"
-                    :filtered="hasCopyFilters" @view="(copy) => openBookDetail(copy.book)"
+                    :filtered="hasCopyFilters" :selected="selectedCopies" @view="(copy) => openBookDetail(copy.book)"
                     @edit-book="(copy) => openEditBook(copy.book)" @edit-copy="openEditCopy" @add-copy="openAddCopies"
-                    @remove-copy="openRemoveCopy" />
+                    @remove-copy="openRemoveCopy" @toggle="toggleCopy" @toggle-page="toggleCopyPage"
+                    @print-label="(copy) => openLabels({ copies: [copy.uuid] })" />
 
                 <div v-if="copies" class="mt-3 flex items-center justify-between text-[13.5px] text-stone-500">
                     <span>Showing {{ copies.data.length }} of {{ copies.total }} copies</span>
@@ -158,9 +170,10 @@
                     <select v-model="stockAction" aria-label="Filter by action"
                         class="h-[42px] rounded-xl border bg-white px-3 text-[14px] outline-none transition-colors hover:bg-stone-50 focus:ring-2 focus:ring-accent-200"
                         :class="stockAction ? 'border-accent-300 text-stone-800' : 'border-stone-200 text-stone-500'">
-                        <option value="">Added and removed</option>
+                        <option value="">All actions</option>
                         <option value="added">Added only</option>
                         <option value="removed">Removed only</option>
+                        <option value="edited">Edited only</option>
                     </select>
 
                     <div class="flex-1"></div>
@@ -279,16 +292,24 @@
             @approve="handleApprove" @reject="handleReject" />
 
         <LibrarianAddBookModal :open="isAddModalOpen" :categories="bookCategories" :book="editingBook"
-            @close="isAddModalOpen = false" @created="handleBookCreated" @updated="handleBookUpdated" />
+            @close="isAddModalOpen = false" @created="handleBookCreated" @updated="handleBookUpdated"
+            @print-labels="printNewBookLabels" />
 
-        <LibrarianAddCopiesModal :open="isAddCopiesOpen" :book="addCopiesBook" :busy="stockBusy"
-            @close="isAddCopiesOpen = false" @submit="saveAddCopies" />
+        <LibrarianAddCopiesModal :open="isAddCopiesOpen" :book="addCopiesBook" :busy="stockBusy" :added="addedCopies"
+            @close="isAddCopiesOpen = false" @submit="saveAddCopies" @print="printNewCopyLabels" />
 
         <LibrarianRemoveCopyModal :open="isRemoveCopyOpen" :copy="removingCopy" :busy="stockBusy"
             @close="isRemoveCopyOpen = false" @submit="saveRemoveCopy" />
 
+        <LibrarianFindDeweyModal :open="isFindDeweyOpen" @close="isFindDeweyOpen = false"
+            @changed="refetchDeweyCount(); refetchBooks(); refetchCopies()" />
+
         <LibrarianEditCopyModal :open="isEditCopyOpen" :copy="editingCopy" :busy="copyBusy"
-            @close="isEditCopyOpen = false" @submit="saveCopyStatus" />
+            @close="isEditCopyOpen = false" @submit="saveCopy" />
+
+        <!-- Barcode labels for the copies chosen (one, a book's, ticked ones, or everything the filters match). -->
+        <LibrarianPrintLabelsModal :open="isLabelsOpen" :labels="labelData.labels" :loading="labelsLoading" :error="labelsError"
+            :truncated="labelData.truncated" @close="isLabelsOpen = false" @refine="refineLabels" />
 
         <LibrarianBookDetailDrawer :open="isDetailOpen" :book="detailBook" :loading="detailLoading" :error="detailError"
             @close="isDetailOpen = false" @edit="openEditBook" @remove="askRemoveBook" />
@@ -298,10 +319,9 @@
             :danger="requestDecision?.action === 'reject'" :loading="requestDecisionBusy"
             @close="isRequestDecisionOpen = false" @confirm="confirmRequestDecision" />
 
-        <LibrarianConfirmModal :open="isRemoveBookOpen" title="Remove this book?"
-            :message="`“${removingBook?.title ?? 'This book'}” leaves the catalog and its copies are retired. Past loans and fines stay on students' records.`"
-            confirm-label="Remove" :loading="removingBusy" @close="isRemoveBookOpen = false"
-            @confirm="handleRemoveBook" />
+        <!-- Shows everything tied to the book, page by page, before it goes. -->
+        <LibrarianRemoveBookModal :open="isRemoveBookOpen" :book="removingBook" :busy="removingBusy"
+            @close="isRemoveBookOpen = false" @confirm="handleRemoveBook" />
 
         <LibrarianCategoryFormModal :open="isCategoryOpen" :subject="editingSubject" :busy="categoryBusy"
             @close="isCategoryOpen = false" @submit="saveCategory" />
@@ -316,7 +336,7 @@
 </template>
 
 <script setup lang="ts">
-import { LIBRARY_AREAS, librarianService, type BookAvailabilityFilter, type BookDetail, type BookSuggestion, type CatalogBook, type CopyCatalogRow, type CopyStatus, type LibraryArea, type RemoveReason } from '~/services/librarianService'
+import { LIBRARY_AREAS, librarianService, type BookAvailabilityFilter, type BookDetail, type BookSuggestion, type CatalogBook, type CopyCatalogRow, type CopyLabelsResponse, type CopyStatus, type LibraryArea, type RemoveReason } from '~/services/librarianService'
 import { subjectService, type SubjectRecord } from '~/services/subjectService'
 import AlertToast from '~/api/alert/AlertToast.vue'
 import { useAlert } from '~/api/alert/useAlert'
@@ -331,6 +351,13 @@ useHead({ title: 'Library' })
 
 const route = useRoute()
 const activeTab = ref(['accession', 'catalog', 'requests', 'categories'].includes(String(route.query.tab)) ? String(route.query.tab) : 'accession')
+
+// How many books still have no confirmed Dewey number (the button that looks them all up shows while any do).
+const isFindDeweyOpen = ref(false)
+const { data: deweyCount, execute: refetchDeweyCount } =
+    useLiveAsyncData('dewey-review-count', () => librarianService.fetchDeweyReview({ perPage: 1 }), { lazy: true })
+const deweyUnchecked = computed(() => deweyCount.value?.needsReview ?? 0)
+
 const search = ref('')
 const page = ref(1)
 
@@ -421,6 +448,71 @@ watch([copySubjectFilter, copyAreaFilter, copyStatusFilter], () => {
     refetchCopies()
 })
 
+// ---- Barcode labels ----
+// Copies ticked in the Book Catalog (kept across pages; cleared when the search or filters change, so nothing
+// ticked is ever hidden from view).
+const selectedCopies = ref<string[]>([])
+watch([copySearch, copySubjectFilter, copyAreaFilter, copyStatusFilter], () => { selectedCopies.value = [] })
+
+function toggleCopy(copy: CopyCatalogRow) {
+    selectedCopies.value = selectedCopies.value.includes(copy.uuid)
+        ? selectedCopies.value.filter((id) => id !== copy.uuid)
+        : [...selectedCopies.value, copy.uuid]
+}
+
+// The page's checkbox: ticks every copy on the page, or, when they all are already, unticks them.
+function toggleCopyPage() {
+    const onPage = (copies.value?.data ?? []).map((c) => c.uuid)
+    const allTicked = onPage.length > 0 && onPage.every((id) => selectedCopies.value.includes(id))
+    selectedCopies.value = allTicked
+        ? selectedCopies.value.filter((id) => !onPage.includes(id))
+        : [...new Set([...selectedCopies.value, ...onPage])]
+}
+
+const isLabelsOpen = ref(false)
+const labelsLoading = ref(false)
+const labelsError = ref('')
+const labelData = ref<CopyLabelsResponse>({ labels: [], total: 0, truncated: false })
+
+type LabelSelection = Parameters<typeof librarianService.fetchCopyLabels>[0]
+// What the window was opened for (a copy, a book, the ticked copies, the filters); typed accession numbers narrow it.
+let labelBase: LabelSelection = {}
+
+async function loadLabels(selection: LabelSelection) {
+    labelsLoading.value = true
+    labelsError.value = ''
+    labelData.value = { labels: [], total: 0, truncated: false }
+    try {
+        labelData.value = await librarianService.fetchCopyLabels(selection)
+    } catch (error: any) {
+        labelsError.value = error?.data?.errors?.accessions?.[0] ?? error?.data?.message ?? "Couldn't gather the labels. Close this and try again."
+    } finally {
+        labelsLoading.value = false
+    }
+}
+
+async function openLabels(selection: LabelSelection) {
+    labelBase = selection
+    isLabelsOpen.value = true
+    await loadLabels(selection)
+}
+
+// Accession numbers typed in the window: the same labels, narrowed to those numbers (none typed means all of them).
+function refineLabels(ranges: { from: number; to: number }[]) {
+    return loadLabels(ranges.length ? { ...labelBase, accessions: ranges } : labelBase)
+}
+
+// From the toolbar: the ticked copies, or, with none ticked, everything the search and filters match.
+function printCatalogLabels() {
+    if (selectedCopies.value.length) return openLabels({ copies: selectedCopies.value })
+    return openLabels({
+        search: copySearch.value.trim() || undefined,
+        subjectID: copySubjectFilter.value || undefined,
+        area: copyAreaFilter.value || undefined,
+        status: copyStatusFilter.value || undefined,
+    })
+}
+
 function clearCopyFilters() {
     copySearch.value = ''
     copySubjectFilter.value = ''
@@ -444,12 +536,12 @@ function openEditCopy(copy: CopyCatalogRow) {
     isEditCopyOpen.value = true
 }
 
-async function saveCopyStatus(status: Exclude<CopyStatus, 'borrowed'> | 'retired') {
+async function saveCopy(payload: Parameters<typeof librarianService.updateCopy>[1]) {
     const copy = editingCopy.value
     if (!copy) return
     copyBusy.value = true
-    const ok = await perform(() => librarianService.updateCopy(copy.uuid, { status }),
-        status === 'retired' ? `Accession no. ${copy.accessionNumber} removed` : `Accession no. ${copy.accessionNumber} updated`,
+    const ok = await perform(() => librarianService.updateCopy(copy.uuid, payload),
+        payload.status === 'retired' ? `Accession no. ${copy.accessionNumber} removed` : `Accession no. ${copy.accessionNumber} updated`,
         'Could not update this copy', [refetchCopies, refetchBooks, refetchStats, refetchStockLogs])
     copyBusy.value = false
     if (ok) isEditCopyOpen.value = false
@@ -461,7 +553,7 @@ const { perform } = useAction()
 // ---- Stock management: add / remove copies, and the stock log ----
 const catalogView = ref<'copies' | 'log'>('copies')
 const stockSearch = ref('')
-const stockAction = ref<'' | 'added' | 'removed'>('')
+const stockAction = ref<'' | 'added' | 'removed' | 'edited'>('')
 const stockPage = ref(1)
 const hasStockFilters = computed(() => !!(stockSearch.value.trim() || stockAction.value))
 
@@ -499,17 +591,31 @@ const refreshStock = [refetchCopies, refetchBooks, refetchStats, refetchStockLog
 const isAddCopiesOpen = ref(false)
 const addCopiesBook = ref<{ bookUuid: string; title: string } | null>(null)
 
+// Set once the copies are in: the window stays open on a "copies added" page with a button to print their labels.
+const addedCopies = ref<{ title: string; accessions: number[] } | null>(null)
+
 function openAddCopies(copy?: CopyCatalogRow) {
     addCopiesBook.value = copy ? { bookUuid: copy.book.uuid, title: copy.book.title } : null
+    addedCopies.value = null
     isAddCopiesOpen.value = true
 }
 
 async function saveAddCopies(payload: { bookUuid: string; title: string; quantity: number; sourceOfFund: string; cost: number; remarks: string | undefined }) {
     stockBusy.value = true
-    const ok = await perform(() => librarianService.addCopies(payload.bookUuid, { quantity: payload.quantity, sourceOfFund: payload.sourceOfFund, cost: payload.cost, remarks: payload.remarks }),
-        payload.quantity === 1 ? 'Copy added' : `${payload.quantity} copies added`, 'Could not add copies', refreshStock)
+    let accessions: number[] = []
+    const ok = await perform(async () => {
+        const result = await librarianService.addCopies(payload.bookUuid, { quantity: payload.quantity, sourceOfFund: payload.sourceOfFund, cost: payload.cost, remarks: payload.remarks })
+        accessions = result.copies.map((c) => c.accessionNumber)
+        return result
+    }, payload.quantity === 1 ? 'Copy added' : `${payload.quantity} copies added`, 'Could not add copies', refreshStock)
     stockBusy.value = false
-    if (ok) isAddCopiesOpen.value = false
+    if (ok) addedCopies.value = { title: payload.title, accessions }
+}
+
+// "Print labels" on the copies-added page: this window gives way to the print window (never two at once).
+function printNewCopyLabels(accessions: number[]) {
+    isAddCopiesOpen.value = false
+    return openLabels({ accessions: toRanges(accessions) })
 }
 
 const isRemoveCopyOpen = ref(false)
@@ -588,6 +694,12 @@ async function handleDeleteCategory() {
 const isAddModalOpen = ref(false)
 // Every category, not just the ones on the current page of books.
 const bookCategories = computed(() => subjects.value.map((s) => s.name))
+
+// "Print labels" on the book-added page: the Add Book window gives way to the print window (never two at once).
+function printNewBookLabels(bookUuid: string) {
+    isAddModalOpen.value = false
+    return openLabels({ book: bookUuid })
+}
 
 async function handleBookCreated() {
     await Promise.all([refetchBooks(), refetchCopies(), refetchStats(), refetchSubjects(), refetchStockLogs()])
@@ -669,6 +781,8 @@ const isRemoveBookOpen = ref(false)
 const removingBusy = ref(false)
 
 function askRemoveBook(book: CatalogBook | BookDetail) {
+    // Asked from the book's drawer: the drawer closes first, so the removal window never opens on top of it.
+    isDetailOpen.value = false
     removingBook.value = { uuid: book.uuid, title: book.title }
     isRemoveBookOpen.value = true
 }

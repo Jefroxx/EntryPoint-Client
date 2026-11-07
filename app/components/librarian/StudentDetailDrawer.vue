@@ -1,5 +1,5 @@
 <template>
-	<Teleport to="body">
+	<AppTeleport>
 		<div class="fixed inset-0 z-[60] bg-stone-900/40 transition-opacity duration-200"
 			:class="open ? 'opacity-100' : 'pointer-events-none opacity-0'" @click="emit('close')" />
 
@@ -17,7 +17,7 @@
 					<LibrarianStudentAvatar :name="studentName" class="!h-16 !w-16 !text-xl" />
 				</div>
 				<p class="mt-3 text-[16px] font-bold text-stone-900">{{ studentName }}</p>
-				<p class="text-[13.5px] text-stone-500">{{ student.studentIDNumber }} · {{ student.academicProgram ?? student.department ?? '—' }}</p>
+				<p class="text-[13.5px] text-stone-500">{{ student.memberIDNumber }} · {{ student.academicProgram ?? student.department ?? '—' }}</p>
 
 				<div class="mt-4 grid grid-cols-2 gap-x-4 gap-y-3.5">
 					<div class="col-span-2">
@@ -54,7 +54,7 @@
 				</ButtonsButton>
 			</div>
 		</aside>
-	</Teleport>
+	</AppTeleport>
 </template>
 
 <script setup lang="ts">

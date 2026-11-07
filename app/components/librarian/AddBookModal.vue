@@ -1,5 +1,5 @@
 <template>
-	<Teleport to="body">
+	<AppTeleport>
 		<div class="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-6"
 			:class="open ? '' : 'pointer-events-none'">
 			<Transition enter-active-class="transition-opacity duration-200 ease-out" enter-from-class="opacity-0"
@@ -14,7 +14,7 @@
 				leave-from-class="scale-100 translate-y-0 opacity-100"
 				leave-to-class="scale-95 translate-y-1 opacity-0 max-sm:translate-x-6 max-sm:translate-y-0 max-sm:scale-100">
 				<form v-if="open" role="dialog" aria-modal="true" aria-labelledby="addBookTitle" novalidate
-					@keydown.esc="handleClose" @submit.prevent="step < lastStep ? next() : handleSubmit()"
+					@keydown.esc="handleClose" @submit.prevent="confirming ? doSave() : step < lastStep ? next() : handleSubmit()"
 					class="relative z-10 flex max-h-[min(780px,calc(100vh-32px))] w-full max-w-[940px] flex-col overflow-hidden rounded-[22px] bg-white shadow-overlay max-sm:h-dvh max-sm:max-h-none max-sm:rounded-none max-sm:shadow-none">
 					<!-- Header + step bar (same pattern as student registration) -->
 					<div class="flex-shrink-0 border-b border-stone-100 px-6 pb-4 pt-5 sm:px-7">
@@ -24,16 +24,16 @@
 							</ButtonsButton>
 							<div class="min-w-0 max-sm:flex-1">
 								<h2 id="addBookTitle" class="dashboard-heading text-2xl font-bold text-crimson">
-									{{ isEdit ? 'Edit Book' : 'Add New Book' }}</h2>
+									{{ createdBook ? 'Book Added' : confirming ? (isEdit ? 'Confirm Changes' : 'Confirm New Book') : isEdit ? 'Edit Book' : 'Add New Book' }}</h2>
 								<p class="dashboard-heading text-[13.5px] text-crimson">
-									{{ isEdit ? 'Jump to any section, change what you need, then save.' : 'Catalog a new title and its physical copies.' }}</p>
+									{{ createdBook ? createdBook.title : confirming ? 'Check the details before they are saved.' : isEdit ? 'Jump to any section, change what you need, then save.' : 'Catalog a new title and its physical copies.' }}</p>
 							</div>
 							<ButtonsButton variant="icon" size="md" aria-label="Close" class="max-sm:hidden" @click="handleClose">
 								<Icon name="i-tabler-x" class="h-4 w-4" />
 							</ButtonsButton>
 						</div>
 
-						<ol class="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-4" aria-label="Book form sections">
+						<ol v-show="!confirming && !createdBook" class="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-4" aria-label="Book form sections">
 							<li v-for="s in stepList" :key="s.n" :aria-current="step === s.n ? 'step' : undefined">
 								<button type="button" :disabled="!canOpen(s.n)"
 									class="group w-full rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-200 disabled:cursor-default"
@@ -53,7 +53,67 @@
 						</ol>
 					</div>
 
-					<div class="flex min-h-0 flex-1 flex-col overflow-y-auto md:flex-row md:overflow-hidden">
+					<!-- Last step: a summary of what will be saved. It replaces the form in this same window (no second pop-up).
+						 The form below is only hidden, not removed, so the page photos picked in step 4 are kept when going Back. -->
+					<!-- Done: the book and its copies are in the catalog, and their barcode labels are one tap away. -->
+				<div v-if="createdBook" class="min-h-0 flex-1 overflow-y-auto px-6 py-6 sm:px-7">
+					<div class="mx-auto max-w-[620px] space-y-4">
+						<div class="flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50/60 px-4 py-3">
+							<Icon name="i-tabler-circle-check" class="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
+							<div class="min-w-0">
+								<p class="text-[15px] font-semibold text-stone-900">"{{ createdBook.title }}" is in the catalog</p>
+								<p class="text-[13px] text-stone-600">{{ createdBook.copies }} {{ createdBook.copies === 1 ? 'copy' : 'copies' }}, each with its own accession number and barcode.</p>
+							</div>
+						</div>
+						<p class="text-[14px] leading-snug text-stone-600">Each copy needs a barcode label stuck on it before it can be scanned at checkout. Print them now, or later from the Book Catalog.</p>
+					</div>
+				</div>
+
+				<div v-else-if="confirming" class="min-h-0 flex-1 overflow-y-auto px-6 py-6 sm:px-7">
+						<div class="mx-auto max-w-[620px] space-y-4">
+							<p v-if="isEdit && summaryRows.length === 0" class="rounded-xl bg-stone-50 px-4 py-3 text-[14px] text-stone-600">
+								None of the book's details changed. Any page photo changes will still be saved.
+							</p>
+							<dl v-else-if="summaryRows.length" class="divide-y divide-stone-100 rounded-xl border border-stone-200 text-[14px]">
+								<div v-for="row in summaryRows" :key="row.label" class="px-4 py-2.5">
+									<dt class="text-[12.5px] text-stone-500">{{ row.label }}</dt>
+									<dd class="mt-0.5 flex flex-wrap items-center gap-x-2 text-stone-900">
+										<template v-if="isEdit">
+											<span class="text-stone-500 line-through decoration-stone-300">{{ row.before || '—' }}</span>
+											<Icon name="i-tabler-arrow-right" class="h-3.5 w-3.5 shrink-0 text-stone-400" />
+										</template>
+										<span class="font-semibold">{{ row.now || '—' }}</span>
+									</dd>
+								</div>
+							</dl>
+							<!-- The Dewey number: looked up from the ISBN when this page opens, and accepted here by pressing Yes. -->
+						<div class="rounded-xl border border-stone-200 p-4">
+							<label for="bookDewey" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">
+								Dewey number (DDC) <span class="font-normal text-stone-500">(optional)</span>
+							</label>
+							<div class="flex gap-2">
+								<input id="bookDewey" v-model="form.deweyNumber" type="text" inputmode="decimal" maxlength="14" placeholder="e.g. 005.1"
+									:disabled="lookingUp" :class="[inputClass, 'border-stone-200']" class="font-data !text-[13.5px]" @input="deweyHint = ''; deweyFromLookup = false" />
+								<ButtonsButton variant="ghost" class="shrink-0" :disabled="lookingUp || !form.isbn.trim()"
+									:title="form.isbn.trim() ? undefined : 'No ISBN to look up'" @click="lookUpDewey">
+									<Icon :name="lookingUp ? 'i-tabler-loader-2' : 'i-tabler-search'" class="h-4 w-4" :class="{ 'animate-spin': lookingUp }" />Look up again
+								</ButtonsButton>
+							</div>
+							<p class="mt-1.5 text-[12.5px] leading-snug" :class="deweyIsError ? 'text-red-500' : 'text-stone-500'">
+								{{ lookingUp ? 'Looking in the Library of Congress catalogue…' : deweyHint }}
+							</p>
+							<p class="mt-2 text-[12.5px] leading-snug text-stone-500">
+								Pressing the button below accepts the number shown here. Left blank, the book is saved without a confirmed number (students see "Pending"); add it later by editing the book.
+							</p>
+						</div>
+
+						<p v-if="!isEdit" class="text-[13px] text-stone-500">
+								Each copy gets its own accession number and barcode, and is recorded in the stock log. Any page photos you picked are saved with the book.
+							</p>
+						</div>
+					</div>
+
+					<div v-show="!confirming && !createdBook" class="flex min-h-0 flex-1 flex-col overflow-y-auto md:flex-row md:overflow-hidden">
 						<!-- Cover: always visible, whichever step is open -->
 						<aside
 							class="flex flex-shrink-0 gap-4 border-b border-stone-100 bg-stone-50/70 px-6 py-5 md:w-[272px] md:flex-col md:overflow-y-auto md:border-b-0 md:border-r md:px-6">
@@ -177,13 +237,13 @@
 												</datalist>
 												<p v-if="errors.subjectName" class="mt-1 text-[12.5px] text-red-500">{{ errors.subjectName }}</p>
 											</div>
+											<!-- The call number is the Dewey number plus the author's Cutter, so it is shown, never typed. -->
 											<div>
-												<label for="bookCall" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">
-													Call number <span class="font-normal text-stone-500">(optional)</span>
-												</label>
-												<input id="bookCall" v-model="form.callNumber" type="text"
-													:placeholder="isEdit ? 'Leave blank to keep the current one' : 'Auto-generated if left blank'"
-													:class="[inputClass, 'border-stone-200']" class="font-data !text-[13.5px]" />
+												<p class="mb-1.5 text-[13.5px] font-semibold text-stone-800">Call number</p>
+												<p class="font-data flex min-h-[42px] items-center rounded-xl bg-stone-50 px-3.5 text-[13.5px] text-stone-600">
+													<template v-if="isEdit && book?.callNumber">{{ book.callNumber }}</template>
+													<span v-else class="font-sans text-stone-500">Made from the Dewey number and the author</span>
+												</p>
 											</div>
 										</div>
 									</fieldset>
@@ -266,9 +326,9 @@
 										</div>
 										<div>
 											<label for="bookPages" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">Pages<FieldRequired /></label>
-											<input id="bookPages" v-model="form.pages" type="number" min="1" placeholder="e.g. 320"
-											:class="[inputClass, errors.pages ? 'border-red-400 bg-red-50' : 'border-stone-200']" @input="errors.pages = ''" />
-											<p v-if="errors.pages" class="mt-1 text-[12.5px] text-red-500">{{ errors.pages }}</p>
+											<input id="bookPages" v-model="form.pageCount" type="number" min="1" placeholder="e.g. 320"
+											:class="[inputClass, errors.pageCount ? 'border-red-400 bg-red-50' : 'border-stone-200']" @input="errors.pageCount = ''" />
+											<p v-if="errors.pageCount" class="mt-1 text-[12.5px] text-red-500">{{ errors.pageCount }}</p>
 										</div>
 										<div>
 											<label for="bookFund" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">Source of fund<FieldRequired /></label>
@@ -291,6 +351,14 @@
 										<textarea id="bookRemarks" v-model="form.remarks" rows="3" maxlength="1000"
 											placeholder="e.g. Donated copy, minor cover wear"
 											class="w-full resize-y rounded-[10px] border border-stone-200 bg-white px-3 py-2 text-[14px] text-stone-900 outline-none focus:border-accent-500 focus:ring-2 focus:ring-accent-200" />
+										<!-- For books that just arrived (the library also catalogues old books). Editing can mark an existing book, or take the mark off. -->
+										<label class="mt-4 flex cursor-pointer items-start gap-3 rounded-xl border border-stone-200 bg-stone-50 px-3.5 py-3">
+											<input v-model="form.isNewArrival" type="checkbox" class="mt-0.5 h-4 w-4 shrink-0 accent-accent-500" />
+											<span class="min-w-0">
+												<span class="block text-[14px] font-semibold text-stone-900">This is a new arrival</span>
+												<span class="block text-[12.5px] leading-snug text-stone-500">{{ isEdit ? 'Shows the book in New arrivals on the students\' Home. Students are not notified again.' : 'Marks the book as new and notifies everyone. Leave it unticked for older books you are only now cataloguing.' }}</span>
+											</span>
+										</label>
 									</div>
 								</div>
 							</Transition>
@@ -303,8 +371,24 @@
 					</div>
 
 					<div class="flex flex-shrink-0 items-center justify-between gap-2 border-t border-stone-100 px-6 py-4 sm:px-7">
-						<span class="text-[12.5px] tabular-nums text-stone-500">Step {{ step }} of {{ lastStep }}</span>
-						<div class="flex gap-2">
+						<span class="text-[12.5px] tabular-nums text-stone-500">{{ createdBook ? 'Done' : confirming ? 'Review' : `Step ${step} of ${lastStep}` }}</span>
+						<div v-if="createdBook" class="flex gap-2">
+							<ButtonsButton variant="ghost" @click="emit('close')">Done</ButtonsButton>
+							<ButtonsButton variant="primary" @click="emit('print-labels', createdBook.uuid)">
+								<Icon name="i-tabler-printer" class="h-3.5 w-3.5" />Print {{ createdBook.copies === 1 ? 'label' : `${createdBook.copies} labels` }}
+							</ButtonsButton>
+						</div>
+						<div v-else-if="confirming" class="flex gap-2">
+							<ButtonsButton variant="ghost" :disabled="submitting" @click="backToForm">
+								<Icon name="i-tabler-arrow-left" class="h-4 w-4" />Back
+							</ButtonsButton>
+							<ButtonsButton type="submit" variant="primary" :disabled="submitting || lookingUp">
+								<Icon v-if="submitting" name="i-tabler-loader-2" class="h-3.5 w-3.5 animate-spin" />
+								<Icon v-else name="i-tabler-check" class="h-3.5 w-3.5" />
+								{{ isEdit ? (submitting ? 'Saving…' : 'Yes, save changes') : (submitting ? 'Adding…' : 'Yes, add book') }}
+							</ButtonsButton>
+						</div>
+						<div v-else class="flex gap-2">
 							<ButtonsButton v-if="step > 1" variant="ghost" :disabled="submitting" @click="goTo(step - 1)">
 								<Icon name="i-tabler-arrow-left" class="h-4 w-4" />Back
 							</ButtonsButton>
@@ -312,25 +396,24 @@
 
 							<!-- Editing can save from any step; adding walks through to the end. -->
 							<ButtonsButton v-if="isEdit && step < lastStep" variant="ghost" :disabled="submitting" @click="handleSubmit">
-								Save Changes
+								Review Changes
 							</ButtonsButton>
 							<ButtonsButton v-if="step < lastStep" type="submit" variant="primary">
 								Continue<Icon name="i-tabler-arrow-right" class="h-4 w-4" />
 							</ButtonsButton>
 							<ButtonsButton v-else type="submit" variant="primary" :disabled="submitting">
-								<Icon v-if="submitting" name="i-tabler-loader-2" class="h-3.5 w-3.5 animate-spin" />
-								{{ isEdit ? (submitting ? 'Saving…' : 'Save Changes') : (submitting ? 'Adding…' : 'Add Book') }}
+								{{ isEdit ? 'Review Changes' : 'Review' }}<Icon name="i-tabler-arrow-right" class="h-4 w-4" />
 							</ButtonsButton>
 						</div>
 					</div>
 				</form>
 			</Transition>
 		</div>
-	</Teleport>
+	</AppTeleport>
 </template>
 
 <script setup lang="ts">
-import { librarianService, type BookDetail, type LibraryArea, type NewBookPayload } from '~/services/librarianService'
+import { DEWEY_SOURCE_LABEL, LIBRARY_AREAS, librarianService, type BookDetail, type LibraryArea, type NewBookPayload } from '~/services/librarianService'
 import { useAlert } from '~/api/alert/useAlert'
 
 const alert = useAlert()
@@ -346,6 +429,8 @@ const emit = defineEmits<{
 	(e: 'close'): void
 	(e: 'created'): void
 	(e: 'updated'): void
+	/** Print the barcode labels of the book just added (all its copies). */
+	(e: 'print-labels', bookUuid: string): void
 }>()
 
 const isEdit = computed(() => !!props.book)
@@ -358,22 +443,79 @@ const inputClass =
 
 const coverInputRef = ref<HTMLInputElement | null>(null)
 
+/* ---------- Dewey number: found from the ISBN (Library of Congress, then Open Library) and accepted on the last page ---------- */
+const deweyHint = ref('')
+const deweyIsError = ref(false)
+const lookingUp = ref(false)
+// What the book already has, so saving an edit only sends the number when it was changed (and so counts as "typed in").
+let originalDewey = ''
+// The number an unchecked book has now: only a guess from its category, so it is shown for the librarian to accept or correct.
+const guessedDewey = ref('')
+// True while the number in the box came from a catalogue lookup (not typed), so going Back and changing the ISBN looks it up again.
+let deweyFromLookup = false
+
+/**
+ * Entering the last page: when no number is typed, the ISBN is looked up so the librarian can accept it right there.
+ * An unchecked book with no match falls back to its guess, which is shown to be checked or corrected.
+ */
+async function prepareDewey() {
+	deweyIsError.value = false
+	if (form.deweyNumber.trim()) {
+		if (!deweyHint.value) deweyHint.value = props.book ? 'The number the book has now. Change it, or leave it as it is.' : ''
+		return
+	}
+	if (form.isbn.trim()) await lookUpDewey()
+	if (!form.deweyNumber.trim() && guessedDewey.value) {
+		form.deweyNumber = guessedDewey.value
+		deweyHint.value = `No catalogue has this book, so ${guessedDewey.value} is only a guess from the category. Check it, or type the right number.`
+	}
+}
+
+function backToForm() {
+	// A number that was only looked up (never typed) is dropped, so a changed ISBN is looked up again on the way back.
+	if (deweyFromLookup) { form.deweyNumber = ''; deweyHint.value = ''; deweyFromLookup = false }
+	confirming.value = false
+}
+
+async function lookUpDewey() {
+	const isbn = form.isbn.trim()
+	if (!isbn) return
+	lookingUp.value = true
+	deweyIsError.value = false
+	try {
+		const result = await librarianService.lookupIsbnDewey(isbn)
+		if (result.found && result.deweyNumber) {
+			form.deweyNumber = result.deweyNumber
+			deweyFromLookup = true
+			deweyHint.value = `Found ${result.deweyNumber} in ${result.source ? DEWEY_SOURCE_LABEL[result.source] : 'a library catalogue'}. Check it, then confirm.`
+		} else {
+			deweyHint.value = 'No catalogue has a Dewey number for this ISBN. Type one if you know it (often printed on the copyright page as "DDC"), or leave it blank.'
+		}
+	} catch {
+		deweyIsError.value = true
+		deweyHint.value = "Couldn't reach the catalogues. Try again, or type the number."
+	} finally {
+		lookingUp.value = false
+	}
+}
+
 const form = reactive({
 	title: '',
 	isbn: '',
 	publicationYear: '' as string | number,
 	subjectName: '',
-	callNumber: '',
+	deweyNumber: '',
 	areaOfLibrary: 'circulation' as LibraryArea,
 	shelfLocation: '',
 	coverImageURL: '',
 	publisher: '',
 	edition: '',
 	volume: '',
-	pages: '' as string | number,
+	pageCount: '' as string | number,
 	sourceOfFund: '',
 	cost: '' as string | number,
 	remarks: '',
+	isNewArrival: false,
 })
 
 /* Steps, as on the registration page: short sections instead of one long scroll. */
@@ -411,9 +553,13 @@ const pagesEditor = ref<{ apply: (bookUuid: string) => Promise<{ failed: number 
 const editorKey = ref(0)
 const quantity = ref(1)
 const submitting = ref(false)
+// The last step: a summary of what will be saved, shown in place of the form.
+const confirming = ref(false)
+// Set once a new book is in: the window then shows "Book Added" with a button to print its copies' labels.
+const createdBook = ref<{ uuid: string; title: string; copies: number } | null>(null)
 const coverLoadFailed = ref(false)
 // The fields every book must have, whether it is being added or edited (see StoreBookRequest and UpdateBookRequest).
-const REQUIRED_KEYS = ['isbn', 'publicationYear', 'publisher', 'edition', 'volume', 'pages', 'sourceOfFund', 'cost'] as const
+const REQUIRED_KEYS = ['isbn', 'publicationYear', 'publisher', 'edition', 'volume', 'pageCount', 'sourceOfFund', 'cost'] as const
 type RequiredKey = (typeof REQUIRED_KEYS)[number]
 const errors = reactive<{ title: string; authors: string; subjectName: string } & Record<RequiredKey, string>>({
 	title: '',
@@ -424,7 +570,7 @@ const errors = reactive<{ title: string; authors: string; subjectName: string } 
 	publisher: '',
 	edition: '',
 	volume: '',
-	pages: '',
+	pageCount: '',
 	sourceOfFund: '',
 	cost: '',
 })
@@ -472,23 +618,31 @@ function resetForm() {
 	form.isbn = ''
 	form.publicationYear = ''
 	form.subjectName = ''
-	form.callNumber = ''
+	form.deweyNumber = ''
+	deweyHint.value = ''
+	deweyIsError.value = false
+	deweyFromLookup = false
+	createdBook.value = null
+	originalDewey = ''
+	guessedDewey.value = ''
 	form.areaOfLibrary = 'circulation'
 	form.shelfLocation = ''
 	form.coverImageURL = ''
 	form.publisher = ''
 	form.edition = ''
 	form.volume = ''
-	form.pages = ''
+	form.pageCount = ''
 	form.sourceOfFund = ''
 	form.cost = ''
 	form.remarks = ''
+	form.isNewArrival = false
 	authors.value = [blankAuthor()]
 	quantity.value = 1
 	coverLoadFailed.value = false
 	step.value = 1
 	direction.value = 1
 	furthestStep.value = 1
+	confirming.value = false
 	errors.title = ''
 	errors.authors = ''
 	errors.subjectName = ''
@@ -500,14 +654,20 @@ function fillFromBook(book: BookDetail) {
 	form.isbn = book.isbn ?? ''
 	form.publicationYear = book.publicationYear ?? ''
 	form.subjectName = book.subject?.name ?? ''
-	form.callNumber = book.callNumber ?? ''
+	// A checked number is shown as it is; a guessed one is left blank so it can't be saved by accident as "typed in".
+	originalDewey = book.deweyStatus === 'ok' ? (book.deweyNumber ?? '') : ''
+	guessedDewey.value = book.deweyStatus === 'ok' ? '' : (book.deweyNumber ?? '')
+	form.deweyNumber = originalDewey
+	deweyHint.value = ''
+	deweyIsError.value = false
 	form.areaOfLibrary = book.areaOfLibrary ?? 'circulation'
 	form.shelfLocation = book.shelfLocation ?? ''
 	form.coverImageURL = book.coverImageURL ?? ''
+	form.isNewArrival = !!book.isNewArrival
 	form.publisher = book.publisher ?? ''
 	form.edition = book.edition ?? ''
 	form.volume = book.volume ?? ''
-	form.pages = book.pageCount ?? ''
+	form.pageCount = book.pageCount ?? ''
 	form.sourceOfFund = book.sourceOfFund ?? ''
 	form.cost = book.cost ?? ''
 	form.remarks = book.remarks ?? ''
@@ -549,12 +709,12 @@ function checkStep(n: number): boolean {
 		errors.publisher = form.publisher.trim() ? '' : 'Publisher is required.'
 		errors.edition = form.edition.trim() ? '' : 'Edition is required. Enter N/A if there isn\'t one.'
 		errors.volume = form.volume.trim() ? '' : 'Volume is required. Enter N/A if there isn\'t one.'
-		const pages = Number(form.pages)
-		errors.pages = form.pages !== '' && Number.isInteger(pages) && pages >= 1 ? '' : 'Enter the number of pages.'
+		const pages = Number(form.pageCount)
+		errors.pageCount = form.pageCount !== '' && Number.isInteger(pages) && pages >= 1 ? '' : 'Enter the number of pages.'
 		errors.sourceOfFund = form.sourceOfFund.trim() ? '' : 'Source of fund is required.'
 		const price = form.cost === '' ? NaN : Number(form.cost)
 		errors.cost = Number.isFinite(price) && price >= 0 ? '' : 'Enter the cost (0 if it was donated).'
-		return !errors.publisher && !errors.edition && !errors.volume && !errors.pages && !errors.sourceOfFund && !errors.cost
+		return !errors.publisher && !errors.edition && !errors.volume && !errors.pageCount && !errors.sourceOfFund && !errors.cost
 	}
 	return true
 }
@@ -562,7 +722,7 @@ function checkStep(n: number): boolean {
 function stepHasError(n: number) {
 	if (n === 1) return !!(errors.title || errors.authors || errors.isbn || errors.publicationYear)
 	if (n === 2) return !!errors.subjectName
-	if (n === 3) return !!(errors.publisher || errors.edition || errors.volume || errors.pages || errors.sourceOfFund || errors.cost)
+	if (n === 3) return !!(errors.publisher || errors.edition || errors.volume || errors.pageCount || errors.sourceOfFund || errors.cost)
 	return false
 }
 
@@ -575,7 +735,41 @@ function next() {
 	goTo(step.value + 1)
 }
 
-async function handleSubmit() {
+/** What the confirmation shows: every field when adding; only the fields that changed (old → new) when editing. */
+const summaryRows = computed(() => {
+	if (!confirming.value) return []
+	const book = props.book
+	const money = (v: string | number | null | undefined) => (v === '' || v == null ? '' : formatPeso(Number(v)))
+	const authorNames = authors.value.filter((a) => a.name.trim()).map((a) => a.name.trim()).join(', ')
+
+	const rows: { label: string; now: string; before: string }[] = [
+		{ label: 'Title', now: form.title.trim(), before: book?.title ?? '' },
+		{ label: 'Authors', now: authorNames, before: book?.authors.map((a) => a.name).join(', ') ?? '' },
+		{ label: 'Category', now: form.subjectName.trim(), before: book?.subject?.name ?? '' },
+		{ label: 'ISBN', now: form.isbn.trim(), before: book?.isbn ?? '' },
+		{ label: 'Publication year', now: String(form.publicationYear).trim(), before: String(book?.publicationYear ?? '') },
+		{ label: 'Area of library', now: LIBRARY_AREAS[form.areaOfLibrary], before: book?.areaOfLibrary ? LIBRARY_AREAS[book.areaOfLibrary] : LIBRARY_AREAS.circulation },
+		{ label: 'Shelf location', now: form.shelfLocation.trim(), before: book?.shelfLocation ?? '' },
+		{ label: 'Cover image link', now: form.coverImageURL.trim(), before: book?.coverImageURL ?? '' },
+		{ label: 'Publisher', now: form.publisher.trim(), before: book?.publisher ?? '' },
+		{ label: 'Edition', now: form.edition.trim(), before: book?.edition ?? '' },
+		{ label: 'Volume', now: form.volume.trim(), before: book?.volume ?? '' },
+		{ label: 'Pages', now: String(form.pageCount).trim(), before: String(book?.pageCount ?? '') },
+		{ label: 'Source of fund', now: form.sourceOfFund.trim(), before: book?.sourceOfFund ?? '' },
+		{ label: 'Cost', now: money(form.cost), before: money(book?.cost) },
+		{ label: 'Remarks', now: form.remarks.trim(), before: book?.remarks ?? '' },
+	]
+	if (book) rows.push({ label: 'New arrival', now: form.isNewArrival ? 'Yes' : 'No', before: book.isNewArrival ? 'Yes' : 'No' })
+	if (!book) {
+		rows.splice(5, 0, { label: 'Copies', now: String(quantity.value), before: '' })
+		rows.push({ label: 'New arrival', now: form.isNewArrival ? 'Yes, everyone is notified' : 'No', before: '' })
+		return rows.filter((r) => r.now !== '' || r.label === 'Copies')
+	}
+	return rows.filter((r) => r.now !== r.before)
+})
+
+/** Validates every step, then shows the confirmation. Nothing is saved until "Yes" is pressed there. */
+function handleSubmit() {
 	// Check every step, and send the librarian to the first one with a problem.
 	const invalidStep = stepList.map((s) => s.n).find((n) => !checkStep(n))
 	if (invalidStep) {
@@ -583,7 +777,11 @@ async function handleSubmit() {
 		else goTo(invalidStep)
 		return
 	}
+	confirming.value = true
+	void prepareDewey()
+}
 
+async function doSave() {
 	submitting.value = true
 
 	const payload: NewBookPayload = {
@@ -594,7 +792,8 @@ async function handleSubmit() {
 		subjectName: form.subjectName.trim(),
 		isbn: form.isbn.trim() || null,
 		publicationYear: form.publicationYear ? Number(form.publicationYear) : null,
-		callNumber: form.callNumber.trim() || null,
+		// New book: whatever was typed or looked up. Edit: only when it changed from what the book had.
+		deweyNumber: form.deweyNumber.trim() && form.deweyNumber.trim() !== originalDewey ? form.deweyNumber.trim() : undefined,
 		areaOfLibrary: form.areaOfLibrary,
 		shelfLocation: form.shelfLocation.trim() || null,
 		coverImageURL: form.coverImageURL.trim() || null,
@@ -602,24 +801,28 @@ async function handleSubmit() {
 		publisher: form.publisher.trim() || null,
 		edition: form.edition.trim() || null,
 		volume: form.volume.trim() || null,
-		pages: form.pages ? Number(form.pages) : null,
+		pageCount: form.pageCount ? Number(form.pageCount) : null,
 		sourceOfFund: form.sourceOfFund.trim() || null,
 		cost: form.cost !== '' ? Number(form.cost) : null,
 		remarks: form.remarks.trim() || null,
+		isNewArrival: form.isNewArrival,
 	}
 
 	const failTitle = isEdit.value ? 'Could not save changes' : 'Could not add book'
 
 	try {
 		let bookUuid: string
+		let unchecked = false
 		if (props.book) {
-			// A blank call number means "keep the one it has"; the server won't take an empty one.
 			// The copy count isn't edited here (copies are added and removed from the Book Catalog), so it isn't sent.
-			const { callNumber, quantity: _copies, ...changes } = payload
-			await librarianService.updateBook(props.book.uuid, callNumber ? { ...changes, callNumber } : changes)
+			const { quantity: _copies, ...changes } = payload
+			await librarianService.updateBook(props.book.uuid, changes)
 			bookUuid = props.book.uuid
 		} else {
-			bookUuid = (await librarianService.createBook(payload)).book.uuid
+			const created = await librarianService.createBook(payload)
+			bookUuid = created.book.uuid
+			// No number typed and none found by ISBN: the book was saved with a guess from its category, which students don't see.
+			unchecked = created.book.deweyStatus === 'needs_review'
 		}
 
 		// Page photos go once the book exists (a new one only has an ID now).
@@ -629,13 +832,23 @@ async function handleSubmit() {
 			alert.success('Book updated', `Changes to "${payload.title}" are saved.`)
 			emit('updated')
 		} else {
-			alert.success('Book added', `"${payload.title}" is now in the catalog.`)
+			alert.success(
+				unchecked ? 'Book added, Dewey number not checked' : 'Book added',
+				unchecked
+					? `"${payload.title}" is in the catalog without a confirmed Dewey number. Add it later by editing the book.`
+					: `"${payload.title}" is now in the catalog.`,
+			)
 			emit('created')
 		}
 		if (failed) alert.error('Some page photos didn\'t save', 'Open the book again to check its photos and add any that are missing.')
-		emit('close')
+
+		// A new book stays open on a "Book Added" page (with a button to print its labels); an edit just closes.
+		if (props.book) emit('close')
+		else createdBook.value = { uuid: bookUuid, title: payload.title, copies: payload.quantity }
 	} catch (error: any) {
 		const serverErrors = error?.data?.errors
+		// Back to the form: the highlighted fields are there.
+		confirming.value = false
 		if (serverErrors) {
 			errors.title = serverErrors.title?.[0] ?? ''
 			errors.subjectName = serverErrors.subjectName?.[0] ?? ''

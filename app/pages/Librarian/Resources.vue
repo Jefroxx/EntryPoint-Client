@@ -74,10 +74,13 @@
                     <option v-for="r in logResourceOptions" :key="r.resID" :value="r.resID">{{ r.name }}</option>
                 </select>
 
+                <!-- Sort through the log by date: pick a day, or step back and forward through them. -->
+                <LibrarianDayPicker v-model="logDate" :max="todayYmd" empty-value="" reset-label="All dates" />
+
                 <div class="flex-1"></div>
 
                 <LibrarianResetFiltersButton
-                    @click="logSearch = ''; logFilter = 'all'; logTypeFilter = ''; logResourceFilter = 0" />
+                    @click="logSearch = ''; logFilter = 'all'; logTypeFilter = ''; logResourceFilter = 0; logDate = ''" />
             </div>
 
             <LibrarianUsageLogTable :logs="pagedLogs" :loading="logsPending" :now-ms="nowMs" />
@@ -160,6 +163,10 @@ const logSearch = ref('')
 const logFilter = ref<'all' | 'active'>('all')
 const logTypeFilter = ref('')
 const logResourceFilter = ref(0)
+// One day of the log (Y-m-d); empty shows every date.
+const logDate = ref('')
+const ymd = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+const todayYmd = ymd(new Date())
 const logPage = ref(1)
 const LOGS_PER_PAGE = 10
 
@@ -176,6 +183,8 @@ const filteredLogs = computed(() => {
         if (logFilter.value === 'active' && log.endTime) return false
         if (logTypeFilter.value && log.resource?.resourceType !== logTypeFilter.value) return false
         if (logResourceFilter.value && log.resID !== logResourceFilter.value) return false
+        // The day a session started, in the librarian's own time zone.
+        if (logDate.value && ymd(new Date(log.startTime)) !== logDate.value) return false
         if (!term) return true
         return (
             personName(log.student?.user).toLowerCase().includes(term) ||
@@ -194,7 +203,7 @@ watch(logTypeFilter, () => {
         logResourceFilter.value = 0
     }
 })
-watch([logSearch, logFilter, logTypeFilter, logResourceFilter], () => { logPage.value = 1 })
+watch([logSearch, logFilter, logTypeFilter, logResourceFilter, logDate], () => { logPage.value = 1 })
 
 // ---- Actions ----
 const busy = ref(false)

@@ -88,7 +88,7 @@ const fields = computed(() => {
 	if (!loan) return []
 	return [
 		{ label: 'Student', value: loan.studentName, wide: true },
-		{ label: 'Student ID', value: loan.studentIDNumber, mono: true },
+		{ label: 'Student ID', value: loan.memberIDNumber, mono: true },
 		{ label: 'Program', value: loan.academicProgram },
 		{ label: 'Accession no.', value: loan.accessionNumber, mono: true },
 		{ label: 'Checked out', value: formatDateTime(loan.checkoutAt ?? loan.checkoutDate) },

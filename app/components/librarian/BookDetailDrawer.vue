@@ -1,5 +1,5 @@
 <template>
-	<Teleport to="body">
+	<AppTeleport>
 		<div class="fixed inset-0 z-[60] bg-stone-900/40 transition-opacity duration-200"
 			:class="open ? 'opacity-100' : 'pointer-events-none opacity-0'" @click="emit('close')" />
 
@@ -60,7 +60,26 @@
 					</div>
 				</div>
 
-				<dl class="mt-5 grid grid-cols-2 gap-x-4 gap-y-3.5">
+				<!-- The label for the spine, and whether anyone has checked the number on it. -->
+					<div v-if="book.spineLabel" class="mt-5 flex items-start gap-4 rounded-2xl border border-stone-200 p-4">
+						<LibrarianSpineLabel :label="book.spineLabel" />
+						<div class="min-w-0 text-[13.5px] leading-snug">
+							<p class="text-[12px] font-bold uppercase tracking-wide text-stone-500">Shelf label</p>
+							<template v-if="book.spineLabel.pending">
+								<p class="mt-1 font-semibold text-amber-700">Dewey number not checked yet</p>
+								<p class="mt-0.5 text-stone-500">
+									{{ book.deweyNumber ? `It is a guess (${book.deweyNumber}) from the category, so students don't see it.` : 'No number yet.' }}
+									Edit the book to confirm it: the number is accepted on the last page.
+								</p>
+							</template>
+							<template v-else>
+								<p class="mt-1 font-semibold text-stone-800">Dewey {{ book.deweyNumber }}</p>
+								<p class="mt-0.5 text-stone-500">{{ book.deweySource ? DEWEY_SOURCE_LABEL[book.deweySource] : '' }}</p>
+							</template>
+						</div>
+					</div>
+
+					<dl class="mt-5 grid grid-cols-2 gap-x-4 gap-y-3.5">
 					<div v-for="field in fields" :key="field.label" :class="field.wide ? 'col-span-2' : ''">
 						<dt class="mb-0.5 text-[12px] font-bold uppercase tracking-wide text-stone-500">{{ field.label }}</dt>
 						<dd class="text-[14.5px] font-medium text-stone-800" :class="field.mono ? 'font-data text-[13.5px]' : ''">{{ field.value }}</dd>
@@ -96,11 +115,11 @@
 				</ButtonsButton>
 			</div>
 		</aside>
-	</Teleport>
+	</AppTeleport>
 </template>
 
 <script setup lang="ts">
-import { LIBRARY_AREAS, type BookDetail } from '~/services/librarianService'
+import { DEWEY_SOURCE_LABEL, LIBRARY_AREAS, type BookDetail } from '~/services/librarianService'
 
 const props = defineProps<{
 	open: boolean
@@ -133,7 +152,7 @@ const fields = computed(() => {
 
 	const peso = (value: string | number) => `₱${Number(value).toLocaleString('en-PH', { minimumFractionDigits: 2 })}`
 	const rows: { label: string; value: string | number; mono?: boolean; wide?: boolean; optional?: boolean }[] = [
-		{ label: 'Call number', value: b.callNumber || '—', mono: true },
+		{ label: 'Call number', value: b.callNumber ? (b.deweyStatus === 'needs_review' ? `${b.callNumber} (unchecked)` : b.callNumber) : '—', mono: true },
 		{ label: 'ISBN', value: b.isbn || '—', mono: true },
 		{ label: 'Area of the library', value: b.areaOfLibrary ? AREAS[b.areaOfLibrary] ?? b.areaOfLibrary : '—' },
 		{ label: 'Shelf location', value: b.shelfLocation || '—' },

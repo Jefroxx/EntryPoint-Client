@@ -61,7 +61,7 @@ export interface BookStatusOverview {
 /** What the dashboard's "click a row" drawer shows beyond the row itself. Sent with every dashboard loan. */
 export interface LoanRowDetails {
   loanID?: number;
-  studentIDNumber?: string | null;
+  memberIDNumber?: string | null;
   academicProgram?: string | null;
   accessionNumber?: number | string | null;
   checkoutAt?: string;
@@ -93,9 +93,9 @@ export interface LibraryStats {
 export interface StudentRecord {
   studentID: number;
   uuid: string;
-  studentIDNumber: string;
+  memberIDNumber: string;
   academicProgram: string | null;
-  /** Faculty and staff members have a department instead of a program (and an employee ID in studentIDNumber). */
+  /** Faculty and staff members have a department instead of a program (and an employee ID in memberIDNumber). */
   memberType?: "student" | "faculty" | "staff";
   department?: string | null;
   registrationStatus: "pending" | "approved" | "rejected";
@@ -167,6 +167,8 @@ export interface CatalogBook {
   title: string;
   isbn: string | null;
   callNumber: string;
+  /** "needs_review" until a catalogue or a librarian has confirmed the Dewey number. */
+  deweyStatus?: DeweyStatus;
   coverImageURL: string | null;
   subject: { subjectID: number; name: string } | null;
   authors: BookAuthor[];
@@ -194,6 +196,10 @@ export interface BookDetail {
   remarks: string | null;
   coverImageURL: string | null;
   shelfLocation: string | null;
+  deweyNumber?: string | null;
+  deweySource?: DeweySource | null;
+  deweyStatus?: DeweyStatus;
+  spineLabel?: SpineLabelData;
   subject: { subjectID: number; name: string } | null;
   authors: (BookAuthor & { role: string | null })[];
   /** Retired copies are left out. */
@@ -219,6 +225,58 @@ export interface PaginatedBooks {
 export type CopyStatus = "available" | "borrowed" | "lost" | "damaged";
 
 /** GET /librarian/copies: one Book Catalog row, a single copy with its book's fuller record. */
+/** One barcode label: the code that gets scanned and enough of the book to tell it apart on the shelf. */
+export interface CopyLabel {
+  uuid: string;
+  accessionNumber: number;
+  barcodeValue: string | null;
+  title: string;
+  authors: string[];
+  /** The confirmed call number, or null while the Dewey number is only a guess (a guess never goes on a label). */
+  callNumber: string | null;
+  area: string;
+  year: number | null;
+}
+
+/** POST /librarian/copies/labels */
+export interface CopyLabelsResponse {
+  labels: CopyLabel[];
+  total: number;
+  /** There were more than the limit (500): only the first ones are included. */
+  truncated: boolean;
+}
+
+/** GET /librarian/books/{uuid}/removal-summary */
+export interface BookRemovalSummary {
+  book: { uuid: string; title: string; isbn: string | null; callNumber: string; areaOfLibrary: string | null; subject: string | null; authors: string[]; coverImageURL: string | null };
+  copies: {
+    items: { accessionNumber: number; barcodeValue: string | null; status: string; cost: string | number | null; sourceOfFund: string | null }[];
+    alreadyRemoved: number;
+  };
+  loans: { total: number; returned: number; active: { name: string; studentID: string | null; accessionNumber: number | null; dueDate: string | null }[] };
+  penalties: { total: number; unpaidCount: number; unpaidAmount: number };
+  reservations: { total: number; open: { name: string; studentID: string | null; status: string; pickupCode: string }[] };
+  wishlists: number;
+  pagePhotos: number;
+  stockLogCount: number;
+  /** What stops the removal (a copy still out on loan). Empty means it can go ahead. */
+  blockers: string[];
+}
+
+/** A copy found by scanning its barcode at the checkout desk. */
+export interface ScannedCopy {
+  copyID: number;
+  uuid?: string;
+  accessionNumber: number;
+  barcodeValue: string | null;
+  status: string;
+  /** null = can be lent; otherwise why it can't ("This copy is already out on loan."). */
+  lendable: string | null;
+  /** When it would fall due if lent today (null for a book that can't be lent). */
+  dueDate?: string | null;
+  book: { bookID: number; uuid?: string; title: string; coverImageURL: string | null; authors: string[] };
+}
+
 export interface CopyCatalogRow {
   copyID: number;
   uuid: string;
@@ -243,6 +301,9 @@ export interface CopyCatalogRow {
     publisher: string | null;
     sourceOfFund: string | null;
     cost: string | number | null;
+    /** The book's own remarks; a copy's remarks (if any) take priority in the export. */
+    remarks?: string | null;
+    deweyStatus?: DeweyStatus;
     shelfLocation: string | null;
     coverImageURL: string | null;
     subject: { subjectID: number; name: string } | null;
@@ -257,7 +318,7 @@ export interface StockLogRow {
   bookTitle: string;
   copyID: number | null;
   accessionNumber: string | null;
-  action: "added" | "removed";
+  action: "added" | "removed" | "edited";
   reason: string | null;
   note: string | null;
   librarianName: string | null;
@@ -286,11 +347,15 @@ export interface PaginatedCopies {
 
 export interface AttendanceLog {
   logID: number;
+  uuid: string;
+  /** Set for a walk-in with no account (then `student` is null). */
+  visitorName: string | null;
+  visitorPurpose: string | null;
   entryTime: string;
   exitTime: string | null;
   student: {
     studentID: number;
-    studentIDNumber: string;
+    memberIDNumber: string;
     academicProgram: string | null;
     user: { firstName: string; lastName: string } | null;
   } | null;
@@ -308,6 +373,12 @@ export interface AttendanceStats {
   currentlyInLibrary: number;
   totalVisitsToday: number;
   averageMinutesToday: number;
+  /** Who is inside the library right now (students and walk-in visitors). */
+  inside: { students: number; visitors: number };
+  /** The date the `day` numbers are for (Y-m-d). */
+  date: string;
+  /** One day's attendance: visits that started that day, different students and walk-in visitors, and the average stay. */
+  day: { visits: number; students: number; visitors: number; averageMinutes: number };
 }
 
 /** POST /librarian/attendance-logs/scan: one scan either checks a student in or checks them out. */
@@ -315,11 +386,13 @@ export interface AttendanceScanResult {
   message: string;
   action: "check_in" | "check_out";
   log: { logID: number; entryTime: string; exitTime: string | null };
-  student: { name: string; program: string | null; studentIDNumber: string; visitStreak: number };
+  student: { name: string; program: string | null; memberIDNumber: string; visitStreak: number };
   /** Minutes spent inside; only set on a check-out. */
   durationMinutes: number | null;
   /** Visits from an earlier day that were closed automatically because the student never scanned out. */
   autoClosed: { logID: number; exitTime: string }[];
+  /** A computer or room session that ended because the student logged out of the library; null when they had none. */
+  endedSession?: { name: string; minutes: number } | null;
 }
 
 /**
@@ -338,7 +411,7 @@ export type ScanResult =
         bookTitle: string;
         accessionNumber: number;
         studentName: string;
-        studentIDNumber: string;
+        memberIDNumber: string;
         dueDate: string | null;
         returnDate: string | null;
         wasLate: boolean;
@@ -355,12 +428,12 @@ export type ScanResult =
         studentID: number;
         bookID: number;
         studentName: string;
-        studentIDNumber: string;
+        memberIDNumber: string;
         bookTitle: string;
       };
     }
   | { type: "facility"; message: string; resource: ScanFacility }
-  | { type: "facility_started"; message: string; resource: ScanFacility; student: { name: string; program: string | null; studentIDNumber: string } }
+  | { type: "facility_started"; message: string; resource: ScanFacility; student: { name: string; program: string | null; memberIDNumber: string } }
   | { type: "facility_ended"; message: string; resource: ScanFacility; student: string; minutes: number };
 
 export interface ScanFacility {
@@ -395,6 +468,62 @@ export const LIBRARY_AREAS: Record<LibraryArea, string> = {
   dissertation: "Dissertation",
 };
 
+/** Where a book's Dewey number came from. "guessed" is the keyword guess and always needs a librarian's check. */
+export type DeweySource = "library_of_congress" | "open_library" | "manual" | "guessed";
+export type DeweyStatus = "ok" | "needs_review";
+
+export const DEWEY_SOURCE_LABEL: Record<DeweySource, string> = {
+  library_of_congress: "Library of Congress",
+  open_library: "Open Library",
+  manual: "Typed in",
+  guessed: "Guessed from the category",
+};
+
+/** POST /librarian/dewey/lookup */
+export interface DeweyIsbnLookup {
+  found: boolean;
+  deweyNumber?: string;
+  source?: DeweySource;
+  cutter?: string | null;
+  year?: number | null;
+}
+
+/** POST /librarian/books/{uuid}/dewey/lookup and PUT .../dewey */
+export interface DeweyApplied {
+  found?: boolean;
+  message: string;
+  deweyNumber?: string;
+  callNumber?: string;
+  deweySource?: DeweySource;
+}
+
+export interface DeweyReviewBook {
+  bookID: number;
+  uuid: string;
+  title: string;
+  isbn: string | null;
+  authors: string[];
+  subject: string | null;
+  callNumber: string;
+  deweyNumber: string | null;
+  deweySource: DeweySource | null;
+}
+
+export interface DeweyReviewResponse {
+  books: { data: DeweyReviewBook[]; current_page: number; last_page: number; total: number; per_page: number };
+  /** Every book still waiting for a check, whatever the search. */
+  needsReview: number;
+}
+
+/** The four lines of the spine label, top to bottom. While `pending`, the Dewey and Cutter lines are empty. */
+export interface SpineLabelData {
+  area: string;
+  dewey: string | null;
+  cutter: string | null;
+  year: number | null;
+  pending: boolean;
+}
+
 export interface NewBookPayload {
   title: string;
   authors: NewBookAuthor[];
@@ -413,6 +542,10 @@ export interface NewBookPayload {
   sourceOfFund?: string | null;
   cost?: number | null;
   remarks?: string | null;
+  /** Ticked for a book that just arrived: marks it new and notifies everyone. */
+  isNewArrival?: boolean;
+  /** The Dewey number alone ("005.1"). Left out, the server looks it up by ISBN. */
+  deweyNumber?: string | null;
 }
 
 class LibrarianServiceClass extends BaseService {
@@ -541,13 +674,41 @@ class LibrarianServiceClass extends BaseService {
     return this.apiRequest<HallOfFame>("/librarian/dashboard/hall-of-fame");
   }
 
+  /**
+   * What the barcode labels need for the copies chosen: by uuid, every copy of one book, or everything the Book
+   * Catalog's search and filters match (up to 500; `truncated` says when there were more).
+   */
+  fetchCopyLabels(selection: {
+    copies?: string[]; book?: string; search?: string; subjectID?: number; status?: CopyStatus; area?: LibraryArea;
+    /** Narrow it to these accession numbers: each a range, a single number being from = to. */
+    accessions?: { from: number; to: number }[];
+  }) {
+    return this.apiRequest<CopyLabelsResponse>("/librarian/copies/labels", { method: "POST", body: selection });
+  }
+
+  /**
+   * The checkout desk's first step: a scanned barcode (or a typed accession number) finds its copy.
+   * `lendable` is null when the copy can go out, otherwise the reason it can't.
+   */
+  lookupCopy(code: string) {
+    return this.apiRequest<{ copy: ScannedCopy }>("/librarian/copies/lookup", { query: { code } });
+  }
+
   /** The Book Catalog tab: every copy on its own row, in accession order. */
   fetchCopies(params: { search?: string; subjectID?: number; status?: CopyStatus; area?: LibraryArea; page?: number; perPage?: number } = {}) {
     return this.apiRequest<PaginatedCopies>("/librarian/copies", { query: params });
   }
 
-  /** One copy's status. Borrowed copies change only through check-in; "retired" removes the copy. */
-  updateCopy(copyUuid: string, payload: { status: Exclude<CopyStatus, "borrowed"> | "retired" }) {
+  /**
+   * One copy's status and/or its own record (source of fund, cost, remarks). A borrowed copy's status changes
+   * only through check-in, but its record can still be corrected; "retired" removes the copy.
+   */
+  updateCopy(copyUuid: string, payload: {
+    status?: Exclude<CopyStatus, "borrowed"> | "retired";
+    sourceOfFund?: string;
+    cost?: number;
+    remarks?: string | null;
+  }) {
     return this.apiRequest<{ message: string; copy: { copyID: number; accessionNumber: number; status: string } }>(
       `/librarian/copies/${copyUuid}`, { method: "PATCH", body: payload });
   }
@@ -586,12 +747,20 @@ class LibrarianServiceClass extends BaseService {
     });
   }
 
-  fetchAttendanceStats() {
+  /** Ending the scan station: logs everyone still in the library out, and ends their computer and room sessions. */
+  closeAllVisits() {
+    return this.apiRequest<{ message: string; students: number; visitors: number; sessionsEnded: number }>(
+      "/librarian/attendance-logs/close-all", { method: "POST" });
+  }
+
+  /** The live numbers, plus `day` for one date (Y-m-d; today when left out). */
+  fetchAttendanceStats(date?: string) {
     const runtimeConfig = useRuntimeConfig();
 
     return $fetch<AttendanceStats>("/librarian/attendance-logs/stats", {
       baseURL: runtimeConfig.public.apiBaseURL,
       method: "GET",
+      query: date ? { date } : undefined,
       headers: {
         Accept: "application/json",
         ...this.authHeaders(),
@@ -608,6 +777,47 @@ class LibrarianServiceClass extends BaseService {
     return this.apiRequest<AttendanceScanResult>("/librarian/attendance-logs/scan", {
       method: "POST",
       body: { barcodeValue },
+    });
+  }
+
+  /** What the catalogues say about an ISBN (Library of Congress, then Open Library). Saves nothing. */
+  lookupIsbnDewey(isbn: string) {
+    return this.apiRequest<DeweyIsbnLookup>("/librarian/dewey/lookup", { method: "POST", body: { isbn } });
+  }
+
+  /** The "check these Dewey numbers" list. */
+  fetchDeweyReview(params: { search?: string; page?: number; perPage?: number } = {}) {
+    const runtimeConfig = useRuntimeConfig();
+
+    return $fetch<DeweyReviewResponse>("/librarian/books/dewey-review", {
+      baseURL: runtimeConfig.public.apiBaseURL,
+      method: "GET",
+      query: params,
+      headers: { Accept: "application/json", ...this.authHeaders() },
+    });
+  }
+
+  /** Looks one book's ISBN up and applies the number if one is found. */
+  lookupBookDewey(bookUuid: string) {
+    return this.apiRequest<DeweyApplied>(`/librarian/books/${bookUuid}/dewey/lookup`, { method: "POST" });
+  }
+
+  /** A librarian typed the right number: used as is, and counted as checked. */
+  setBookDewey(bookUuid: string, deweyNumber: string) {
+    return this.apiRequest<DeweyApplied>(`/librarian/books/${bookUuid}/dewey`, { method: "PUT", body: { deweyNumber } });
+  }
+
+  /** A walk-in without an account: just a typed name and purpose. */
+  logVisitor(payload: { name: string; purpose: string }) {
+    return this.apiRequest<{ message: string; log: AttendanceLog }>("/librarian/attendance-logs/visitor", {
+      method: "POST",
+      body: payload,
+    });
+  }
+
+  checkOutVisitor(uuid: string) {
+    return this.apiRequest<{ message: string; log: AttendanceLog }>(`/librarian/attendance-logs/${uuid}/visitor-checkout`, {
+      method: "POST",
     });
   }
 
@@ -648,6 +858,11 @@ class LibrarianServiceClass extends BaseService {
   /** Same fields as createBook; `quantity` here is the new number of copies (0 retires them all). */
   updateBook(bookUuid: string, payload: Partial<NewBookPayload> & { quantity?: number }) {
     return this.apiRequest<{ message: string }>(`/librarian/books/${bookUuid}`, { method: "PATCH", body: payload });
+  }
+
+  /** Everything tied to a book (copies, loans, fines, reservations, wishlists, photos, log), shown before it is removed. */
+  fetchBookRemovalSummary(bookUuid: string) {
+    return this.apiRequest<BookRemovalSummary>(`/librarian/books/${bookUuid}/removal-summary`);
   }
 
   deleteBook(bookUuid: string) {

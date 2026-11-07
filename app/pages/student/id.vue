@@ -22,7 +22,7 @@
 					<div class="p-[22px]">
 						<p class="dashboard-heading text-[22px] font-extrabold leading-tight text-crimson">{{
 							profile?.fullName ?? '…' }}</p>
-						<p class="font-data mt-0.5 text-[13px] text-stone-500">{{ profile?.studentIDNumber }}{{
+						<p class="font-data mt-0.5 text-[13px] text-stone-500">{{ profile?.memberIDNumber }}{{
 							(profile?.academicProgram ?? profile?.department) ? ` · ${profile?.academicProgram ?? profile?.department}` : '' }}</p>
 
 						<!-- Tapping the barcode enlarges it too: it's what people reach for at the door. -->
@@ -153,7 +153,7 @@ const barcode = computed(() => code128(profile.value?.barcodeValue ?? ''))
 const printable = computed(() => {
 	const p = profile.value
 	return p?.barcodeValue
-		? { fullName: p.fullName, studentIDNumber: p.studentIDNumber, academicProgram: p.academicProgram, barcodeValue: p.barcodeValue }
+		? { fullName: p.fullName, memberIDNumber: p.memberIDNumber, academicProgram: p.academicProgram, barcodeValue: p.barcodeValue }
 		: null
 })
 

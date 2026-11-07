@@ -6,11 +6,11 @@
 		<PickupSlipBody :code="code" :title="title" :author="author" :reserved-on="reservedOn" />
 	</div>
 
-	<Teleport to="body">
+	<AppTeleport>
 		<div ref="printCopy" class="print-only" aria-hidden="true">
 			<PickupSlipBody :code="code" :title="title" :author="author" :reserved-on="reservedOn" />
 		</div>
-	</Teleport>
+	</AppTeleport>
 </template>
 
 <script setup lang="ts">

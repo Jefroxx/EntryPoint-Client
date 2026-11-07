@@ -52,7 +52,7 @@
                 </ButtonsButton>
             </div>
 
-            <LibrarianMarketItemsTable :items="filteredItems" :loading="itemsPending" @edit="openItemForm"
+            <LibrarianMarketItemsTable :items="filteredItems" :loading="itemsPending" :redemptions="redemptions" @edit="openItemForm"
                 @delete="askDeleteItem" />
         </template>
 
@@ -95,8 +95,11 @@
             @submit="saveItem" />
         <LibrarianRedemptionReviewModal :open="isRedemptionOpen" :mode="redemptionMode" :redemption="redemptionTarget" :busy="redemptionBusy"
             @close="isRedemptionOpen = false" @submit="confirmRedemption" />
-        <LibrarianConfirmModal :open="confirmOpen" :title="confirmState.title" :message="confirmState.message"
-            :confirm-label="confirmState.label" :loading="busy" @close="confirmOpen = false" @confirm="runConfirm" />
+        <!-- Deleting shows everything tied to the achievement or item, page by page, before it goes. -->
+        <LibrarianRemoveAchievementModal :open="isRemoveAchievementOpen" :achievement="removingAchievement" :busy="busy"
+            @close="isRemoveAchievementOpen = false" @confirm="deleteAchievement" />
+        <LibrarianRemoveItemModal :open="isRemoveItemOpen" :item="removingItem" :redemptions="redemptions" :busy="busy"
+            @close="isRemoveItemOpen = false" @confirm="deleteItem" />
 
         <AlertToast />
     
@@ -270,40 +273,38 @@ async function confirmRedemption() {
     if (ok) isRedemptionOpen.value = false
 }
 
-// ---- Confirmations (delete / cancel) ----
-const confirmOpen = ref(false)
-const confirmState = ref<{ title: string; message: string; label: string; action: () => Promise<boolean> }>({
-    title: '', message: '', label: 'Confirm', action: async () => true,
-})
-
-function ask(title: string, message: string, label: string, action: () => Promise<boolean>) {
-    confirmState.value = { title, message, label, action }
-    confirmOpen.value = true
-}
-
-async function runConfirm() {
-    busy.value = true
-    const ok = await confirmState.value.action()
-    busy.value = false
-    if (ok) confirmOpen.value = false
-}
+// ---- Deleting (each shows what is tied to it first) ----
+const isRemoveAchievementOpen = ref(false)
+const removingAchievement = ref<AchievementRecord | null>(null)
+const isRemoveItemOpen = ref(false)
+const removingItem = ref<MarketItemRecord | null>(null)
 
 function askDeleteAchievement(achievement: AchievementRecord) {
-    ask(
-        'Delete achievement?',
-        `“${achievement.name}” will be removed, along with every student's progress toward it. This can't be undone.`,
-        'Delete',
-        () => perform(() => engagementService.deleteAchievement(achievement.uuid), 'Achievement deleted', 'Could not delete achievement', [refetchAchievements]),
-    )
+    removingAchievement.value = achievement
+    isRemoveAchievementOpen.value = true
+}
+
+async function deleteAchievement() {
+    const target = removingAchievement.value
+    if (!target) return
+    busy.value = true
+    const ok = await perform(() => engagementService.deleteAchievement(target.uuid), 'Achievement deleted', 'Could not delete achievement', [refetchAchievements])
+    busy.value = false
+    if (ok) isRemoveAchievementOpen.value = false
 }
 
 function askDeleteItem(item: MarketItemRecord) {
-    ask(
-        'Delete item?',
-        `“${item.name}” will be removed from the rewards market.`,
-        'Delete',
-        () => perform(() => engagementService.deleteMarketItem(item.uuid), 'Item deleted', 'Could not delete item', [refetchItems]),
-    )
+    removingItem.value = item
+    isRemoveItemOpen.value = true
+}
+
+async function deleteItem() {
+    const target = removingItem.value
+    if (!target) return
+    busy.value = true
+    const ok = await perform(() => engagementService.deleteMarketItem(target.uuid), 'Item deleted', 'Could not delete item', [refetchItems])
+    busy.value = false
+    if (ok) isRemoveItemOpen.value = false
 }
 </script>
 

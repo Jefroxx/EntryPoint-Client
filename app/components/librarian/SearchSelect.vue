@@ -12,7 +12,7 @@
 		</div>
 
 		<template v-else>
-			<div
+			<div ref="field"
 				class="flex h-10 items-center gap-2 rounded-[10px] border bg-white px-3 transition-shadow focus-within:border-accent-500 focus-within:ring-2 focus-within:ring-accent-200"
 				:class="invalid ? 'border-red-400 bg-red-50' : 'border-stone-200'">
 				<Icon name="i-tabler-search" class="h-[14px] w-[14px] text-stone-400" />
@@ -21,17 +21,21 @@
 					@focus="openList" @blur="isOpen = false" />
 			</div>
 
-			<div v-if="isOpen"
-				class="absolute left-0 right-0 top-[calc(100%+4px)] z-20 max-h-56 overflow-y-auto rounded-xl border border-stone-200 bg-white p-1 shadow-card">
-				<p v-if="loading" class="px-3 py-2 text-[13.5px] text-stone-500">Searching…</p>
-				<p v-else-if="results.length === 0" class="px-3 py-2 text-[13.5px] text-stone-500">No matches.</p>
-				<button v-for="(item, index) in results" :key="index" type="button"
-					class="flex w-full flex-col rounded-lg px-3 py-2 text-left transition-colors hover:bg-stone-50"
-					@mousedown.prevent="choose(item)">
-					<span class="text-[14px] font-semibold text-stone-900">{{ getLabel(item) }}</span>
-					<span v-if="getSublabel" class="text-[12.5px] text-stone-500">{{ getSublabel(item) }}</span>
-				</button>
-			</div>
+			<!-- Teleported to <body> and placed from the field's position on screen. Inside a pop-up the list would otherwise
+				 be cut off by the pop-up's own scrolling body, or hidden behind its footer. -->
+			<AppTeleport>
+				<div v-if="isOpen" :style="listStyle"
+					class="fixed z-[200] overflow-y-auto rounded-xl border border-stone-200 bg-white p-1 shadow-card">
+					<p v-if="loading" class="px-3 py-2 text-[13.5px] text-stone-500">Searching…</p>
+					<p v-else-if="results.length === 0" class="px-3 py-2 text-[13.5px] text-stone-500">No matches.</p>
+					<button v-for="(item, index) in results" :key="index" type="button"
+						class="flex w-full flex-col rounded-lg px-3 py-2 text-left transition-colors hover:bg-stone-50"
+						@mousedown.prevent="choose(item)">
+						<span class="text-[14px] font-semibold text-stone-900">{{ getLabel(item) }}</span>
+						<span v-if="getSublabel" class="text-[12.5px] text-stone-500">{{ getSublabel(item) }}</span>
+					</button>
+				</div>
+			</AppTeleport>
 		</template>
 	</div>
 </template>
@@ -53,6 +57,8 @@ const query = ref('')
 const results = shallowRef<T[]>([])
 const loading = ref(false)
 const isOpen = ref(false)
+const field = ref<HTMLElement | null>(null)
+const listStyle = ref<Record<string, string>>({})
 
 let timeout: ReturnType<typeof setTimeout>
 
@@ -72,10 +78,48 @@ function openList() {
 	runSearch()
 }
 
+/** Puts the list under the field (or above it when there is more room there), at the field's width. */
+function placeList() {
+	const el = field.value
+	if (!el) return
+	const rect = el.getBoundingClientRect()
+	const MAX = 224
+	const below = window.innerHeight - rect.bottom - 12
+	const above = rect.top - 12
+	const openUp = below < 160 && above > below
+	const room = Math.max(96, Math.min(MAX, openUp ? above : below))
+
+	listStyle.value = {
+		left: `${rect.left}px`,
+		width: `${rect.width}px`,
+		maxHeight: `${room}px`,
+		...(openUp ? { bottom: `${window.innerHeight - rect.top + 4}px` } : { top: `${rect.bottom + 4}px` }),
+	}
+}
+
 watch(query, () => {
 	isOpen.value = true
 	clearTimeout(timeout)
 	timeout = setTimeout(runSearch, 250)
+})
+
+// While the list is open it follows the field when the window or a pop-up scrolls or resizes.
+watch(isOpen, (open) => {
+	if (!import.meta.client) return
+	if (open) {
+		placeList()
+		window.addEventListener('scroll', placeList, true)
+		window.addEventListener('resize', placeList)
+	} else {
+		window.removeEventListener('scroll', placeList, true)
+		window.removeEventListener('resize', placeList)
+	}
+})
+onBeforeUnmount(() => {
+	clearTimeout(timeout)
+	if (!import.meta.client) return
+	window.removeEventListener('scroll', placeList, true)
+	window.removeEventListener('resize', placeList)
 })
 
 function choose(item: T) {

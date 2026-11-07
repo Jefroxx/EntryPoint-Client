@@ -112,7 +112,7 @@ const details = computed(() => {
 	if (!b) return []
 	return [
 		{ label: 'Subject', value: b.subject?.name ?? '—' },
-		{ label: 'Call number', value: b.callNumber ?? '—', mono: true },
+		{ label: 'Call number', value: b.callNumber ?? 'Pending', mono: !!b.callNumber },
 		{ label: 'Published', value: b.publicationYear ? String(b.publicationYear) : '—' },
 		{ label: 'Where', value: b.shelfLocation ?? b.circulationType.charAt(0).toUpperCase() + b.circulationType.slice(1) },
 	]

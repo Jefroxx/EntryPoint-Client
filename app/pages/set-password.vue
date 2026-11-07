@@ -22,10 +22,6 @@
 					</li>
 				</ul>
 
-				<p v-if="failure" role="alert" class="flex items-start gap-2 rounded-xl border border-red-100 bg-red-50 px-3 py-2.5 text-[12.5px] leading-snug text-red-600">
-					<Icon name="i-tabler-alert-circle" class="mt-px h-4 w-4 shrink-0" />{{ failure }}
-				</p>
-
 				<ButtonsButton type="submit" class="mt-1 !h-[46px] w-full !text-[14.5px]" :disabled="!ready || saving">
 					<span v-if="saving" class="h-[15px] w-[15px] animate-spin rounded-full border-2 border-white/40 border-t-white" />
 					{{ saving ? 'Saving…' : 'Save and continue' }}
@@ -104,4 +100,9 @@ async function signOutInstead() {
 		await navigateTo(target === 'librarian' ? '/librarian/login' : '/login')
 	}
 }
+
+// Problems pop up as a dialog (the shared one in app.vue) instead of a red box inside the form.
+import { useAlert } from '~/api/alert/useAlert'
+const popupAlert = useAlert()
+watch(failure, (message) => { if (message) popupAlert.error('Could not save the password', message) }, { immediate: true })
 </script>

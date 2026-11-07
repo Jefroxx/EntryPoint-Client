@@ -66,7 +66,7 @@
 					<li v-for="s in pagedStudents" :key="s.studentID" class="flex items-start justify-between gap-3 py-2.5">
 						<div class="min-w-0">
 							<p class="truncate text-[14px] font-semibold text-stone-900">{{ s.name }}</p>
-							<p class="text-[12px] text-stone-500"><span class="font-data">{{ s.studentIDNumber ?? '—' }}</span><template v-if="s.earnedAt"> · Unlocked {{ formatDate(s.earnedAt) }}</template></p>
+							<p class="text-[12px] text-stone-500"><span class="font-data">{{ s.memberIDNumber ?? '—' }}</span><template v-if="s.earnedAt"> · Unlocked {{ formatDate(s.earnedAt) }}</template></p>
 						</div>
 						<div class="shrink-0 text-right">
 							<LibrarianStatusPill :label="s.redeemedAt ? 'Redeemed' : 'Not redeemed'" :tone="s.redeemedAt ? 'success' : 'neutral'" />
@@ -142,7 +142,7 @@ const visibleStudents = computed(() => {
 	return students.value.filter((s) => {
 		if (studentFilter.value === 'redeemed' && !s.redeemedAt) return false
 		if (studentFilter.value === 'not' && s.redeemedAt) return false
-		return !term || s.name.toLowerCase().includes(term) || (s.studentIDNumber ?? '').toLowerCase().includes(term)
+		return !term || s.name.toLowerCase().includes(term) || (s.memberIDNumber ?? '').toLowerCase().includes(term)
 	})
 })
 
