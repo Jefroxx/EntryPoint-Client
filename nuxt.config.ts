@@ -16,7 +16,14 @@ export default defineNuxtConfig({
 		'/student/spaces': { redirect: '/student/facilities' },
 		// Tunnel hosting: the browser only sees one origin (the tunnel URL), so Nuxt forwards
 		// the API and uploaded files to Laravel. Used when NUXT_PUBLIC_API_BASE_URL=/api.
-		'/api/**': { proxy: `${process.env.LARAVEL_ORIGIN || 'http://127.0.0.1:8000'}/api/**` },
+		// redirect: 'manual' hands Laravel's redirects (the email link answers 302 -> /login?verified=...)
+		// to the browser. By default the forwarder follows them itself and ends up on the API's own /login (404).
+		'/api/**': {
+			proxy: {
+				to: `${process.env.LARAVEL_ORIGIN || 'http://127.0.0.1:8000'}/api/**`,
+				fetchOptions: { redirect: 'manual' },
+			},
+		},
 		'/storage/**': { proxy: `${process.env.LARAVEL_ORIGIN || 'http://127.0.0.1:8000'}/storage/**` },
 	},
 	// The dev server rejects unknown Host headers, and a quick tunnel's hostname is random.
