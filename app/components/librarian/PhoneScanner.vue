@@ -173,6 +173,11 @@ watch(link, async (value) => {
 	qr.value = await QRCode.toDataURL(value, { margin: 1, width: 280, errorCorrectionLevel: 'M' })
 })
 
+// The panel can be opened from outside (the Scan station's "Phone camera" tab, or a choice remembered from last time),
+// not only by its own button. The address is worked out whenever it is open, however it got that way; before, it was
+// only set by the button, so those windows had no address and showed the "type an address" box even on the real domain.
+watch(on, (isOn) => { if (isOn && !origin.value) origin.value = phoneOrigin() }, { immediate: true })
+
 // A phone that connects ends the QR; losing it brings the QR back.
 watch(() => phone.connected.value, (isConnected) => { if (isConnected) showCode.value = false })
 
