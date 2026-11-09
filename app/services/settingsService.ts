@@ -19,7 +19,7 @@ export interface FineRule {
 export interface SettingsOverview {
   loanPeriods: Record<CollectionArea, number>;
   fineRules: FineRule[];
-  account: { firstName: string; lastName: string; email: string };
+  account: { firstName: string; lastName: string; email: string | null };
 }
 
 class SettingsServiceClass extends BaseService {
@@ -39,7 +39,7 @@ class SettingsServiceClass extends BaseService {
     return this.apiRequest<{ message: string }>(`/librarian/settings/fine-rules/${area}`, { method: "DELETE" });
   }
 
-  updateAccount(payload: { firstName: string; lastName: string; email: string }) {
+  updateAccount(payload: { firstName: string; lastName: string; email?: string }) {
     return this.apiRequest<{ message: string; account: SettingsOverview["account"] }>("/librarian/settings/account", { method: "PATCH", body: payload });
   }
 

@@ -213,6 +213,8 @@ export interface BookDetail {
 }
 
 export type BookAvailabilityFilter = "" | "available" | "unavailable";
+/** Whether a book's Dewey number has been confirmed by a librarian ("verified") or is still a guess ("unverified"). */
+export type BookDeweyFilter = "" | "verified" | "unverified";
 
 export interface PaginatedBooks {
   data: CatalogBook[];
@@ -655,7 +657,7 @@ class LibrarianServiceClass extends BaseService {
     });
   }
 
-  fetchBooks(params: { search?: string; subjectID?: number; availability?: Exclude<BookAvailabilityFilter, "">; page?: number; perPage?: number } = {}) {
+  fetchBooks(params: { search?: string; subjectID?: number; availability?: Exclude<BookAvailabilityFilter, "">; dewey?: Exclude<BookDeweyFilter, "">; page?: number; perPage?: number } = {}) {
     const runtimeConfig = useRuntimeConfig();
 
     return $fetch<PaginatedBooks>("/books", {

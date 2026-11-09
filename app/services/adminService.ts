@@ -9,7 +9,13 @@ export interface StaffAccount {
   middleInitial: string | null;
   lastName: string;
   name: string;
-  email: string;
+  /** Empty for a student assistant, who signs in with a username instead. */
+  email: string | null;
+  username: string | null;
+  /** Whether the email was confirmed with the mailed link; null when the account has no email. */
+  emailConfirmed: boolean | null;
+  /** Picked from the registered students (a student assistant). */
+  linkedStudent: boolean;
   phoneNumber: string | null;
   role: StaffRole;
   roleLabel: string;
@@ -118,13 +124,25 @@ export interface Page<T> {
   total: number;
 }
 
+/** A registered student who can still be made a student assistant. */
+export interface AssistantCandidate {
+  uuid: string;
+  name: string;
+  idNumber: string;
+  academicProgram: string | null;
+}
+
 export interface StaffPayload {
-  firstName: string;
+  firstName?: string;
   middleInitial?: string | null;
-  lastName: string;
-  email: string;
+  lastName?: string;
+  email?: string;
   phoneNumber?: string | null;
   role: StaffRole;
+  /** Assistants only: picked from the registered students, or someone from outside the school. */
+  assistantSource?: "student" | "outside";
+  /** The registered student picked (assistantSource "student"); their name comes from their record. */
+  studentUuid?: string;
 }
 
 export interface MemberPayload {
@@ -142,6 +160,10 @@ export interface MemberPayload {
 export interface CreatedAccount<T> {
   account: T;
   temporaryPassword: string;
+  /** A student assistant's generated sign-in name (they have no email). */
+  username?: string;
+  /** The confirmation email went out (false if it couldn't be sent, or there is no email). */
+  verificationSent?: boolean;
 }
 
 class AdminServiceClass extends BaseService {
@@ -152,6 +174,9 @@ class AdminServiceClass extends BaseService {
   // ---- staff
   staff(search?: string) {
     return this.apiRequest<{ staff: StaffAccount[] }>("/admin/staff", { query: { search: search || undefined } });
+  }
+  assistantCandidates(search?: string) {
+    return this.apiRequest<{ students: AssistantCandidate[] }>("/admin/staff/assistant-candidates", { query: { search: search || undefined } });
   }
   createStaff(payload: StaffPayload) {
     return this.apiRequest<CreatedAccount<StaffAccount>>("/admin/staff", { method: "POST", body: payload });
@@ -207,6 +232,10 @@ class AdminServiceClass extends BaseService {
   // ---- roles and the audit log
   roles() {
     return this.apiRequest<RolesOverview>("/admin/roles");
+  }
+  /** Every changed role in one go (the roles screen's single Save): all of them are saved, or none. */
+  saveRoles(roles: Partial<Record<StaffRole, string[]>>) {
+    return this.apiRequest<RolesOverview>("/admin/roles", { method: "PUT", body: { roles } });
   }
   saveRole(role: StaffRole, permissions: string[]) {
     return this.apiRequest<RolesOverview>(`/admin/roles/${role}`, { method: "PUT", body: { permissions } });

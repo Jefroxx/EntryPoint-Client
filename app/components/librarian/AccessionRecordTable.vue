@@ -17,7 +17,8 @@
 								<span class="h-2 w-2 shrink-0 rounded-[3px]" :style="{ backgroundColor: subjectSwatch(book.subject.name) }" />{{ book.subject.name }}
 							</span>
 							<span class="font-data text-[12px] text-stone-500">{{ book.callNumber }}</span>
-								<span v-if="book.deweyStatus === 'needs_review'" class="rounded-full bg-amber-100 px-1.5 py-0.5 text-[10.5px] font-semibold text-amber-700" title="The Dewey number hasn't been checked yet">unchecked</span>
+								<span v-if="book.deweyStatus === 'needs_review'" class="rounded-full bg-amber-100 px-1.5 py-0.5 text-[10.5px] font-semibold text-amber-700" title="The Dewey number hasn't been verified yet">Unverified</span>
+								<span v-else class="rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10.5px] font-semibold text-emerald-700" title="The Dewey number has been verified">Verified</span>
 						</div>
 						<p class="mt-1.5 text-[13px] tabular-nums text-stone-500">
 							<b :class="availableCopies(book) === 0 ? 'text-red-500' : 'text-stone-900'">{{ availableCopies(book) }}</b> of {{ book.copies.length }} on the shelf

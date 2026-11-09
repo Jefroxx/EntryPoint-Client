@@ -13,7 +13,7 @@
         </div>
 
         <div class="phone-toolbar mb-4 flex flex-wrap items-center gap-2">
-            <LibrarianSearchInput id="staff-search" v-model="search" placeholder="Search name or email" />
+            <LibrarianSearchInput id="staff-search" v-model="search" placeholder="Search name, email or username" />
             <div class="flex-1"></div>
             <LibrarianResetFiltersButton @click="search = ''" />
             <ButtonsButton variant="primary" @click="openCreate">
@@ -21,7 +21,7 @@
             </ButtonsButton>
         </div>
 
-        <LibrarianTableShell :columns="['Name', 'Email', 'Role', 'Status', '']" :loading="pending && !data" :empty="shown.length === 0"
+        <LibrarianTableShell :columns="['Name', 'Email / username', 'Role', 'Status', '']" :loading="pending && !data" :empty="shown.length === 0"
             :empty-text="search ? 'No staff accounts match your search.' : 'No staff accounts yet.'" min-width="760px">
             <!-- Phones: one card per account. -->
             <template #cards>
@@ -30,10 +30,10 @@
                         <LibrarianStudentAvatar :name="account.name" />
                         <div class="min-w-0 flex-1">
                             <p class="truncate text-[15px] font-semibold text-stone-900">{{ account.name }}<span v-if="account.isYou" class="ml-1.5 text-[12px] font-bold text-accent-600">You</span></p>
-                            <p class="truncate text-[13px] text-stone-500">{{ account.email }}</p>
+                            <p class="truncate text-[13px] text-stone-500">{{ signInName(account) }}</p>
                             <div class="mt-1.5 flex flex-wrap items-center gap-1.5">
                                 <LibrarianStatusPill :label="account.roleLabel" :tone="roleTone[account.role]" />
-                                <LibrarianStatusPill :label="account.isDisabled ? 'Disabled' : 'Active'" :tone="account.isDisabled ? 'danger' : 'success'" />
+                                <LibrarianStatusPill :label="statusOf(account).label" :tone="statusOf(account).tone" />
                             </div>
                         </div>
                         <LibrarianRowMenu :items="menuFor(account)" :label="`More actions for ${account.name}`" @select="(key: string) => onMenu(key, account)" />
@@ -46,9 +46,9 @@
                 <td class="px-4 py-3">
                     <LibrarianPersonCell :name="account.name" :sub="account.isYou ? 'This is you' : undefined" />
                 </td>
-                <td class="font-data px-4 py-3 text-[13.5px] text-stone-600">{{ account.email }}</td>
+                <td class="font-data px-4 py-3 text-[13.5px] text-stone-600">{{ signInName(account) }}</td>
                 <td class="px-4 py-3"><LibrarianStatusPill :label="account.roleLabel" :tone="roleTone[account.role]" /></td>
-                <td class="px-4 py-3"><LibrarianStatusPill :label="account.isDisabled ? 'Disabled' : 'Active'" :tone="account.isDisabled ? 'danger' : 'success'" /></td>
+                <td class="px-4 py-3"><LibrarianStatusPill :label="statusOf(account).label" :tone="statusOf(account).tone" /></td>
                 <td class="px-4 py-3">
                     <div class="flex items-center justify-end gap-1.5">
                         <ButtonsButton variant="ghost" size="sm" @click="openEdit(account)">Edit</ButtonsButton>
@@ -94,8 +94,20 @@ const { data, pending, execute: refetch } = useAsyncData('admin-staff', () => ad
 const all = computed(() => data.value?.staff ?? [])
 const shown = computed(() => {
     const q = search.value.trim().toLowerCase()
-    return q ? all.value.filter((a) => `${a.name} ${a.email} ${a.roleLabel}`.toLowerCase().includes(q)) : all.value
+    return q ? all.value.filter((a) => `${a.name} ${signInName(a)} ${a.roleLabel}`.toLowerCase().includes(q)) : all.value
 })
+
+/** What they sign in with: their email, or a student assistant's username. */
+function signInName(account: StaffAccount): string {
+    return account.email ?? account.username ?? ''
+}
+
+/** Disabled wins; then an email that still has to be confirmed (they can't sign in yet); otherwise active. */
+function statusOf(account: StaffAccount): { label: string; tone: 'danger' | 'warning' | 'success' } {
+    if (account.isDisabled) return { label: 'Disabled', tone: 'danger' }
+    if (account.emailConfirmed === false) return { label: 'Awaiting email', tone: 'warning' }
+    return { label: 'Active', tone: 'success' }
+}
 const countOf = (role: StaffRole) => (data.value ? all.value.filter((a) => a.role === role).length : '—')
 const disabledCount = computed(() => (data.value ? all.value.filter((a) => a.isDisabled).length : '—'))
 
@@ -141,7 +153,10 @@ async function save(payload: StaffPayload) {
             alert.success('Account updated')
         } else {
             const created = await adminService.createStaff(payload)
-            credentials.value = { name: created.account.name, email: created.account.email, password: created.temporaryPassword }
+            credentials.value = {
+                name: created.account.name, email: created.account.email, username: created.username,
+                password: created.temporaryPassword, verificationSent: created.verificationSent,
+            }
             credentialsTitle.value = 'Account created'
             isCredentialsOpen.value = true
             alert.success('Account created')
@@ -200,7 +215,7 @@ async function reset() {
     try {
         const result = await adminService.resetStaffPassword(account.uuid)
         isResetOpen.value = false
-        credentials.value = { name: account.name, email: account.email, password: result.temporaryPassword }
+        credentials.value = { name: account.name, email: account.email, username: account.username, password: result.temporaryPassword }
         credentialsTitle.value = 'Password reset'
         isCredentialsOpen.value = true
     } catch (error) {

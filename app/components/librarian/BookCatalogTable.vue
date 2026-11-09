@@ -71,7 +71,7 @@
 							</span>
 							<span v-else class="text-stone-300">—</span>
 						</td>
-						<td class="font-data whitespace-nowrap px-4 py-3 text-[13.5px] group-hover:bg-accent-50">{{ copy.book.callNumber }}<span v-if="copy.book.deweyStatus === 'needs_review'" class="ml-1.5 rounded-full bg-amber-100 px-1.5 py-0.5 font-sans text-[10.5px] font-semibold text-amber-700" title="The Dewey number hasn't been checked yet">unchecked</span></td>
+						<td class="font-data whitespace-nowrap px-4 py-3 text-[13.5px] group-hover:bg-accent-50">{{ copy.book.callNumber }}<span v-if="copy.book.deweyStatus === 'needs_review'" class="ml-1.5 rounded-full bg-amber-100 px-1.5 py-0.5 font-sans text-[10.5px] font-semibold text-amber-700" title="The Dewey number hasn't been verified yet">Unverified</span><span v-else class="ml-1.5 rounded-full bg-emerald-100 px-1.5 py-0.5 font-sans text-[10.5px] font-semibold text-emerald-700" title="The Dewey number has been verified">Verified</span></td>
 						<td class="whitespace-nowrap px-4 py-3 group-hover:bg-accent-50">{{ areaLabel(copy.book.areaOfLibrary) }}</td>
 						<td class="whitespace-nowrap px-4 py-3 group-hover:bg-accent-50">{{ copy.book.edition || '—' }}</td>
 						<td class="whitespace-nowrap px-4 py-3 group-hover:bg-accent-50">{{ copy.book.volume || '—' }}</td>
