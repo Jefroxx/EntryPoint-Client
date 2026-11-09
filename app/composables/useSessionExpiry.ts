@@ -15,7 +15,8 @@ export async function endExpiredSession(area: Area, reason?: string) {
     const back = useRoute().fullPath
     useAuthSession(area).signOut()
     // "elsewhere": the account was signed in on another browser or device, which ends this one.
-    const expired = reason === 'signed_in_elsewhere' ? 'elsewhere' : '1'
+    // "idle": the sign-in sat unused for 4 hours, so the server ended it.
+    const expired = reason === 'signed_in_elsewhere' ? 'elsewhere' : reason === 'idle' ? 'idle' : '1'
     await navigateTo({ path: area === 'student' ? '/login' : '/librarian/login', query: { redirect: back, expired } })
   } finally {
     endingSession = false

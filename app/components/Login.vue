@@ -16,8 +16,10 @@
 		</div>
 
 		<form class="grid gap-3.5" novalidate @submit.prevent="handleLogin">
-			<LibrarianTextField id="email" v-model="email" label="Email" type="email" autocomplete="email"
-				:placeholder="!isLibrarianPortal && emailDomain ? `you@${emailDomain}` : 'you@school.edu.ph'" @update:model-value="errorMessage = ''" />
+			<!-- The librarian sign-in also takes a username (student assistants have no email), so it is a plain text field there. -->
+			<LibrarianTextField id="email" v-model="email" :label="isLibrarianPortal ? 'Email or username' : 'Email'" :type="isLibrarianPortal ? 'text' : 'email'"
+				:autocomplete="isLibrarianPortal ? 'username' : 'email'"
+				:placeholder="isLibrarianPortal ? 'you@school.edu.ph or your username' : emailDomain ? `you@${emailDomain}` : 'you@school.edu.ph'" @update:model-value="errorMessage = ''" />
 			<AuthPasswordField id="password" v-model="password" label="Password" autocomplete="current-password"
 				placeholder="••••••••" @update:model-value="errorMessage = ''" />
 
@@ -85,10 +87,13 @@ const verified = String(route.query.verified ?? '')
 const notice = ref(
 	verified === '1' ? "Email confirmed. A librarian will now review your registration; you can sign in once it's approved."
 		: verified === 'already' ? "That email is already confirmed. You can sign in once a librarian approves your registration."
-			: '',
+			// Accounts an administrator made (staff, faculty): nothing to approve, so they can sign in now.
+			: verified === 'staff' || verified === 'member' ? 'Email confirmed. Sign in with the temporary password the library administrator gave you.'
+				: '',
 )
 const errorMessage = ref(
 	route.query.expired === 'elsewhere' ? 'You were signed out because this account was signed in somewhere else. Sign in again to use it here.'
+		: route.query.expired === 'idle' ? 'You were signed out because you were inactive for a while. Please sign in again.'
 		: route.query.expired === '1' ? 'Your session ended. Please sign in again.'
 		: verified === 'expired' ? 'That confirmation link has expired. Enter your email below and send yourself a new one.'
 			: verified === 'invalid' ? "That confirmation link isn't valid. Enter your email below and send yourself a new one."
@@ -119,7 +124,7 @@ async function resend() {
 
 async function handleLogin() {
 	if (!email.value.trim() || !password.value) {
-		errorMessage.value = 'Enter your email and password.'
+		errorMessage.value = isLibrarianPortal ? 'Enter your email or username and password.' : 'Enter your email and password.'
 		return
 	}
 
@@ -157,7 +162,7 @@ const popupAlert = useAlert()
 // The message the page opened with (as opposed to one from a sign-in attempt made on it).
 const initialMessage = errorMessage.value
 // Arriving here because the sign-in ended (not because a sign-in attempt failed) says so in the title.
-const endedSession = route.query.expired === 'elsewhere' || route.query.expired === '1'
+const endedSession = route.query.expired === 'elsewhere' || route.query.expired === 'idle' || route.query.expired === '1'
 watch(errorMessage, (message) => {
 	if (message) popupAlert.error(endedSession && message === initialMessage ? 'You were signed out' : 'Could not sign in', message)
 }, { immediate: true })

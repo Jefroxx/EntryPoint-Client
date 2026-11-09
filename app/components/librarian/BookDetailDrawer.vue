@@ -152,7 +152,7 @@ const fields = computed(() => {
 
 	const peso = (value: string | number) => `₱${Number(value).toLocaleString('en-PH', { minimumFractionDigits: 2 })}`
 	const rows: { label: string; value: string | number; mono?: boolean; wide?: boolean; optional?: boolean }[] = [
-		{ label: 'Call number', value: b.callNumber ? (b.deweyStatus === 'needs_review' ? `${b.callNumber} (unchecked)` : b.callNumber) : '—', mono: true },
+		{ label: 'Call number', value: b.callNumber ? (b.deweyStatus === 'needs_review' ? `${b.callNumber} (Unverified)` : b.callNumber) : '—', mono: true },
 		{ label: 'ISBN', value: b.isbn || '—', mono: true },
 		{ label: 'Area of the library', value: b.areaOfLibrary ? AREAS[b.areaOfLibrary] ?? b.areaOfLibrary : '—' },
 		{ label: 'Shelf location', value: b.shelfLocation || '—' },

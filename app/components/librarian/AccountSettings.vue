@@ -11,7 +11,7 @@
 					<LibrarianTextField id="account-last" v-model="profile.lastName" label="Last name"
 						:error="profileErrors.lastName" autocomplete="family-name" />
 				</div>
-				<LibrarianTextField id="account-email" v-model="profile.email" type="email" label="Email"
+				<LibrarianTextField v-if="props.account.email !== null" id="account-email" v-model="profile.email" type="email" label="Email"
 					:error="profileErrors.email" autocomplete="email" />
 			</div>
 
@@ -78,7 +78,7 @@ async function saveProfile() {
 		const result = await settingsService.updateAccount({
 			firstName: profile.firstName.trim(),
 			lastName: profile.lastName.trim(),
-			email: profile.email.trim(),
+			...(profile.email !== null ? { email: profile.email.trim() } : {}),
 		})
 
 		// The header reads these cookies, so keep its name and initials current.

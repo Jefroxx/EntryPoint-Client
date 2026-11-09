@@ -171,5 +171,12 @@ onBeforeUnmount(() => {
 	for (const item of items.value) if (item.blob) URL.revokeObjectURL(item.url)
 })
 
-defineExpose({ apply, hasChanges })
+/** What changed, for the confirmation step: photos added and removed, and whether any section's order was changed. */
+const summary = computed(() => ({
+	added: items.value.filter((i) => i.blob).length,
+	removed: removed.value.length,
+	reordered: reordered.value.size > 0,
+}))
+
+defineExpose({ apply, hasChanges, summary })
 </script>

@@ -173,7 +173,7 @@ async function save(payload: MemberPayload) {
             alert.success('Member updated')
         } else {
             const created = await adminService.createMember(payload)
-            credentials.value = { name: created.account.name, email: created.account.email, password: created.temporaryPassword }
+            credentials.value = { name: created.account.name, email: created.account.email, password: created.temporaryPassword, verificationSent: created.verificationSent }
             credentialsTitle.value = 'Member created'
             isCredentialsOpen.value = true
             alert.success('Member created')

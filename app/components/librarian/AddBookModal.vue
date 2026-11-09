@@ -70,22 +70,47 @@
 				</div>
 
 				<div v-else-if="confirming" class="min-h-0 flex-1 overflow-y-auto px-6 py-6 sm:px-7">
-						<div class="mx-auto max-w-[620px] space-y-4">
-							<p v-if="isEdit && summaryRows.length === 0" class="rounded-xl bg-stone-50 px-4 py-3 text-[14px] text-stone-600">
-								None of the book's details changed. Any page photo changes will still be saved.
-							</p>
-							<dl v-else-if="summaryRows.length" class="divide-y divide-stone-100 rounded-xl border border-stone-200 text-[14px]">
-								<div v-for="row in summaryRows" :key="row.label" class="px-4 py-2.5">
-									<dt class="text-[12.5px] text-stone-500">{{ row.label }}</dt>
-									<dd class="mt-0.5 flex flex-wrap items-center gap-x-2 text-stone-900">
-										<template v-if="isEdit">
-											<span class="text-stone-500 line-through decoration-stone-300">{{ row.before || '—' }}</span>
-											<Icon name="i-tabler-arrow-right" class="h-3.5 w-3.5 shrink-0 text-stone-400" />
-										</template>
-										<span class="font-semibold">{{ row.now || '—' }}</span>
-									</dd>
+						<div class="mx-auto max-w-[860px] space-y-4">
+							<!-- A new book: who it is, at a glance (the cover as it will look, the title and authors). -->
+							<div v-if="!isEdit" class="flex items-center gap-4 rounded-2xl border border-stone-200 bg-white p-4">
+								<img v-if="hasCover" :src="form.coverImageURL" alt="" class="h-24 w-16 shrink-0 rounded-lg object-cover shadow-sm ring-1 ring-stone-200" />
+								<div v-else class="flex h-24 w-16 shrink-0 items-center justify-center rounded-lg bg-stone-100 text-stone-400 ring-1 ring-stone-200">
+									<Icon name="i-tabler-book-2" class="h-6 w-6" aria-hidden="true" />
 								</div>
-							</dl>
+								<div class="min-w-0">
+									<p class="text-[11.5px] font-semibold uppercase tracking-wide text-stone-500">New book</p>
+									<p class="text-[19px] font-bold leading-snug text-crimson">{{ form.title.trim() }}</p>
+									<p class="mt-0.5 text-[14px] text-stone-600">{{ headerAuthors }}</p>
+									<span v-if="form.subjectName.trim()" class="mt-2 inline-flex items-center rounded-full bg-stone-100 px-2.5 py-0.5 text-[12.5px] font-semibold text-stone-700">{{ form.subjectName.trim() }}</span>
+								</div>
+							</div>
+
+							<p v-if="isEdit && summaryRows.length === 0" class="rounded-xl bg-stone-50 px-4 py-3 text-[14px] text-stone-600">
+								None of the book's details changed.
+							</p>
+							<p v-else-if="isEdit" class="text-[13.5px] text-stone-600">
+								{{ summaryRows.length }} {{ summaryRows.length === 1 ? 'thing is' : 'things are' }} changing. Only what changed is shown.
+							</p>
+
+							<!-- Grouped into small cards, two columns wide, so it reads at a glance instead of one long list. -->
+							<section v-for="group in summaryGroups" :key="group.key" class="overflow-hidden rounded-2xl border border-stone-200 bg-white">
+								<h3 class="flex items-center gap-2 border-b border-stone-100 bg-stone-50 px-4 py-2.5 text-[12.5px] font-bold uppercase tracking-wide text-stone-600">
+									<Icon :name="group.icon" class="h-4 w-4 text-accent-600" aria-hidden="true" />{{ group.title }}
+								</h3>
+								<dl class="grid gap-x-6 gap-y-1 p-3 sm:grid-cols-2">
+									<div v-for="row in group.rows" :key="row.label" class="min-w-0 rounded-lg px-2 py-2"
+										:class="[row.wide ? 'sm:col-span-2' : '', isEdit ? 'bg-amber-50/70' : '']">
+										<dt class="text-[11.5px] font-semibold uppercase tracking-wide text-stone-500">{{ row.label }}</dt>
+										<dd class="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 break-words text-[15px] text-stone-900">
+											<template v-if="isEdit && !row.plain">
+												<span class="text-[13.5px] text-stone-500 line-through decoration-stone-300">{{ row.before || '—' }}</span>
+												<Icon name="i-tabler-arrow-right" class="h-3.5 w-3.5 shrink-0 text-stone-400" aria-hidden="true" />
+											</template>
+											<span class="font-semibold">{{ row.now || '—' }}</span>
+										</dd>
+									</div>
+								</dl>
+							</section>
 							<!-- The Dewey number: looked up from the ISBN when this page opens, and accepted here by pressing Yes. -->
 						<div class="rounded-xl border border-stone-200 p-4">
 							<label for="bookDewey" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">
@@ -93,7 +118,7 @@
 							</label>
 							<div class="flex gap-2">
 								<input id="bookDewey" v-model="form.deweyNumber" type="text" inputmode="decimal" maxlength="14" placeholder="e.g. 005.1"
-									:disabled="lookingUp" :class="[inputClass, 'border-stone-200']" class="font-data !text-[13.5px]" @input="deweyHint = ''; deweyFromLookup = false" />
+									:disabled="lookingUp" :class="[inputClass, 'border-stone-200']" class="font-data !text-[13.5px]" @input="deweyHint = ''" />
 								<ButtonsButton variant="ghost" class="shrink-0" :disabled="lookingUp || !form.isbn.trim()"
 									:title="form.isbn.trim() ? undefined : 'No ISBN to look up'" @click="lookUpDewey">
 									<Icon :name="lookingUp ? 'i-tabler-loader-2' : 'i-tabler-search'" class="h-4 w-4" :class="{ 'animate-spin': lookingUp }" />Look up again
@@ -246,6 +271,24 @@
 												</p>
 											</div>
 										</div>
+
+											<!-- The Dewey number: typed in, or looked up from the ISBN. It can still be checked and changed on the review page. -->
+											<div class="mt-3">
+												<label for="bookDeweyStep" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">
+													Dewey number (DDC) <span class="font-normal text-stone-500">(optional)</span>
+												</label>
+												<div class="flex gap-2">
+													<input id="bookDeweyStep" v-model="form.deweyNumber" type="text" inputmode="decimal" maxlength="14" placeholder="e.g. 005.1"
+														:disabled="lookingUp" :class="[inputClass, 'border-stone-200']" class="font-data !text-[13.5px]" @input="deweyHint = ''" />
+													<ButtonsButton variant="ghost" class="shrink-0" :disabled="lookingUp || !form.isbn.trim()"
+														:title="form.isbn.trim() ? undefined : 'Add the ISBN in step 1 to look it up'" @click="lookUpDewey">
+														<Icon :name="lookingUp ? 'i-tabler-loader-2' : 'i-tabler-search'" class="h-4 w-4" :class="{ 'animate-spin': lookingUp }" />Look up
+													</ButtonsButton>
+												</div>
+												<p class="mt-1.5 text-[12.5px] leading-snug" :class="deweyIsError ? 'text-red-500' : 'text-stone-500'">
+													{{ lookingUp ? 'Looking in the Library of Congress catalogue…' : deweyHint || (form.isbn.trim() ? 'Press Look up to find it from the ISBN, or type it if you know it. Left blank, the book is saved without a confirmed number.' : 'Add the ISBN in step 1 to look the number up, or type it if you know it.') }}
+												</p>
+											</div>
 									</fieldset>
 
 									<fieldset>
@@ -451,8 +494,20 @@ const lookingUp = ref(false)
 let originalDewey = ''
 // The number an unchecked book has now: only a guess from its category, so it is shown for the librarian to accept or correct.
 const guessedDewey = ref('')
-// True while the number in the box came from a catalogue lookup (not typed), so going Back and changing the ISBN looks it up again.
-let deweyFromLookup = false
+// The ISBN the catalogues were last asked about, and the number they gave back. The lookup runs by itself on reaching the
+// shelving step, but never twice for the same ISBN, and never over a number typed by hand or one the book already has.
+let lookedUpIsbn = ''
+let lookedUpNumber = ''
+
+/** Reaching the shelving step with an ISBN entered: look the Dewey number up without a button press. */
+async function autoLookUpDewey() {
+	const isbn = form.isbn.trim()
+	if (!isbn || lookingUp.value || isbn === lookedUpIsbn) return
+	const typed = form.deweyNumber.trim()
+	// An empty box, or the number an earlier lookup (for another ISBN) put there, may be replaced; nothing else.
+	if (typed && typed !== lookedUpNumber) return
+	await lookUpDewey()
+}
 
 /**
  * Entering the last page: when no number is typed, the ISBN is looked up so the librarian can accept it right there.
@@ -464,7 +519,8 @@ async function prepareDewey() {
 		if (!deweyHint.value) deweyHint.value = props.book ? 'The number the book has now. Change it, or leave it as it is.' : ''
 		return
 	}
-	if (form.isbn.trim()) await lookUpDewey()
+	// Already asked about this ISBN on the shelving step (and found nothing): don't ask the catalogues again.
+	if (form.isbn.trim() && form.isbn.trim() !== lookedUpIsbn) await lookUpDewey()
 	if (!form.deweyNumber.trim() && guessedDewey.value) {
 		form.deweyNumber = guessedDewey.value
 		deweyHint.value = `No catalogue has this book, so ${guessedDewey.value} is only a guess from the category. Check it, or type the right number.`
@@ -472,8 +528,7 @@ async function prepareDewey() {
 }
 
 function backToForm() {
-	// A number that was only looked up (never typed) is dropped, so a changed ISBN is looked up again on the way back.
-	if (deweyFromLookup) { form.deweyNumber = ''; deweyHint.value = ''; deweyFromLookup = false }
+	// The number stays: if the ISBN is changed on the way back, the shelving step looks the new one up (see autoLookUpDewey).
 	confirming.value = false
 }
 
@@ -482,13 +537,19 @@ async function lookUpDewey() {
 	if (!isbn) return
 	lookingUp.value = true
 	deweyIsError.value = false
+	lookedUpIsbn = isbn
 	try {
 		const result = await librarianService.lookupIsbnDewey(isbn)
+		// The ISBN was changed while the catalogues were answering: that answer is for a book that is no longer in the form.
+		if (form.isbn.trim() !== isbn) return
 		if (result.found && result.deweyNumber) {
 			form.deweyNumber = result.deweyNumber
-			deweyFromLookup = true
+			lookedUpNumber = result.deweyNumber
 			deweyHint.value = `Found ${result.deweyNumber} in ${result.source ? DEWEY_SOURCE_LABEL[result.source] : 'a library catalogue'}. Check it, then confirm.`
 		} else {
+			// A number from an earlier lookup belonged to the previous ISBN, so it doesn't stay for this one.
+			if (lookedUpNumber && form.deweyNumber === lookedUpNumber) form.deweyNumber = ''
+			lookedUpNumber = ''
 			deweyHint.value = 'No catalogue has a Dewey number for this ISBN. Type one if you know it (often printed on the copyright page as "DDC"), or leave it blank.'
 		}
 	} catch {
@@ -536,6 +597,8 @@ function goTo(target: number) {
 	if (target === step.value || !canOpen(target)) return
 	direction.value = target > step.value ? 1 : -1
 	step.value = target
+	// The shelving step is where the Dewey number lives: look it up from the ISBN as soon as it opens.
+	if (target === 2) void autoLookUpDewey()
 }
 
 function focusStep() {
@@ -549,7 +612,11 @@ function blankAuthor() {
 }
 
 const authors = ref([blankAuthor()])
-const pagesEditor = ref<{ apply: (bookUuid: string) => Promise<{ failed: number }> } | null>(null)
+const pagesEditor = ref<{
+	apply: (bookUuid: string) => Promise<{ failed: number }>
+	/** Photos added and removed, and whether any section was reordered (for the confirmation). */
+	summary: { added: number; removed: number; reordered: boolean }
+} | null>(null)
 const editorKey = ref(0)
 const quantity = ref(1)
 const submitting = ref(false)
@@ -621,7 +688,8 @@ function resetForm() {
 	form.deweyNumber = ''
 	deweyHint.value = ''
 	deweyIsError.value = false
-	deweyFromLookup = false
+	lookedUpIsbn = ''
+	lookedUpNumber = ''
 	createdBook.value = null
 	originalDewey = ''
 	guessedDewey.value = ''
@@ -735,38 +803,81 @@ function next() {
 	goTo(step.value + 1)
 }
 
+type SummaryRow = {
+	label: string
+	now: string
+	before: string
+	group: 'book' | 'shelving' | 'details' | 'extras'
+	/** A long value (the title, authors, remarks, a link): takes the whole width of its card. */
+	wide?: boolean
+	/** No "before" to show (page photo changes are described, not compared). */
+	plain?: boolean
+}
+
 /** What the confirmation shows: every field when adding; only the fields that changed (old → new) when editing. */
-const summaryRows = computed(() => {
+const summaryRows = computed<SummaryRow[]>(() => {
 	if (!confirming.value) return []
 	const book = props.book
 	const money = (v: string | number | null | undefined) => (v === '' || v == null ? '' : formatPeso(Number(v)))
-	const authorNames = authors.value.filter((a) => a.name.trim()).map((a) => a.name.trim()).join(', ')
+	// "Name" for an ordinary author, "Name (Editor)" for any other role, so a changed role counts as a change too.
+	const withRole = (name: string, role: string | null | undefined) => (role && role !== 'Author' ? `${name} (${role})` : name)
+	const authorNames = authors.value.filter((a) => a.name.trim()).map((a) => withRole(a.name.trim(), a.role)).join(', ')
 
-	const rows: { label: string; now: string; before: string }[] = [
-		{ label: 'Title', now: form.title.trim(), before: book?.title ?? '' },
-		{ label: 'Authors', now: authorNames, before: book?.authors.map((a) => a.name).join(', ') ?? '' },
-		{ label: 'Category', now: form.subjectName.trim(), before: book?.subject?.name ?? '' },
-		{ label: 'ISBN', now: form.isbn.trim(), before: book?.isbn ?? '' },
-		{ label: 'Publication year', now: String(form.publicationYear).trim(), before: String(book?.publicationYear ?? '') },
-		{ label: 'Area of library', now: LIBRARY_AREAS[form.areaOfLibrary], before: book?.areaOfLibrary ? LIBRARY_AREAS[book.areaOfLibrary] : LIBRARY_AREAS.circulation },
-		{ label: 'Shelf location', now: form.shelfLocation.trim(), before: book?.shelfLocation ?? '' },
-		{ label: 'Cover image link', now: form.coverImageURL.trim(), before: book?.coverImageURL ?? '' },
-		{ label: 'Publisher', now: form.publisher.trim(), before: book?.publisher ?? '' },
-		{ label: 'Edition', now: form.edition.trim(), before: book?.edition ?? '' },
-		{ label: 'Volume', now: form.volume.trim(), before: book?.volume ?? '' },
-		{ label: 'Pages', now: String(form.pageCount).trim(), before: String(book?.pageCount ?? '') },
-		{ label: 'Source of fund', now: form.sourceOfFund.trim(), before: book?.sourceOfFund ?? '' },
-		{ label: 'Cost', now: money(form.cost), before: money(book?.cost) },
-		{ label: 'Remarks', now: form.remarks.trim(), before: book?.remarks ?? '' },
+	// The page photos live in their own editor: added, removed or re-ordered photos are summed up here.
+	const photos = pagesEditor.value?.summary
+	const photoParts = photos ? [
+		photos.added ? `${photos.added} added` : '',
+		photos.removed ? `${photos.removed} removed` : '',
+		photos.reordered ? 'order changed' : '',
+	].filter(Boolean) : []
+	const photoNow = photoParts.length ? (book ? photoParts.join(', ') : `${photos?.added ?? 0} ${photos?.added === 1 ? 'photo' : 'photos'}`) : ''
+
+	const rows: SummaryRow[] = [
+		{ group: 'book', wide: true, label: 'Title', now: form.title.trim(), before: book?.title ?? '' },
+		{ group: 'book', wide: true, label: 'Authors', now: authorNames, before: book?.authors.map((a) => withRole(a.name, a.role)).join(', ') ?? '' },
+		{ group: 'book', label: 'Category', now: form.subjectName.trim(), before: book?.subject?.name ?? '' },
+		{ group: 'book', label: 'ISBN', now: form.isbn.trim(), before: book?.isbn ?? '' },
+		{ group: 'book', label: 'Publication year', now: String(form.publicationYear).trim(), before: String(book?.publicationYear ?? '') },
+		{ group: 'shelving', label: 'Area of library', now: LIBRARY_AREAS[form.areaOfLibrary], before: book?.areaOfLibrary ? LIBRARY_AREAS[book.areaOfLibrary] : LIBRARY_AREAS.circulation },
+		{ group: 'shelving', label: 'Shelf location', now: form.shelfLocation.trim(), before: book?.shelfLocation ?? '' },
+		{ group: 'details', label: 'Publisher', now: form.publisher.trim(), before: book?.publisher ?? '' },
+		{ group: 'details', label: 'Edition', now: form.edition.trim(), before: book?.edition ?? '' },
+		{ group: 'details', label: 'Volume', now: form.volume.trim(), before: book?.volume ?? '' },
+		{ group: 'details', label: 'Pages', now: String(form.pageCount).trim(), before: String(book?.pageCount ?? '') },
+		{ group: 'details', label: 'Source of fund', now: form.sourceOfFund.trim(), before: book?.sourceOfFund ?? '' },
+		{ group: 'details', label: 'Cost', now: money(form.cost), before: money(book?.cost) },
+		{ group: 'extras', wide: true, label: 'Cover image link', now: form.coverImageURL.trim(), before: book?.coverImageURL ?? '' },
+		{ group: 'extras', wide: true, label: 'Remarks', now: form.remarks.trim(), before: book?.remarks ?? '' },
+		{ group: 'extras', plain: true, label: 'Page photos', now: photoNow, before: '' },
 	]
-	if (book) rows.push({ label: 'New arrival', now: form.isNewArrival ? 'Yes' : 'No', before: book.isNewArrival ? 'Yes' : 'No' })
+	if (book) rows.push({ group: 'extras', label: 'New arrival', now: form.isNewArrival ? 'Yes' : 'No', before: book.isNewArrival ? 'Yes' : 'No' })
 	if (!book) {
-		rows.splice(5, 0, { label: 'Copies', now: String(quantity.value), before: '' })
-		rows.push({ label: 'New arrival', now: form.isNewArrival ? 'Yes, everyone is notified' : 'No', before: '' })
+		rows.splice(7, 0, { group: 'shelving', label: 'Copies', now: String(quantity.value), before: '' })
+		rows.push({ group: 'extras', label: 'New arrival', now: form.isNewArrival ? 'Yes, everyone is notified' : 'No', before: '' })
 		return rows.filter((r) => r.now !== '' || r.label === 'Copies')
 	}
 	return rows.filter((r) => r.now !== r.before)
 })
+
+const GROUPS = [
+	{ key: 'book', title: 'The book', icon: 'i-tabler-book-2' },
+	{ key: 'shelving', title: 'Shelving', icon: 'i-tabler-map-pin' },
+	{ key: 'details', title: 'Details', icon: 'i-tabler-list-details' },
+	{ key: 'extras', title: 'Extras', icon: 'i-tabler-photo' },
+] as const
+
+/**
+ * The rows, sorted into their cards. A new book's title, authors and category are in the header card above,
+ * so they are left out here; an edit lists only the rows that changed, so a card with none doesn't appear.
+ */
+const summaryGroups = computed(() => {
+	const inHeader = new Set(['Title', 'Authors', 'Category'])
+	return GROUPS
+		.map((g) => ({ ...g, rows: summaryRows.value.filter((r) => r.group === g.key && (props.book || !inHeader.has(r.label))) }))
+		.filter((g) => g.rows.length > 0)
+})
+
+const headerAuthors = computed(() => authors.value.filter((a) => a.name.trim()).map((a) => a.name.trim()).join(', '))
 
 /** Validates every step, then shows the confirmation. Nothing is saved until "Yes" is pressed there. */
 function handleSubmit() {
@@ -833,7 +944,7 @@ async function doSave() {
 			emit('updated')
 		} else {
 			alert.success(
-				unchecked ? 'Book added, Dewey number not checked' : 'Book added',
+				unchecked ? 'Book added, Dewey number unverified' : 'Book added',
 				unchecked
 					? `"${payload.title}" is in the catalog without a confirmed Dewey number. Add it later by editing the book.`
 					: `"${payload.title}" is now in the catalog.`,

@@ -89,7 +89,7 @@
 
 			<p class="text-[12.5px] leading-snug text-stone-500">
 				A number needs three digits, then an optional decimal (like <span class="font-data">005.133</span>). A row can be ticked once it has one.
-				Leaving a row unticked keeps that book unchecked.
+				Leaving a row unticked keeps that book unverified.
 			</p>
 		</div>
 
@@ -113,7 +113,7 @@
 				</div>
 			</div>
 			<p v-if="failedSaves.length" class="rounded-xl bg-red-50 px-3.5 py-2.5 text-[13px] leading-snug text-red-800">
-				{{ failedSaves.length }} could not be saved: {{ failedSaves.slice(0, 3).join(', ') }}<span v-if="failedSaves.length > 3"> and {{ failedSaves.length - 3 }} more</span>. They are still unchecked.
+				{{ failedSaves.length }} could not be saved: {{ failedSaves.slice(0, 3).join(', ') }}<span v-if="failedSaves.length > 3"> and {{ failedSaves.length - 3 }} more</span>. They are still unverified.
 			</p>
 			<p v-if="remaining > 0" class="text-[13.5px] text-stone-600">{{ remaining }} {{ remaining === 1 ? 'book is' : 'books are' }} still waiting. Open this again to keep going.</p>
 		</div>

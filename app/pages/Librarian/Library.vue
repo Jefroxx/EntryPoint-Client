@@ -49,6 +49,13 @@
                     <option value="available">On the shelf</option>
                     <option value="unavailable">None on the shelf</option>
                 </select>
+                <select v-model="deweyFilter" aria-label="Filter by Dewey number status"
+                    class="h-[42px] rounded-xl border bg-white px-3 text-[14px] outline-none transition-colors hover:bg-stone-50 focus:ring-2 focus:ring-accent-200"
+                    :class="deweyFilter ? 'border-accent-300 text-stone-800' : 'border-stone-200 text-stone-500'">
+                    <option value="">All Verification</option>
+                    <option value="verified">Verified</option>
+                    <option value="unverified">Unverified</option>
+                </select>
                 <div class="flex-1"></div>
 
                 <LibrarianResetFiltersButton @click="clearBookFilters" />
@@ -336,7 +343,7 @@
 </template>
 
 <script setup lang="ts">
-import { LIBRARY_AREAS, librarianService, type BookAvailabilityFilter, type BookDetail, type BookSuggestion, type CatalogBook, type CopyCatalogRow, type CopyLabelsResponse, type CopyStatus, type LibraryArea, type RemoveReason } from '~/services/librarianService'
+import { LIBRARY_AREAS, librarianService, type BookAvailabilityFilter, type BookDeweyFilter, type BookDetail, type BookSuggestion, type CatalogBook, type CopyCatalogRow, type CopyLabelsResponse, type CopyStatus, type LibraryArea, type RemoveReason } from '~/services/librarianService'
 import { subjectService, type SubjectRecord } from '~/services/subjectService'
 import AlertToast from '~/api/alert/AlertToast.vue'
 import { useAlert } from '~/api/alert/useAlert'
@@ -365,13 +372,15 @@ const { data: stats, execute: refetchStats } = useLiveAsyncData('library-stats',
 
 const subjectFilter = ref<number | ''>('')
 const availabilityFilter = ref<BookAvailabilityFilter>('')
-const hasBookFilters = computed(() => !!(search.value.trim() || subjectFilter.value || availabilityFilter.value))
+const deweyFilter = ref<BookDeweyFilter>('')
+const hasBookFilters = computed(() => !!(search.value.trim() || subjectFilter.value || availabilityFilter.value || deweyFilter.value))
 
 const { data: books, pending: booksPending, execute: refetchBooks } =
     useLiveAsyncData('library-books', () => librarianService.fetchBooks({
         search: search.value || undefined,
         subjectID: subjectFilter.value || undefined,
         availability: availabilityFilter.value || undefined,
+        dewey: deweyFilter.value || undefined,
         page: page.value,
         perPage: 10,
     }), { lazy: true })
@@ -386,7 +395,7 @@ watch(search, () => {
 })
 
 // Dropdowns apply straight away (no typing to wait out), always from the first page.
-watch([subjectFilter, availabilityFilter], () => {
+watch([subjectFilter, availabilityFilter, deweyFilter], () => {
     page.value = 1
     refetchBooks()
 })
@@ -395,6 +404,7 @@ function clearBookFilters() {
     search.value = ''
     subjectFilter.value = ''
     availabilityFilter.value = ''
+    deweyFilter.value = ''
 }
 
 function goToPage(next: number) {
