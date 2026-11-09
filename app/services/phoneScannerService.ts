@@ -3,6 +3,8 @@ import { BaseService } from "~/services/BaseService";
 export interface PhonePairing {
   code: string;
   expiresAt: string;
+  /** The address the server is reached on (its PORTAL_URL: the real domain when hosted): where the phone has to go. */
+  portalUrl?: string;
 }
 
 export interface PhoneScan {

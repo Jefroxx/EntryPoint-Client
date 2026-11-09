@@ -41,9 +41,9 @@
 
 			<!-- Not connected yet: the QR, or a way to say where the phone should go. -->
 			<div v-else class="mt-3">
-				<div v-if="!origin" class="rounded-xl bg-amber-50 p-3 text-[13px] leading-snug text-amber-900">
+				<div v-if="!address" class="rounded-xl bg-amber-50 p-3 text-[13px] leading-snug text-amber-900">
 					<p class="font-semibold">A phone can't open this address.</p>
-					<p class="mt-0.5">The camera on a phone only works on a secure (https) address, and not on <span class="font-data">localhost</span>. Open this site on the computer through its public address, or type that address here once:</p>
+					<p class="mt-0.5">This is a local copy of the site (<span class="font-data">localhost</span>), and a phone can only use the camera on a secure public (https) address. On the live site the QR code appears by itself. To try it here, type a public address that reaches this computer, once:</p>
 					<form class="mt-2 flex gap-2" @submit.prevent="saveAddress">
 						<input v-model="addressInput" type="text" inputmode="url" autocomplete="off" placeholder="https://your-address.trycloudflare.com"
 							class="font-data h-10 min-w-0 flex-1 rounded-xl border bg-white px-3 text-[13px] text-stone-900 outline-none focus:border-accent-400"
@@ -68,7 +68,7 @@
 						<div class="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1.5">
 							<ButtonsButton variant="ghost" size="sm" :disabled="phone.busy.value" @click="phone.newCode()"><Icon name="i-tabler-refresh" class="h-3.5 w-3.5" />New code</ButtonsButton>
 							<ButtonsButton variant="ghost" size="sm" @click="copyLink"><Icon name="i-tabler-copy" class="h-3.5 w-3.5" />{{ copied ? 'Copied' : 'Copy link' }}</ButtonsButton>
-							<button v-if="!onPublicAddress" type="button" class="text-[12.5px] font-medium text-stone-500 underline-offset-2 hover:text-stone-800 hover:underline" @click="changeAddress">Change address</button>
+							<button v-if="!onPublicAddress && !serverOrigin" type="button" class="text-[12.5px] font-medium text-stone-500 underline-offset-2 hover:text-stone-800 hover:underline" @click="changeAddress">Change address</button>
 							<button v-if="phone.connected.value" type="button" class="text-[12.5px] font-medium text-stone-500 underline-offset-2 hover:text-stone-800 hover:underline" @click="showCode = false">Done</button>
 						</div>
 					</div>
@@ -107,7 +107,12 @@ const addressError = ref('')
 const qr = ref('')
 const copied = ref(false)
 
-const link = computed(() => (origin.value && phone.pairing.value ? phoneLink(origin.value, phone.pairing.value.code) : ''))
+// The server says which address phones should open (its PORTAL_URL: the real domain once hosted). The code only works
+// against the server that made it, so that address is always the right one and nothing has to be typed.
+const serverOrigin = computed(() => cleanPhoneAddress(phone.pairing.value?.portalUrl ?? ''))
+// In order of preference: the server's address, then the one this window is open on, then one typed in once.
+const address = computed(() => serverOrigin.value ?? origin.value)
+const link = computed(() => (address.value && phone.pairing.value ? phoneLink(address.value, phone.pairing.value.code) : ''))
 
 async function turnOn() {
 	on.value = true
