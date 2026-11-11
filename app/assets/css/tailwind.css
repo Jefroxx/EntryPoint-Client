@@ -3,8 +3,8 @@
 
 @theme {
 	/* Words are Raleway, figures are Montserrat (see the rules below the theme). */
-	--font-sans: 'Raleway', ui-sans-serif, system-ui, sans-serif;
-	--font-display: 'Raleway', ui-sans-serif, system-ui, sans-serif;
+	--font-sans: 'Figures', 'Raleway', ui-sans-serif, system-ui, sans-serif;
+	--font-display: 'Figures', 'Raleway', ui-sans-serif, system-ui, sans-serif;
 	--font-data: 'Montserrat', ui-sans-serif, system-ui, sans-serif;
 
 	/* "Old Library" palette. Six named colours, each with one job:
@@ -57,15 +57,28 @@
 /* Type: Raleway for words, Montserrat for numbers — both roles          */
 /* ------------------------------------------------------------------ */
 
+/* "Figures" is Montserrat restricted to the digits 0-9 (unicode-range). It sits first in every
+   font stack, so each digit on every page renders in Montserrat and every letter falls through to
+   Raleway. Nothing has to be marked up: counts, badges, points, dates and prices all match, and a
+   class like .dashboard-heading can no longer pull a number back to Raleway. The file is the same
+   Montserrat variable font @nuxt/fonts hosts, copied to /public so this face can name it directly. */
+@font-face {
+	font-family: 'Figures';
+	src: url('/fonts/montserrat-latin-var.woff2') format('woff2');
+	font-weight: 100 900;
+	font-style: normal;
+	font-display: swap;
+	unicode-range: U+0030-0039;
+}
+
 /* Written out in full (not only as theme variables) so @nuxt/fonts sees both
    families while scanning the CSS and self-hosts them. */
 :root {
-	font-family: 'Raleway', ui-sans-serif, system-ui, sans-serif;
+	font-family: 'Figures', 'Raleway', ui-sans-serif, system-ui, sans-serif;
 }
 
-/* Anything already marked as figures takes the number face: `font-data` for IDs,
-   codes and times, `tabular-nums` for counts and totals that line up in a column.
-   No component has to name a font itself. */
+/* Elements marked as figures (`font-data` for IDs, codes and times, `tabular-nums` for columns of
+   totals) keep the whole Montserrat face, letters included; their digits are the same either way. */
 .tabular-nums,
 .font-data {
 	font-family: 'Montserrat', ui-sans-serif, system-ui, sans-serif;
@@ -74,7 +87,7 @@
 /* Page-header font used across every Librarian page (was previously scoped
    to Dashboard.vue only, so it silently had no effect anywhere else). */
 .dashboard-heading {
-	font-family: 'Raleway', sans-serif;
+	font-family: 'Figures', 'Raleway', sans-serif;
 }
 
 /* Staggered table-row entrance. Global (not scoped) so the animation name

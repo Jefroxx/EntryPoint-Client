@@ -1,5 +1,5 @@
 <template>
-	<LibrarianModalShell :open="open" size="lg" :title="announcement ? 'Edit announcement' : 'New announcement'"
+	<LibrarianModalShell :open="open" size="lg" :title="announcement ? 'Edit Announcement' : 'New Announcement'"
 		subtitle="It shows at the top of the page for whoever you choose." :busy="busy" @close="emit('close')">
 		<div class="space-y-4">
 			<LibrarianTextField id="announce-title" v-model="form.title" label="Title" placeholder="e.g. Closed on Friday" :maxlength="120"
@@ -28,7 +28,7 @@
 				</div>
 			</fieldset>
 
-			<LibrarianTextField id="announce-end" v-model="form.endDate" type="date" label="Stop showing it after" optional
+			<LibrarianTextField id="announce-end" v-model="form.endDate" type="date" :min="toYmd()" label="Stop showing it after" optional
 				hint="Leave this empty to keep it up until you remove it." :error="errors.expiresAt" @update:model-value="errors.expiresAt = ''" />
 		</div>
 

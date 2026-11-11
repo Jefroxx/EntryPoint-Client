@@ -85,7 +85,7 @@
 							placeholder="Pojadas" :error="err('lastName')" @update:model-value="clear('lastName')" />
 					</div>
 					<div class="mt-3 grid gap-3 sm:grid-cols-2" @focusout="touch">
-						<LibrarianTextField id="birthDate" v-model="form.birthDate" label="Birth date" optional type="date"
+						<LibrarianTextField id="birthDate" v-model="form.birthDate" label="Birth date" optional type="date" :max="toYmd()"
 							:error="err('birthDate')" @update:model-value="clear('birthDate')" />
 						<LibrarianTextField id="phoneNumber" v-model="form.phoneNumber" label="Phone" optional type="tel"
 							autocomplete="tel" placeholder="0917 123 4567" :maxlength="20" :error="err('phoneNumber')"

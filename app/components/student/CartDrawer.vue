@@ -37,7 +37,7 @@
 
 			<template v-if="cart.length">
 				<TransitionGroup tag="div" class="relative mt-4 overflow-hidden rounded-2xl border border-stone-200 bg-white"
-					leave-active-class="absolute inset-x-0 transition-[opacity,transform] duration-200 ease-out"
+					leave-active-class="absolute inset-x-0 transition-[opacity,transform,translate,scale] duration-200 ease-out"
 					leave-to-class="-translate-x-3 opacity-0" move-class="transition-transform duration-200 ease-out">
 					<div v-for="row in cart" :key="row.wishlistID" class="relative flex items-center gap-3.5 border-b border-stone-100 bg-white p-3.5 last:border-0">
 						<StudentCover :book="briefOf(row.book)" :width="44" />

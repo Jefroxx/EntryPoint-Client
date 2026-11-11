@@ -63,11 +63,11 @@
 
         <AdminCredentialsModal :open="isCredentialsOpen" :title="credentialsTitle" :credentials="credentials" @close="isCredentialsOpen = false" />
 
-        <LibrarianConfirmModal :open="isDisableOpen" title="Disable this account?"
+        <LibrarianConfirmModal :open="isDisableOpen" title="Disable This Account?"
             :message="`${target?.name ?? 'This account'} will be signed out right away and can't sign in until you enable the account again. Their records stay as they are.`"
             confirm-label="Disable account" :loading="busy" @close="isDisableOpen = false" @confirm="disable" />
 
-        <LibrarianConfirmModal :open="isResetOpen" title="Reset this password?"
+        <LibrarianConfirmModal :open="isResetOpen" title="Reset This Password?"
             :message="`${target?.name ?? 'This account'} gets a new temporary password and is signed out everywhere. The old password stops working. You'll see the new one once.`"
             confirm-label="Reset password" :danger="false" :loading="busy" @close="isResetOpen = false" @confirm="reset" />
 

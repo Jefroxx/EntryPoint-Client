@@ -8,10 +8,7 @@
 			@click="select(tab.value)">
 			<template v-if="tab.short"><span class="sm:hidden">{{ tab.short }}</span><span class="hidden sm:inline">{{ tab.label }}</span></template>
 				<template v-else>{{ tab.label }}</template>
-			<span v-if="tab.badge"
-				class="inline-flex h-[17px] min-w-[17px] items-center justify-center rounded-full bg-amber-600 px-1.5 text-[11px] font-bold text-white">
-				{{ tab.badge }}
-			</span>
+			<CountBadge v-if="tab.badge" tone="amber">{{ tab.badge }}</CountBadge>
 		</button>
 	</div>
 </template>

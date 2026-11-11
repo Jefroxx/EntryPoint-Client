@@ -4,7 +4,7 @@
 			:class="open ? 'opacity-100' : 'pointer-events-none opacity-0'" @click="emit('close')" />
 
 		<aside role="dialog" aria-modal="true" aria-labelledby="bookDetailTitle" :aria-hidden="!open" @keydown.esc="emit('close')"
-			class="fixed right-0 top-0 z-[61] flex h-full w-full max-w-[440px] flex-col bg-white shadow-overlay transition-transform ease-[cubic-bezier(.32,.72,0,1)]"
+			class="fixed right-0 top-0 z-[61] flex h-full w-full max-sm:max-w-none max-w-[440px] flex-col bg-white shadow-overlay transition-transform ease-[cubic-bezier(.32,.72,0,1)]"
 			:class="open ? 'translate-x-0 duration-300' : 'translate-x-full duration-200'">
 			<div class="flex items-center justify-between border-b border-stone-100 px-5 py-4">
 				<h3 id="bookDetailTitle" class="text-[17px] font-bold text-accent-700">Book details</h3>
@@ -150,7 +150,7 @@ const fields = computed(() => {
 	const b = props.book
 	if (!b) return []
 
-	const peso = (value: string | number) => `₱${Number(value).toLocaleString('en-PH', { minimumFractionDigits: 2 })}`
+	const peso = formatPeso
 	const rows: { label: string; value: string | number; mono?: boolean; wide?: boolean; optional?: boolean }[] = [
 		{ label: 'Call number', value: b.callNumber ? (b.deweyStatus === 'needs_review' ? `${b.callNumber} (Unverified)` : b.callNumber) : '—', mono: true },
 		{ label: 'ISBN', value: b.isbn || '—', mono: true },

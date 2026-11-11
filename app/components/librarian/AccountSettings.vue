@@ -25,7 +25,7 @@
 
 		<section class="rounded-2xl border border-stone-200 bg-white p-5">
 			<h2 class="text-[15px] font-bold text-stone-900">Password</h2>
-			<p class="mb-4 text-[13.5px] text-stone-500">Use at least 8 characters.</p>
+			<p class="mb-4 text-[13.5px] text-stone-500">Use at least 10 characters.</p>
 
 			<div class="space-y-4">
 				<LibrarianTextField id="account-current" v-model="password.currentPassword" type="password"

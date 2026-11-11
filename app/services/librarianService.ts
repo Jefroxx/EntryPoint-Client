@@ -1,6 +1,7 @@
 import { BaseService } from "./BaseService";
 import type { HallOfFame } from "./studentService";
 import type { BookPagePhoto, BookPageSection } from "~/utils/bookPages";
+import type { StaffRef } from "~/utils/staffRole";
 
 /** GET /librarian/dashboard/today — today's desk traffic and the queues waiting on a librarian. */
 export interface DashboardToday {
@@ -234,8 +235,14 @@ export interface CopyLabel {
   barcodeValue: string | null;
   title: string;
   authors: string[];
-  /** The confirmed call number, or null while the Dewey number is only a guess (a guess never goes on a label). */
+  /** The confirmed call number (Dewey + Cutter, joined), or null while the Dewey number is only a guess (a guess never goes on a label). */
   callNumber: string | null;
+  /** The label's call number line: the Dewey number, or null while it is unchecked. */
+  dewey: string | null;
+  /** The label's author Cutter line, or null while the Dewey number is unchecked. */
+  cutter: string | null;
+  /** The book's Dewey number is only a guess (so it is left off unless the librarian chose to print it). */
+  unconfirmed: boolean;
   area: string;
   year: number | null;
 }
@@ -355,6 +362,10 @@ export interface AttendanceLog {
   visitorPurpose: string | null;
   entryTime: string;
   exitTime: string | null;
+  /** The staff account that scanned the visit in; null for visits logged before this was kept. */
+  checkedInByStaff?: StaffRef | null;
+  /** The staff account that scanned it out; null while it is open, or when the system closed it (end of day, nightly clean-up). */
+  checkedOutByStaff?: StaffRef | null;
   student: {
     studentID: number;
     memberIDNumber: string;
@@ -387,7 +398,7 @@ export interface AttendanceStats {
 export interface AttendanceScanResult {
   message: string;
   action: "check_in" | "check_out";
-  log: { logID: number; entryTime: string; exitTime: string | null };
+  log: { logID: number; entryTime: string; exitTime: string | null; checkedInByStaff?: StaffRef | null; checkedOutByStaff?: StaffRef | null };
   student: { name: string; program: string | null; memberIDNumber: string; visitStreak: number };
   /** Minutes spent inside; only set on a check-out. */
   durationMinutes: number | null;
@@ -480,6 +491,25 @@ export const DEWEY_SOURCE_LABEL: Record<DeweySource, string> = {
   manual: "Typed in",
   guessed: "Guessed from the category",
 };
+
+/** POST /librarian/isbn/lookup: a book's details from its ISBN, or why there are none. */
+export type IsbnDetailsLookup =
+  | {
+      found: true;
+      isbn: string;
+      title: string | null;
+      authors: string[];
+      publisher: string | null;
+      publishYear: number | null;
+      pageCount: number | null;
+      description: string | null;
+      coverUrl: string | null;
+      deweyNumber: string | null;
+      deweySource: DeweySource | null;
+      /** Which catalogues the fields came from, most trusted first. */
+      sources: string[];
+    }
+  | { found: false; reason: "invalid" | "not_found"; isbn?: string; message: string };
 
 /** POST /librarian/dewey/lookup */
 export interface DeweyIsbnLookup {
@@ -684,6 +714,8 @@ class LibrarianServiceClass extends BaseService {
     copies?: string[]; book?: string; search?: string; subjectID?: number; status?: CopyStatus; area?: LibraryArea;
     /** Narrow it to these accession numbers: each a range, a single number being from = to. */
     accessions?: { from: number; to: number }[];
+    /** Also print the call number and Cutter of books whose Dewey number is only a guess (left off by default). */
+    includeUnconfirmed?: boolean;
   }) {
     return this.apiRequest<CopyLabelsResponse>("/librarian/copies/labels", { method: "POST", body: selection });
   }
@@ -785,6 +817,11 @@ class LibrarianServiceClass extends BaseService {
   /** What the catalogues say about an ISBN (Library of Congress, then Open Library). Saves nothing. */
   lookupIsbnDewey(isbn: string) {
     return this.apiRequest<DeweyIsbnLookup>("/librarian/dewey/lookup", { method: "POST", body: { isbn } });
+  }
+
+  /** What the catalogues know about an ISBN, to fill the Add Book form. Saves nothing; "not found" is a normal answer. */
+  lookupIsbnDetails(isbn: string) {
+    return this.apiRequest<IsbnDetailsLookup>("/librarian/isbn/lookup", { method: "POST", body: { isbn } });
   }
 
   /** The "check these Dewey numbers" list. */

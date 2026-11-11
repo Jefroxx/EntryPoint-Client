@@ -40,7 +40,7 @@
         <AdminAnnouncementFormModal :open="isFormOpen" :announcement="editing" :busy="busy" :server-errors="serverErrors"
             @close="isFormOpen = false" @submit="save" />
 
-        <LibrarianConfirmModal :open="isDeleteOpen" title="Remove this announcement?"
+        <LibrarianConfirmModal :open="isDeleteOpen" title="Remove This Announcement?"
             :message="`“${target?.title ?? 'This announcement'}” stops showing for everyone right away.`"
             confirm-label="Remove" :loading="busy" @close="isDeleteOpen = false" @confirm="remove" />
 

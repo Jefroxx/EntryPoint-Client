@@ -32,13 +32,10 @@
                     @click.stop="toggleBell">
                     <Icon name="i-tabler-bell" class="h-[22px] w-[22px]" />
                 </button>
-                <span v-if="unreadCount > 0"
-                    class="pointer-events-none absolute -right-1.5 -top-1.5 box-content flex h-[18px] min-w-[18px] items-center justify-center rounded-full border-2 border-parchment bg-red-500 px-1 text-[11px] font-bold leading-none text-white tabular-nums">
-                    {{ unreadCount > 9 ? '9+' : unreadCount }}
-                </span>
+                <CountBadge v-if="unreadCount > 0" size="md" ring="parchment" class="pointer-events-none absolute -right-1.5 -top-1.5">{{ unreadCount > 9 ? '9+' : unreadCount }}</CountBadge>
 
                 <div
-                    class="absolute right-0 top-[calc(100%+10px)] z-50 w-[380px] max-w-[calc(100vw-2rem)] origin-top-right max-sm:fixed max-sm:inset-x-3 max-sm:right-3 max-sm:top-[76px] max-sm:w-auto max-sm:max-w-none overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-card transition-[opacity,transform] duration-150"
+                    class="absolute right-0 top-[calc(100%+10px)] z-50 w-[380px] max-w-[calc(100vw-2rem)] origin-top-right max-sm:fixed max-sm:inset-x-3 max-sm:right-3 max-sm:top-[76px] max-sm:w-auto max-sm:max-w-none overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-card transition-[opacity,transform,translate,scale] duration-150"
                     :class="isBellOpen ? 'scale-100 opacity-100' : 'pointer-events-none scale-95 opacity-0'">
                     <div class="flex items-center justify-between border-b border-stone-100 px-4 py-3">
                         <p class="text-[15px] font-bold text-stone-900">Notifications</p>
@@ -75,7 +72,7 @@
                 </button>
 
                 <div
-                    class="absolute right-0 top-[calc(100%+10px)] z-50 w-56 origin-top-right rounded-2xl border border-stone-200 bg-white p-2 shadow-card transition-[opacity,transform] duration-150"
+                    class="absolute right-0 top-[calc(100%+10px)] z-50 w-56 origin-top-right rounded-2xl border border-stone-200 bg-white p-2 shadow-card transition-[opacity,transform,translate,scale] duration-150"
                     :class="isMenuOpen ? 'scale-100 opacity-100' : 'pointer-events-none scale-95 opacity-0'">
                     <div class="flex items-center gap-3 px-2 pb-2.5 pt-1">
                         <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-accent-500 to-accent-700 text-[13px] font-bold text-white">

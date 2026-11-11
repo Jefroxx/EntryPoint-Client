@@ -198,11 +198,12 @@ const detail = computed(() => {
 
 /* ---------- scanning ---------- */
 // Wide and short like a barcode, in the upper middle where a phone is held naturally.
-const REGION: ScanRegion = { left: 0.08, top: 0.34, width: 0.84, height: 0.26 }
+// Tall enough for a book's ISBN barcode too (it is squarer than the library's own labels).
+const REGION: ScanRegion = { left: 0.08, top: 0.28, width: 0.84, height: 0.4 }
 const frameStyle = { left: `${REGION.left * 100}%`, top: `${REGION.top * 100}%`, width: `${REGION.width * 100}%`, height: `${REGION.height * 100}%` }
 const CORNERS = ['left-0 top-0 border-b-0 border-r-0 rounded-tl-[12px]', 'right-0 top-0 border-b-0 border-l-0 rounded-tr-[12px]', 'bottom-0 left-0 border-r-0 border-t-0 rounded-bl-[12px]', 'bottom-0 right-0 border-l-0 border-t-0 rounded-br-[12px]']
 
-const { video, state: camState, torchAvailable, torchOn, start, stop, flip, toggleTorch } = useCameraScanner(onCode, () => REGION)
+const { video, state: camState, torchAvailable, torchOn, start, stop, flip, toggleTorch } = useCameraScanner(onCode, () => REGION, { formats: 'any' })
 
 interface Recent { id: number; code: string; state: 'sending' | 'sent' | 'failed' }
 const recent = ref<Recent[]>([])

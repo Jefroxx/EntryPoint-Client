@@ -1,5 +1,5 @@
 <template>
-	<LibrarianModalShell :open="open" size="xl" title="Create a Facebook post"
+	<LibrarianModalShell :open="open" size="xl" title="Create a Facebook Post"
 		:subtitle="category ? `${category.title} · ${periodText}` : ''" @close="emit('close')">
 		<div v-if="category" class="grid gap-5 md:grid-cols-[minmax(0,1fr)_320px]">
 			<!-- The poster exactly as it will be downloaded. -->

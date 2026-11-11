@@ -39,26 +39,35 @@
 
 <script setup lang="ts">
 import type { ScanRegion } from '~/composables/useCameraScanner'
+import { isbnFromBarcode } from '~/utils/isbn'
 
 /**
  * A camera that reads barcodes, for any window that needs to scan something (an ID, a book, a slip) without sending
  * the librarian to the Station tab. It is on while `active` is true. While it is on it tells the Station tab (over
  * the same channel Checkout uses) to leave its own camera reads alone, since both read the same webcam.
  */
-const props = defineProps<{
+const props = withDefaults(defineProps<{
 	active: boolean
 	/** What to hold up, shown inside the frame ("Hold the student's ID inside the box"). */
 	hint: string
-}>()
+	/** 'code128' is the library's own labels and IDs; 'isbn' reads the EAN-13 barcode on the back of a book (978/979 only). */
+	format?: 'code128' | 'isbn'
+}>(), { format: 'code128' })
 
 const emit = defineEmits<{ (e: 'code', value: string): void }>()
 
 // Wide and short like a barcode. The decoder reads only inside this box, so what is drawn is what is read.
-const REGION: ScanRegion = { left: 0.14, top: 0.32, width: 0.72, height: 0.36 }
+// A book's ISBN barcode is squarer than a Code 128 label (it carries the digits under the bars), so its box is taller.
+const REGION: ScanRegion = props.format === 'isbn'
+	? { left: 0.22, top: 0.16, width: 0.56, height: 0.62 }
+	: { left: 0.14, top: 0.32, width: 0.72, height: 0.36 }
 const frameStyle = { left: `${REGION.left * 100}%`, top: `${REGION.top * 100}%`, width: `${REGION.width * 100}%`, height: `${REGION.height * 100}%` }
 const CORNERS = ['left-0 top-0 border-b-0 border-r-0 rounded-tl-[10px]', 'right-0 top-0 border-b-0 border-l-0 rounded-tr-[10px]', 'bottom-0 left-0 border-r-0 border-t-0 rounded-bl-[10px]', 'bottom-0 right-0 border-l-0 border-t-0 rounded-br-[10px]']
 
-const { video, state: camState, torchAvailable, torchOn, start, stop, toggleTorch } = useCameraScanner(onCameraCode, () => REGION)
+const { video, state: camState, torchAvailable, torchOn, start, stop, toggleTorch } = useCameraScanner(onCameraCode, () => REGION, props.format === 'isbn'
+	// Only a real book ISBN counts: the price add-on and other products' barcodes are ignored, not reported.
+	? { formats: 'isbn', accept: (code) => isbnFromBarcode(code) !== null }
+	: undefined)
 const desk = useCheckoutDeskAnnouncer()
 
 const flash = ref(false)

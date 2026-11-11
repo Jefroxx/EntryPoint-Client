@@ -1,5 +1,5 @@
 <template>
-	<LibrarianModalShell :open="open" size="lg" title="Scan to check out" subtitle="Scan the student's reservation pickup slip." @close="emit('close')">
+	<LibrarianModalShell :open="open" size="lg" title="Scan to Check Out" subtitle="Scan the student's reservation pickup slip." @close="emit('close')">
 		<div v-if="reservation" class="space-y-4">
 			<!-- Whose reservation this is, so a scan can be checked against it by eye as well. -->
 			<section class="rounded-xl border border-stone-200 bg-stone-50 p-4">

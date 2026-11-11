@@ -229,20 +229,20 @@ const kind = computed(() => props.mode ?? 'return')
 
 const WORDS = {
 	return: {
-		title: 'Return this book?', subtitle: 'Check the details, then continue.',
-		confirmTitle: 'Confirm the return', confirmSubtitle: 'This is the last step. Check it, then return the book.',
+		title: 'Return This Book?', subtitle: 'Check the details, then continue.',
+		confirmTitle: 'Confirm the Return', confirmSubtitle: 'This is the last step. Check it, then return the book.',
 		about: 'You are about to return', outcome: 'It goes back on the shelf and the next person in line is told.',
 		confirm: 'Yes, return the book', icon: 'i-tabler-arrow-back-up',
 	},
 	verify: {
-		title: 'Verify this self-return?', subtitle: 'The student says they brought the book back. Check the details, then continue.',
-		confirmTitle: 'Confirm the verification', confirmSubtitle: 'This is the last step. Check it, then verify the return.',
+		title: 'Verify This Self-Return?', subtitle: 'The student says they brought the book back. Check the details, then continue.',
+		confirmTitle: 'Confirm the Verification', confirmSubtitle: 'This is the last step. Check it, then verify the return.',
 		about: 'You are about to verify the return of', outcome: 'The book is returned and goes back on the shelf, and the student is told it was verified.',
 		confirm: 'Yes, verify the return', icon: 'i-tabler-circle-check',
 	},
 	reject: {
-		title: 'Reject this report?', subtitle: "Check the details, then continue. The book stays on the student's loan.",
-		confirmTitle: 'Confirm the rejection', confirmSubtitle: 'This is the last step. Check it, then reject the report.',
+		title: 'Reject This Report?', subtitle: "Check the details, then continue. The book stays on the student's loan.",
+		confirmTitle: 'Confirm the Rejection', confirmSubtitle: 'This is the last step. Check it, then reject the report.',
 		about: 'You are about to reject the report for', outcome: 'The book stays on loan. The student is told why it could not be verified and can report again after 6 hours.',
 		confirm: 'Yes, reject the report', icon: 'i-tabler-circle-x',
 	},
@@ -317,7 +317,7 @@ const bookFields = computed(() => {
 	if (!b) return []
 	return [
 		{ label: 'Accession no.', value: String(b.accessionNumber), mono: true },
-		{ label: 'Call no.', value: b.callNumber ?? '', mono: true },
+		{ label: 'Call number', value: b.callNumber ?? '', mono: true },
 		{ label: 'Collection', value: b.areaOfLibrary ? (AREAS[b.areaOfLibrary] ?? b.areaOfLibrary) : '' },
 		{ label: 'ISBN', value: b.isbn ?? '', mono: true },
 	]

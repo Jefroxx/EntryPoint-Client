@@ -227,7 +227,7 @@
         <LibrarianIssuePenaltyModal :open="isIssueOpen" :busy="issueBusy"
             @close="isIssueOpen = false" @submit="saveIssuePenalty" />
 
-        <LibrarianConfirmModal :open="isReplaceOpen" title="Replacement received?" confirm-label="Yes, replacement received"
+        <LibrarianConfirmModal :open="isReplaceOpen" title="Replacement Received?" confirm-label="Yes, replacement received"
             :danger="false" :loading="replaceBusy" :message="replaceMessage"
             @close="isReplaceOpen = false" @confirm="confirmReplace" />
 
@@ -314,7 +314,7 @@ const { data: loans, pending: loansPending, execute: refetchLoans } = useLiveAsy
         search: loanSearch.value || undefined,
         status: loanStatus.value || undefined,
         page: loanPage.value,
-        perPage: 10,
+        perPage: 12,
     }),
     { lazy: true },
 )
@@ -344,7 +344,7 @@ const reservationStatus = ref<'' | 'open' | ReservationStatus>('open')
 const reservationPage = ref(1)
 // Filter by one book ('' = every book).
 const reservationBook = ref<number | ''>('')
-const RESERVATIONS_PER_PAGE = 9 // students per page: three full rows of cards
+const RESERVATIONS_PER_PAGE = 12 // students per page: whole rows of the 1, 2 and 3 column card grid
 
 const reservationStats = computed(() => ({
     waiting: reservations.value.filter((r) => r.status === 'Waiting').length,
@@ -478,7 +478,7 @@ const { data: penalties, pending: penaltiesPending, execute: refetchPenalties } 
         status: penaltyStatus.value || undefined,
         kind: 'late',
         page: penaltyPage.value,
-        perPage: 10,
+        perPage: 12,
     }),
     { lazy: true },
 )
@@ -513,7 +513,7 @@ const { data: copyPenalties, pending: copyPenaltiesPending, execute: refetchCopy
         status: copyPenaltyStatus.value || undefined,
         kind: 'copy',
         page: copyPenaltyPage.value,
-        perPage: 10,
+        perPage: 12,
     }),
     { lazy: true },
 )

@@ -20,8 +20,18 @@ const TICK_MS = 100
 /** Upscaled crops are capped at this width, which keeps a pass well under the tick on a desk PC. */
 const MAX_CROP_WIDTH = 1600
 
+export interface ScannerOptions {
+  /**
+   * Which barcodes to read. 'code128' (the default) is the library's own labels, IDs and slips; 'isbn' is the
+   * EAN-13 barcode on the back of a book; 'any' reads both (a phone, which doesn't know what the desk wants).
+   */
+  formats?: 'code128' | 'isbn' | 'any'
+  /** Reads this returns false for are dropped before they are reported or counted as "seen". */
+  accept?: (code: string) => boolean
+}
+
 /**
- * Reads Code 128 barcodes from the webcam or a phone camera. Every read is handed to `onCode`;
+ * Reads barcodes (Code 128 by default, see `options.formats`) from the webcam or a phone camera. Every read is handed to `onCode`;
  * the same code seen again within a couple of seconds is ignored so one ID is never reported twice.
  * The <video> element is wired up through the returned `video` ref.
  *
@@ -30,7 +40,14 @@ const MAX_CROP_WIDTH = 1600
  * behind it isn't there to confuse the decoder. That crop is decoded carefully (ZXing's TRY_HARDER,
  * with two binarizers), which matters on Windows, where there's no built-in BarcodeDetector.
  */
-export function useCameraScanner(onCode: (code: string) => void, region?: () => ScanRegion) {
+export function useCameraScanner(onCode: (code: string) => void, region?: () => ScanRegion, options: ScannerOptions = {}) {
+  const formats = options.formats ?? 'code128'
+  // The browser's detector and ZXing name the same symbologies differently.
+  const detectorFormats = formats === 'isbn' ? ['ean_13'] : formats === 'any' ? ['code_128', 'ean_13'] : ['code_128']
+  const zxingFormats = (ZXing: any) =>
+    formats === 'isbn' ? [ZXing.BarcodeFormat.EAN_13]
+      : formats === 'any' ? [ZXing.BarcodeFormat.CODE_128, ZXing.BarcodeFormat.EAN_13]
+        : [ZXing.BarcodeFormat.CODE_128]
   const video = ref<HTMLVideoElement | null>(null)
   const state = ref<CameraState>('idle')
   const facing = ref<'environment' | 'user'>('environment')
@@ -47,6 +64,7 @@ export function useCameraScanner(onCode: (code: string) => void, region?: () => 
   // was SEEN (not the last time it was reported), so it re-arms only after it has been out of view for 2.5 seconds.
   // Counting from the report made a held ID report itself every 2.5 seconds, and each one could flip a student in or out.
   function emit(code: string) {
+    if (options.accept && !options.accept(code)) return
     const now = Date.now()
     const repeat = code === last.code && now - last.at < 2500
     last = { code, at: now }
@@ -165,7 +183,7 @@ export function useCameraScanner(onCode: (code: string) => void, region?: () => 
     let pass = 0
 
     if ('BarcodeDetector' in window) {
-      const detector = new (window as any).BarcodeDetector({ formats: ['code_128'] })
+      const detector = new (window as any).BarcodeDetector({ formats: detectorFormats })
 
       const tick = async () => {
         if (mine !== session || !video.value) return
@@ -206,11 +224,11 @@ export function useCameraScanner(onCode: (code: string) => void, region?: () => 
     // it only runs on the frame's crop. The whole-picture fallback pass stays on the quick setting.
     const careful = new ZXing.MultiFormatReader()
     careful.setHints(new Map<any, any>([
-      [ZXing.DecodeHintType.POSSIBLE_FORMATS, [ZXing.BarcodeFormat.CODE_128]],
+      [ZXing.DecodeHintType.POSSIBLE_FORMATS, zxingFormats(ZXing)],
       [ZXing.DecodeHintType.TRY_HARDER, true],
     ]))
     const quick = new ZXing.MultiFormatReader()
-    quick.setHints(new Map<any, any>([[ZXing.DecodeHintType.POSSIBLE_FORMATS, [ZXing.BarcodeFormat.CODE_128]]]))
+    quick.setHints(new Map<any, any>([[ZXing.DecodeHintType.POSSIBLE_FORMATS, zxingFormats(ZXing)]]))
 
     const decode = (reader: any, image: { data: Uint8ClampedArray; w: number; h: number }, Binarizer: any): string | null => {
       try {

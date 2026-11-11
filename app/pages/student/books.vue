@@ -102,7 +102,7 @@
 					</StudentEmptyState>
 
 					<TransitionGroup v-else tag="div" class="relative md:overflow-hidden md:rounded-2xl md:border md:border-stone-200 md:bg-white"
-						leave-active-class="absolute inset-x-0 transition-[opacity,transform] duration-200 ease-out" leave-to-class="-translate-x-3 opacity-0"
+						leave-active-class="absolute inset-x-0 transition-[opacity,transform,translate,scale] duration-200 ease-out" leave-to-class="-translate-x-3 opacity-0"
 						move-class="transition-transform duration-200 ease-out">
 						<div v-for="r in activeReservations" :key="r.reservationID"
 							class="mb-2.5 rounded-2xl border border-stone-200 bg-white p-3.5 md:mb-0 md:flex md:items-center md:gap-4 md:rounded-none md:border-0 md:border-b md:border-stone-100 md:px-6 md:py-5 md:last:border-0">

@@ -1,5 +1,5 @@
 <template>
-	<LibrarianModalShell :open="open" size="xl" :title="reviewing ? 'Create this account?' : account ? 'Edit staff account' : 'Add staff account'"
+	<LibrarianModalShell :open="open" size="xl" :title="reviewing ? 'Create This Account?' : account ? 'Edit Staff Account' : 'Add Staff Account'"
 		:subtitle="subtitle" :busy="busy" @close="emit('close')">
 		<!-- Step 2 (new accounts only): look it over before anything is created. Back returns to the form with everything kept. -->
 		<div v-if="reviewing" class="space-y-4">

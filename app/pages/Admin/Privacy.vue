@@ -64,7 +64,7 @@
             </li>
         </ul>
 
-        <LibrarianConfirmModal :open="isConfirmOpen" title="Anonymize this account?"
+        <LibrarianConfirmModal :open="isConfirmOpen" title="Anonymize This Account?"
             :message="`This removes ${target ? target.name + '’s' : 'their'} name, email, phone, address, birth date and ID, and closes the account for good. Their loans, fines and visits stay in the library's records without a name. This can't be undone. Download their data first if they asked for a copy.`"
             confirm-label="Anonymize account" :loading="anonymizing" @close="isConfirmOpen = false" @confirm="anonymize" />
 

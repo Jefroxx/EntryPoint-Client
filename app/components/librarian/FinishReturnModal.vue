@@ -1,6 +1,6 @@
 <template>
-	<LibrarianModalShell :open="open" size="sm" title="Check the returned book"
-		:subtitle="summary ? `${summary.bookTitle} · Acc. no. ${summary.accessionNumber}` : undefined" :busy="busy" @close="emit('close')">
+	<LibrarianModalShell :open="open" size="sm" title="Check the Returned Book"
+		:subtitle="summary ? `${summary.bookTitle} · Accession no. ${summary.accessionNumber}` : undefined" :busy="busy" @close="emit('close')">
 		<div class="space-y-4">
 			<p class="text-[14px] leading-relaxed text-stone-600">
 				{{ summary?.studentName ?? 'The student' }} handed this book in.

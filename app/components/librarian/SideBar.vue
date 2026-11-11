@@ -26,7 +26,7 @@
             <!-- Rows are a fixed 44px whether or not the labels show, so the highlight's position holds
                  across folding; it's still re-measured on every fold in case that ever changes. -->
             <div class="absolute left-0 top-0 z-0 h-11 w-full rounded-xl bg-accent-500 shadow-sm"
-                :class="highlightReady ? 'transition-[transform,opacity] duration-[250ms] ease-[cubic-bezier(.22,1,.36,1)]' : ''"
+                :class="highlightReady ? 'transition-[transform,translate,scale,opacity] duration-[250ms] ease-[cubic-bezier(.22,1,.36,1)]' : ''"
                 :style="{ transform: `translateY(${highlightOffset}px)`, opacity: displayIndex === -1 ? 0 : 1 }" />
 
             <NuxtLink v-for="(link, index) in navLinks" :key="link.to" :ref="(el) => setLinkRef(el, index)" :to="link.to"

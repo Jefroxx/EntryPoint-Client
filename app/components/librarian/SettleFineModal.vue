@@ -1,5 +1,5 @@
 <template>
-	<LibrarianModalShell :open="open" size="xl" :title="step === 'confirm' ? 'Confirm the payment' : 'Mark this fine as paid?'"
+	<LibrarianModalShell :open="open" size="xl" :title="step === 'confirm' ? 'Confirm the Payment' : 'Mark This Fine as Paid?'"
 		:subtitle="step === 'confirm' ? 'This is the last step. Check it, then record the payment.' : 'Check the details, then continue.'"
 		:busy="busy" @close="emit('close')">
 		<!-- Step 2: the final confirmation. Nothing has changed yet. -->

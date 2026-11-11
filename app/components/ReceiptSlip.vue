@@ -69,8 +69,8 @@ const props = defineProps<{ receipt: LoanReceipt }>()
 const barcode = computed(() => code128(props.receipt.receiptNumber))
 
 const dateTime = (iso: string) => new Date(iso).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })
-const dueDay = (iso: string) => new Date(iso).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
-const dueTime = (iso: string) => new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+const dueDay = (iso: string) => formatLongDate(iso)
+const dueTime = (iso: string) => formatTime(iso)
 
 /** Only the details this book actually has; a blank edition or volume is left off, not printed as "—". */
 const bookRows = computed(() => {

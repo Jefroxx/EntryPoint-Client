@@ -133,7 +133,7 @@
 			<section class="overflow-hidden rounded-2xl border border-stone-200 bg-white" aria-label="Recent scans">
 				<p class="px-4 pb-1 pt-4 text-[12px] font-semibold uppercase tracking-[.08em] text-stone-400">Recent scans</p>
 				<p v-if="!feed.length" class="px-4 pb-5 pt-2 text-center text-[14px] text-stone-400">Nothing scanned yet this session.</p>
-				<TransitionGroup v-else tag="div" class="pb-1.5" enter-active-class="transition-[transform,opacity] duration-[250ms] ease-out" enter-from-class="-translate-y-2 opacity-0"
+				<TransitionGroup v-else tag="div" class="pb-1.5" enter-active-class="transition-[transform,translate,scale,opacity] duration-[250ms] ease-out" enter-from-class="-translate-y-2 opacity-0"
 					move-class="transition-transform duration-200 ease-out">
 					<div v-for="item in feed" :key="item.key" class="flex items-center gap-3 border-b border-stone-100 px-4 py-2.5 last:border-0">
 						<span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px]" :class="TONES[item.tone].dot"><Icon :name="item.icon" class="h-4 w-4" /></span>
@@ -267,7 +267,7 @@ const hint = computed(() => useRelay.value
 	: 'On a phone the camera fills the screen, the phone vibrates on a good read, and the screen stays awake. The torch helps in dim rooms.')
 
 /* ---------- scanning ---------- */
-const clock = (d = new Date()) => d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+const clock = (d = new Date()) => formatTime(d)
 const initialsOf = (name: string) => name.split(' ').filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase()
 
 async function scan(raw: string, via: Via) {
@@ -372,6 +372,9 @@ function fromAttendance(res: AttendanceScanResult): ResultView {
 
 	if (!checkIn && res.durationMinutes != null) notes.push({ icon: 'i-tabler-clock', text: `Stayed ${formatMinutes(res.durationMinutes)}` })
 	if (checkIn && res.student.visitStreak > 1) notes.push({ icon: 'i-tabler-flame', text: `${res.student.visitStreak}-day streak` })
+	// Which staff account recorded this scan (the one signed in at this desk), so a shared desk can see it was them.
+	const by = checkIn ? res.log.checkedInByStaff : res.log.checkedOutByStaff
+	if (by) notes.push({ icon: 'i-tabler-user-check', text: `Recorded by ${by.name}` })
 	if (!checkIn && res.endedSession) notes.push({ icon: 'i-tabler-device-desktop', text: `${res.endedSession.name} session ended · ${formatMinutes(res.endedSession.minutes)}` })
 	for (const closed of res.autoClosed) notes.push({ icon: 'i-tabler-alert-circle', text: `Yesterday's visit was closed at ${formatTime(closed.exitTime)}` })
 
@@ -379,7 +382,7 @@ function fromAttendance(res: AttendanceScanResult): ResultView {
 		key: ++seq, tone: checkIn ? 'in' : 'out', icon: checkIn ? 'i-tabler-login' : 'i-tabler-logout', verdict: checkIn ? 'Checked in' : 'Checked out',
 		time: formatTime(checkIn ? res.log.entryTime : (res.log.exitTime ?? res.log.entryTime)),
 		name: res.student.name, program: res.student.program, sid: res.student.memberIDNumber, notes,
-		sub: checkIn ? 'Checked in' : `Checked out · ${formatMinutes(res.durationMinutes ?? 0)}`,
+		sub: (checkIn ? 'Checked in' : `Checked out · ${formatMinutes(res.durationMinutes ?? 0)}`) + (by ? ` · by ${by.name}` : ''),
 	}
 }
 

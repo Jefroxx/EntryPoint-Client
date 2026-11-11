@@ -6,13 +6,12 @@
 			:class="open ? 'border-accent-200 text-accent-600' : 'border-stone-200 text-stone-700 hover:border-accent-200 hover:text-accent-600'"
 			@click="open = !open">
 			<Icon name="i-tabler-bell" class="h-[22px] w-[22px]" />
-			<span v-if="unreadCount"
-				class="absolute -right-1.5 -top-1.5 box-content flex h-[18px] min-w-[18px] items-center justify-center rounded-full border-2 border-parchment bg-red-500 px-1 text-[11px] font-bold leading-none text-white tabular-nums">{{ unreadCount > 9 ? '9+' : unreadCount }}</span>
+			<CountBadge v-if="unreadCount" size="md" ring="parchment" class="absolute -right-1.5 -top-1.5">{{ unreadCount > 9 ? '9+' : unreadCount }}</CountBadge>
 		</button>
 
 		<!-- Scales out from the bell (its top-right corner), not from the middle of the panel. -->
-		<Transition enter-active-class="transition-[transform,opacity] duration-[160ms] ease-out" enter-from-class="scale-[.96] opacity-0"
-			leave-active-class="transition-[transform,opacity] duration-[120ms] ease-out" leave-to-class="scale-[.96] opacity-0">
+		<Transition enter-active-class="transition-[transform,translate,scale,opacity] duration-[160ms] ease-out" enter-from-class="scale-[.96] opacity-0"
+			leave-active-class="transition-[transform,translate,scale,opacity] duration-[120ms] ease-out" leave-to-class="scale-[.96] opacity-0">
 			<div v-if="open" role="dialog" aria-label="Notifications"
 				class="absolute right-0 top-[calc(100%+10px)] z-50 w-[380px] origin-top-right overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-[0_18px_44px_-18px_rgba(40,25,8,.45)]">
 				<div class="flex items-center justify-between border-b border-stone-100 px-4 py-3">

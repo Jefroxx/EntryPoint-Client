@@ -18,7 +18,7 @@
 							<span class="block text-[13.5px] leading-snug text-stone-900" :class="item.isRead ? 'font-normal text-stone-600' : 'font-medium'">{{ item.message }}</span>
 							<span class="mt-0.5 block text-[12px] text-stone-500">{{ timeAgo(item.sentAt) }}</span>
 						</span>
-						<span class="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-accent-500 transition-[opacity,transform] duration-200 ease-out"
+						<span class="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-accent-500 transition-[opacity,transform,translate,scale] duration-200 ease-out"
 							:class="item.isRead ? 'scale-[.4] opacity-0' : ''" />
 					</button>
 				</div>

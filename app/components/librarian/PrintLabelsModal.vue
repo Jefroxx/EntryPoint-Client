@@ -53,9 +53,19 @@
 				<p v-if="truncated" class="rounded-xl bg-amber-50 px-3.5 py-2.5 text-[13px] leading-snug text-amber-900">
 					More than {{ labels.length }} copies matched, so only the first {{ labels.length }} are included. Narrow it down with accession numbers or the filters.
 				</p>
-				<p v-if="noCallNumber" class="rounded-xl bg-stone-100 px-3.5 py-2.5 text-[13px] leading-snug text-stone-700">
-					{{ noCallNumber }} {{ noCallNumber === 1 ? 'label has' : 'labels have' }} no call number yet: the Dewey number isn't confirmed, so that line is blank.
-				</p>
+				<!-- Books whose Dewey number is only a guess from the category: their call number and Cutter lines are left blank so nobody
+					 shelves by a wrong number. Printing the guess anyway is the librarian's call. -->
+				<label v-if="unconfirmedCount || (loading && sawUnconfirmed)" class="flex cursor-pointer items-start gap-3 rounded-xl border px-3.5 py-3 transition-colors"
+					:class="includeUnconfirmed ? 'border-amber-300 bg-amber-50' : 'border-stone-200 bg-stone-50 hover:bg-stone-100'">
+					<input v-model="includeUnconfirmed" type="checkbox" class="mt-0.5 h-4 w-4 shrink-0 accent-accent-500" :disabled="loading" @change="reload" />
+					<span class="min-w-0">
+						<span class="block text-[13.5px] font-semibold text-stone-900">Print the unconfirmed call numbers too</span>
+						<span class="mt-0.5 block text-[12.5px] leading-snug text-stone-600">
+							{{ unconfirmedCount }} {{ unconfirmedCount === 1 ? 'label is' : 'labels are' }} for books whose Dewey number is only a guess from the category.
+							{{ includeUnconfirmed ? 'Their guessed call number and Cutter are printed. They may be wrong, so check them before shelving.' : 'Left unticked, their call number and Cutter lines stay blank; the rest of the label still prints.' }}
+						</span>
+					</span>
+				</label>
 			</div>
 
 			<!-- Right: the sheet as it will print (scaled down), one sheet at a time. -->
@@ -124,8 +134,8 @@ const props = defineProps<{
 
 const emit = defineEmits<{
 	(e: 'close'): void
-	/** The librarian typed accession numbers (or cleared them: an empty list): load the labels again, narrowed to those. */
-	(e: 'refine', ranges: AccessionRange[]): void
+	/** The librarian typed accession numbers (or cleared them: an empty list), or changed the unconfirmed-numbers choice: load the labels again. */
+	(e: 'refine', ranges: AccessionRange[], options: { includeUnconfirmed: boolean }): void
 }>()
 
 const LAYOUT_LIST = Object.values(LABEL_LAYOUTS)
@@ -143,10 +153,21 @@ const printCopy = ref<HTMLElement | null>(null)
 const numbers = ref('')
 const numbersError = ref('')
 
+// Print the call number and Cutter of books whose Dewey number is only a guess? Off by default (those lines stay blank).
+const includeUnconfirmed = ref(false)
+// The numbers last applied, so ticking the box above reloads the same labels instead of whatever is half typed.
+let appliedRanges: AccessionRange[] = []
+
 function applyNumbers() {
 	const { ranges, error } = parseAccessionRanges(numbers.value)
 	numbersError.value = error
-	if (!error) emit('refine', ranges)
+	if (error) return
+	appliedRanges = ranges
+	emit('refine', ranges, { includeUnconfirmed: includeUnconfirmed.value })
+}
+
+function reload() {
+	emit('refine', appliedRanges, { includeUnconfirmed: includeUnconfirmed.value })
 }
 
 // The last layout used is remembered: a library tends to use the same sheets every time.
@@ -175,11 +196,23 @@ const pages = computed(() => paginateLabels(props.labels, perPage.value, skip.va
 
 const previewW = computed(() => Math.round(paperSize.value.w * MM * PREVIEW_SCALE))
 const previewH = computed(() => Math.round(paperSize.value.h * MM * PREVIEW_SCALE))
-const noCallNumber = computed(() => props.labels.filter((l) => !l.callNumber).length)
+const unconfirmedCount = computed(() => props.labels.filter((l) => l.unconfirmed).length)
+// While the labels reload after ticking the box, the box stays where it is instead of vanishing and coming back.
+const sawUnconfirmed = ref(false)
+watch(unconfirmedCount, (n) => { if (n > 0) sawUnconfirmed.value = true })
 
 // The sheet the preview shows can't be past the last one; and a fresh set of labels starts at the top.
 watch(pages, (list) => { if (sheet.value > list.length - 1) sheet.value = Math.max(0, list.length - 1) })
-watch(() => props.open, (isOpen) => { if (isOpen) { sheet.value = 0; startAt.value = 1; numbers.value = ''; numbersError.value = '' } })
+watch(() => props.open, (isOpen) => {
+	if (!isOpen) return
+	sheet.value = 0
+	startAt.value = 1
+	numbers.value = ''
+	numbersError.value = ''
+	includeUnconfirmed.value = false
+	sawUnconfirmed.value = false
+	appliedRanges = []
+})
 watch([layoutKey, paperKey], () => { startAt.value = 1 })
 
 // Sets the paper for the print job; the margin is 0 because each label's position is already measured from the edge.

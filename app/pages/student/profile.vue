@@ -30,7 +30,7 @@
 							placeholder="0917 123 4567" :maxlength="20" :error="contactErrors.phoneNumber" @update:model-value="contactErrors.phoneNumber = ''" />
 						<LibrarianTextField id="address" v-model="contact.address" label="Address" optional autocomplete="street-address"
 							placeholder="Street, barangay, city" :maxlength="255" :error="contactErrors.address" @update:model-value="contactErrors.address = ''" />
-						<LibrarianTextField id="birthDate" v-model="contact.birthDate" label="Birth date" optional type="date"
+						<LibrarianTextField id="birthDate" v-model="contact.birthDate" label="Birth date" optional type="date" :max="toYmd()"
 							:error="contactErrors.birthDate" @update:model-value="contactErrors.birthDate = ''" />
 						<div class="mt-1 flex items-center gap-3">
 							<ButtonsButton type="submit" :disabled="!contactDirty || savingContact">
@@ -257,7 +257,7 @@ watch(saved, () => { if (!contactDirty.value) resetContact() }, { immediate: tru
 
 const savingContact = ref(false)
 async function saveContact() {
-	if (contact.birthDate && contact.birthDate > new Date().toISOString().slice(0, 10)) {
+	if (contact.birthDate && contact.birthDate > toYmd()) {
 		contactErrors.birthDate = "Birth date can't be in the future."
 		return
 	}

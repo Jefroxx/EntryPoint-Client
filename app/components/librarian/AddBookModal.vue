@@ -8,32 +8,29 @@
 				<div v-if="open" class="absolute inset-0 bg-[#1c1712]/40" @click="handleClose" />
 			</Transition>
 
-			<Transition enter-active-class="transition-[transform,opacity] duration-[260ms] ease-out"
-				enter-from-class="scale-95 translate-y-2 opacity-0 max-sm:translate-x-10 max-sm:translate-y-0 max-sm:scale-100" enter-to-class="scale-100 translate-y-0 opacity-100"
-				leave-active-class="transition-[transform,opacity] duration-150 ease-out"
+			<Transition enter-active-class="transition-[transform,translate,scale,opacity] duration-[260ms] ease-out max-sm:duration-[420ms] max-sm:ease-[cubic-bezier(.4,0,.2,1)]"
+				enter-from-class="scale-95 translate-y-2 opacity-0 max-sm:translate-x-full max-sm:translate-y-0 max-sm:scale-100 max-sm:opacity-100 max-sm:motion-reduce:translate-x-0 max-sm:motion-reduce:opacity-0" enter-to-class="scale-100 translate-y-0 opacity-100"
+				leave-active-class="transition-[transform,translate,scale,opacity] duration-150 ease-out max-sm:duration-[320ms] max-sm:ease-[cubic-bezier(.4,0,.2,1)]"
 				leave-from-class="scale-100 translate-y-0 opacity-100"
-				leave-to-class="scale-95 translate-y-1 opacity-0 max-sm:translate-x-6 max-sm:translate-y-0 max-sm:scale-100">
+				leave-to-class="scale-95 translate-y-1 opacity-0 max-sm:translate-x-full max-sm:translate-y-0 max-sm:scale-100 max-sm:opacity-100 max-sm:motion-reduce:translate-x-0 max-sm:motion-reduce:opacity-0">
 				<form v-if="open" role="dialog" aria-modal="true" aria-labelledby="addBookTitle" novalidate
-					@keydown.esc="handleClose" @submit.prevent="confirming ? doSave() : step < lastStep ? next() : handleSubmit()"
+					@keydown.esc="handleClose" @submit.prevent="entry !== 'form' ? undefined : confirming ? doSave() : step < lastStep ? next() : handleSubmit()"
 					class="relative z-10 flex max-h-[min(780px,calc(100vh-32px))] w-full max-w-[940px] flex-col overflow-hidden rounded-[22px] bg-white shadow-overlay max-sm:h-dvh max-sm:max-h-none max-sm:rounded-none max-sm:shadow-none">
 					<!-- Header + step bar (same pattern as student registration) -->
 					<div class="flex-shrink-0 border-b border-stone-100 px-6 pb-4 pt-5 sm:px-7">
 						<div class="flex items-start justify-between gap-3 max-sm:items-center">
-							<ButtonsButton variant="icon" size="md" aria-label="Back" class="-ml-1 shrink-0 sm:hidden" @click="handleClose">
-								<Icon name="i-tabler-arrow-left" class="h-[18px] w-[18px]" />
-							</ButtonsButton>
 							<div class="min-w-0 max-sm:flex-1">
 								<h2 id="addBookTitle" class="dashboard-heading text-2xl font-bold text-crimson">
 									{{ createdBook ? 'Book Added' : confirming ? (isEdit ? 'Confirm Changes' : 'Confirm New Book') : isEdit ? 'Edit Book' : 'Add New Book' }}</h2>
 								<p class="dashboard-heading text-[13.5px] text-crimson">
-									{{ createdBook ? createdBook.title : confirming ? 'Check the details before they are saved.' : isEdit ? 'Jump to any section, change what you need, then save.' : 'Catalog a new title and its physical copies.' }}</p>
+									{{ createdBook ? createdBook.title : confirming ? 'Check the details before they are saved.' : isEdit ? 'Jump to any section, change what you need, then save.' : entry === 'choose' ? 'How would you like to start?' : entry === 'scan' ? 'Scan the barcode on the back cover, or type the ISBN.' : 'Catalog a new title and its physical copies.' }}</p>
 							</div>
-							<ButtonsButton variant="icon" size="md" aria-label="Close" class="max-sm:hidden" @click="handleClose">
-								<Icon name="i-tabler-x" class="h-4 w-4" />
+							<ButtonsButton variant="icon" size="md" aria-label="Close" class="shrink-0" @click="handleClose">
+								<Icon name="i-tabler-x" class="h-[18px] w-[18px]" />
 							</ButtonsButton>
 						</div>
 
-						<ol v-show="!confirming && !createdBook" class="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-4" aria-label="Book form sections">
+						<ol v-show="!confirming && !createdBook && entry === 'form'" class="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-4" aria-label="Book form sections">
 							<li v-for="s in stepList" :key="s.n" :aria-current="step === s.n ? 'step' : undefined">
 								<button type="button" :disabled="!canOpen(s.n)"
 									class="group w-full rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-200 disabled:cursor-default"
@@ -111,26 +108,28 @@
 									</div>
 								</dl>
 							</section>
-							<!-- The Dewey number: looked up from the ISBN when this page opens, and accepted here by pressing Yes. -->
-						<div class="rounded-xl border border-stone-200 p-4">
-							<label for="bookDewey" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">
-								Dewey number (DDC) <span class="font-normal text-stone-500">(optional)</span>
-							</label>
-							<div class="flex gap-2">
-								<input id="bookDewey" v-model="form.deweyNumber" type="text" inputmode="decimal" maxlength="14" placeholder="e.g. 005.1"
-									:disabled="lookingUp" :class="[inputClass, 'border-stone-200']" class="font-data !text-[13.5px]" @input="deweyHint = ''" />
-								<ButtonsButton variant="ghost" class="shrink-0" :disabled="lookingUp || !form.isbn.trim()"
-									:title="form.isbn.trim() ? undefined : 'No ISBN to look up'" @click="lookUpDewey">
-									<Icon :name="lookingUp ? 'i-tabler-loader-2' : 'i-tabler-search'" class="h-4 w-4" :class="{ 'animate-spin': lookingUp }" />Look up again
-								</ButtonsButton>
+							<!-- The call number (Dewey Decimal): from the ISBN lookup or typed on the shelving step. It can still be changed here, and is saved when Yes is pressed. -->
+							<div class="rounded-xl border border-stone-200 p-4">
+								<label for="bookDewey" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">
+									Call number (Dewey Decimal)<FieldRequired v-if="deweyRequired" /><span v-else class="font-normal text-stone-500"> (optional)</span>
+								</label>
+								<div class="flex gap-2">
+									<input id="bookDewey" v-model="form.deweyNumber" type="text" inputmode="decimal" maxlength="14" placeholder="e.g. 005.1" autocomplete="off"
+										:disabled="lookingUp" :class="[inputClass, errors.deweyNumber ? 'border-red-400 bg-red-50' : 'border-stone-200']" class="font-data !text-[13.5px]"
+										@input="onDeweyInput" @blur="checkDeweyField" />
+									<ButtonsButton variant="ghost" class="shrink-0" :disabled="lookingUp || !form.isbn.trim()"
+										:title="form.isbn.trim() ? 'Search the library catalogues for this book by its ISBN and fill in the call number' : 'No ISBN to look up'" @click="lookUpDewey">
+										<Icon :name="lookingUp ? 'i-tabler-loader-2' : 'i-tabler-search'" class="h-4 w-4" :class="{ 'animate-spin': lookingUp }" />Find from ISBN
+									</ButtonsButton>
+								</div>
+								<p v-if="errors.deweyNumber" class="mt-1.5 text-[12.5px] leading-snug text-red-500">{{ errors.deweyNumber }}</p>
+								<p v-else-if="lookingUp || deweyHint" class="mt-1.5 text-[12.5px] leading-snug" :class="deweyIsError ? 'text-red-500' : 'text-stone-500'">
+									{{ lookingUp ? 'Looking the ISBN up in the library catalogues…' : deweyHint }}
+								</p>
+								<p class="mt-2 text-[12.5px] leading-snug text-stone-500">
+									{{ deweyRequired ? 'This is saved with the book when you press the button below.' : 'Left blank, the book is saved without a confirmed number (students see "Pending"); add it later by editing the book.' }}
+								</p>
 							</div>
-							<p class="mt-1.5 text-[12.5px] leading-snug" :class="deweyIsError ? 'text-red-500' : 'text-stone-500'">
-								{{ lookingUp ? 'Looking in the Library of Congress catalogue…' : deweyHint }}
-							</p>
-							<p class="mt-2 text-[12.5px] leading-snug text-stone-500">
-								Pressing the button below accepts the number shown here. Left blank, the book is saved without a confirmed number (students see "Pending"); add it later by editing the book.
-							</p>
-						</div>
 
 						<p v-if="!isEdit" class="text-[13px] text-stone-500">
 								Each copy gets its own accession number and barcode, and is recorded in the stock log. Any page photos you picked are saved with the book.
@@ -138,7 +137,63 @@
 						</div>
 					</div>
 
-					<div v-show="!confirming && !createdBook" class="flex min-h-0 flex-1 flex-col overflow-y-auto md:flex-row md:overflow-hidden">
+					<!-- Adding a book starts here: scan the back cover, or type everything by hand. Both end up in the same form. -->
+					<div v-if="entry !== 'form' && !confirming && !createdBook" class="min-h-0 flex-1 overflow-y-auto px-6 py-6 sm:px-7">
+						<div v-if="entry === 'choose'" class="mx-auto grid max-w-[640px] gap-3 sm:grid-cols-2">
+							<button type="button"
+								class="group flex flex-col items-start gap-3 rounded-2xl border border-stone-200 bg-white p-5 text-left transition-[transform,border-color,background-color] duration-150 ease-out hover:border-accent-300 hover:bg-accent-50/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-200 active:scale-[0.98]"
+								@click="entry = 'scan'">
+								<span class="flex h-12 w-12 items-center justify-center rounded-xl bg-accent-50 text-accent-600 transition-colors group-hover:bg-white">
+									<Icon name="i-tabler-barcode" class="h-6 w-6" />
+								</span>
+								<span>
+									<span class="flex items-center gap-2 text-[17px] font-bold text-crimson">Scan the back of the book
+										<span class="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">Fastest</span>
+									</span>
+									<span class="mt-1 block text-[13.5px] leading-snug text-stone-600">Point the camera at the barcode on the back cover. The title, author, cover and more fill in for you.</span>
+								</span>
+							</button>
+							<button type="button"
+								class="group flex flex-col items-start gap-3 rounded-2xl border border-stone-200 bg-white p-5 text-left transition-[transform,border-color,background-color] duration-150 ease-out hover:border-accent-300 hover:bg-accent-50/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-200 active:scale-[0.98]"
+								@click="startManual">
+								<span class="flex h-12 w-12 items-center justify-center rounded-xl bg-accent-50 text-accent-600 transition-colors group-hover:bg-white">
+									<Icon name="i-tabler-pencil" class="h-6 w-6" />
+								</span>
+								<span>
+									<span class="block text-[17px] font-bold text-crimson">Type it in myself</span>
+									<span class="mt-1 block text-[13.5px] leading-snug text-stone-600">Enter every detail by hand. Best for older books and anything without a barcode.</span>
+								</span>
+							</button>
+						</div>
+
+						<div v-else class="mx-auto max-w-[560px] space-y-4">
+							<div v-show="!phoneOpen">
+								<LibrarianCameraScanPanel :active="open && entry === 'scan' && !phoneOpen" format="isbn"
+									hint="Hold the barcode on the back cover inside the box" @code="onIsbnScanned" />
+							</div>
+							<LibrarianPhoneScanner v-model:open="phoneOpen" :active="open && entry === 'scan'" @code="onIsbnScanned" />
+
+							<div>
+								<label for="startIsbn" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">
+									No barcode, or it won't scan? Type the ISBN</label>
+								<div class="flex gap-2">
+									<input id="startIsbn" v-model="form.isbn" type="text" inputmode="numeric" placeholder="978-0-000-00000-0" maxlength="20" autocomplete="off"
+										:class="[inputClass, 'border-stone-200']" class="font-data !text-[13.5px]" @input="form.isbn = sanitizeIsbnInput(form.isbn)" @keydown.enter.prevent="findDetails" />
+									<ButtonsButton variant="ghost" class="shrink-0" :disabled="findingDetails || !form.isbn.trim()" @click="findDetails">
+										<Icon :name="findingDetails ? 'i-tabler-loader-2' : 'i-tabler-search'" class="h-4 w-4" :class="{ 'animate-spin': findingDetails }" />Find
+									</ButtonsButton>
+								</div>
+							</div>
+
+							<p class="flex items-start gap-2 text-[13px] leading-snug" aria-live="polite"
+								:class="isbnStatus.kind === 'error' ? 'text-red-500' : 'text-stone-500'">
+								<span v-if="isbnStatus.kind === 'searching'" class="mt-0.5 h-3.5 w-3.5 shrink-0 animate-spin rounded-full border-2 border-stone-300 border-t-accent-500" />
+								<span>{{ isbnStatus.kind === 'idle' ? 'The details are looked up as soon as the barcode is read.' : isbnStatusText }}</span>
+							</p>
+						</div>
+					</div>
+
+					<div v-show="!confirming && !createdBook && entry === 'form'" class="flex min-h-0 flex-1 flex-col overflow-y-auto md:flex-row md:overflow-hidden">
 						<!-- Cover: always visible, whichever step is open -->
 						<aside
 							class="flex flex-shrink-0 gap-4 border-b border-stone-100 bg-stone-50/70 px-6 py-5 md:w-[272px] md:flex-col md:overflow-y-auto md:border-b-0 md:border-r md:px-6">
@@ -190,6 +245,15 @@
 								leave-active-class="transition duration-150 ease-out" leave-to-class="opacity-0"
 								@after-enter="focusStep">
 								<div v-if="step === 1" key="details" class="space-y-4">
+									<!-- What the last scan or ISBN lookup did (a new book only): which catalogues answered and what was filled in, or
+										 that nothing was found. The scan itself is the "Scan the book" button next to Continue. -->
+									<p v-if="!isEdit && (isbnStatus.kind === 'found' || isbnStatus.kind === 'none')"
+										class="flex items-start gap-2 rounded-xl px-3.5 py-2.5 text-[13px] leading-snug" aria-live="polite"
+										:class="isbnStatus.kind === 'found' ? 'bg-emerald-50 text-emerald-800' : 'bg-stone-100 text-stone-600'">
+										<Icon :name="isbnStatus.kind === 'found' ? 'i-tabler-circle-check' : 'i-tabler-info-circle'" class="mt-px h-4 w-4 shrink-0" />
+										<span>{{ isbnStatusText }}</span>
+									</p>
+
 									<div>
 										<label for="bookTitle"
 											class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">Title<FieldRequired /></label>
@@ -231,25 +295,35 @@
 									<div class="grid gap-3 sm:grid-cols-2">
 										<div>
 											<label for="bookIsbn" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">ISBN<FieldRequired /></label>
-											<input id="bookIsbn" v-model="form.isbn" type="text" placeholder="978-0-000-00000-0" maxlength="20"
+											<input id="bookIsbn" v-model="form.isbn" type="text" inputmode="text" autocomplete="off" placeholder="978-0-000-00000-0" maxlength="20"
 												:class="[inputClass, errors.isbn ? 'border-red-400 bg-red-50' : 'border-stone-200']" class="font-data !text-[13.5px]"
-												@input="errors.isbn = ''" />
+												@input="onIsbnInput" @blur="checkIsbnField" />
 											<p v-if="errors.isbn" class="mt-1 text-[12.5px] text-red-500">{{ errors.isbn }}</p>
+											<p v-else class="mt-1 text-[12.5px] text-stone-500">10 or 13 digits. Hyphens are fine, and an X only at the end of an ISBN-10.</p>
 										</div>
 										<div>
 											<label for="bookYear" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">Publication year<FieldRequired /></label>
-											<input id="bookYear" v-model="form.publicationYear" type="number" placeholder="2024"
+											<input id="bookYear" v-model="form.publicationYear" type="text" inputmode="numeric" autocomplete="off" maxlength="4" placeholder="2024"
 												:class="[inputClass, errors.publicationYear ? 'border-red-400 bg-red-50' : 'border-stone-200']"
-												@input="errors.publicationYear = ''" />
+												@input="onYearInput" @blur="checkYearField" />
 											<p v-if="errors.publicationYear" class="mt-1 text-[12.5px] text-red-500">{{ errors.publicationYear }}</p>
+											<p v-else class="mt-1 text-[12.5px] text-stone-500">The four-digit year, no later than {{ CURRENT_YEAR }}.</p>
 										</div>
 									</div>
+									<!-- For books that just arrived (the library also catalogues old books). Editing can mark an existing book, or take the mark off. -->
+									<label class="flex cursor-pointer items-start gap-3 rounded-xl border border-stone-200 bg-stone-50 px-3.5 py-3">
+										<input v-model="form.isNewArrival" type="checkbox" class="mt-0.5 h-4 w-4 shrink-0 accent-accent-500" />
+										<span class="min-w-0">
+											<span class="block text-[14px] font-semibold text-stone-900">This is a new arrival</span>
+											<span class="block text-[12.5px] leading-snug text-stone-500">{{ isEdit ? 'Shows the book in New arrivals on the students\' Home. Students are not notified again.' : 'Marks the book as new and notifies everyone. Leave it unticked for older books you are only now cataloguing.' }}</span>
+										</span>
+									</label>
 								</div>
 
 								<div v-else-if="step === 2" key="shelving" class="space-y-6">
 									<fieldset>
 										<legend class="mb-2.5 text-[12px] font-bold uppercase tracking-wide text-stone-500">Classification</legend>
-										<div class="grid gap-3 sm:grid-cols-2">
+										<div class="grid gap-4">
 											<div>
 												<label for="bookCategory" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">
 													Category / genre<FieldRequired /></label>
@@ -262,33 +336,27 @@
 												</datalist>
 												<p v-if="errors.subjectName" class="mt-1 text-[12.5px] text-red-500">{{ errors.subjectName }}</p>
 											</div>
-											<!-- The call number is the Dewey number plus the author's Cutter, so it is shown, never typed. -->
+											<!-- The call number IS the Dewey Decimal number (the author's Cutter is added on the shelf label). It is looked up from the ISBN
+												when this step opens; if no catalogue has the book it is typed in. Required for a new book. -->
 											<div>
-												<p class="mb-1.5 text-[13.5px] font-semibold text-stone-800">Call number</p>
-												<p class="font-data flex min-h-[42px] items-center rounded-xl bg-stone-50 px-3.5 text-[13.5px] text-stone-600">
-													<template v-if="isEdit && book?.callNumber">{{ book.callNumber }}</template>
-													<span v-else class="font-sans text-stone-500">Made from the Dewey number and the author</span>
+												<label for="bookDeweyStep" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">
+													Call number (Dewey Decimal)<FieldRequired v-if="deweyRequired" /><span v-else class="font-normal text-stone-500"> (optional)</span>
+												</label>
+												<div class="flex gap-2">
+													<input id="bookDeweyStep" v-model="form.deweyNumber" type="text" inputmode="decimal" maxlength="14" placeholder="e.g. 005.1" autocomplete="off"
+														:disabled="lookingUp" :class="[inputClass, errors.deweyNumber ? 'border-red-400 bg-red-50' : 'border-stone-200']" class="font-data !text-[13.5px]"
+														@input="onDeweyInput" @blur="checkDeweyField" />
+													<ButtonsButton variant="ghost" class="shrink-0" :disabled="lookingUp || !form.isbn.trim()"
+														:title="form.isbn.trim() ? 'Search the library catalogues for this book by its ISBN and fill in the call number' : 'Add the ISBN in step 1 to look it up'" @click="lookUpDewey">
+														<Icon :name="lookingUp ? 'i-tabler-loader-2' : 'i-tabler-search'" class="h-4 w-4" :class="{ 'animate-spin': lookingUp }" />Find from ISBN
+													</ButtonsButton>
+												</div>
+												<p v-if="errors.deweyNumber" class="mt-1.5 text-[12.5px] leading-snug text-red-500">{{ errors.deweyNumber }}</p>
+												<p v-else class="mt-1.5 text-[12.5px] leading-snug" :class="deweyIsError ? 'text-red-500' : 'text-stone-500'">
+													{{ lookingUp ? 'Looking the ISBN up in the library catalogues…' : deweyHint || deweyHelp }}
 												</p>
 											</div>
 										</div>
-
-											<!-- The Dewey number: typed in, or looked up from the ISBN. It can still be checked and changed on the review page. -->
-											<div class="mt-3">
-												<label for="bookDeweyStep" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">
-													Dewey number (DDC) <span class="font-normal text-stone-500">(optional)</span>
-												</label>
-												<div class="flex gap-2">
-													<input id="bookDeweyStep" v-model="form.deweyNumber" type="text" inputmode="decimal" maxlength="14" placeholder="e.g. 005.1"
-														:disabled="lookingUp" :class="[inputClass, 'border-stone-200']" class="font-data !text-[13.5px]" @input="deweyHint = ''" />
-													<ButtonsButton variant="ghost" class="shrink-0" :disabled="lookingUp || !form.isbn.trim()"
-														:title="form.isbn.trim() ? undefined : 'Add the ISBN in step 1 to look it up'" @click="lookUpDewey">
-														<Icon :name="lookingUp ? 'i-tabler-loader-2' : 'i-tabler-search'" class="h-4 w-4" :class="{ 'animate-spin': lookingUp }" />Look up
-													</ButtonsButton>
-												</div>
-												<p class="mt-1.5 text-[12.5px] leading-snug" :class="deweyIsError ? 'text-red-500' : 'text-stone-500'">
-													{{ lookingUp ? 'Looking in the Library of Congress catalogue…' : deweyHint || (form.isbn.trim() ? 'Press Look up to find it from the ISBN, or type it if you know it. Left blank, the book is saved without a confirmed number.' : 'Add the ISBN in step 1 to look the number up, or type it if you know it.') }}
-												</p>
-											</div>
 									</fieldset>
 
 									<fieldset>
@@ -369,8 +437,8 @@
 										</div>
 										<div>
 											<label for="bookPages" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">Pages<FieldRequired /></label>
-											<input id="bookPages" v-model="form.pageCount" type="number" min="1" placeholder="e.g. 320"
-											:class="[inputClass, errors.pageCount ? 'border-red-400 bg-red-50' : 'border-stone-200']" @input="errors.pageCount = ''" />
+											<input id="bookPages" v-model="form.pageCount" type="text" inputmode="numeric" autocomplete="off" placeholder="e.g. 320"
+											:class="[inputClass, errors.pageCount ? 'border-red-400 bg-red-50' : 'border-stone-200']" @input="onPagesInput" @blur="checkPagesField" />
 											<p v-if="errors.pageCount" class="mt-1 text-[12.5px] text-red-500">{{ errors.pageCount }}</p>
 										</div>
 										<div>
@@ -381,8 +449,8 @@
 										</div>
 										<div>
 											<label for="bookCost" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">Cost (₱)<FieldRequired /></label>
-											<input id="bookCost" v-model="form.cost" type="number" min="0" step="0.01" placeholder="0.00"
-											:class="[inputClass, errors.cost ? 'border-red-400 bg-red-50' : 'border-stone-200']" class="font-data !text-[13.5px]" @input="errors.cost = ''" />
+											<input id="bookCost" v-model="form.cost" type="text" inputmode="decimal" autocomplete="off" placeholder="0.00"
+											:class="[inputClass, errors.cost ? 'border-red-400 bg-red-50' : 'border-stone-200']" class="font-data !text-[13.5px]" @input="onCostInput" @blur="checkCostField" />
 											<p v-if="errors.cost" class="mt-1 text-[12.5px] text-red-500">{{ errors.cost }}</p>
 											<p v-else class="mt-1 text-[12.5px] text-stone-500">Enter 0 for a donated book.</p>
 										</div>
@@ -394,14 +462,6 @@
 										<textarea id="bookRemarks" v-model="form.remarks" rows="3" maxlength="1000"
 											placeholder="e.g. Donated copy, minor cover wear"
 											class="w-full resize-y rounded-[10px] border border-stone-200 bg-white px-3 py-2 text-[14px] text-stone-900 outline-none focus:border-accent-500 focus:ring-2 focus:ring-accent-200" />
-										<!-- For books that just arrived (the library also catalogues old books). Editing can mark an existing book, or take the mark off. -->
-										<label class="mt-4 flex cursor-pointer items-start gap-3 rounded-xl border border-stone-200 bg-stone-50 px-3.5 py-3">
-											<input v-model="form.isNewArrival" type="checkbox" class="mt-0.5 h-4 w-4 shrink-0 accent-accent-500" />
-											<span class="min-w-0">
-												<span class="block text-[14px] font-semibold text-stone-900">This is a new arrival</span>
-												<span class="block text-[12.5px] leading-snug text-stone-500">{{ isEdit ? 'Shows the book in New arrivals on the students\' Home. Students are not notified again.' : 'Marks the book as new and notifies everyone. Leave it unticked for older books you are only now cataloguing.' }}</span>
-											</span>
-										</label>
 									</div>
 								</div>
 							</Transition>
@@ -414,7 +474,7 @@
 					</div>
 
 					<div class="flex flex-shrink-0 items-center justify-between gap-2 border-t border-stone-100 px-6 py-4 sm:px-7">
-						<span class="text-[12.5px] tabular-nums text-stone-500">{{ createdBook ? 'Done' : confirming ? 'Review' : `Step ${step} of ${lastStep}` }}</span>
+						<span class="text-[12.5px] tabular-nums text-stone-500">{{ createdBook ? 'Done' : confirming ? 'Review' : entry !== 'form' ? 'Start' : `Step ${step} of ${lastStep}` }}</span>
 						<div v-if="createdBook" class="flex gap-2">
 							<ButtonsButton variant="ghost" @click="emit('close')">Done</ButtonsButton>
 							<ButtonsButton variant="primary" @click="emit('print-labels', createdBook.uuid)">
@@ -431,11 +491,27 @@
 								{{ isEdit ? (submitting ? 'Saving…' : 'Yes, save changes') : (submitting ? 'Adding…' : 'Yes, add book') }}
 							</ButtonsButton>
 						</div>
+						<!-- Before the form: choosing how to start, or scanning. -->
+						<div v-else-if="entry === 'choose'" class="flex gap-2">
+							<ButtonsButton variant="ghost" @click="handleClose">Cancel</ButtonsButton>
+						</div>
+						<div v-else-if="entry === 'scan'" class="flex gap-2">
+							<ButtonsButton variant="ghost" @click="entry = formStarted ? 'form' : 'choose'">
+								<Icon name="i-tabler-arrow-left" class="h-4 w-4" />Back
+							</ButtonsButton>
+							<ButtonsButton variant="primary" @click="startManual">
+								Type the details instead<Icon name="i-tabler-arrow-right" class="h-4 w-4" />
+							</ButtonsButton>
+						</div>
 						<div v-else class="flex gap-2">
 							<ButtonsButton v-if="step > 1" variant="ghost" :disabled="submitting" @click="goTo(step - 1)">
 								<Icon name="i-tabler-arrow-left" class="h-4 w-4" />Back
 							</ButtonsButton>
 							<ButtonsButton v-else variant="ghost" @click="handleClose">Cancel</ButtonsButton>
+							<!-- A new book: scan the back cover from the first page too (it fills only what is still empty). -->
+							<ButtonsButton v-if="!isEdit && step === 1" variant="ghost" @click="entry = 'scan'">
+								<Icon name="i-tabler-barcode" class="h-4 w-4" />Scan the book
+							</ButtonsButton>
 
 							<!-- Editing can save from any step; adding walks through to the end. -->
 							<ButtonsButton v-if="isEdit && step < lastStep" variant="ghost" :disabled="submitting" @click="handleSubmit">
@@ -456,7 +532,8 @@
 </template>
 
 <script setup lang="ts">
-import { DEWEY_SOURCE_LABEL, LIBRARY_AREAS, librarianService, type BookDetail, type LibraryArea, type NewBookPayload } from '~/services/librarianService'
+import { DEWEY_SOURCE_LABEL, LIBRARY_AREAS, librarianService, type BookDetail, type IsbnDetailsLookup, type LibraryArea, type NewBookPayload } from '~/services/librarianService'
+import { isbnFromBarcode, normalizeIsbn, sanitizeIsbnInput } from '~/utils/isbn'
 import { useAlert } from '~/api/alert/useAlert'
 
 const alert = useAlert()
@@ -544,13 +621,16 @@ async function lookUpDewey() {
 		if (form.isbn.trim() !== isbn) return
 		if (result.found && result.deweyNumber) {
 			form.deweyNumber = result.deweyNumber
+			errors.deweyNumber = ''
 			lookedUpNumber = result.deweyNumber
 			deweyHint.value = `Found ${result.deweyNumber} in ${result.source ? DEWEY_SOURCE_LABEL[result.source] : 'a library catalogue'}. Check it, then confirm.`
 		} else {
 			// A number from an earlier lookup belonged to the previous ISBN, so it doesn't stay for this one.
 			if (lookedUpNumber && form.deweyNumber === lookedUpNumber) form.deweyNumber = ''
 			lookedUpNumber = ''
-			deweyHint.value = 'No catalogue has a Dewey number for this ISBN. Type one if you know it (often printed on the copyright page as "DDC"), or leave it blank.'
+			deweyHint.value = deweyRequired.value
+				? 'No catalogue has a Dewey number for this ISBN. Type it in; it is often printed on the copyright page as "DDC".'
+				: 'No catalogue has a Dewey number for this ISBN. Type one if you know it (often printed on the copyright page as "DDC"), or leave it blank.'
 		}
 	} catch {
 		deweyIsError.value = true
@@ -558,6 +638,147 @@ async function lookUpDewey() {
 	} finally {
 		lookingUp.value = false
 	}
+}
+
+/* ---------- Fill the form from the ISBN: scan the back of the book, or type it and press Find ---------- */
+const SOURCE_LABEL: Record<string, string> = { library_of_congress: 'the Library of Congress', open_library: 'Open Library', google_books: 'Google Books' }
+
+// Adding a book opens on a choice: scan the back cover, or type everything. Editing goes straight to the form.
+const entry = ref<'choose' | 'scan' | 'form'>('form')
+const phoneOpen = ref(false)
+// Once the form has been shown, Back from the scan screen returns to it (with what was typed) and not to the first choice.
+const formStarted = ref(entry.value === 'form')
+watch(entry, (now) => { if (now === 'form') formStarted.value = true })
+
+function startManual() {
+	entry.value = 'form'
+	void nextTick(focusStep)
+}
+type IsbnStatus =
+	| { kind: 'idle' }
+	| { kind: 'searching' }
+	| { kind: 'found'; filled: string[]; sources: string[] }
+	| { kind: 'none'; text: string }
+	| { kind: 'error'; text: string }
+const isbnStatus = ref<IsbnStatus>({ kind: 'idle' })
+const findingDetails = computed(() => isbnStatus.value.kind === 'searching')
+// Each lookup gets a number, so an answer that arrives after a newer scan (or after the window was reset) is dropped.
+let detailsRun = 0
+
+const isbnStatusText = computed(() => {
+	const status = isbnStatus.value
+	if (status.kind === 'searching') return 'Looking the book up in the library catalogues…'
+	if (status.kind === 'none' || status.kind === 'error') return status.text
+	if (status.kind === 'found') {
+		const from = status.sources.map((s) => SOURCE_LABEL[s] ?? s).join(' and ')
+		return status.filled.length
+			? `Found it in ${from}. Filled in: ${status.filled.join(', ')}. Check them below, then continue.`
+			: `Found it in ${from}, but every field already has something typed in, so nothing was changed.`
+	}
+	return 'Scan the barcode on the back cover and the details fill in, or type the ISBN below and press Find. You can also skip this and type everything yourself.'
+})
+
+/** A barcode came off the camera (or the phone). Only a real book ISBN is used; anything else is explained, not guessed at. */
+function onIsbnScanned(code: string) {
+	const isbn = isbnFromBarcode(code) ?? normalizeIsbn(code)
+	if (!isbn) {
+		isbnStatus.value = { kind: 'none', text: "That barcode isn't a book's ISBN. Scan the one on the back cover (its number starts with 978 or 979)." }
+		return
+	}
+	form.isbn = isbn
+	errors.isbn = ''
+	void findDetails()
+}
+
+async function findDetails() {
+	const typed = form.isbn.trim()
+	if (!typed || findingDetails.value) return
+
+	const isbn = normalizeIsbn(typed)
+	if (!isbn) {
+		errors.isbn = "That isn't a valid ISBN. Check the digits."
+		isbnStatus.value = { kind: 'none', text: "That isn't a valid ISBN, so there is nothing to look up. Check the digits (an ISBN has 10 or 13)." }
+		return
+	}
+
+	const run = ++detailsRun
+	isbnStatus.value = { kind: 'searching' }
+	try {
+		const result = await librarianService.lookupIsbnDetails(isbn)
+		if (run !== detailsRun) return
+		if (!result.found) {
+			isbnStatus.value = { kind: 'none', text: result.message }
+			// Valid ISBN, but no catalogue has the book (common for local and older titles): carry on into the form with
+			// the ISBN kept, so the librarian types the rest. A mistyped ISBN or a dropped connection stays put to retry.
+			if (entry.value !== 'form' && result.reason === 'not_found') {
+				form.isbn = isbn
+				errors.isbn = ''
+				entry.value = 'form'
+				void nextTick(focusStep)
+			}
+			return
+		}
+		isbnStatus.value = { kind: 'found', filled: applyIsbnDetails(result), sources: result.sources }
+		// Found from the start screen: carry on into the form, now filled in. (A miss stays put so it can be retried.)
+		if (entry.value !== 'form') {
+			entry.value = 'form'
+			void nextTick(focusStep)
+		}
+	} catch {
+		if (run !== detailsRun) return
+		isbnStatus.value = { kind: 'error', text: "Couldn't reach the catalogues. Check the connection and try again, or type the details yourself." }
+	}
+}
+
+/** Puts what was found into the fields that are still empty (never over what the librarian typed). Returns what it filled. */
+function applyIsbnDetails(found: Extract<IsbnDetailsLookup, { found: true }>): string[] {
+	const filled: string[] = []
+
+	form.isbn = found.isbn
+	errors.isbn = ''
+
+	if (found.title && !form.title.trim()) {
+		form.title = found.title
+		errors.title = ''
+		filled.push('title')
+	}
+	if (found.authors.length && authors.value.every((a) => !a.name.trim())) {
+		authors.value = found.authors.map((name) => ({ key: ++authorKeySeq, name, role: 'Author' }))
+		errors.authors = ''
+		filled.push(found.authors.length === 1 ? 'author' : 'authors')
+	}
+	if (found.publisher && !form.publisher.trim()) {
+		form.publisher = found.publisher
+		errors.publisher = ''
+		filled.push('publisher')
+	}
+	// (A catalogue can list a forthcoming book under next year; the form doesn't take a year in the future.)
+	if (found.publishYear && found.publishYear <= new Date().getFullYear() && !String(form.publicationYear).trim()) {
+		form.publicationYear = found.publishYear
+		errors.publicationYear = ''
+		filled.push('year')
+	}
+	if (found.pageCount && !String(form.pageCount).trim()) {
+		form.pageCount = found.pageCount
+		errors.pageCount = ''
+		filled.push('page count')
+	}
+	if (found.coverUrl && !form.coverImageURL.trim()) {
+		form.coverImageURL = found.coverUrl
+		coverLoadFailed.value = false
+		filled.push('cover')
+	}
+	// The Dewey number comes in the same answer, so the shelving step doesn't have to ask the catalogues again.
+	if (found.deweyNumber && !form.deweyNumber.trim()) {
+		form.deweyNumber = found.deweyNumber
+		errors.deweyNumber = ''
+		lookedUpIsbn = found.isbn
+		lookedUpNumber = found.deweyNumber
+		deweyHint.value = `Found ${found.deweyNumber} in ${found.deweySource ? DEWEY_SOURCE_LABEL[found.deweySource] : 'a library catalogue'}. Check it, then confirm.`
+		filled.push('Dewey number')
+	}
+
+	return filled
 }
 
 const form = reactive({
@@ -628,10 +849,11 @@ const coverLoadFailed = ref(false)
 // The fields every book must have, whether it is being added or edited (see StoreBookRequest and UpdateBookRequest).
 const REQUIRED_KEYS = ['isbn', 'publicationYear', 'publisher', 'edition', 'volume', 'pageCount', 'sourceOfFund', 'cost'] as const
 type RequiredKey = (typeof REQUIRED_KEYS)[number]
-const errors = reactive<{ title: string; authors: string; subjectName: string } & Record<RequiredKey, string>>({
+const errors = reactive<{ title: string; authors: string; subjectName: string; deweyNumber: string } & Record<RequiredKey, string>>({
 	title: '',
 	authors: '',
 	subjectName: '',
+	deweyNumber: '',
 	isbn: '',
 	publicationYear: '',
 	publisher: '',
@@ -681,6 +903,10 @@ function removeAuthor(index: number) {
 }
 
 function resetForm() {
+	detailsRun++
+	isbnStatus.value = { kind: 'idle' }
+	phoneOpen.value = false
+	formStarted.value = false
 	form.title = ''
 	form.isbn = ''
 	form.publicationYear = ''
@@ -714,6 +940,8 @@ function resetForm() {
 	errors.title = ''
 	errors.authors = ''
 	errors.subjectName = ''
+	errors.deweyNumber = ''
+	hadCheckedDewey.value = false
 	for (const key of REQUIRED_KEYS) errors[key] = ''
 }
 
@@ -724,6 +952,7 @@ function fillFromBook(book: BookDetail) {
 	form.subjectName = book.subject?.name ?? ''
 	// A checked number is shown as it is; a guessed one is left blank so it can't be saved by accident as "typed in".
 	originalDewey = book.deweyStatus === 'ok' ? (book.deweyNumber ?? '') : ''
+	hadCheckedDewey.value = originalDewey !== ''
 	guessedDewey.value = book.deweyStatus === 'ok' ? '' : (book.deweyNumber ?? '')
 	form.deweyNumber = originalDewey
 	deweyHint.value = ''
@@ -750,7 +979,8 @@ watch(() => props.open, (isOpen) => {
 		editorKey.value++
 		resetForm()
 		if (props.book) fillFromBook(props.book)
-		nextTick(focusStep)
+		entry.value = props.book ? 'form' : 'choose'
+		if (entry.value === 'form') nextTick(focusStep)
 	}
 })
 
@@ -759,19 +989,114 @@ function handleClose() {
 	emit('close')
 }
 
+/* ---------- Checks on the ISBN and the publication year ---------- */
+const CURRENT_YEAR = new Date().getFullYear()
+
+/** Why the ISBN can't be saved, or '' when it can. An old book's unchanged ISBN is left alone (see UpdateBookRequest). */
+function isbnProblem(): string {
+	const value = form.isbn.trim()
+	if (!value) return 'ISBN is required.'
+	if (isEdit.value && value === (props.book?.isbn ?? '')) return ''
+	return normalizeIsbn(value) ? '' : "That isn't a valid ISBN. It has 10 or 13 digits (an ISBN-10 may end in X), and its last digit is a check digit, so a typo is usually caught."
+}
+
+/** Why the year can't be saved, or '' when it can: four digits, and not in the future. */
+function yearProblem(): string {
+	const value = String(form.publicationYear).trim()
+	if (!/^\d{4}$/.test(value)) return 'Enter the four-digit year, like 2024.'
+	const year = Number(value)
+	if (year > CURRENT_YEAR) return `The publication year can't be in the future. ${CURRENT_YEAR} is the latest.`
+	if (year < 1000) return 'Enter the four-digit year, like 2024.'
+	return ''
+}
+
+/** Only digits, hyphens, spaces and a final X can be typed (or pasted) into the ISBN box. */
+function onIsbnInput() {
+	form.isbn = sanitizeIsbnInput(form.isbn)
+	errors.isbn = ''
+}
+
+/** Leaving the ISBN box with something in it says right away if it isn't a real ISBN (an empty box waits for Continue). */
+function checkIsbnField() {
+	if (form.isbn.trim()) errors.isbn = isbnProblem()
+}
+
+/** Only digits, and at most four of them. */
+function onYearInput() {
+	form.publicationYear = String(form.publicationYear).replace(/\D/g, '').slice(0, 4)
+	errors.publicationYear = ''
+}
+
+/** Only digits can be typed into the page count. */
+function onPagesInput() {
+	form.pageCount = digitsOnly(String(form.pageCount), 5)
+	errors.pageCount = ''
+}
+
+function checkPagesField() {
+	const value = String(form.pageCount).trim()
+	if (value && !(Number.isInteger(Number(value)) && Number(value) >= 1)) errors.pageCount = 'Enter the number of pages.'
+}
+
+/** Digits and one decimal point, with two places at most. */
+function onCostInput() {
+	form.cost = decimalOnly(String(form.cost), 2)
+	errors.cost = ''
+}
+
+function checkCostField() {
+	const value = String(form.cost).trim()
+	if (value && !(Number.isFinite(Number(value)) && Number(value) >= 0)) errors.cost = 'Enter the cost (0 if it was donated).'
+}
+
+function checkYearField() {
+	if (String(form.publicationYear).trim()) errors.publicationYear = yearProblem()
+}
+
+/* ---------- Call number (Dewey Decimal): required for a new book ---------- */
+const DEWEY_FORMAT = /^\d{3}(\.\d{1,10})?$/
+// Editing: a book whose number was only a guess may stay without one (it is on the "check Dewey numbers" list), but a book
+// that already has a checked number can't have it blanked out.
+const hadCheckedDewey = ref(false)
+const deweyRequired = computed(() => !isEdit.value || hadCheckedDewey.value)
+
+const deweyHelp = computed(() => form.isbn.trim()
+	? 'Looked up from the ISBN when this step opens. If no catalogue has the book, type the number (often printed on the copyright page as "DDC").'
+	: 'Type the Dewey number (often printed on the copyright page as "DDC"), or add the ISBN in step 1 to look it up.')
+
+/** Why the call number can't be saved, or '' when it can. */
+function deweyProblem(): string {
+	const value = form.deweyNumber.trim()
+	if (!value) return deweyRequired.value ? 'The call number is required. It is the Dewey number, like 005.1, often printed on the copyright page as "DDC".' : ''
+	return DEWEY_FORMAT.test(value) ? '' : 'Write it as three digits, then an optional decimal part, like 005 or 005.13.'
+}
+
+/** Only digits and one decimal point can be typed (or pasted) into the call number box. */
+function onDeweyInput() {
+	const [whole = '', ...rest] = form.deweyNumber.replace(/[^0-9.]/g, '').split('.')
+	form.deweyNumber = rest.length ? `${whole}.${rest.join('')}` : whole
+	deweyHint.value = ''
+	errors.deweyNumber = ''
+}
+
+function checkDeweyField() {
+	if (form.deweyNumber.trim()) errors.deweyNumber = deweyProblem()
+}
+
 /** Checks one step's required fields and shows their messages. Step 4 (page photos) is optional. */
 function checkStep(n: number): boolean {
 	if (n === 1) {
 		errors.title = form.title.trim() ? '' : 'Title is required.'
 		errors.authors = authors.value.some((a) => a.name.trim()) ? '' : 'At least one author is required.'
 		// A book's record is complete, new or edited.
-		errors.isbn = form.isbn.trim() ? '' : 'ISBN is required.'
-		errors.publicationYear = /^\d{4}$/.test(String(form.publicationYear).trim()) ? '' : 'Enter the four-digit year, like 2024.'
+		errors.isbn = isbnProblem()
+		errors.publicationYear = yearProblem()
 		return !errors.title && !errors.authors && !errors.isbn && !errors.publicationYear
 	}
 	if (n === 2) {
 		errors.subjectName = form.subjectName.trim() ? '' : 'Category is required.'
-		return !errors.subjectName
+		errors.deweyNumber = deweyProblem()
+		return !errors.subjectName && !errors.deweyNumber
 	}
 	if (n === 3) {
 		errors.publisher = form.publisher.trim() ? '' : 'Publisher is required.'
@@ -789,7 +1114,7 @@ function checkStep(n: number): boolean {
 
 function stepHasError(n: number) {
 	if (n === 1) return !!(errors.title || errors.authors || errors.isbn || errors.publicationYear)
-	if (n === 2) return !!errors.subjectName
+	if (n === 2) return !!(errors.subjectName || errors.deweyNumber)
 	if (n === 3) return !!(errors.publisher || errors.edition || errors.volume || errors.pageCount || errors.sourceOfFund || errors.cost)
 	return false
 }
@@ -893,6 +1218,11 @@ function handleSubmit() {
 }
 
 async function doSave() {
+	const deweyError = deweyProblem()
+	if (deweyError) {
+		errors.deweyNumber = deweyError
+		return
+	}
 	submitting.value = true
 
 	const payload: NewBookPayload = {
