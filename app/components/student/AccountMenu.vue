@@ -6,8 +6,8 @@
 			<span class="dashboard-heading">{{ initialsText }}</span>
 		</button>
 
-		<Transition enter-active-class="transition-[transform,opacity] duration-[160ms] ease-out" enter-from-class="scale-[.96] opacity-0"
-			leave-active-class="transition-[transform,opacity] duration-[120ms] ease-out" leave-to-class="scale-[.96] opacity-0">
+		<Transition enter-active-class="transition-[transform,translate,scale,opacity] duration-[160ms] ease-out" enter-from-class="scale-[.96] opacity-0"
+			leave-active-class="transition-[transform,translate,scale,opacity] duration-[120ms] ease-out" leave-to-class="scale-[.96] opacity-0">
 			<div v-if="open" role="menu" aria-label="Account"
 				class="absolute right-0 top-[calc(100%+10px)] z-50 w-[300px] origin-top-right overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-[0_18px_44px_-18px_rgba(40,25,8,.45)]">
 				<div class="flex items-center gap-3 border-b border-stone-100 p-4">

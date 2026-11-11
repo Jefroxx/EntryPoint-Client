@@ -118,9 +118,6 @@ function requesterName(suggestion: BookSuggestion): string {
 	return user ? `${user.firstName} ${user.lastName}` : '—'
 }
 
-function formatDate(value: string): string {
-	return new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-}
 
 const COVER_COLORS = ['#532c2e', '#4a1f24', '#34000b', '#855e56', '#1e423f']
 

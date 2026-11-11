@@ -17,6 +17,15 @@
 									<Icon :name="checkingOut === log.uuid ? 'i-tabler-loader-2' : 'i-tabler-logout'" class="h-3.5 w-3.5" :class="{ 'animate-spin': checkingOut === log.uuid }" />Check out
 								</ButtonsButton>
 							<p class="font-data mt-1 text-[12.5px] text-stone-500">In {{ formatTime(log.entryTime) }} · Out {{ log.exitTime ? formatTime(log.exitTime) : '—' }} · {{ duration(log) }}</p>
+							<!-- Which staff account scanned the visit in (and out), so a desk shared by several accounts can tell who did what. -->
+							<p class="mt-1 flex items-start gap-1.5 text-[12.5px] leading-snug" :class="log.checkedInByStaff ? 'text-stone-600' : 'text-stone-400'">
+								<Icon name="i-tabler-user-check" class="mt-px h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+								<span class="min-w-0">
+									<template v-if="log.checkedInByStaff">In by <b class="font-semibold text-stone-700">{{ log.checkedInByStaff.name }}</b> <span class="text-stone-400">· {{ staffRoleLabel(log.checkedInByStaff.role) }}</span></template>
+									<template v-else>Checked in by: not recorded</template>
+									<template v-if="log.checkedOutByStaff"><br />Out by <b class="font-semibold text-stone-700">{{ log.checkedOutByStaff.name }}</b> <span class="text-stone-400">· {{ staffRoleLabel(log.checkedOutByStaff.role) }}</span></template>
+								</span>
+							</p>
 						</div>
 						<span v-if="!log.exitTime" class="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[12px] font-semibold text-emerald-600">
 							<span class="pulse-dot h-1.5 w-1.5 rounded-full bg-emerald-500" />In Library
@@ -108,7 +117,9 @@ const fields = computed(() => {
 			? { label: 'Purpose of visit', value: log.visitorPurpose, wide: true }
 			: { label: 'Program', value: log.student?.academicProgram, wide: true },
 		{ label: 'Entered', value: formatDateTime(log.entryTime), wide: true },
+		{ label: 'Checked in by', value: log.checkedInByStaff ? staffLabel(log.checkedInByStaff) : 'Not recorded', wide: true },
 		{ label: 'Left', value: log.exitTime ? formatDateTime(log.exitTime) : null, wide: true },
+		...(log.exitTime ? [{ label: 'Checked out by', value: log.checkedOutByStaff ? staffLabel(log.checkedOutByStaff) : 'Not recorded, or closed automatically at the end of the day', wide: true }] : []),
 		{ label: 'Time in library', value: log.exitTime ? duration(log) : 'Still inside' },
 		{ label: 'Log ID', value: log.logID, mono: true },
 	]
@@ -120,9 +131,6 @@ function studentName(log: AttendanceLog): string {
 	return user ? `${user.firstName} ${user.lastName}` : 'Unknown student'
 }
 
-function formatTime(value: string): string {
-	return new Date(value).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
-}
 
 function duration(log: AttendanceLog): string {
 	if (!log.exitTime) return '—'

@@ -1,5 +1,5 @@
 <template>
-	<LibrarianModalShell :open="open" size="lg" :title="reviewing ? 'Create this member?' : member ? 'Edit member' : 'Add faculty or staff member'"
+	<LibrarianModalShell :open="open" size="lg" :title="reviewing ? 'Create This Member?' : member ? 'Edit Member' : 'Add Faculty or Staff Member'"
 		:subtitle="subtitle" :busy="busy" @close="emit('close')">
 		<!-- Step 2 (new members only): look it over before anything is created. Back returns to the form with everything kept. -->
 		<div v-if="reviewing" class="space-y-4">

@@ -1,5 +1,5 @@
 <template>
-	<LibrarianModalShell :open="open" title="Log a visitor"
+	<LibrarianModalShell :open="open" title="Log a Visitor"
 		subtitle="For someone without an account. Type their name and why they came." :busy="busy" @close="emit('close')">
 		<div class="space-y-4">
 			<LibrarianTextField id="visitor-name" v-model="form.name" label="Name" placeholder="e.g. Maria Santos"

@@ -1,69 +1,56 @@
 <template>
-	<AppTeleport>
-		<div class="fixed inset-0 z-[60] bg-stone-900/40 transition-opacity duration-200"
-			:class="open ? 'opacity-100' : 'pointer-events-none opacity-0'" @click="emit('close')" />
-
-		<aside class="fixed right-0 top-0 z-[61] flex h-full w-full max-w-[420px] flex-col bg-white shadow-overlay transition-transform ease-[cubic-bezier(.32,.72,0,1)]"
-			:class="open ? 'translate-x-0 duration-300' : 'translate-x-full duration-200'">
-			<div class="flex items-center justify-between border-b border-stone-100 px-5 py-4">
-				<h3 class="text-[17px] font-bold text-accent-700">Review request</h3>
-				<ButtonsButton variant="icon" aria-label="Close" @click="emit('close')">
-					<Icon name="i-tabler-x" class="h-[18px] w-[18px]" />
-				</ButtonsButton>
+	<!-- A pop-up on a computer, a full page on a phone (the shared modal shell does both). -->
+	<LibrarianModalShell :open="open" size="lg" title="Review Request" :subtitle="suggestion ? 'A student asked the library to get this book.' : ''" @close="emit('close')">
+		<div v-if="suggestion" class="space-y-5">
+			<div class="flex gap-4">
+				<div class="flex h-[96px] w-[70px] shrink-0 items-center justify-center rounded-lg text-2xl font-bold text-white shadow-sm"
+					:style="{ background: coverColor(suggestion.title) }">
+					{{ coverInitials(suggestion.title) }}
+				</div>
+				<div class="min-w-0">
+					<p class="text-[17px] font-bold leading-snug text-stone-900">{{ suggestion.title }}</p>
+					<p class="mt-0.5 text-[14.5px] text-stone-500">{{ suggestion.author || 'Author not specified' }}</p>
+					<div class="mt-2.5">
+						<LibrarianRequestStatusPill :status="suggestion.status" />
+					</div>
+				</div>
 			</div>
 
-			<div v-if="suggestion" class="flex-1 overflow-y-auto px-5 py-5">
-				<div class="mb-5 flex gap-3.5">
-					<div class="flex h-[82px] w-[60px] shrink-0 items-center justify-center rounded-lg text-xl font-bold text-white shadow-sm"
-						:style="{ background: coverColor(suggestion.title) }">
-						{{ coverInitials(suggestion.title) }}
-					</div>
-					<div>
-						<p class="text-[15.5px] font-bold leading-snug text-stone-900">{{ suggestion.title }}</p>
-						<p class="mt-0.5 text-[14px] text-stone-500">{{ suggestion.author || 'Author not specified' }}</p>
-						<div class="mt-2">
-							<LibrarianRequestStatusPill :status="suggestion.status" />
-						</div>
-					</div>
-				</div>
-
-				<div class="mb-5 grid grid-cols-2 gap-x-4 gap-y-3.5">
-					<div>
-						<p class="mb-0.5 text-[12px] font-bold uppercase tracking-wide text-stone-500">Requested by</p>
-						<p class="text-[15px] font-medium text-stone-800">{{ requesterName }}</p>
-					</div>
-					<div>
-						<p class="mb-0.5 text-[12px] font-bold uppercase tracking-wide text-stone-500">Section</p>
-						<p class="text-[15px] font-medium text-stone-800">{{ suggestion.student?.academicProgram || '—' }}</p>
-					</div>
-					<div>
-						<p class="mb-0.5 text-[12px] font-bold uppercase tracking-wide text-stone-500">Date requested</p>
-						<p class="text-[15px] font-medium text-stone-800">{{ formattedDate }}</p>
-					</div>
-					<div>
-						<p class="mb-0.5 text-[12px] font-bold uppercase tracking-wide text-stone-500">Progress</p>
-						<p class="text-[15px] font-medium text-stone-800">{{ suggestion.progressStep || suggestion.status }}</p>
-					</div>
-				</div>
-
+			<div class="grid grid-cols-1 gap-x-6 gap-y-4 rounded-xl border border-stone-200 p-4 sm:grid-cols-2">
 				<div>
-					<p class="mb-1.5 text-[12px] font-bold uppercase tracking-wide text-stone-500">Student's reason</p>
-					<div class="rounded-xl border border-stone-100 bg-stone-50 px-3.5 py-3 text-[14px] leading-relaxed text-stone-600">
-						{{ suggestion.reason || 'No reason provided.' }}
-					</div>
+					<p class="mb-0.5 text-[12px] font-bold uppercase tracking-wide text-stone-500">Requested by</p>
+					<p class="text-[15px] font-medium text-stone-800">{{ requesterName }}</p>
+				</div>
+				<div>
+					<p class="mb-0.5 text-[12px] font-bold uppercase tracking-wide text-stone-500">Section</p>
+					<p class="text-[15px] font-medium text-stone-800">{{ suggestion.student?.academicProgram || '—' }}</p>
+				</div>
+				<div>
+					<p class="mb-0.5 text-[12px] font-bold uppercase tracking-wide text-stone-500">Date requested</p>
+					<p class="text-[15px] font-medium text-stone-800">{{ formattedDate }}</p>
+				</div>
+				<div>
+					<p class="mb-0.5 text-[12px] font-bold uppercase tracking-wide text-stone-500">Progress</p>
+					<p class="text-[15px] font-medium text-stone-800">{{ suggestion.progressStep || suggestion.status }}</p>
 				</div>
 			</div>
 
-			<div v-if="suggestion?.status === 'Pending'" class="flex gap-2.5 border-t border-stone-100 px-5 py-4">
-				<ButtonsButton variant="danger" class="flex-1" @click="emit('reject', suggestion)">
-					Reject
-				</ButtonsButton>
-				<ButtonsButton variant="primary" class="flex-[1.4]" @click="emit('approve', suggestion)">
-					Approve request
-				</ButtonsButton>
+			<div>
+				<p class="mb-1.5 text-[12px] font-bold uppercase tracking-wide text-stone-500">Student's reason</p>
+				<div class="rounded-xl border border-stone-100 bg-stone-50 px-4 py-3.5 text-[14.5px] leading-relaxed text-stone-600">
+					{{ suggestion.reason || 'No reason provided.' }}
+				</div>
 			</div>
-		</aside>
-	</AppTeleport>
+		</div>
+
+		<template #footer>
+			<template v-if="suggestion?.status === 'Pending'">
+				<ButtonsButton variant="danger" @click="emit('reject', suggestion)">Reject</ButtonsButton>
+				<ButtonsButton variant="primary" @click="emit('approve', suggestion)">Approve request</ButtonsButton>
+			</template>
+			<ButtonsButton v-else variant="ghost" @click="emit('close')">Close</ButtonsButton>
+		</template>
+	</LibrarianModalShell>
 </template>
 
 <script setup lang="ts">
@@ -87,7 +74,7 @@ const requesterName = computed(() => {
 
 const formattedDate = computed(() => {
 	if (!props.suggestion) return '—'
-	return new Date(props.suggestion.submittedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+	return formatDate(props.suggestion.submittedAt)
 })
 
 const COVER_COLORS = ['#532c2e', '#4a1f24', '#34000b', '#855e56', '#1e423f']
@@ -103,11 +90,4 @@ function coverColor(title: string): string {
 	for (let i = 0; i < title.length; i++) hash = title.charCodeAt(i) + ((hash << 5) - hash)
 	return COVER_COLORS[Math.abs(hash) % COVER_COLORS.length]!
 }
-
-function handleKeydown(e: KeyboardEvent) {
-	if (e.key === 'Escape' && props.open) emit('close')
-}
-
-onMounted(() => window.addEventListener('keydown', handleKeydown))
-onUnmounted(() => window.removeEventListener('keydown', handleKeydown))
 </script>

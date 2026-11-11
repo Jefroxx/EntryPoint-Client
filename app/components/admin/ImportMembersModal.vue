@@ -1,5 +1,5 @@
 <template>
-	<LibrarianModalShell :open="open" size="xl" :title="step === 'done' ? 'Import finished' : 'Import from a CSV file'"
+	<LibrarianModalShell :open="open" size="xl" :title="step === 'done' ? 'Import Finished' : 'Import From a CSV File'"
 		:subtitle="subtitle" :busy="busy" @close="close">
 		<!-- Step 1: choose the file -->
 		<div v-if="step === 'file'" class="space-y-4">

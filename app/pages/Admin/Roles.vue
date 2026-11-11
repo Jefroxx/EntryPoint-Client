@@ -59,7 +59,7 @@
         </div>
 
         <!-- Look over what will change before it is saved (opened from the page's own button, so nothing is stacked). -->
-        <LibrarianModalShell :open="isConfirmOpen" size="md" title="Save these changes?"
+        <LibrarianModalShell :open="isConfirmOpen" size="md" title="Save These Changes?"
             subtitle="They apply to everyone with these roles straight away." :busy="saving" @close="isConfirmOpen = false">
             <div class="space-y-4">
                 <section v-for="c in changes" :key="c.role" class="rounded-xl border border-stone-200 bg-white p-4">
@@ -87,7 +87,7 @@
         </LibrarianModalShell>
 
         <!-- Undo all throws the unsaved ticks away, so it asks first (a button on the page itself, nothing else open). -->
-        <LibrarianConfirmModal :open="isDiscardOpen" title="Discard these changes?"
+        <LibrarianConfirmModal :open="isDiscardOpen" title="Discard These Changes?"
             :message="`Your unsaved changes to ${dirtyRoles.map((r) => r.label).join(' and ')} will be thrown away, and the roles go back to what was last saved.`"
             confirm-label="Yes, discard changes" @close="isDiscardOpen = false" @confirm="discard" />
 

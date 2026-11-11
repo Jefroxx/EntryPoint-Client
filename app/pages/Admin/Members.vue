@@ -62,19 +62,8 @@
             </tr>
         </LibrarianTableShell>
 
-        <div v-if="page" class="mt-3 flex items-center justify-between text-[13.5px] text-stone-500">
-            <span>Showing {{ rows.length }} of {{ page.total }} members</span>
-            <span>Page {{ page.current_page }} of {{ page.last_page }}</span>
-        </div>
-
-        <div v-if="page && page.last_page > 1" class="mt-3 flex items-center justify-center gap-2">
-            <ButtonsButton variant="ghost" size="sm" :disabled="page.current_page <= 1" @click="pageNumber--">
-                <Icon name="i-tabler-chevron-left" class="h-3.5 w-3.5" />Previous
-            </ButtonsButton>
-            <ButtonsButton variant="ghost" size="sm" :disabled="page.current_page >= page.last_page" @click="pageNumber++">
-                Next<Icon name="i-tabler-chevron-right" class="h-3.5 w-3.5" />
-            </ButtonsButton>
-        </div>
+        <LibrarianPagination v-if="page" :shown="rows.length" :total="page.total" noun="members"
+            :page="page.current_page" :last-page="page.last_page" @change="pageNumber = $event" />
 
         <AdminMemberFormModal :open="isFormOpen" :member="editing" :busy="busy" :server-errors="serverErrors"
             @close="isFormOpen = false" @submit="save" />
@@ -83,11 +72,11 @@
 
         <AdminCredentialsModal :open="isCredentialsOpen" :title="credentialsTitle" :credentials="credentials" @close="isCredentialsOpen = false" />
 
-        <LibrarianConfirmModal :open="isDisableOpen" title="Disable this account?"
+        <LibrarianConfirmModal :open="isDisableOpen" title="Disable This Account?"
             :message="`${target?.name ?? 'This member'} will be signed out right away and can't sign in or borrow until you enable the account again. Their records stay as they are.`"
             confirm-label="Disable account" :loading="busy" @close="isDisableOpen = false" @confirm="disable" />
 
-        <LibrarianConfirmModal :open="isResetOpen" title="Reset this password?"
+        <LibrarianConfirmModal :open="isResetOpen" title="Reset This Password?"
             :message="`${target?.name ?? 'This member'} gets a new temporary password and is signed out everywhere. The old password stops working. You'll see the new one once.`"
             confirm-label="Reset password" :danger="false" :loading="busy" @close="isResetOpen = false" @confirm="reset" />
 

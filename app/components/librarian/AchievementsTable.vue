@@ -75,7 +75,7 @@
 					</li>
 				</ul>
 					<LibrarianPagination v-if="visibleStudents.length > STUDENTS_PER_PAGE" :shown="pagedStudents.length" :total="visibleStudents.length"
-						noun="students" :page="studentPage" :last-page="studentPages" @change="studentPage = $event" />
+						noun="students" :floating="false" :page="studentPage" :last-page="studentPages" @change="studentPage = $event" />
 			</section>
 		</LibrarianRecordDrawer>
 	</LibrarianTableShell>

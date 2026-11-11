@@ -9,9 +9,9 @@
 
 		<!-- Rendered at the body so a table's `overflow-hidden` can never clip it. -->
 		<AppTeleport>
-			<Transition enter-active-class="transition-[transform,opacity] duration-[180ms] ease-out"
+			<Transition enter-active-class="transition-[transform,translate,scale,opacity] duration-[180ms] ease-out"
 				enter-from-class="scale-[.96] opacity-0" enter-to-class="scale-100 opacity-100"
-				leave-active-class="transition-[transform,opacity] duration-[130ms] ease-out"
+				leave-active-class="transition-[transform,translate,scale,opacity] duration-[130ms] ease-out"
 				leave-from-class="scale-100 opacity-100" leave-to-class="scale-[.98] opacity-0">
 				<div v-if="open" role="menu" :style="style"
 					class="fixed z-[120] min-w-[186px] rounded-[14px] border border-stone-200 bg-white p-1.5 shadow-card"

@@ -96,7 +96,7 @@
             @submit="handleSave" />
         <LibrarianStartSessionModal :open="isStartOpen" :resource="startTarget" :busy="busy" @close="isStartOpen = false"
             @submit="handleStart" />
-        <LibrarianConfirmModal :open="endOpen" title="End this session?"
+        <LibrarianConfirmModal :open="endOpen" title="End This Session?"
             :message="`${endTarget?.active_usage?.student?.user?.firstName ?? 'The student'}'s session on “${endTarget?.name ?? 'this resource'}” will be ended now.`"
             confirm-label="End session" :danger="false" :loading="busy" @close="endOpen = false" @confirm="handleEnd" />
         <LibrarianConfirmModal :open="toggleOpen" :title="toggleNext === 'Unavailable' ? 'Mark as unavailable?' : 'Mark as available?'"
@@ -105,7 +105,7 @@
                 : `“${toggleTarget?.name ?? 'This resource'}” can be used again.`"
             :confirm-label="toggleNext === 'Unavailable' ? 'Mark unavailable' : 'Mark available'" :danger="toggleNext === 'Unavailable'"
             :loading="busy" @close="toggleOpen = false" @confirm="handleToggle" />
-        <LibrarianConfirmModal :open="deleteOpen" title="Delete resource?"
+        <LibrarianConfirmModal :open="deleteOpen" title="Delete Resource?"
             :message="`“${deleteTarget?.name ?? 'This resource'}” will be removed from the library. Its past sessions stay in the log.`"
             confirm-label="Delete" :loading="busy" @close="deleteOpen = false" @confirm="handleDelete" />
 
@@ -168,7 +168,7 @@ const logDate = ref('')
 const ymd = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 const todayYmd = ymd(new Date())
 const logPage = ref(1)
-const LOGS_PER_PAGE = 10
+const LOGS_PER_PAGE = 12 // fills whole rows of the 1, 2 and 3 column card grid
 
 // The resource dropdown only lists resources of the chosen type.
 const logResourceOptions = computed(() =>

@@ -73,22 +73,8 @@
                 @view="openBookDetail" @edit="openEditBook" @remove="askRemoveBook"
                 @print-labels="(book) => openLabels({ book: book.uuid })" />
 
-            <div v-if="books" class="mt-3 flex items-center justify-between text-[13.5px] text-stone-500">
-                <span>Showing {{ books.data.length }} of {{ books.total }} books</span>
-                <span>Page {{ books.current_page }} of {{ books.last_page }}</span>
-            </div>
-
-            <div v-if="books && books.last_page > 1" class="mt-3 flex items-center justify-center gap-2">
-                <ButtonsButton variant="ghost" size="sm" :disabled="books.current_page <= 1"
-                    @click="goToPage(books.current_page - 1)">
-                    <Icon name="i-tabler-chevron-left" class="h-3.5 w-3.5" />Previous
-                </ButtonsButton>
-                <ButtonsButton variant="ghost" size="sm" :disabled="books.current_page >= books.last_page"
-                    @click="goToPage(books.current_page + 1)">
-                    Next
-                    <Icon name="i-tabler-chevron-right" class="h-3.5 w-3.5" />
-                </ButtonsButton>
-            </div>
+            <LibrarianPagination v-if="books" :shown="books.data.length" :total="books.total" noun="books"
+                :page="books.current_page" :last-page="books.last_page" @change="goToPage" />
         </template>
 
         <template v-else-if="activeTab === 'catalog'">
@@ -151,22 +137,8 @@
                     @remove-copy="openRemoveCopy" @toggle="toggleCopy" @toggle-page="toggleCopyPage"
                     @print-label="(copy) => openLabels({ copies: [copy.uuid] })" />
 
-                <div v-if="copies" class="mt-3 flex items-center justify-between text-[13.5px] text-stone-500">
-                    <span>Showing {{ copies.data.length }} of {{ copies.total }} copies</span>
-                    <span>Page {{ copies.current_page }} of {{ copies.last_page }}</span>
-                </div>
-
-                <div v-if="copies && copies.last_page > 1" class="mt-3 flex items-center justify-center gap-2">
-                    <ButtonsButton variant="ghost" size="sm" :disabled="copies.current_page <= 1"
-                        @click="goToCopyPage(copies.current_page - 1)">
-                        <Icon name="i-tabler-chevron-left" class="h-3.5 w-3.5" />Previous
-                    </ButtonsButton>
-                    <ButtonsButton variant="ghost" size="sm" :disabled="copies.current_page >= copies.last_page"
-                        @click="goToCopyPage(copies.current_page + 1)">
-                        Next
-                        <Icon name="i-tabler-chevron-right" class="h-3.5 w-3.5" />
-                    </ButtonsButton>
-                </div>
+                <LibrarianPagination v-if="copies" :shown="copies.data.length" :total="copies.total" noun="copies"
+                    :page="copies.current_page" :last-page="copies.last_page" @change="goToCopyPage" />
             </template>
 
             <template v-else>
@@ -194,22 +166,8 @@
                 <LibrarianStockLogTable :logs="stockLogs?.data ?? []" :loading="stockPending"
                     :filtered="hasStockFilters" />
 
-                <div v-if="stockLogs" class="mt-3 flex items-center justify-between text-[13.5px] text-stone-500">
-                    <span>Showing {{ stockLogs.data.length }} of {{ stockLogs.total }} entries</span>
-                    <span>Page {{ stockLogs.current_page }} of {{ stockLogs.last_page }}</span>
-                </div>
-
-                <div v-if="stockLogs && stockLogs.last_page > 1" class="mt-3 flex items-center justify-center gap-2">
-                    <ButtonsButton variant="ghost" size="sm" :disabled="stockLogs.current_page <= 1"
-                        @click="goToStockPage(stockLogs.current_page - 1)">
-                        <Icon name="i-tabler-chevron-left" class="h-3.5 w-3.5" />Previous
-                    </ButtonsButton>
-                    <ButtonsButton variant="ghost" size="sm" :disabled="stockLogs.current_page >= stockLogs.last_page"
-                        @click="goToStockPage(stockLogs.current_page + 1)">
-                        Next
-                        <Icon name="i-tabler-chevron-right" class="h-3.5 w-3.5" />
-                    </ButtonsButton>
-                </div>
+                <LibrarianPagination v-if="stockLogs" :shown="stockLogs.data.length" :total="stockLogs.total" noun="entries"
+                    :page="stockLogs.current_page" :last-page="stockLogs.last_page" @change="goToStockPage" />
             </template>
         </template>
 
@@ -250,21 +208,8 @@
             <LibrarianBookRequestsTable :suggestions="pagedRequests" :loading="requestsPending"
                 @review="openReviewDrawer" @approve="handleApprove" @reject="handleReject" />
 
-            <div v-if="suggestions" class="mt-3 flex items-center justify-between text-[13.5px] text-stone-500">
-                <span>Showing {{ pagedRequests.length }} of {{ filteredRequests.length }} requests</span>
-                <span>Page {{ requestsPage }} of {{ requestsTotalPages }}</span>
-            </div>
-
-            <div v-if="requestsTotalPages > 1" class="mt-3 flex items-center justify-center gap-2">
-                <ButtonsButton variant="ghost" size="sm" :disabled="requestsPage <= 1" @click="requestsPage--">
-                    <Icon name="i-tabler-chevron-left" class="h-3.5 w-3.5" />Previous
-                </ButtonsButton>
-                <ButtonsButton variant="ghost" size="sm" :disabled="requestsPage >= requestsTotalPages"
-                    @click="requestsPage++">
-                    Next
-                    <Icon name="i-tabler-chevron-right" class="h-3.5 w-3.5" />
-                </ButtonsButton>
-            </div>
+            <LibrarianPagination v-if="suggestions" :shown="pagedRequests.length" :total="filteredRequests.length" noun="requests"
+                :page="requestsPage" :last-page="requestsTotalPages" @change="requestsPage = $event" />
         </template>
 
         <template v-else>
@@ -332,7 +277,7 @@
 
         <LibrarianCategoryFormModal :open="isCategoryOpen" :subject="editingSubject" :busy="categoryBusy"
             @close="isCategoryOpen = false" @submit="saveCategory" />
-        <LibrarianConfirmModal :open="isDeleteCategoryOpen" title="Delete category?"
+        <LibrarianConfirmModal :open="isDeleteCategoryOpen" title="Delete Category?"
             :message="`“${deleteSubject?.name ?? 'This category'}” will be removed. No books use it.`"
             confirm-label="Delete" :loading="categoryBusy" @close="isDeleteCategoryOpen = false"
             @confirm="handleDeleteCategory" />
@@ -382,7 +327,8 @@ const { data: books, pending: booksPending, execute: refetchBooks } =
         availability: availabilityFilter.value || undefined,
         dewey: deweyFilter.value || undefined,
         page: page.value,
-        perPage: 10,
+        // 12 divides into whole rows of 1, 2, 3 and 4 columns, so a full page never ends on a lone card.
+        perPage: 12,
     }), { lazy: true })
 
 let searchTimeout: ReturnType<typeof setTimeout>
@@ -428,7 +374,7 @@ const { data: copies, pending: copiesPending, execute: refetchCopies } =
         area: copyAreaFilter.value || undefined,
         status: copyStatusFilter.value || undefined,
         page: copyPage.value,
-        perPage: 15,
+        perPage: 12,
     }), { lazy: true })
 
 let copySearchTimeout: ReturnType<typeof setTimeout>
@@ -508,8 +454,13 @@ async function openLabels(selection: LabelSelection) {
 }
 
 // Accession numbers typed in the window: the same labels, narrowed to those numbers (none typed means all of them).
-function refineLabels(ranges: { from: number; to: number }[]) {
-    return loadLabels(ranges.length ? { ...labelBase, accessions: ranges } : labelBase)
+// `includeUnconfirmed` is the window's "print the guessed numbers too" choice, kept when the numbers change.
+function refineLabels(ranges: { from: number; to: number }[], options: { includeUnconfirmed: boolean }) {
+    return loadLabels({
+        ...labelBase,
+        ...(ranges.length ? { accessions: ranges } : {}),
+        ...(options.includeUnconfirmed ? { includeUnconfirmed: true } : {}),
+    })
 }
 
 // From the toolbar: the ticked copies, or, with none ticked, everything the search and filters match.
@@ -572,7 +523,7 @@ const { data: stockLogs, pending: stockPending, execute: refetchStockLogs } =
         search: stockSearch.value.trim() || undefined,
         action: stockAction.value || undefined,
         page: stockPage.value,
-        perPage: 15,
+        perPage: 12,
     }), { lazy: true })
 
 let stockSearchTimeout: ReturnType<typeof setTimeout>
@@ -599,13 +550,15 @@ const refreshStock = [refetchCopies, refetchBooks, refetchStats, refetchStockLog
 
 // "Add Book Copy": from a catalog row the book is known; from the header button the librarian searches for it.
 const isAddCopiesOpen = ref(false)
-const addCopiesBook = ref<{ bookUuid: string; title: string } | null>(null)
+const addCopiesBook = ref<{ bookUuid: string; title: string; authors?: string[]; coverImageURL?: string | null; callNumber?: string | null } | null>(null)
 
 // Set once the copies are in: the window stays open on a "copies added" page with a button to print their labels.
 const addedCopies = ref<{ title: string; accessions: number[] } | null>(null)
 
 function openAddCopies(copy?: CopyCatalogRow) {
-    addCopiesBook.value = copy ? { bookUuid: copy.book.uuid, title: copy.book.title } : null
+    addCopiesBook.value = copy
+        ? { bookUuid: copy.book.uuid, title: copy.book.title, authors: copy.book.authors, coverImageURL: copy.book.coverImageURL, callNumber: copy.book.callNumber }
+        : null
     addedCopies.value = null
     isAddCopiesOpen.value = true
 }
@@ -840,7 +793,8 @@ const filteredRequests = computed(() => {
     })
 })
 
-const REQUESTS_PER_PAGE = 10
+// 12 fills whole rows in the card grids' 1, 2 and 3 columns.
+const REQUESTS_PER_PAGE = 12
 const requestsPage = ref(1)
 
 const requestsTotalPages = computed(() => Math.max(1, Math.ceil(filteredRequests.value.length / REQUESTS_PER_PAGE)))

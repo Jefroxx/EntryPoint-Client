@@ -59,8 +59,7 @@
                     </span>
                     <span class="hidden truncate text-[12.5px] text-stone-500 sm:block">{{ action.hint }}</span>
                 </span>
-                <span v-if="action.badge" class="absolute right-1.5 top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-600 px-1.5 text-[11.5px] font-bold tabular-nums text-white sm:static sm:h-6 sm:min-w-6 sm:px-2 sm:text-[12px]">
-                    {{ action.badge }}</span>
+                <CountBadge v-if="action.badge" tone="amber" size="lg" class="absolute right-1.5 top-1.5 sm:static">{{ action.badge }}</CountBadge>
             </NuxtLink>
         </section>
 
@@ -181,7 +180,7 @@ const greeting = computed(() => {
     const hour = now.value.getHours()
     return hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
 })
-const todayLabel = computed(() => now.value.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }))
+const todayLabel = computed(() => formatLongDate(now.value))
 
 /* ---------- data ---------- */
 const { data: today, execute: refetchToday } =

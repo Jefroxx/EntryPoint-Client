@@ -22,9 +22,8 @@
 						:aria-current="isActive(link.to) ? 'page' : undefined" :title="link.label">
 						<Icon :name="link.icon" class="h-[19px] w-[19px] shrink-0" />
 						<span class="sb-label hidden whitespace-nowrap lg:inline">{{ link.label }}</span>
-						<span v-if="link.to === '/student/wishlist' && wishlist.length" class="sb-label font-data ml-auto hidden text-[12px] text-stone-500 lg:inline">{{ wishlist.length }}</span>
-						<span v-if="link.to === '/student/books' && attention"
-							class="sb-badge absolute right-2 top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10.5px] font-semibold text-white lg:static lg:ml-auto">{{ attention }}</span>
+						<span v-if="link.to === '/student/wishlist' && wishlist.length" class="sb-label font-data ml-auto hidden h-4 min-w-4 items-center justify-center px-1 text-[12px] text-stone-500 lg:flex">{{ wishlist.length }}</span>
+						<CountBadge v-if="link.to === '/student/books' && attention" class="sb-badge absolute right-2 top-1.5 lg:static lg:ml-auto">{{ attention }}</CountBadge>
 					</NuxtLink>
 				</template>
 			</nav>
@@ -89,8 +88,7 @@
 					class="relative flex h-10 w-10 items-center justify-center rounded-xl border border-stone-200 bg-white text-stone-700 transition-[transform,border-color,color] duration-150 ease-out hover:border-accent-200 hover:text-accent-600 active:scale-[0.96]"
 					@click="drawer.open('cart')">
 					<StudentCartIcon class="h-[26px] w-[26px]" />
-					<span v-if="cart.length" :key="cart.length"
-						class="heart-pop absolute -right-1.5 -top-1.5 box-content flex h-[18px] min-w-[18px] items-center justify-center rounded-full border-2 border-parchment bg-accent-500 px-1 text-[11px] font-bold leading-none text-white tabular-nums">{{ cart.length }}</span>
+					<CountBadge v-if="cart.length" :key="cart.length" tone="accent" size="md" ring="parchment" class="heart-pop absolute -right-1.5 -top-1.5">{{ cart.length }}</CountBadge>
 				</button>
 				<StudentAccountMenu class="ml-1" />
 			</div>
@@ -104,14 +102,14 @@
 			<div class="grid h-[52px] grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 px-3.5">
 				<!-- Pages opened from another page (Profile, Notifications, Wishlist…) name where Back goes: the logo gives way to it. -->
 				<button v-if="route.meta.back" type="button"
-					class="-ml-1.5 flex h-10 items-center gap-0.5 rounded-xl pl-1 pr-2.5 text-[15px] font-medium text-accent-500 transition-[transform,opacity] duration-150 ease-out active:scale-[0.96] active:opacity-70"
+					class="-ml-1.5 flex h-10 items-center gap-0.5 rounded-xl pl-1 pr-2.5 text-[15px] font-medium text-accent-500 transition-[transform,translate,scale,opacity] duration-150 ease-out active:scale-[0.96] active:opacity-70"
 					@click="goBack">
 					<Icon name="i-tabler-chevron-left" class="h-5 w-5" aria-hidden="true" />Back
 				</button>
 				<NuxtLink v-else to="/student/home" class="flex items-center leading-none" aria-label="EntryPoint home">
 					<img src="~/assets/css/logo/EntryPointLogo.png" alt="EntryPoint" class="h-7 w-auto" />
 				</NuxtLink>
-				<p class="truncate px-1 text-center text-[15px] font-semibold text-stone-900 transition-[opacity,transform] duration-200 ease-out"
+				<p class="truncate px-1 text-center text-[15px] font-semibold text-stone-900 transition-[opacity,transform,translate,scale] duration-200 ease-out"
 					:class="scrolled ? 'translate-y-0 opacity-100' : 'translate-y-1 opacity-0'">{{ route.meta.title }}</p>
 				<div class="flex items-center justify-end">
 					<NuxtLink v-if="isStudent" to="/student/rewards" :aria-label="`${points} knowledge points. Open rewards`"
@@ -124,15 +122,13 @@
 					<NuxtLink to="/student/notifications" :aria-label="unreadCount ? `Notifications, ${unreadCount} unread` : 'Notifications'"
 						class="relative flex h-10 w-10 items-center justify-center rounded-xl text-stone-800 transition-[transform,background-color] duration-150 ease-out active:scale-[0.96] active:bg-stone-100">
 						<Icon name="i-tabler-bell" class="h-6 w-6" />
-						<span v-if="unreadCount"
-							class="absolute -right-0.5 top-0 box-content flex h-[17px] min-w-[17px] items-center justify-center rounded-full border-2 border-white bg-red-500 px-1 text-[10.5px] font-bold leading-none text-white tabular-nums">{{ unreadCount > 9 ? '9+' : unreadCount }}</span>
+						<CountBadge v-if="unreadCount" size="md" ring="white" class="absolute -right-0.5 top-0">{{ unreadCount > 9 ? '9+' : unreadCount }}</CountBadge>
 					</NuxtLink>
 					<button type="button" :aria-label="cart.length ? `Cart, ${cart.length} book${cart.length === 1 ? '' : 's'}` : 'Cart'"
 						class="relative flex h-10 w-10 items-center justify-center rounded-xl text-stone-800 transition-[transform,background-color] duration-150 ease-out active:scale-[0.96] active:bg-stone-100"
 						@click="drawer.open('cart')">
 						<StudentCartIcon class="h-7 w-7" />
-						<span v-if="cart.length" :key="cart.length"
-							class="heart-pop absolute -right-0.5 top-0 box-content flex h-[17px] min-w-[17px] items-center justify-center rounded-full border-2 border-white bg-accent-500 px-1 text-[10.5px] font-bold leading-none text-white tabular-nums">{{ cart.length }}</span>
+						<CountBadge v-if="cart.length" :key="cart.length" tone="accent" size="md" ring="white" class="heart-pop absolute -right-0.5 top-0">{{ cart.length }}</CountBadge>
 					</button>
 				</div>
 			</div>
@@ -173,8 +169,7 @@
 					<Icon :name="tab.icon" class="h-[23px] w-[23px]" />
 				</span>
 				<span>{{ tab.label }}</span>
-				<span v-if="tab.key === 'books' && attention"
-					class="absolute right-[calc(50%-22px)] top-0 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold text-white">{{ attention }}</span>
+				<CountBadge v-if="tab.key === 'books' && attention" class="absolute right-[calc(50%-22px)] top-0">{{ attention }}</CountBadge>
 			</NuxtLink>
 			</template>
 		</nav>

@@ -231,7 +231,7 @@ async function saveItem(payload: MarketItemPayload, photo: MarketItemPhotoChange
 const redemptionSearch = ref('')
 const redemptionStatus = ref<'' | FulfillmentStatus>('Pending')
 const redemptionPage = ref(1)
-const REDEMPTIONS_PER_PAGE = 10
+const REDEMPTIONS_PER_PAGE = 12 // fills whole rows of the 1, 2 and 3 column card grid
 
 const redemptionCount = (status: FulfillmentStatus) => redemptions.value.filter((r) => r.fulfillmentStatus === status).length
 

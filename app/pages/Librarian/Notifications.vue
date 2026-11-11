@@ -76,7 +76,7 @@ const groups = computed(() => {
     // A chosen day is one group, headed with that date.
     if (day.value) {
         const [y, m, d] = day.value.split('-').map(Number)
-        const label = new Date(y!, m! - 1, d!).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
+        const label = formatLongDate(new Date(y!, m! - 1, d!))
         return visible.value.length ? [{ label, items: visible.value }] : []
     }
 

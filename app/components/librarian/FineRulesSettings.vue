@@ -57,7 +57,7 @@
 			</div>
 		</section>
 
-		<LibrarianConfirmModal :open="removeOpen" title="Remove fine rule?"
+		<LibrarianConfirmModal :open="removeOpen" title="Remove Fine Rule?"
 			:message="`Late returns in ${collectionLabel(removeArea)} will stop being charged. Fines already recorded stay as they are.`"
 			confirm-label="Remove" :loading="busyArea === removeArea" @close="removeOpen = false" @confirm="remove" />
 	</div>

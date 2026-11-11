@@ -118,16 +118,16 @@ watch(() => [props.open, props.redemption?.redemptionID, props.mode], () => { st
 
 const WORDS = {
 	fulfill: {
-		title: 'Fulfill this redemption?', subtitle: 'Check the details, then continue.',
-		confirmTitle: 'Confirm the fulfillment', confirmSubtitle: 'This is the last step. Check it, then mark it fulfilled.',
+		title: 'Fulfill This Redemption?', subtitle: 'Check the details, then continue.',
+		confirmTitle: 'Confirm the Fulfillment', confirmSubtitle: 'This is the last step. Check it, then mark it fulfilled.',
 		banner: 'border-emerald-300 bg-emerald-50 text-emerald-900', icon: 'i-tabler-circle-check',
 		bannerTitle: 'Hand over the reward first.', bannerText: 'Fulfilling marks it as given to the student, and they are told it is done.',
 		about: 'You are about to mark as fulfilled', outcome: 'The student is told their reward is ready. The points stay spent.',
 		confirmBox: 'border-emerald-300 bg-emerald-50', tone: 'text-emerald-800', confirm: 'Yes, mark it fulfilled',
 	},
 	cancel: {
-		title: 'Cancel this redemption?', subtitle: 'Check the details, then continue.',
-		confirmTitle: 'Confirm the cancellation', confirmSubtitle: 'This is the last step. Check it, then cancel the redemption.',
+		title: 'Cancel This Redemption?', subtitle: 'Check the details, then continue.',
+		confirmTitle: 'Confirm the Cancellation', confirmSubtitle: 'This is the last step. Check it, then cancel the redemption.',
 		banner: 'border-amber-300 bg-amber-50 text-amber-900', icon: 'i-tabler-circle-x',
 		bannerTitle: 'Cancelling refunds the student.', bannerText: 'Use this when the reward turned out to be unavailable. Their points go back and the item is restocked.',
 		about: 'You are about to cancel', outcome: '',

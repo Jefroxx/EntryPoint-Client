@@ -46,7 +46,7 @@
 			@close="isFinishOpen = false" @submit="saveFinish" />
 
 		<!-- Ending the station logs everyone still inside out, so it asks first (with the numbers). -->
-		<LibrarianConfirmModal :open="isEndOpen" title="End the session?" :message="endMessage" confirm-label="Yes, log everyone out"
+		<LibrarianConfirmModal :open="isEndOpen" title="End the Session?" :message="endMessage" confirm-label="Yes, log everyone out"
 			:loading="endBusy" @close="isEndOpen = false" @confirm="confirmEndSession" />
 
 		<AlertToast />
@@ -113,7 +113,7 @@ async function saveFinish(payload: { condition: 'good' | 'damaged'; note: string
 /* ---------- clock ---------- */
 // Empty until the page is in the browser: the server's time would never match the browser's, and Vue would warn.
 const now = ref<Date | null>(null)
-const time = computed(() => now.value?.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) ?? '')
+const time = computed(() => (now.value ? formatTime(now.value) : ''))
 const today = computed(() => now.value?.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }) ?? '')
 let tick: ReturnType<typeof setInterval> | undefined
 

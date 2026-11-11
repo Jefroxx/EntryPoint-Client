@@ -55,19 +55,27 @@
 				</div>
 			</td>
 		</tr>
-	<!-- Teleports to <body>; it lives in the slot only so the table keeps a single root element. -->
-		<LibrarianRecordDrawer :open="!!selected" heading="Category details" :title="selected?.name ?? ''"
-			:subtitle="selected?.classificationCode ? `Dewey ${selected.classificationCode}` : undefined"
-			:fields="fields" @close="selected = null">
-			<!-- The books that carry this category; tap one for its details. -->
-			<section class="mt-6" aria-labelledby="category-books-heading">
+	<!-- Teleports to <body>; it lives in the slot only so the table keeps a single root element.
+		 A pop-up on a computer and a full page on a phone (the shared window does both). -->
+	<LibrarianModalShell :open="!!selected" size="xl" :title="shown?.name ?? ''"
+		:subtitle="shown?.classificationCode ? `Dewey ${shown.classificationCode}` : 'Category details'" @close="selected = null">
+		<div v-if="shown" class="grid items-start gap-6 md:grid-cols-[minmax(0,300px)_minmax(0,1fr)]">
+			<dl class="grid grid-cols-2 gap-x-4 gap-y-4">
+				<div v-for="field in fields" :key="field.label" class="min-w-0" :class="field.wide ? 'col-span-2' : ''">
+					<dt class="text-[12px] font-bold uppercase tracking-wide text-stone-500">{{ field.label }}</dt>
+					<dd class="mt-0.5 break-words text-[15px] font-medium text-stone-800" :class="field.mono ? 'font-data' : ''">{{ field.value ?? '—' }}</dd>
+				</div>
+			</dl>
+	
+			<!-- The books that carry this category; tap one for its details. On a computer the list scrolls inside the window. -->
+			<section class="min-w-0 md:border-l md:border-stone-100 md:pl-6" aria-labelledby="category-books-heading">
 				<h4 id="category-books-heading" class="mb-2 flex items-center justify-between text-[12px] font-bold uppercase tracking-wide text-stone-500">
-					Books in this category<span class="tabular-nums">{{ selected?.books_count ?? 0 }}</span>
+					Books in this category<span class="tabular-nums">{{ shown.books_count }}</span>
 				</h4>
 				<p v-if="booksLoading" class="rounded-xl bg-stone-50 px-4 py-5 text-center text-[13.5px] text-stone-500">Loading books…</p>
 				<p v-else-if="booksError" class="rounded-xl bg-red-50 px-4 py-5 text-center text-[13.5px] text-red-700">Couldn't load the books. Close this and try again.</p>
 				<p v-else-if="!categoryBooks.length" class="rounded-xl bg-stone-50 px-4 py-5 text-center text-[13.5px] text-stone-500">No books use this category yet.</p>
-				<ul v-else class="divide-y divide-stone-100 overflow-hidden rounded-xl border border-stone-200">
+				<ul v-else class="divide-y divide-stone-100 overflow-hidden rounded-xl border border-stone-200 md:max-h-[46vh] md:overflow-y-auto">
 					<li v-for="book in categoryBooks" :key="book.uuid">
 						<button type="button" class="flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-accent-50 focus-visible:bg-accent-50 focus-visible:outline-none"
 							@click="viewBook(book)">
@@ -86,13 +94,15 @@
 					Showing {{ categoryBooks.length }} of {{ categoryBooksTotal }}. Use the button below to see them all.
 				</p>
 			</section>
-
-			<template v-if="selected && selected.books_count > 0" #footer>
-				<ButtonsButton variant="primary" class="w-full" @click="showAll">
-					<Icon name="i-tabler-books" class="h-4 w-4" />Show all in Accession Record
-				</ButtonsButton>
-			</template>
-		</LibrarianRecordDrawer>
+		</div>
+	
+		<template #footer>
+			<ButtonsButton variant="ghost" @click="selected = null">Close</ButtonsButton>
+			<ButtonsButton v-if="shown && shown.books_count > 0" variant="primary" @click="showAll">
+				<Icon name="i-tabler-books" class="h-4 w-4" />Show all in Accession Record
+			</ButtonsButton>
+		</template>
+	</LibrarianModalShell>
 	</LibrarianTableShell>
 </template>
 
@@ -116,6 +126,9 @@ const emit = defineEmits<{
 
 const maxBooks = computed(() => Math.max(0, ...props.subjects.map((s) => s.books_count)))
 const selected = ref<SubjectRecord | null>(null)
+// What the window shows. It keeps the last category while the window slides away, instead of emptying mid-animation.
+const shown = ref<SubjectRecord | null>(null)
+watch(selected, (subject) => { if (subject) shown.value = subject })
 
 // The books of the category whose drawer is open, loaded when it opens (the first 50; the button shows the rest).
 const categoryBooks = ref<CatalogBook[]>([])
@@ -124,10 +137,11 @@ const booksLoading = ref(false)
 const booksError = ref(false)
 
 watch(selected, async (subject) => {
+	// Closing leaves the list as it is until the window has gone; the next category starts it afresh.
+	if (!subject) return
 	categoryBooks.value = []
 	categoryBooksTotal.value = 0
 	booksError.value = false
-	if (!subject) return
 	booksLoading.value = true
 	try {
 		const page = await librarianService.fetchBooks({ subjectID: subject.subjectID, perPage: 50 })
@@ -157,7 +171,7 @@ function showAll() {
 }
 
 const fields = computed(() => {
-	const s = selected.value
+	const s = shown.value
 	if (!s) return []
 	return [
 		{ label: 'Dewey code', value: s.classificationCode, mono: true },

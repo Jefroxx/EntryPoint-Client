@@ -7,24 +7,21 @@
 				<div v-if="open" class="absolute inset-0 bg-[#1c1712]/40" @click="handleClose" />
 			</Transition>
 
-			<Transition enter-active-class="transition-[transform,opacity] duration-[260ms] ease-out"
-				enter-from-class="scale-95 translate-y-2 opacity-0 max-sm:translate-x-10 max-sm:translate-y-0 max-sm:scale-100" enter-to-class="scale-100 translate-y-0 opacity-100"
-				leave-active-class="transition-[transform,opacity] duration-150 ease-out"
-				leave-from-class="scale-100 translate-y-0 opacity-100" leave-to-class="scale-95 translate-y-1 opacity-0 max-sm:translate-x-6 max-sm:translate-y-0 max-sm:scale-100">
+			<Transition enter-active-class="transition-[transform,translate,scale,opacity] duration-[260ms] ease-out max-sm:duration-[420ms] max-sm:ease-[cubic-bezier(.4,0,.2,1)]"
+				enter-from-class="scale-95 translate-y-2 opacity-0 max-sm:translate-x-full max-sm:translate-y-0 max-sm:scale-100 max-sm:opacity-100 max-sm:motion-reduce:translate-x-0 max-sm:motion-reduce:opacity-0" enter-to-class="scale-100 translate-y-0 opacity-100"
+				leave-active-class="transition-[transform,translate,scale,opacity] duration-150 ease-out max-sm:duration-[320ms] max-sm:ease-[cubic-bezier(.4,0,.2,1)]"
+				leave-from-class="scale-100 translate-y-0 opacity-100" leave-to-class="scale-95 translate-y-1 opacity-0 max-sm:translate-x-full max-sm:translate-y-0 max-sm:scale-100 max-sm:opacity-100 max-sm:motion-reduce:translate-x-0 max-sm:motion-reduce:opacity-0">
 				<div v-if="open" role="dialog" aria-modal="true" aria-labelledby="checkoutTitle" @keydown.esc="handleClose"
 					class="relative z-10 flex max-h-[min(780px,calc(100vh-32px))] w-full max-w-[940px] flex-col overflow-hidden rounded-[22px] bg-white shadow-overlay max-sm:h-dvh max-sm:max-h-none max-sm:max-w-none max-sm:rounded-none max-sm:shadow-none">
 					<!-- Header + step bar (same pattern as Add Book) -->
 					<div class="flex-shrink-0 border-b border-stone-100 px-6 pb-4 pt-5 max-sm:px-4 max-sm:pt-3 sm:px-7">
 						<div class="flex items-start justify-between gap-3 max-sm:items-center">
-							<ButtonsButton variant="icon" size="md" aria-label="Back" class="-ml-1 shrink-0 sm:hidden" @click="handleClose">
-								<Icon name="i-tabler-arrow-left" class="h-[18px] w-[18px]" />
-							</ButtonsButton>
 							<div class="min-w-0 max-sm:flex-1">
 								<h2 id="checkoutTitle" class="dashboard-heading text-2xl font-bold text-crimson max-sm:text-xl">{{ receipt ? 'Checked out' : 'Checkout Book' }}</h2>
 								<p class="dashboard-heading text-[13.5px] text-crimson">{{ subtitle }}</p>
 							</div>
-							<ButtonsButton variant="icon" size="md" aria-label="Close" class="max-sm:hidden" @click="handleClose">
-								<Icon name="i-tabler-x" class="h-4 w-4" />
+							<ButtonsButton variant="icon" size="md" aria-label="Close" class="shrink-0" @click="handleClose">
+								<Icon name="i-tabler-x" class="h-[18px] w-[18px]" />
 							</ButtonsButton>
 						</div>
 

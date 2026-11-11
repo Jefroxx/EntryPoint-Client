@@ -77,23 +77,9 @@
         <LibrarianVisitorLogModal :open="visitorOpen" :busy="visitorBusy" @close="visitorOpen = false"
             @submit="submitVisitor" />
 
-        <div v-if="logs" class="mt-3 flex items-center justify-between text-[13.5px] text-stone-500">
-            <span>Showing {{ logs.data.length }} of {{ logs.total }} logs</span>
-            <span>Page {{ logs.current_page }} of {{ logs.last_page }}</span>
-        </div>
+        <LibrarianPagination v-if="logs" :shown="logs.data.length" :total="logs.total" noun="logs"
+            :page="logs.current_page" :last-page="logs.last_page" @change="goToPage" />
 
-        <div v-if="logs && logs.last_page > 1" class="mt-3 flex items-center justify-center gap-2">
-            <ButtonsButton variant="ghost" size="sm" :disabled="logs.current_page <= 1"
-                @click="goToPage(logs.current_page - 1)">
-                <Icon name="i-tabler-chevron-left" class="h-3.5 w-3.5" />Previous
-            </ButtonsButton>
-            <ButtonsButton variant="ghost" size="sm" :disabled="logs.current_page >= logs.last_page"
-                @click="goToPage(logs.current_page + 1)">
-                Next
-                <Icon name="i-tabler-chevron-right" class="h-3.5 w-3.5" />
-            </ButtonsButton>
-        </div>
-    
     </div>
 </template>
 
@@ -122,7 +108,7 @@ const isToday = computed(() => day.value === todayYmd)
 const dayHeading = computed(() => {
     const [y, m, d] = day.value.split('-').map(Number)
     if (!y || !m || !d) return 'Attendance'
-    const label = new Date(y, m - 1, d).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
+    const label = formatLongDate(new Date(y, m - 1, d))
     return isToday.value ? `Today · ${label}` : label
 })
 
@@ -134,7 +120,7 @@ const { data: logs, pending: logsPending, execute: refetchLogs } = useLiveAsyncD
         search: search.value || undefined,
         date: day.value,
         page: page.value,
-        perPage: 10,
+        perPage: 12,
     }),
     { lazy: true },
 )

@@ -1,5 +1,5 @@
 <template>
-	<LibrarianModalShell :open="open" size="sm" title="Facility label"
+	<LibrarianModalShell :open="open" size="sm" title="Facility Label"
 		subtitle="Print this and stick it on the computer or room. Scanning it starts or ends a session." @close="emit('close')">
 		<!-- Shown as a preview, plus a copy teleported to <body> that printOnly() sends to the printer on its own. -->
 		<div v-if="resource" class="rounded-2xl bg-stone-100 p-3">

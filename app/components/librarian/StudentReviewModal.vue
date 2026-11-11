@@ -132,24 +132,24 @@ watch(() => [props.open, props.student?.studentID, props.mode], () => { step.val
 
 const WORDS = {
 	approve: {
-		title: 'Approve this registration?', subtitle: 'Check the details against the student\'s school ID, then continue.',
-		confirmTitle: 'Confirm the approval', confirmSubtitle: 'This is the last step. Check it, then approve the student.',
+		title: 'Approve This Registration?', subtitle: 'Check the details against the student\'s school ID, then continue.',
+		confirmTitle: 'Confirm the Approval', confirmSubtitle: 'This is the last step. Check it, then approve the student.',
 		banner: 'border-emerald-300 bg-emerald-50 text-emerald-900', icon: 'i-tabler-circle-check',
 		bannerTitle: 'Check the details against their school ID.', bannerText: 'Once approved, the student can log in, gets a Library ID, and is told by notification and email.',
 		about: 'You are about to approve', outcome: 'They can log in right away, and a Library ID with a barcode is created for them.',
 		confirmBox: 'border-emerald-300 bg-emerald-50', confirmLabelTone: 'text-emerald-800', confirm: 'Yes, approve the student',
 	},
 	reject: {
-		title: 'Reject this registration?', subtitle: 'Check the details, then continue.',
-		confirmTitle: 'Confirm the rejection', confirmSubtitle: 'This is the last step. Check it, then reject the registration.',
+		title: 'Reject This Registration?', subtitle: 'Check the details, then continue.',
+		confirmTitle: 'Confirm the Rejection', confirmSubtitle: 'This is the last step. Check it, then reject the registration.',
 		banner: 'border-amber-300 bg-amber-50 text-amber-900', icon: 'i-tabler-circle-x',
 		bannerTitle: 'Rejecting stops this student from logging in.', bannerText: 'They are told by notification and email to contact the library. You can reinstate them later from the Rejected tab.',
 		about: 'You are about to reject', outcome: 'They stay unable to log in until a librarian reinstates them. They are told to contact the library.',
 		confirmBox: 'border-amber-300 bg-amber-50', confirmLabelTone: 'text-amber-900', confirm: 'Yes, reject the registration',
 	},
 	reinstate: {
-		title: 'Reinstate this student?', subtitle: 'Their registration was rejected. Check the details, then continue.',
-		confirmTitle: 'Confirm the reinstatement', confirmSubtitle: 'This is the last step. Check it, then reinstate their approval.',
+		title: 'Reinstate This Student?', subtitle: 'Their registration was rejected. Check the details, then continue.',
+		confirmTitle: 'Confirm the Reinstatement', confirmSubtitle: 'This is the last step. Check it, then reinstate their approval.',
 		banner: 'border-emerald-300 bg-emerald-50 text-emerald-900', icon: 'i-tabler-user-check',
 		bannerTitle: 'Reinstating approves this student again.', bannerText: 'They can log in again and are told by notification and email.',
 		about: 'You are about to reinstate', outcome: 'They are approved again, can log in right away, and are told by notification and email.',

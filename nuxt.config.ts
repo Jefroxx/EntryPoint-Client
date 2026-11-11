@@ -11,6 +11,27 @@ export default defineNuxtConfig({
 	// The student app is a signed-in, client-driven app (live counters, drawers, media queries):
 	// it renders in the browser only. Sign-in and register pages stay server-rendered.
 	routeRules: {
+		// Browser security headers on every page. The enforced Content-Security-Policy only holds back things the
+		// app never does (framing by other sites, plugins, <base> tricks, forms posting elsewhere); the strict
+		// script/style/connect policy is REPORT-ONLY, so the browser console lists what it would block without
+		// breaking anything. 'self' (not 'none') for framing because the dev phone-preview embeds the app.
+		// camera=(self) keeps the ISBN / QR scanning working; everything else the app does not use is off.
+		'/**': {
+			headers: {
+				'X-Content-Type-Options': 'nosniff',
+				'X-Frame-Options': 'SAMEORIGIN',
+				'Referrer-Policy': 'strict-origin-when-cross-origin',
+				'Permissions-Policy': 'camera=(self), microphone=(), geolocation=(), payment=(), usb=(), bluetooth=()',
+				'Strict-Transport-Security': 'max-age=31536000',
+				'Content-Security-Policy': "frame-ancestors 'self'; base-uri 'self'; object-src 'none'; form-action 'self'",
+				'Content-Security-Policy-Report-Only':
+					"default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; " +
+					"img-src 'self' data: blob: https:; font-src 'self' data:; " +
+					"connect-src 'self' https://api.iconify.design https://api.simplesvg.com https://api.unisvg.com; " +
+					"media-src 'self' blob:; worker-src 'self' blob:; frame-ancestors 'self'; base-uri 'self'; " +
+					"object-src 'none'; form-action 'self'",
+			},
+		},
 		'/student/**': { ssr: false },
 		// "Spaces" was renamed "Facilities"; old links and bookmarks still land on it.
 		'/student/spaces': { redirect: '/student/facilities' },
@@ -41,6 +62,12 @@ export default defineNuxtConfig({
 	// weights are listed because the UI uses 500/600/800 as well as 400/700, and an
 	// absent weight would otherwise be faked by the browser.
 	fonts: {
+		// Named outright: the stylesheet's stacks start with the digits-only 'Figures' face, and
+		// @nuxt/fonts only looks at the first family in a stack, so it would never find Raleway.
+		families: [
+			{ name: 'Raleway', global: true },
+			{ name: 'Montserrat', global: true },
+		],
 		defaults: {
 			weights: [300, 400, 500, 600, 700, 800],
 			styles: ['normal', 'italic'],

@@ -34,7 +34,7 @@
 					Nothing suggested yet. Your ideas will show up here with their status.
 				</p>
 				<TransitionGroup v-else tag="div" class="relative overflow-hidden rounded-2xl border border-stone-200 bg-white"
-					enter-active-class="transition-[transform,opacity] duration-[250ms] ease-out" enter-from-class="-translate-y-2 opacity-0" move-class="transition-transform duration-200 ease-out">
+					enter-active-class="transition-[transform,translate,scale,opacity] duration-[250ms] ease-out" enter-from-class="-translate-y-2 opacity-0" move-class="transition-transform duration-200 ease-out">
 					<div v-for="s in data.suggestions" :key="s.suggestionID" class="flex items-center gap-3.5 border-b border-stone-100 bg-white px-4 py-3.5 last:border-0">
 						<span class="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[10px]" :class="s.status === 'Approved' ? TONE_SOFT.good : s.status === 'Rejected' ? TONE_SOFT.bad : TONE_SOFT.warn">
 							<Icon :name="s.status === 'Approved' ? 'i-tabler-check' : s.status === 'Rejected' ? 'i-tabler-x' : 'i-tabler-clock'" class="h-[17px] w-[17px]" />

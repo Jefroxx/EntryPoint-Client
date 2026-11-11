@@ -1,5 +1,5 @@
 <template>
-	<LibrarianModalShell :open="open" size="xl" title="Issue a penalty"
+	<LibrarianModalShell :open="open" size="xl" title="Issue a Penalty"
 		subtitle="Charge a student for a book that is lost or damaged." :busy="busy" @close="emit('close')">
 		<div class="grid gap-x-8 gap-y-5 md:grid-cols-2">
 		<div class="space-y-5">
@@ -73,9 +73,9 @@
 
 			<div class="rounded-xl border border-dashed border-amber-400 bg-amber-50/60 p-3">
 				<label for="penalty-amount" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">Penalty amount (₱)<FieldRequired /></label>
-				<input id="penalty-amount" v-model="amount" type="number" inputmode="decimal" min="0" step="0.01" placeholder="e.g. 450.00"
+				<input id="penalty-amount" v-model="amount" type="text" inputmode="decimal" autocomplete="off" placeholder="e.g. 450.00"
 					class="font-data h-11 w-full rounded-[10px] border border-stone-200 bg-white px-3 text-[14px] text-stone-900 outline-none focus:border-accent-500 focus:ring-2 focus:ring-accent-200"
-					@input="amountEdited = true" @keydown.enter.prevent="submit">
+					@input="amount = decimalOnly(String(amount), 2); amountEdited = true" @keydown.enter.prevent="submit">
 				<p class="mt-1.5 text-[12.5px] text-stone-600">
 					<template v-if="!target">Pick the book first: the amount starts at its full price.</template>
 					<template v-else-if="target.price !== null">Starts at the book's full price. Lower it only if the damage is light.</template>

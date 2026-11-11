@@ -55,22 +55,9 @@
         <LibrarianStudentsTable :students="students?.data ?? []" :loading="studentsPending" :empty-text="emptyText" :members="isMembers"
             @view="openDrawer" @approve="handleApprove" @reject="handleReject" @reinstate="askReinstate" />
 
-        <div v-if="students" class="mt-3 flex items-center justify-between text-[13.5px] text-stone-500">
-            <span>Showing {{ students.data.length }} of {{ students.total }} {{ isMembers ? 'members' : 'students' }}</span>
-            <span>Page {{ students.current_page }} of {{ students.last_page }}</span>
-        </div>
+        <LibrarianPagination v-if="students" :shown="students.data.length" :total="students.total" :noun="isMembers ? 'members' : 'students'"
+            :page="students.current_page" :last-page="students.last_page" @change="goToPage" />
 
-        <div v-if="students && students.last_page > 1" class="mt-3 flex items-center justify-center gap-2">
-            <ButtonsButton variant="ghost" size="sm" :disabled="students.current_page <= 1"
-                @click="goToPage(students.current_page - 1)">
-                <Icon name="i-tabler-chevron-left" class="h-3.5 w-3.5" />Previous
-            </ButtonsButton>
-            <ButtonsButton variant="ghost" size="sm" :disabled="students.current_page >= students.last_page"
-                @click="goToPage(students.current_page + 1)">
-                Next<Icon name="i-tabler-chevron-right" class="h-3.5 w-3.5" />
-            </ButtonsButton>
-        </div>
-    
 
         <LibrarianStudentDetailDrawer :open="isDrawerOpen" :student="activeStudent" @close="isDrawerOpen = false"
             @approve="handleApprove" @reject="handleReject" @reinstate="askReinstate" />
@@ -127,7 +114,7 @@ const { data: students, pending: studentsPending, execute: refetchStudents } = u
         // never approved here. The fourth tab lists them.
         memberType: isMembers.value ? 'members' : 'student',
         page: page.value,
-        perPage: 10,
+        perPage: 12,
     }),
     { lazy: true },
 )

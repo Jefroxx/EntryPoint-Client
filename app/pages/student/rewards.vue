@@ -67,8 +67,8 @@
 				</div>
 
 				<!-- Phones and tablets: no room for the side panel, so the picks ride along at the bottom. -->
-				<Transition enter-active-class="transition-[transform,opacity] duration-[250ms] ease-out" enter-from-class="translate-y-2 opacity-0"
-					leave-active-class="transition-[transform,opacity] duration-150 ease-out" leave-to-class="translate-y-2 opacity-0">
+				<Transition enter-active-class="transition-[transform,translate,scale,opacity] duration-[250ms] ease-out" enter-from-class="translate-y-2 opacity-0"
+					leave-active-class="transition-[transform,translate,scale,opacity] duration-150 ease-out" leave-to-class="translate-y-2 opacity-0">
 					<div v-if="cartLines.length"
 						class="sticky bottom-[calc(5.5rem+env(safe-area-inset-bottom,0px))] z-30 mt-3.5 flex items-center justify-between gap-3 rounded-2xl border border-stone-200 bg-white/85 px-3.5 py-3 shadow-[0_18px_44px_-18px_rgba(40,25,8,.45)] backdrop-blur-xl md:bottom-4 lg:hidden">
 						<div>
