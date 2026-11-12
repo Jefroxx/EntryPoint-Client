@@ -17,6 +17,15 @@ const REGION_MARGIN = 0.12
 /** Every Nth pass also looks at the whole picture, for an ID held outside the frame. */
 const FULL_FRAME_EVERY = 4
 const TICK_MS = 100
+/**
+ * Software autofocus (books only, see armAutofocus): how long the camera's own autofocus gets before the scanner takes
+ * over, how long the lens is given to move to each trial position, how many positions the first pass tries across the
+ * camera's range, and how long the sharpest one is held (with nothing read) before searching again.
+ */
+const FOCUS_AFTER_MS = 1500
+const FOCUS_SETTLE_MS = 300
+const FOCUS_COARSE_STEPS = 10
+const FOCUS_HOLD_MS = 6000
 /** Upscaled crops are capped at this width, which keeps a pass well under the tick on a desk PC. */
 const MAX_CROP_WIDTH = 1600
 
@@ -28,6 +37,8 @@ export interface ScannerOptions {
   formats?: 'code128' | 'isbn' | 'any'
   /** Reads this returns false for are dropped before they are reported or counted as "seen". */
   accept?: (code: string) => boolean
+  /** Called when `accept` turned a read down, so the screen can say "I see a barcode, but it isn't the one I need". */
+  onRejected?: (code: string) => void
 }
 
 /**
@@ -53,8 +64,11 @@ export function useCameraScanner(onCode: (code: string) => void, region?: () => 
   const facing = ref<'environment' | 'user'>('environment')
   const torchAvailable = ref(false)
   const torchOn = ref(false)
+  /** 'seeking' while the scanner is searching for the sharpest focus, 'locked' once it has found it (see armAutofocus). */
+  const focusPhase = ref<'off' | 'seeking' | 'locked'>('off')
 
   let stream: MediaStream | null = null
+  let focusRun = 0 // bumped to cancel a running autofocus search
   let timer: ReturnType<typeof setTimeout> | undefined
   let wakeLock: any = null
   let session = 0 // bumped by stop(), so slow async work from an old session can't act
@@ -64,25 +78,114 @@ export function useCameraScanner(onCode: (code: string) => void, region?: () => 
   // was SEEN (not the last time it was reported), so it re-arms only after it has been out of view for 2.5 seconds.
   // Counting from the report made a held ID report itself every 2.5 seconds, and each one could flip a student in or out.
   function emit(code: string) {
-    if (options.accept && !options.accept(code)) return
+    if (options.accept && !options.accept(code)) {
+      options.onRejected?.(code)
+      return
+    }
     const now = Date.now()
     const repeat = code === last.code && now - last.at < 2500
     last = { code, at: now }
     if (repeat) return
+    stopFocus()
     onCode(code)
+  }
+
+  /**
+   * Software autofocus, for books. A laptop webcam's own autofocus often settles on the room behind a barcode held
+   * close, and a barcode only a little out of focus reads as grey bars that cannot be decoded. So when nothing has been
+   * read after a moment, the scanner does the camera's job itself: it measures how sharp the picture inside the scan
+   * frame is at each focus position across the camera's range, goes back to the sharpest, holds it while the book is
+   * held still, and searches again as soon as the picture goes soft or after a while with no read.
+   * Only where the camera allows manual focus; one that refuses is handed back to its own autofocus.
+   */
+  function armAutofocus(track: MediaStreamTrack | undefined, caps: any, mine: number) {
+    stopFocus()
+    if (formats !== 'isbn' || !track) return
+    const range = caps?.focusDistance
+    if (!caps?.focusMode?.includes?.('manual') || typeof range?.min !== 'number' || typeof range?.max !== 'number' || range.max <= range.min) return
+
+    const run = ++focusRun
+    const alive = () => mine === session && run === focusRun
+    const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))
+    const clamp = (distance: number) => Math.round(Math.min(range.max, Math.max(range.min, distance)))
+
+    const setFocus = async (distance: number) => {
+      await track.applyConstraints({ advanced: [{ focusMode: 'manual', focusDistance: distance } as any] })
+      await sleep(FOCUS_SETTLE_MS)
+    }
+    // Two looks, a moment apart, so one noisy frame doesn't pick the position.
+    const measure = async () => {
+      let sum = 0
+      for (let i = 0; i < 2 && alive(); i++) {
+        sum += focusScore()
+        await sleep(60)
+      }
+      return sum / 2
+    }
+
+    void (async () => {
+      try {
+        await sleep(FOCUS_AFTER_MS)
+
+        while (alive()) {
+          focusPhase.value = 'seeking'
+          const step = (range.max - range.min) / (FOCUS_COARSE_STEPS - 1)
+          let best = { at: range.min, score: -1 }
+
+          for (let i = 0; i < FOCUS_COARSE_STEPS && alive(); i++) {
+            const at = clamp(range.min + step * i)
+            await setFocus(at)
+            const score = await measure()
+            if (score > best.score) best = { at, score }
+          }
+
+          // Finer: just either side of the best coarse position.
+          for (const at of [clamp(best.at - step / 2), clamp(best.at + step / 2)]) {
+            if (!alive()) break
+            await setFocus(at)
+            const score = await measure()
+            if (score > best.score) best = { at, score }
+          }
+
+          if (!alive()) return
+          await setFocus(best.at)
+          focusPhase.value = 'locked'
+
+          // Hold the sharpest position while the book is held still. Search again when the picture goes soft twice
+          // running (the book moved), or when the hold runs out without a read.
+          const heldFrom = Date.now()
+          let soft = 0
+          while (alive() && Date.now() - heldFrom < FOCUS_HOLD_MS && soft < 2) {
+            await sleep(450)
+            const score = await measure()
+            soft = score < best.score * 0.65 ? soft + 1 : 0
+          }
+        }
+      } catch {
+        // This camera won't take manual focus: give it back to its own autofocus.
+        if (run === focusRun) {
+          stopFocus()
+          try { await track.applyConstraints({ advanced: [{ focusMode: 'continuous' } as any] }) } catch { /* nothing more to do */ }
+        }
+      }
+    })()
+  }
+
+  function stopFocus() {
+    focusRun++
+    focusPhase.value = 'off'
   }
 
   const canvas = import.meta.client ? document.createElement('canvas') : null
   const context = canvas?.getContext('2d', { willReadFrequently: true }) ?? null
 
   /**
-   * Copies the part of the camera image under the on-screen frame onto the canvas. The <video> is drawn
-   * with object-fit: cover, so the element's box is mapped back into the camera's own pixels first.
+   * The part of the camera picture under the on-screen frame (or all of it), in the camera's own pixels. The <video> is
+   * drawn with object-fit: cover, so the element's box is mapped back into the camera's pixels first.
    */
-  function grab(el: HTMLVideoElement, whole: boolean): HTMLCanvasElement | null {
+  function cropRect(el: HTMLVideoElement, whole: boolean) {
     const vw = el.videoWidth
     const vh = el.videoHeight
-    if (!canvas || !context || !vw || !vh) return null
 
     let sx = 0
     let sy = 0
@@ -107,6 +210,49 @@ export function useCameraScanner(onCode: (code: string) => void, region?: () => 
       sw = Math.min(vw - sx, ((right - left) * ew) / scale)
       sh = Math.min(vh - sy, ((bottom - top) * eh) / scale)
     }
+
+    return { sx, sy, sw, sh }
+  }
+
+  const focusCanvas = import.meta.client ? document.createElement('canvas') : null
+  const focusContext = focusCanvas?.getContext('2d', { willReadFrequently: true }) ?? null
+
+  /**
+   * How sharp the picture inside the scan frame is right now: the average change between neighbouring pixels along the
+   * middle rows, at the camera's own resolution (shrinking the picture would hide exactly the fine detail that focus
+   * changes). A blurred barcode has soft edges, so this is low; in focus, it is high.
+   */
+  function focusScore(): number {
+    const el = video.value
+    if (!el || !focusCanvas || !focusContext || !el.videoWidth || !el.videoHeight) return 0
+
+    const { sx, sy, sw, sh } = cropRect(el, false)
+    const w = Math.max(2, Math.round(sw))
+    const h = Math.max(2, Math.round(sh * 0.3))
+    focusCanvas.width = w
+    focusCanvas.height = h
+    focusContext.drawImage(el, sx, sy + sh * 0.35, sw, sh * 0.3, 0, 0, w, h)
+
+    const data = focusContext.getImageData(0, 0, w, h).data
+    let sum = 0
+    let count = 0
+    for (let y = 0; y < h; y += 2) {
+      for (let x = 1; x < w; x++) {
+        const p = (y * w + x) * 4
+        sum += Math.abs(data[p + 1]! - data[p - 3]!)
+        count++
+      }
+    }
+    return count ? sum / count : 0
+  }
+
+  /** Copies the part of the camera image under the on-screen frame onto the canvas, ready to decode. */
+  function grab(el: HTMLVideoElement, whole: boolean): HTMLCanvasElement | null {
+    const vw = el.videoWidth
+    const vh = el.videoHeight
+    if (!canvas || !context || !vw || !vh) return null
+
+    const { sx, sy, sw, sh } = cropRect(el, whole)
 
     // The crop is widened up to 2× (smoothed): thin bars then span several pixels, which the sharpening
     // pass needs. Only across the bars; stretching their height adds nothing. The whole picture isn't scaled.
@@ -270,6 +416,7 @@ export function useCameraScanner(onCode: (code: string) => void, region?: () => 
 
   function release() {
     session++
+    stopFocus()
     clearTimeout(timer)
     stream?.getTracks().forEach((track) => track.stop())
     stream = null
@@ -298,7 +445,10 @@ export function useCameraScanner(onCode: (code: string) => void, region?: () => 
 
     try {
       stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: facing.value }, width: { ideal: 1280 }, height: { ideal: 720 } },
+        // A book's barcode is small and a webcam can't focus close, so the book is held back and needs more pixels.
+        video: formats === 'isbn'
+          ? { facingMode: { ideal: facing.value }, width: { ideal: 1920 }, height: { ideal: 1080 } }
+          : { facingMode: { ideal: facing.value }, width: { ideal: 1280 }, height: { ideal: 720 } },
         audio: false,
       })
 
@@ -313,8 +463,14 @@ export function useCameraScanner(onCode: (code: string) => void, region?: () => 
       await el.play()
 
       const track = stream.getVideoTracks()[0]
-      torchAvailable.value = !!(track?.getCapabilities?.() as any)?.torch
+      const caps = (track?.getCapabilities?.() ?? {}) as any
+      torchAvailable.value = !!caps.torch
+      // Keep refocusing as the book moves; a fixed focus is the usual reason a close barcode stays a blur.
+      if (caps.focusMode?.includes?.('continuous')) {
+        try { await track!.applyConstraints({ advanced: [{ focusMode: 'continuous' } as any] }) } catch { /* optional */ }
+      }
       state.value = 'live'
+      armAutofocus(track, caps, mine)
 
       await beginDecoding(mine)
       try { wakeLock = await (navigator as any).wakeLock?.request('screen') } catch { /* optional */ }
@@ -346,5 +502,5 @@ export function useCameraScanner(onCode: (code: string) => void, region?: () => 
 
   onBeforeUnmount(stop)
 
-  return { video, state, facing, torchAvailable, torchOn, start, stop, flip, toggleTorch }
+  return { video, state, facing, torchAvailable, torchOn, focusPhase, start, stop, flip, toggleTorch }
 }

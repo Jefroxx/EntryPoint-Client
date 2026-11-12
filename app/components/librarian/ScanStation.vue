@@ -451,12 +451,9 @@ watch(mode, async (next) => {
 onMounted(() => {
 	onPhoneDevice.value = window.matchMedia('(pointer: coarse)').matches
 
-	// Phones start on the phone layout; a desk keeps whichever mode it used last.
-	let saved: string | null = null
-	try { saved = localStorage.getItem(STORAGE_KEY) } catch { /* private window */ }
-	const initial: Mode = saved === 'webcam' || saved === 'phone'
-		? saved
-		: window.matchMedia('(pointer: coarse)').matches ? 'phone' : 'webcam'
+	// A phone starts on the phone layout; a desk computer always starts on its own camera, whatever it used last
+	// (a remembered "phone" choice used to hide the webcam every time).
+	const initial: Mode = window.matchMedia('(pointer: coarse)').matches ? 'phone' : 'webcam'
 
 	// Setting the mode starts the camera through the watcher; if it's unchanged, start it here.
 	if (initial !== mode.value) mode.value = initial

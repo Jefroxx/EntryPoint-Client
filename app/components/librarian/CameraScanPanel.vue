@@ -8,7 +8,7 @@
 					<i v-for="corner in CORNERS" :key="corner" class="absolute h-6 w-6 border-[3px] transition-colors duration-150"
 						:class="[corner, flash ? 'border-emerald-300' : 'border-white/90']" />
 				</div>
-				<p class="pointer-events-none absolute inset-x-0 bottom-3 px-3 text-center text-[13.5px] text-white/90">{{ flash ? 'Got it' : hint }}</p>
+				<p class="pointer-events-none absolute inset-x-0 bottom-3 px-3 text-center text-[13.5px] text-white/90">{{ flash ? 'Got it' : rejected || focusHint || (slow ? SLOW_HINT : hint) }}</p>
 				<div class="pointer-events-none absolute inset-0 bg-emerald-300 transition-opacity duration-300" :class="flash ? 'opacity-40' : 'opacity-0'" />
 				<button v-if="torchAvailable" type="button" aria-label="Torch" :aria-pressed="torchOn"
 					class="absolute right-2.5 top-2.5 flex h-9 w-9 items-center justify-center rounded-full transition-[transform,background-color] duration-150 ease-out active:scale-[0.96]"
@@ -59,19 +59,48 @@ const emit = defineEmits<{ (e: 'code', value: string): void }>()
 // Wide and short like a barcode. The decoder reads only inside this box, so what is drawn is what is read.
 // A book's ISBN barcode is squarer than a Code 128 label (it carries the digits under the bars), so its box is taller.
 const REGION: ScanRegion = props.format === 'isbn'
-	? { left: 0.22, top: 0.16, width: 0.56, height: 0.62 }
+	? { left: 0.15, top: 0.2, width: 0.7, height: 0.56 }
 	: { left: 0.14, top: 0.32, width: 0.72, height: 0.36 }
 const frameStyle = { left: `${REGION.left * 100}%`, top: `${REGION.top * 100}%`, width: `${REGION.width * 100}%`, height: `${REGION.height * 100}%` }
 const CORNERS = ['left-0 top-0 border-b-0 border-r-0 rounded-tl-[10px]', 'right-0 top-0 border-b-0 border-l-0 rounded-tr-[10px]', 'bottom-0 left-0 border-r-0 border-t-0 rounded-bl-[10px]', 'bottom-0 right-0 border-l-0 border-t-0 rounded-br-[10px]']
 
-const { video, state: camState, torchAvailable, torchOn, start, stop, toggleTorch } = useCameraScanner(onCameraCode, () => REGION, props.format === 'isbn'
+const { video, state: camState, torchAvailable, torchOn, focusPhase, start, stop, toggleTorch } = useCameraScanner(onCameraCode, () => REGION, props.format === 'isbn'
 	// Only a real book ISBN counts: the price add-on and other products' barcodes are ignored, not reported.
-	? { formats: 'isbn', accept: (code) => isbnFromBarcode(code) !== null }
+	? { formats: 'isbn', accept: (code) => isbnFromBarcode(code) !== null, onRejected: showRejected }
 	: undefined)
 const desk = useCheckoutDeskAnnouncer()
 
 const flash = ref(false)
 let paused = false
+
+// Nothing read for a few seconds with the camera on: the usual cause is the book being too close for the webcam to focus
+// (a blurred barcode can't be read, however big it is), so say that instead of leaving the librarian guessing.
+const SLOW_HINT = props.format === 'isbn'
+	? 'Not reading yet. Move the book back a little, until the digits under the bars look sharp.'
+	: 'Not reading yet. Move it back a little, until the bars look sharp.'
+// While the scanner searches for the sharpest focus by itself, the book just has to stay put and flat: this says so.
+const focusHint = computed(() => focusPhase.value === 'seeking'
+	? 'Finding the focus… keep the barcode flat and still, about 10–15 cm away.'
+	: focusPhase.value === 'locked' ? 'Focus found. Hold it still…' : '')
+const slow = ref(false)
+let slowTimer: ReturnType<typeof setTimeout> | undefined
+function armSlowHint() {
+	clearTimeout(slowTimer)
+	slow.value = false
+	if (camState.value === 'live' && props.active) slowTimer = setTimeout(() => { slow.value = true }, 5000)
+}
+watch([camState, () => props.active, flash], armSlowHint, { immediate: true })
+onBeforeUnmount(() => clearTimeout(slowTimer))
+
+// A barcode was read but it isn't a book ISBN (the price add-on, a shop sticker): say so, so it doesn't look like nothing happened.
+const rejected = ref('')
+let rejectedTimer: ReturnType<typeof setTimeout> | undefined
+function showRejected() {
+	rejected.value = "That's a barcode, but not the book's ISBN. Try the one that starts with 978 or 979."
+	clearTimeout(rejectedTimer)
+	rejectedTimer = setTimeout(() => { rejected.value = '' }, 3000)
+}
+onBeforeUnmount(() => clearTimeout(rejectedTimer))
 
 // A read flashes the frame and pauses for a moment, so one barcode held up is never reported twice.
 function onCameraCode(value: string) {

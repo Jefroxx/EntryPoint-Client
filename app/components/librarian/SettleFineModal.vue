@@ -1,7 +1,7 @@
 <template>
 	<LibrarianModalShell :open="open" size="xl" :title="step === 'confirm' ? 'Confirm the Payment' : 'Mark This Fine as Paid?'"
 		:subtitle="step === 'confirm' ? 'This is the last step. Check it, then record the payment.' : 'Check the details, then continue.'"
-		:busy="busy" @close="emit('close')">
+		:busy="busy" :dirty="dirty" ref="shell" @close="emit('close')">
 		<!-- Step 2: the final confirmation. Nothing has changed yet. -->
 		<div v-if="penalty && step === 'confirm'" class="space-y-4">
 			<section class="rounded-2xl border border-emerald-300 bg-emerald-50 p-4">
@@ -93,7 +93,7 @@
 				</ButtonsButton>
 			</template>
 			<template v-else>
-				<ButtonsButton variant="ghost" :disabled="busy" @click="emit('close')">Cancel</ButtonsButton>
+				<ButtonsButton variant="ghost" :disabled="busy" @click="shell?.requestClose()">Cancel</ButtonsButton>
 				<ButtonsButton variant="primary" :disabled="!penalty" @click="step = 'confirm'">
 					Continue<Icon name="i-tabler-arrow-right" class="h-3.5 w-3.5" />
 				</ButtonsButton>
@@ -121,6 +121,10 @@ const step = ref<'details' | 'confirm'>('details')
 // The cashier's receipt number, written down with the payment.
 const receiptNumber = ref('')
 watch(() => [props.open, props.penalty?.penaltyID], () => { step.value = 'details'; receiptNumber.value = '' })
+
+// A receipt number typed in: closing now asks "Discard Changes?" first (see ModalShell).
+const shell = ref<{ requestClose: () => void } | null>(null)
+const dirty = computed(() => props.open && receiptNumber.value.trim() !== '')
 
 const loan = computed(() => props.penalty?.loan ?? null)
 const student = computed(() => (props.penalty ? penaltyStudent(props.penalty) : null))

@@ -1,6 +1,6 @@
 <template>
 	<LibrarianModalShell :open="open" size="xl" title="Issue a Penalty"
-		subtitle="Charge a student for a book that is lost or damaged." :busy="busy" @close="emit('close')">
+		subtitle="Charge a student for a book that is lost or damaged." :busy="busy" :dirty="dirty" ref="shell" @close="emit('close')">
 		<div class="grid gap-x-8 gap-y-5 md:grid-cols-2">
 		<div class="space-y-5">
 			<!-- What happened to the book. -->
@@ -92,7 +92,7 @@
 		</div>
 
 		<template #footer>
-			<ButtonsButton variant="ghost" :disabled="busy" @click="emit('close')">Cancel</ButtonsButton>
+			<ButtonsButton variant="ghost" :disabled="busy" @click="shell?.requestClose()">Cancel</ButtonsButton>
 			<ButtonsButton variant="primary" :disabled="busy || !ready" @click="submit">
 				<Icon v-if="busy" name="i-tabler-loader-2" class="h-3.5 w-3.5 animate-spin" />
 				<Icon v-else name="i-tabler-gavel" class="h-3.5 w-3.5" />
@@ -139,6 +139,10 @@ const amount = ref('')
 const amountEdited = ref(false)
 
 // A fresh window every time.
+// What is typed in this window: closing it with changes asks "Discard Changes?" first (see ModalShell, useUnsavedChanges).
+const shell = ref<{ requestClose: () => void } | null>(null)
+const { dirty } = useUnsavedChanges(() => [type.value, mode.value, loan.value, student.value, book.value, copyID.value, amount.value], () => props.open)
+
 watch(() => props.open, (isOpen) => {
 	if (!isOpen) return
 	type.value = 'lost'

@@ -1,6 +1,6 @@
 <template>
 	<LibrarianModalShell :open="open" :title="confirming ? 'Confirm Changes' : item ? 'Edit Item' : 'Add Item'"
-		:subtitle="confirming ? 'Check the changes before they are saved.' : 'Students spend knowledge points on these rewards.'" :busy="busy" @close="emit('close')">
+		:subtitle="confirming ? 'Check the changes before they are saved.' : 'Students spend knowledge points on these rewards.'" :busy="busy" :dirty="dirty" ref="shell" @close="emit('close')">
 		<!-- Step 2 (editing only): what will change. It replaces the form in this same window (no second pop-up). -->
 		<div v-if="confirming" class="space-y-4">
 			<div class="rounded-xl bg-stone-50 px-4 py-3">
@@ -76,7 +76,7 @@
 				</ButtonsButton>
 			</template>
 			<template v-else>
-				<ButtonsButton variant="ghost" :disabled="busy" @click="emit('close')">Cancel</ButtonsButton>
+				<ButtonsButton variant="ghost" :disabled="busy" @click="shell?.requestClose()">Cancel</ButtonsButton>
 				<ButtonsButton variant="primary" :disabled="busy || preparing || (!!item && !hasChanges)" @click="submit">
 					<Icon v-if="busy" name="i-tabler-loader-2" class="h-3.5 w-3.5 animate-spin" />
 					<Icon v-else-if="item" name="i-tabler-arrow-right" class="h-3.5 w-3.5" />
@@ -142,6 +142,10 @@ function setLocalPhoto(blob: Blob | null) {
 	newPhoto.value = blob
 	localURL.value = blob ? URL.createObjectURL(blob) : null
 }
+
+// What is typed in this window: closing it with changes asks "Discard Changes?" first (see ModalShell, useUnsavedChanges).
+const shell = ref<{ requestClose: () => void } | null>(null)
+const { dirty } = useUnsavedChanges(() => [form, newPhoto.value?.size ?? 0, removeCurrent.value], () => props.open)
 
 watch(() => props.open, (isOpen) => {
 	setLocalPhoto(null)

@@ -1,5 +1,14 @@
 <template>
 	<div>
+		<!-- Leaving with unsaved contact details, or a half-typed password, asks first. -->
+		<StudentSheet :open="leaving" title="Discard Changes?" @close="stay">
+			What you've changed here won't be saved.
+			<template #actions>
+				<ButtonsButton variant="danger" class="!h-[46px] !text-[15px]" @click="leave">Yes, Discard</ButtonsButton>
+				<ButtonsButton variant="ghost" class="!h-[46px] !text-[15px]" @click="stay">Keep Editing</ButtonsButton>
+			</template>
+		</StudentSheet>
+
 		<!-- Who you are, then the three things you can do about it -->
 		<section class="st-in mb-5 flex flex-wrap items-center gap-x-6 gap-y-4 rounded-[22px] border border-stone-200 bg-white p-5 md:p-6">
 			<div class="flex min-w-0 flex-1 items-center gap-4">
@@ -296,6 +305,10 @@ const pwRules = computed(() => [
 	{ label: 'Different from current', met: !!pw.newPassword && pw.newPassword !== pw.currentPassword },
 ])
 const pwReady = computed(() => !!pw.currentPassword && pwRules.value.every((r) => r.met))
+
+// Unsaved contact details, or anything typed into the password boxes: leaving the page (or refreshing it) asks first.
+// (Switching tabs inside this page is only a query change, so it never asks.)
+const { asking: leaving, stay, leave } = useLeaveGuard(() => contactDirty.value || !!(pw.currentPassword || pw.newPassword || pw.confirm))
 
 const savingPw = ref(false)
 async function savePassword() {

@@ -1,7 +1,7 @@
 <template>
 	<LibrarianModalShell :open="open" :title="resource ? 'Edit Resource' : 'Add Resource'"
 		:subtitle="resource ? 'Rename it or change its type.' : 'Add a computer, room or study space.'" :busy="busy"
-		@close="emit('close')">
+		:dirty="dirty" ref="shell" @close="emit('close')">
 		<div class="space-y-4">
 			<LibrarianTextField id="resource-name" v-model="form.name" label="Name" placeholder="e.g. PC-08"
 				:error="errors.name" @update:model-value="errors.name = ''" />
@@ -14,7 +14,7 @@
 		</div>
 
 		<template #footer>
-			<ButtonsButton variant="ghost" :disabled="busy" @click="emit('close')">Cancel</ButtonsButton>
+			<ButtonsButton variant="ghost" :disabled="busy" @click="shell?.requestClose()">Cancel</ButtonsButton>
 			<ButtonsButton variant="primary" :disabled="busy" @click="submit">
 				<Icon v-if="busy" name="i-tabler-loader-2" class="h-3.5 w-3.5 animate-spin" />
 				{{ resource ? 'Save changes' : 'Add Resource' }}
@@ -39,6 +39,10 @@ const emit = defineEmits<{
 
 const form = reactive({ name: '', resourceType: '' })
 const errors = reactive({ name: '', resourceType: '' })
+
+// What is typed in this window: closing it with changes asks "Discard Changes?" first (see ModalShell, useUnsavedChanges).
+const shell = ref<{ requestClose: () => void } | null>(null)
+const { dirty } = useUnsavedChanges(() => form, () => props.open)
 
 watch(() => props.open, (isOpen) => {
 	if (!isOpen) return

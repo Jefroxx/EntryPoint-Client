@@ -1,6 +1,6 @@
 <template>
 	<LibrarianModalShell :open="open" size="xl" :title="reviewing ? 'Create This Account?' : account ? 'Edit Staff Account' : 'Add Staff Account'"
-		:subtitle="subtitle" :busy="busy" @close="emit('close')">
+		:subtitle="subtitle" :busy="busy" :dirty="dirty" ref="shell" @close="emit('close')">
 		<!-- Step 2 (new accounts only): look it over before anything is created. Back returns to the form with everything kept. -->
 		<div v-if="reviewing" class="space-y-4">
 			<dl class="divide-y divide-stone-100 rounded-xl border border-stone-200 bg-white">
@@ -115,7 +115,7 @@
 				</ButtonsButton>
 			</template>
 			<template v-else>
-				<ButtonsButton variant="ghost" :disabled="busy" @click="emit('close')">Cancel</ButtonsButton>
+				<ButtonsButton variant="ghost" :disabled="busy" @click="shell?.requestClose()">Cancel</ButtonsButton>
 				<ButtonsButton variant="primary" :disabled="busy" @click="submit">
 					<Icon v-if="busy" name="i-tabler-loader-2" class="h-3.5 w-3.5 animate-spin" />
 					{{ account ? 'Save changes' : 'Create account' }}
@@ -236,6 +236,10 @@ watch(studentSearch, () => {
 // Load the list when the picker appears (form opened on "Student assistant", or the role was just switched to it).
 watch(pickingStudent, (showing) => { if (showing && props.open) void loadCandidates() })
 onBeforeUnmount(() => clearTimeout(searchTimer))
+
+// What is typed in this window: closing it with changes asks "Discard Changes?" first (see ModalShell, useUnsavedChanges).
+const shell = ref<{ requestClose: () => void } | null>(null)
+const { dirty } = useUnsavedChanges(() => form, () => props.open)
 
 watch(() => props.open, (isOpen) => {
 	if (!isOpen) return
