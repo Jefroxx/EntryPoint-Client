@@ -14,7 +14,7 @@
 
 		<ul v-if="!loading" class="grid gap-3 sm:grid-cols-2 2xl:grid-cols-3 [&>li]:overflow-hidden [&>li]:rounded-2xl [&>li]:border [&>li]:border-stone-200 [&>li]:bg-white">
 			<li v-for="copy in copies" :key="`card-${copy.copyID}`" :class="selected.includes(copy.uuid) ? '!border-accent-300 !bg-accent-50/50' : ''">
-				<div role="button" tabindex="0" class="px-4 py-3.5 transition-colors active:bg-accent-50" @click="emit('view', copy)" @keydown.enter.self="emit('view', copy)">
+				<div role="button" tabindex="0" class="px-4 py-3.5 transition-colors active:bg-accent-50" @click="detailUuid = copy.uuid" @keydown.enter.self="detailUuid = copy.uuid">
 					<div class="flex items-start gap-3">
 						<input type="checkbox" class="mt-3.5 h-[18px] w-[18px] shrink-0 cursor-pointer accent-accent-500" :checked="selected.includes(copy.uuid)"
 							:aria-label="`Select accession no. ${copy.accessionNumber}`" @click.stop @change="emit('toggle', copy)" />
@@ -48,7 +48,7 @@
 					</tr>
 				</thead>
 				<tbody>
-					<tr v-for="(copy, index) in copies" :key="copy.copyID" tabindex="0" @click="emit('view', copy)" @keydown.enter.self="emit('view', copy)"
+					<tr v-for="(copy, index) in copies" :key="copy.copyID" tabindex="0" @click="detailUuid = copy.uuid" @keydown.enter.self="detailUuid = copy.uuid"
 						class="row-fade-in group cursor-pointer border-b border-stone-100 text-[14px] text-stone-600 last:border-0"
 						:style="{ animationDelay: `${index * 30}ms` }">
 						<!-- Pinned columns carry their own background so scrolled cells don't show through. -->
@@ -57,7 +57,7 @@
 						</td>
 						<td class="sticky left-[92px] z-[1] min-w-[240px] max-w-[300px] border-r border-stone-100 bg-white px-4 py-3 group-hover:bg-accent-50">
 							<button type="button" class="line-clamp-2 text-left text-[14.5px] font-semibold text-stone-900 hover:text-accent-600 hover:underline"
-								@click="emit('view', copy)">{{ copy.book.title }}</button>
+								@click="detailUuid = copy.uuid">{{ copy.book.title }}</button>
 							<p v-if="copy.book.isbn" class="font-data text-[12px] text-stone-500">ISBN {{ copy.book.isbn }}</p>
 						</td>
 						<td class="px-4 py-3 group-hover:bg-accent-50">
@@ -107,6 +107,21 @@
 				</tbody>
 			</table>
 		</div>
+
+		<!-- Pressing a copy shows that copy (accession no., status, where it came from), not the whole book; the book's own
+			 record is one button away. Teleports to <body>; it lives here only so the table keeps a single root element. -->
+		<LibrarianRecordDrawer :open="!!detail" heading="Book copy detail" :title="detail?.book.title ?? ''"
+			:subtitle="detail ? `Accession no. ${detail.accessionNumber}` : ''"
+			:status="detail ? STATUS[detail.status] : undefined" :fields="detailFields" @close="detailUuid = null">
+			<template #footer>
+				<ButtonsButton variant="ghost" class="flex-1" @click="openBook">
+					<Icon name="i-tabler-eye" class="h-4 w-4" />View book details
+				</ButtonsButton>
+				<ButtonsButton variant="primary" class="flex-1" @click="editCopy">
+					<Icon name="i-tabler-pencil" class="h-4 w-4" />Edit this copy
+				</ButtonsButton>
+			</template>
+		</LibrarianRecordDrawer>
 
 	</div>
 </template>
@@ -160,5 +175,47 @@ const STATUS: Record<CopyStatus, { label: string; tone: 'success' | 'warning' | 
 
 function areaLabel(area: LibraryArea | null): string {
 	return area ? LIBRARY_AREAS[area] ?? area : '—'
+}
+
+/* ---------- Book copy detail: the copy that was pressed ---------- */
+// Held by uuid and looked up in the list, so the drawer shows the fresh copy after it is edited and the list reloads.
+const detailUuid = ref<string | null>(null)
+const detail = computed(() => props.copies.find((c) => c.uuid === detailUuid.value) ?? null)
+
+const detailFields = computed(() => {
+	const copy = detail.value
+	if (!copy) return []
+	const book = copy.book
+	const cost = copy.cost ?? book.cost
+	return [
+		{ label: 'Accession no.', value: copy.accessionNumber, mono: true },
+		{ label: 'Barcode', value: copy.barcodeValue, mono: true },
+		{ label: 'Source of fund', value: copy.sourceOfFund || book.sourceOfFund },
+		{ label: 'Cost', value: cost != null ? formatPeso(cost) : null },
+		{ label: 'Copy remarks', value: copy.remarks, wide: true },
+		{ label: 'Author', value: book.authors.join(', '), wide: true },
+		{ label: 'Category', value: book.subject?.name },
+		{ label: 'Call no.', value: book.callNumber, mono: true },
+		{ label: 'Area of the library', value: areaLabel(book.areaOfLibrary) },
+		{ label: 'Shelf', value: book.shelfLocation },
+		{ label: 'ISBN', value: book.isbn, mono: true },
+		{ label: 'Edition', value: book.edition },
+		{ label: 'Volume', value: book.volume },
+		{ label: 'Publisher', value: book.publisher },
+		{ label: 'Year', value: book.publicationYear },
+	]
+})
+
+// The drawer hands over to the book view or the edit window (never two panels at once).
+function openBook() {
+	const copy = detail.value
+	detailUuid.value = null
+	if (copy) emit('view', copy)
+}
+
+function editCopy() {
+	const copy = detail.value
+	detailUuid.value = null
+	if (copy) emit('edit-copy', copy)
 }
 </script>
