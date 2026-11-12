@@ -492,6 +492,25 @@ export const DEWEY_SOURCE_LABEL: Record<DeweySource, string> = {
   guessed: "Guessed from the category",
 };
 
+/** The three catalogues an ISBN is looked up in. */
+export type IsbnSourceName = "library_of_congress" | "open_library" | "google_books";
+
+/**
+ * How one catalogue went: 'found' (has the book), 'none' (answered, has no record), 'unreachable' (did not answer: a
+ * timeout or an outage), 'off' (switched off on the server).
+ */
+export type IsbnSourceOutcome = "found" | "none" | "unreachable" | "off";
+
+/** POST /librarian/isbn/lookup/source */
+export interface IsbnSourceCheck {
+  source: IsbnSourceName;
+  status: IsbnSourceOutcome;
+  /** How long the catalogue took (0 when the answer was already remembered). */
+  ms: number;
+  cached: boolean;
+  title: string | null;
+}
+
 /** POST /librarian/isbn/lookup: a book's details from its ISBN, or why there are none. */
 export type IsbnDetailsLookup =
   | {
@@ -502,18 +521,35 @@ export type IsbnDetailsLookup =
       publisher: string | null;
       publishYear: number | null;
       pageCount: number | null;
+      /** As the catalogue states it ("3rd ed."); null when none does (the librarian types it, or N/A). */
+      edition: string | null;
+      /** "Vol. 2" when a catalogue says which volume; null when it can't tell (a whole set, or no statement). */
+      volume: string | null;
+      /** Things to check by eye, e.g. "listed as a set of 7 volumes, so the volume can't be read". */
+      hints: string[];
       description: string | null;
       coverUrl: string | null;
       deweyNumber: string | null;
       deweySource: DeweySource | null;
       /** Which catalogues the fields came from, most trusted first. */
       sources: string[];
+      sourceStatus: Partial<Record<IsbnSourceName, IsbnSourceOutcome>>;
+      /** 'unreachable' means the Dewey catalogue didn't answer, so an empty number may only mean "couldn't ask". */
+      deweyStatus: "found" | "none" | "unreachable";
     }
-  | { found: false; reason: "invalid" | "not_found"; isbn?: string; message: string };
+  | {
+      found: false;
+      reason: "invalid" | "not_found";
+      isbn?: string;
+      message: string;
+      sourceStatus?: Partial<Record<IsbnSourceName, IsbnSourceOutcome>>;
+    };
 
 /** POST /librarian/dewey/lookup */
 export interface DeweyIsbnLookup {
   found: boolean;
+  /** Not found AND a catalogue did not answer: "no number" may only mean "couldn't ask". */
+  unreachable?: boolean;
   deweyNumber?: string;
   source?: DeweySource;
   cutter?: string | null;
@@ -822,6 +858,15 @@ class LibrarianServiceClass extends BaseService {
   /** What the catalogues know about an ISBN, to fill the Add Book form. Saves nothing; "not found" is a normal answer. */
   lookupIsbnDetails(isbn: string) {
     return this.apiRequest<IsbnDetailsLookup>("/librarian/isbn/lookup", { method: "POST", body: { isbn } });
+  }
+
+  /**
+   * Asks ONE catalogue about an ISBN and says how it went, so the progress list can show each one as it finishes.
+   * `retry` asks again even if that catalogue failed to answer a moment ago. The answer is remembered by the server,
+   * so the {@link lookupIsbnDetails} call that follows does not ask the catalogues again.
+   */
+  lookupIsbnSource(isbn: string, source: IsbnSourceName, retry = false) {
+    return this.apiRequest<IsbnSourceCheck>("/librarian/isbn/lookup/source", { method: "POST", body: { isbn, source, retry } });
   }
 
   /** The "check these Dewey numbers" list. */

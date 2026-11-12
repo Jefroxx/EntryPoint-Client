@@ -14,15 +14,15 @@
 				leave-from-class="scale-100 translate-y-0 opacity-100"
 				leave-to-class="scale-95 translate-y-1 opacity-0 max-sm:translate-x-full max-sm:translate-y-0 max-sm:scale-100 max-sm:opacity-100 max-sm:motion-reduce:translate-x-0 max-sm:motion-reduce:opacity-0">
 				<form v-if="open" role="dialog" aria-modal="true" aria-labelledby="addBookTitle" novalidate
-					@keydown.esc="handleClose" @submit.prevent="entry !== 'form' ? undefined : confirming ? doSave() : step < lastStep ? next() : handleSubmit()"
+					@submit.prevent="entry !== 'form' ? undefined : confirming ? doSave() : step < lastStep ? next() : handleSubmit()"
 					class="relative z-10 flex max-h-[min(780px,calc(100vh-32px))] w-full max-w-[940px] flex-col overflow-hidden rounded-[22px] bg-white shadow-overlay max-sm:h-dvh max-sm:max-h-none max-sm:rounded-none max-sm:shadow-none">
 					<!-- Header + step bar (same pattern as student registration) -->
 					<div class="flex-shrink-0 border-b border-stone-100 px-6 pb-4 pt-5 sm:px-7">
 						<div class="flex items-start justify-between gap-3 max-sm:items-center">
 							<div class="min-w-0 max-sm:flex-1">
 								<h2 id="addBookTitle" class="dashboard-heading text-2xl font-bold text-crimson">
-									{{ createdBook ? 'Book Added' : confirming ? (isEdit ? 'Confirm Changes' : 'Confirm New Book') : isEdit ? 'Edit Book' : 'Add New Book' }}</h2>
-								<p class="dashboard-heading text-[13.5px] text-crimson">
+									{{ discarding ? 'Discard Changes?' : createdBook ? 'Book Added' : confirming ? (isEdit ? 'Confirm Changes' : 'Confirm New Book') : isEdit ? 'Edit Book' : 'Add New Book' }}</h2>
+								<p v-if="!discarding" class="dashboard-heading text-[13.5px] text-crimson">
 									{{ createdBook ? createdBook.title : confirming ? 'Check the details before they are saved.' : isEdit ? 'Jump to any section, change what you need, then save.' : entry === 'choose' ? 'How would you like to start?' : entry === 'scan' ? 'Scan the barcode on the back cover, or type the ISBN.' : 'Catalog a new title and its physical copies.' }}</p>
 							</div>
 							<ButtonsButton variant="icon" size="md" aria-label="Close" class="shrink-0" @click="handleClose">
@@ -30,7 +30,7 @@
 							</ButtonsButton>
 						</div>
 
-						<ol v-show="!confirming && !createdBook && entry === 'form'" class="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-4" aria-label="Book form sections">
+						<ol v-show="!confirming && !createdBook && !discarding && entry === 'form'" class="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-4" aria-label="Book form sections">
 							<li v-for="s in stepList" :key="s.n" :aria-current="step === s.n ? 'step' : undefined">
 								<button type="button" :disabled="!canOpen(s.n)"
 									class="group w-full rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-200 disabled:cursor-default"
@@ -53,7 +53,20 @@
 					<!-- Last step: a summary of what will be saved. It replaces the form in this same window (no second pop-up).
 						 The form below is only hidden, not removed, so the page photos picked in step 4 are kept when going Back. -->
 					<!-- Done: the book and its copies are in the catalog, and their barcode labels are one tap away. -->
-				<div v-if="createdBook" class="min-h-0 flex-1 overflow-y-auto px-6 py-6 sm:px-7">
+				<!-- "Discard Changes?": closing with something typed or scanned asks first, inside this same window (never a second
+						 pop-up). The form is only hidden meanwhile, so everything typed is still there if they keep editing. -->
+				<div v-if="discarding" class="min-h-0 flex-1 overflow-y-auto px-6 py-6 sm:px-7">
+					<div class="mx-auto flex max-w-[620px] items-start gap-3">
+						<span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-50 text-amber-600">
+							<Icon name="i-tabler-alert-triangle" class="h-5 w-5" />
+						</span>
+						<p class="pt-1 text-[15px] leading-relaxed text-stone-600">
+							{{ isEdit ? "The changes you made to this book won't be saved." : "What you've entered for this book won't be saved, and nothing will be added to the catalog." }}
+						</p>
+					</div>
+				</div>
+
+				<div v-else-if="createdBook" class="min-h-0 flex-1 overflow-y-auto px-6 py-6 sm:px-7">
 					<div class="mx-auto max-w-[620px] space-y-4">
 						<div class="flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50/60 px-4 py-3">
 							<Icon name="i-tabler-circle-check" class="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
@@ -138,7 +151,7 @@
 					</div>
 
 					<!-- Adding a book starts here: scan the back cover, or type everything by hand. Both end up in the same form. -->
-					<div v-if="entry !== 'form' && !confirming && !createdBook" class="min-h-0 flex-1 overflow-y-auto px-6 py-6 sm:px-7">
+					<div v-if="entry !== 'form' && !confirming && !createdBook && !discarding" class="min-h-0 flex-1 overflow-y-auto px-6 py-6 sm:px-7">
 						<div v-if="entry === 'choose'" class="mx-auto grid max-w-[640px] gap-3 sm:grid-cols-2">
 							<button type="button"
 								class="group flex flex-col items-start gap-3 rounded-2xl border border-stone-200 bg-white p-5 text-left transition-[transform,border-color,background-color] duration-150 ease-out hover:border-accent-300 hover:bg-accent-50/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-200 active:scale-[0.98]"
@@ -167,9 +180,11 @@
 						</div>
 
 						<div v-else class="mx-auto max-w-[560px] space-y-4">
+							<!-- First, so it is in view without scrolling while the camera and the typed box stay below it. -->
+							<LibrarianIsbnLookupProgress v-if="lookupSteps.length" :title="lookupTitle" :steps="lookupSteps" />
 							<div v-show="!phoneOpen">
 								<LibrarianCameraScanPanel :active="open && entry === 'scan' && !phoneOpen" format="isbn"
-									hint="Hold the barcode on the back cover inside the box" @code="onIsbnScanned" />
+									hint="Hold the barcode inside the box, about 10–15 cm from the camera" @code="onIsbnScanned" />
 							</div>
 							<LibrarianPhoneScanner v-model:open="phoneOpen" :active="open && entry === 'scan'" @code="onIsbnScanned" />
 
@@ -185,7 +200,7 @@
 								</div>
 							</div>
 
-							<p class="flex items-start gap-2 text-[13px] leading-snug" aria-live="polite"
+							<p v-if="!(lookupSteps.length && isbnStatus.kind === 'searching')" class="flex items-start gap-2 text-[13px] leading-snug" aria-live="polite"
 								:class="isbnStatus.kind === 'error' ? 'text-red-500' : 'text-stone-500'">
 								<span v-if="isbnStatus.kind === 'searching'" class="mt-0.5 h-3.5 w-3.5 shrink-0 animate-spin rounded-full border-2 border-stone-300 border-t-accent-500" />
 								<span>{{ isbnStatus.kind === 'idle' ? 'The details are looked up as soon as the barcode is read.' : isbnStatusText }}</span>
@@ -193,7 +208,7 @@
 						</div>
 					</div>
 
-					<div v-show="!confirming && !createdBook && entry === 'form'" class="flex min-h-0 flex-1 flex-col overflow-y-auto md:flex-row md:overflow-hidden">
+					<div v-show="!confirming && !createdBook && !discarding && entry === 'form'" class="flex min-h-0 flex-1 flex-col overflow-y-auto md:flex-row md:overflow-hidden">
 						<!-- Cover: always visible, whichever step is open -->
 						<aside
 							class="flex flex-shrink-0 gap-4 border-b border-stone-100 bg-stone-50/70 px-6 py-5 md:w-[272px] md:flex-col md:overflow-y-auto md:border-b-0 md:border-r md:px-6">
@@ -251,7 +266,7 @@
 										class="flex items-start gap-2 rounded-xl px-3.5 py-2.5 text-[13px] leading-snug" aria-live="polite"
 										:class="isbnStatus.kind === 'found' ? 'bg-emerald-50 text-emerald-800' : 'bg-stone-100 text-stone-600'">
 										<Icon :name="isbnStatus.kind === 'found' ? 'i-tabler-circle-check' : 'i-tabler-info-circle'" class="mt-px h-4 w-4 shrink-0" />
-										<span>{{ isbnStatusText }}</span>
+										<span>{{ isbnStatusText }}<template v-if="isbnStatus.kind === 'found'"><span v-for="hint in isbnHints" :key="hint" class="mt-1.5 block font-medium text-amber-800">{{ hint }}</span></template></span>
 									</p>
 
 									<div>
@@ -475,7 +490,11 @@
 
 					<div class="flex flex-shrink-0 items-center justify-between gap-2 border-t border-stone-100 px-6 py-4 sm:px-7">
 						<span class="text-[12.5px] tabular-nums text-stone-500">{{ createdBook ? 'Done' : confirming ? 'Review' : entry !== 'form' ? 'Start' : `Step ${step} of ${lastStep}` }}</span>
-						<div v-if="createdBook" class="flex gap-2">
+						<div v-if="discarding" class="flex gap-2">
+							<ButtonsButton ref="keepEditingButton" variant="ghost" @click="keepEditing">Keep Editing</ButtonsButton>
+							<ButtonsButton variant="danger" @click="discardAndClose">Yes, Discard</ButtonsButton>
+						</div>
+						<div v-else-if="createdBook" class="flex gap-2">
 							<ButtonsButton variant="ghost" @click="emit('close')">Done</ButtonsButton>
 							<ButtonsButton variant="primary" @click="emit('print-labels', createdBook.uuid)">
 								<Icon name="i-tabler-printer" class="h-3.5 w-3.5" />Print {{ createdBook.copies === 1 ? 'label' : `${createdBook.copies} labels` }}
@@ -532,7 +551,8 @@
 </template>
 
 <script setup lang="ts">
-import { DEWEY_SOURCE_LABEL, LIBRARY_AREAS, librarianService, type BookDetail, type IsbnDetailsLookup, type LibraryArea, type NewBookPayload } from '~/services/librarianService'
+import { DEWEY_SOURCE_LABEL, LIBRARY_AREAS, librarianService, type BookDetail, type IsbnDetailsLookup, type IsbnSourceCheck, type IsbnSourceName, type LibraryArea, type NewBookPayload } from '~/services/librarianService'
+import type { ProgressStep } from '~/components/librarian/IsbnLookupProgress.vue'
 import { isbnFromBarcode, normalizeIsbn, sanitizeIsbnInput } from '~/utils/isbn'
 import { useAlert } from '~/api/alert/useAlert'
 
@@ -628,7 +648,10 @@ async function lookUpDewey() {
 			// A number from an earlier lookup belonged to the previous ISBN, so it doesn't stay for this one.
 			if (lookedUpNumber && form.deweyNumber === lookedUpNumber) form.deweyNumber = ''
 			lookedUpNumber = ''
-			deweyHint.value = deweyRequired.value
+			// "Nobody has a number" and "the catalogue didn't answer" call for different next steps, so they read differently.
+			deweyHint.value = result.unreachable
+				? "The Library of Congress didn't answer, so a number may exist that couldn't be checked. Press Find from ISBN to try again, or type it in."
+				: deweyRequired.value
 				? 'No catalogue has a Dewey number for this ISBN. Type it in; it is often printed on the copyright page as "DDC".'
 				: 'No catalogue has a Dewey number for this ISBN. Type one if you know it (often printed on the copyright page as "DDC"), or leave it blank.'
 		}
@@ -648,7 +671,15 @@ const entry = ref<'choose' | 'scan' | 'form'>('form')
 const phoneOpen = ref(false)
 // Once the form has been shown, Back from the scan screen returns to it (with what was typed) and not to the first choice.
 const formStarted = ref(entry.value === 'form')
-watch(entry, (now) => { if (now === 'form') formStarted.value = true })
+watch(entry, (now) => {
+	if (now === 'form') formStarted.value = true
+	// Back on the scan screen for another book: the last lookup's progress list and note no longer apply.
+	if (now === 'scan' && !findingDetails.value) {
+		lookupSteps.value = []
+		isbnHints.value = []
+		isbnStatus.value = { kind: 'idle' }
+	}
+})
 
 function startManual() {
 	entry.value = 'form'
@@ -664,6 +695,66 @@ const isbnStatus = ref<IsbnStatus>({ kind: 'idle' })
 const findingDetails = computed(() => isbnStatus.value.kind === 'searching')
 // Each lookup gets a number, so an answer that arrives after a newer scan (or after the window was reset) is dropped.
 let detailsRun = 0
+
+/* ---------- The progress list: what the lookup is doing, step by step, so the screen is never a silent wait ---------- */
+const PROGRESS_SOURCES: { name: IsbnSourceName; label: string }[] = [
+	{ name: 'library_of_congress', label: 'Library of Congress' },
+	{ name: 'open_library', label: 'Open Library' },
+	{ name: 'google_books', label: 'Google Books' },
+]
+const lookupSteps = ref<ProgressStep[]>([])
+const lookupTitle = ref('')
+// Things to check by eye after a lookup (e.g. "this ISBN is a set of 7 volumes, so enter which volume").
+const isbnHints = ref<string[]>([])
+
+function patchStep(key: string, patch: Partial<ProgressStep>) {
+	const step = lookupSteps.value.find((s) => s.key === key)
+	if (step) Object.assign(step, patch)
+}
+
+function beginProgress(isbn: string) {
+	const now = Date.now()
+	lookupTitle.value = `Looking up ${isbn}`
+	lookupSteps.value = [
+		{ key: 'isbn', label: 'ISBN checked', state: 'done', detail: isbn },
+		...PROGRESS_SOURCES.map(({ name, label }): ProgressStep => ({ key: name, label, state: 'running', running: 'Waiting for an answer…', startedAt: now })),
+		{ key: 'merge', label: 'Putting the details together', state: 'waiting' },
+		{ key: 'dewey', label: 'Call number (Dewey)', state: 'waiting' },
+	]
+}
+
+function took(ms: number) {
+	return ms >= 1000 ? ` · ${(ms / 1000).toFixed(1)}s` : ''
+}
+
+/** One catalogue is back: say what it said (found, no record, or no answer), from what the server really reported. */
+function finishSource(check: IsbnSourceCheck) {
+	const time = check.cached ? '' : took(check.ms)
+	const detail = check.status === 'found' ? `Has this book${check.title ? `: ${check.title}` : ''}${time}`
+		: check.status === 'none' ? `No record of this ISBN${time}`
+			: check.status === 'unreachable' ? "Didn't answer in time. It may be down; the others carry on without it."
+				: 'Switched off'
+	patchStep(check.source, { state: check.status, detail })
+}
+
+/** The details are put together: close the last two rows from the server's answer. */
+function finishProgress(result: IsbnDetailsLookup) {
+	if (!result.found) {
+		patchStep('merge', { state: 'none', detail: 'No catalogue had the book, so there was nothing to fill in.' })
+		patchStep('dewey', { state: 'none', detail: 'Not looked up.' })
+		return
+	}
+	const from = result.sources.map((s) => SOURCE_LABEL[s] ?? s).join(' and ')
+	patchStep('merge', { state: 'done', detail: from ? `Filled in from ${from}.` : 'Done.' })
+	if (result.deweyStatus === 'found' && result.deweyNumber) {
+		const where = result.deweySource ? DEWEY_SOURCE_LABEL[result.deweySource] : 'a library catalogue'
+		patchStep('dewey', { state: 'found', detail: `${result.deweyNumber}, from ${where}` })
+	} else if (result.deweyStatus === 'unreachable') {
+		patchStep('dewey', { state: 'unreachable', detail: "The Library of Congress didn't answer, so this couldn't be checked. You can retry on the next step, or type it." })
+	} else {
+		patchStep('dewey', { state: 'none', detail: 'No catalogue has a number for this book. Type it in; it is often printed on the copyright page as "DDC".' })
+	}
+}
 
 const isbnStatusText = computed(() => {
 	const status = isbnStatus.value
@@ -703,9 +794,31 @@ async function findDetails() {
 
 	const run = ++detailsRun
 	isbnStatus.value = { kind: 'searching' }
+	isbnHints.value = []
+	beginProgress(isbn)
 	try {
+		// Each catalogue is asked on its own, all at once, so each row can say how ITS ask went the moment it is back.
+		// (The server remembers what they answered, so the lookup after this does not ask them again.)
+		await Promise.all(PROGRESS_SOURCES.map(async ({ name }) => {
+			try {
+				const check = await librarianService.lookupIsbnSource(isbn, name, true)
+				if (run === detailsRun) finishSource(check)
+			} catch {
+				if (run === detailsRun) patchStep(name, { state: 'unreachable', detail: "Couldn't ask. Check the connection." })
+			}
+		}))
+		if (run !== detailsRun) return
+
+		patchStep('merge', { state: 'running', running: 'Comparing what they said…', startedAt: Date.now() })
+		patchStep('dewey', { state: 'running', running: 'Looking for the call number…', startedAt: Date.now() })
 		const result = await librarianService.lookupIsbnDetails(isbn)
 		if (run !== detailsRun) return
+		finishProgress(result)
+		// Let the finished list be seen for a moment before the window moves on to the form it has just filled.
+		if (entry.value !== 'form' && (result.found || result.reason === 'not_found')) {
+			await new Promise((resolve) => setTimeout(resolve, result.found ? 1100 : 600))
+			if (run !== detailsRun) return
+		}
 		if (!result.found) {
 			isbnStatus.value = { kind: 'none', text: result.message }
 			// Valid ISBN, but no catalogue has the book (common for local and older titles): carry on into the form with
@@ -719,6 +832,12 @@ async function findDetails() {
 			return
 		}
 		isbnStatus.value = { kind: 'found', filled: applyIsbnDetails(result), sources: result.sources }
+		isbnHints.value = result.hints ?? []
+		// The Dewey catalogue stayed silent: the shelving step must say so, not "no catalogue has a number".
+		if (result.deweyStatus === 'unreachable' && !result.deweyNumber) {
+			deweyHint.value = "The Library of Congress didn't answer, so a call number may exist that couldn't be checked. Press Find from ISBN to try again, or type it."
+			lookedUpIsbn = result.isbn
+		}
 		// Found from the start screen: carry on into the form, now filled in. (A miss stays put so it can be retried.)
 		if (entry.value !== 'form') {
 			entry.value = 'form'
@@ -726,6 +845,9 @@ async function findDetails() {
 		}
 	} catch {
 		if (run !== detailsRun) return
+		for (const step of lookupSteps.value) {
+			if (step.state === 'running' || step.state === 'waiting') { step.state = 'unreachable'; step.detail = "Didn't finish." }
+		}
 		isbnStatus.value = { kind: 'error', text: "Couldn't reach the catalogues. Check the connection and try again, or type the details yourself." }
 	}
 }
@@ -767,6 +889,17 @@ function applyIsbnDetails(found: Extract<IsbnDetailsLookup, { found: true }>): s
 		form.coverImageURL = found.coverUrl
 		coverLoadFailed.value = false
 		filled.push('cover')
+	}
+	// Only when a catalogue actually states them. Otherwise they stay empty for the librarian (a guess would read as fact).
+	if (found.edition && !form.edition.trim()) {
+		form.edition = found.edition
+		errors.edition = ''
+		filled.push('edition')
+	}
+	if (found.volume && !form.volume.trim()) {
+		form.volume = found.volume
+		errors.volume = ''
+		filled.push('volume')
 	}
 	// The Dewey number comes in the same answer, so the shelving step doesn't have to ask the catalogues again.
 	if (found.deweyNumber && !form.deweyNumber.trim()) {
@@ -905,6 +1038,8 @@ function removeAuthor(index: number) {
 function resetForm() {
 	detailsRun++
 	isbnStatus.value = { kind: 'idle' }
+	lookupSteps.value = []
+	isbnHints.value = []
 	phoneOpen.value = false
 	formStarted.value = false
 	form.title = ''
@@ -977,6 +1112,7 @@ function fillFromBook(book: BookDetail) {
 watch(() => props.open, (isOpen) => {
 	if (isOpen) {
 		editorKey.value++
+		discarding.value = false
 		resetForm()
 		if (props.book) fillFromBook(props.book)
 		entry.value = props.book ? 'form' : 'choose'
@@ -984,8 +1120,42 @@ watch(() => props.open, (isOpen) => {
 	}
 })
 
+// What is typed or scanned in this window. Closing with changes asks "Discard Changes?" first, as a step in this same
+// window; once the book is saved there is nothing to lose (see useUnsavedChanges).
+const { dirty } = useUnsavedChanges(() => [form, authors.value, quantity.value], () => props.open)
+const discarding = ref(false)
+const keepEditingButton = ref<{ $el?: HTMLElement } | null>(null)
+
 function handleClose() {
 	if (submitting.value) return
+	// With the question already showing, the X, a click outside and Escape all mean "keep editing", so a second tap
+	// can't throw the data away by accident.
+	if (discarding.value) {
+		keepEditing()
+		return
+	}
+	if (dirty.value && !createdBook.value) {
+		discarding.value = true
+		void nextTick(() => keepEditingButton.value?.$el?.focus?.())
+		return
+	}
+	emit('close')
+}
+
+function keepEditing() {
+	discarding.value = false
+}
+
+// Escape is heard on the whole page, not only inside the form: after "Keep Editing" the button that had focus is gone,
+// and Escape would otherwise do nothing until something in the form was clicked.
+function onEscape(event: KeyboardEvent) {
+	if (event.key === 'Escape' && props.open) handleClose()
+}
+onMounted(() => window.addEventListener('keydown', onEscape))
+onBeforeUnmount(() => window.removeEventListener('keydown', onEscape))
+
+function discardAndClose() {
+	discarding.value = false
 	emit('close')
 }
 

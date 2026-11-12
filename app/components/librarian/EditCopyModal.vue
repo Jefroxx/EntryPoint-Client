@@ -1,6 +1,6 @@
 <template>
 	<LibrarianModalShell :open="open" size="xl" :title="title" :subtitle="confirming ? 'Check the changes before they are saved.' : copy?.book.title"
-		:busy="busy" @close="emit('close')">
+		:busy="busy" :dirty="dirty" ref="shell" @close="emit('close')">
 		<!-- Step 2: what is about to change. It replaces the form in this same window (no second pop-up). -->
 		<div v-if="confirming" class="space-y-4">
 			<div class="rounded-xl bg-stone-50 px-4 py-3">
@@ -74,7 +74,7 @@
 				</ButtonsButton>
 			</template>
 			<template v-else>
-				<ButtonsButton variant="ghost" :disabled="busy" @click="emit('close')">Cancel</ButtonsButton>
+				<ButtonsButton variant="ghost" :disabled="busy" @click="shell?.requestClose()">Cancel</ButtonsButton>
 				<ButtonsButton variant="primary" :disabled="busy || !hasChanges" @click="review">
 					<Icon name="i-tabler-arrow-right" class="h-3.5 w-3.5" />
 					Review
@@ -126,6 +126,10 @@ const original = computed(() => {
 		remarks: (c?.remarks ?? '').trim(),
 	}
 })
+
+// What is typed in this window: closing it with changes asks "Discard Changes?" first (see ModalShell, useUnsavedChanges).
+const shell = ref<{ requestClose: () => void } | null>(null)
+const { dirty } = useUnsavedChanges(() => [status.value, cost.value, sourceOfFund.value, remarks.value], () => props.open)
 
 watch(() => props.open, (isOpen) => {
 	if (!isOpen || !props.copy) return

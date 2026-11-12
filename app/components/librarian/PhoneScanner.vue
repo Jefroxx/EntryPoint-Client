@@ -95,8 +95,6 @@ const props = withDefaults(defineProps<{
 }>(), { as: 'desk' })
 const emit = defineEmits<{ (e: 'code', value: string): void }>()
 
-const PREFERENCE_KEY = 'entrypoint-phone-panel'
-
 const phone = usePhoneScanner((value) => emit('code', value), props.as)
 // Open means the phone is being used instead of the webcam: the window hides its own camera while this is true.
 const on = defineModel<boolean>('open', { default: false })
@@ -117,7 +115,6 @@ const link = computed(() => (address.value && phone.pairing.value ? phoneLink(ad
 async function turnOn() {
 	on.value = true
 	origin.value = phoneOrigin()
-	remember(true)
 	await phone.enable()
 }
 
@@ -125,11 +122,6 @@ function turnOff() {
 	on.value = false
 	showCode.value = false
 	phone.disable()
-	remember(false)
-}
-
-function remember(open: boolean) {
-	try { localStorage.setItem(PREFERENCE_KEY, open ? '1' : '0') } catch { /* not remembered */ }
 }
 
 async function addAnother() {
@@ -186,10 +178,8 @@ watch(() => phone.connected.value, (isConnected) => { if (isConnected) showCode.
 watch(() => props.active, (isActive) => {
 	if (!import.meta.client) return
 	if (!isActive) { phone.disable(); return }
-	if (on.value) { void phone.enable(); return }
-
-	let wanted = false
-	try { wanted = localStorage.getItem(PREFERENCE_KEY) === '1' } catch { /* default off */ }
-	if (wanted) void turnOn()
+	// The phone is never reopened by itself: every window starts on the computer's own camera, and the phone is
+	// something the librarian picks each time. (It used to remember the last choice, which hid the webcam for good.)
+	if (on.value) void phone.enable()
 }, { immediate: true })
 </script>

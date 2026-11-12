@@ -5,6 +5,15 @@
 			<p class="dashboard-heading mt-1 text-crimson">Can't find it? Tell the librarians what to add next.</p>
 		</div>
 
+		<!-- Leaving with a suggestion half-written asks first. -->
+		<StudentSheet :open="leaving" title="Discard Changes?" @close="stay">
+			What you've written here won't be sent.
+			<template #actions>
+				<ButtonsButton variant="danger" class="!h-[46px] !text-[15px]" @click="leave">Yes, Discard</ButtonsButton>
+				<ButtonsButton variant="ghost" class="!h-[46px] !text-[15px]" @click="stay">Keep Editing</ButtonsButton>
+			</template>
+		</StudentSheet>
+
 		<div class="md:grid md:grid-cols-[minmax(0,520px)_minmax(0,1fr)] md:items-start md:gap-10">
 			<form class="st-in rounded-2xl border border-stone-200 bg-white p-[18px] md:p-5" style="animation-delay: 35ms" novalidate @submit.prevent="submit">
 				<div class="grid gap-3.5">
@@ -66,6 +75,9 @@ const form = reactive({ title: '', author: '', reason: '' })
 const serverErrors = reactive<Record<string, string>>({ title: '', author: '' })
 const titleTouched = ref(false)
 const submitting = ref(false)
+
+// Something typed and not sent: leaving the page (or refreshing it) asks first. A sent suggestion clears the form.
+const { asking: leaving, stay, leave } = useLeaveGuard(() => !!(form.title.trim() || form.author.trim() || form.reason.trim()))
 
 // Inline, on blur: "required" shows once you've left the field, server messages show at once.
 const titleError = computed(() => serverErrors.title || (titleTouched.value && !form.title.trim() ? "Enter the book's title." : ''))

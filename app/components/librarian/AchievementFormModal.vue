@@ -1,6 +1,6 @@
 <template>
 	<LibrarianModalShell :open="open" size="xl" :title="confirming ? 'Confirm Changes' : achievement ? 'Edit Achievement' : 'Add Achievement'"
-		:subtitle="confirming ? 'Check the changes before they are saved.' : 'Students unlock it automatically once they reach the goal.'" :busy="busy" @close="emit('close')">
+		:subtitle="confirming ? 'Check the changes before they are saved.' : 'Students unlock it automatically once they reach the goal.'" :busy="busy" :dirty="dirty" ref="shell" @close="emit('close')">
 		<!-- Step 2 (editing only): what will change. It replaces the form in this same window (no second pop-up). -->
 		<div v-if="confirming" class="space-y-4">
 			<div class="rounded-xl bg-stone-50 px-4 py-3">
@@ -67,7 +67,7 @@
 				</ButtonsButton>
 			</template>
 			<template v-else>
-				<ButtonsButton variant="ghost" :disabled="busy" @click="emit('close')">Cancel</ButtonsButton>
+				<ButtonsButton variant="ghost" :disabled="busy" @click="shell?.requestClose()">Cancel</ButtonsButton>
 				<ButtonsButton variant="primary" :disabled="busy || (!!achievement && !hasChanges)" @click="submit">
 					<Icon v-if="busy" name="i-tabler-loader-2" class="h-3.5 w-3.5 animate-spin" />
 					<Icon v-else-if="achievement" name="i-tabler-arrow-right" class="h-3.5 w-3.5" />
@@ -136,6 +136,10 @@ const changes = computed(() => {
 	return rows
 })
 const hasChanges = computed(() => changes.value.length > 0)
+
+// What is typed in this window: closing it with changes asks "Discard Changes?" first (see ModalShell, useUnsavedChanges).
+const shell = ref<{ requestClose: () => void } | null>(null)
+const { dirty } = useUnsavedChanges(() => form, () => props.open)
 
 watch(() => props.open, (isOpen) => {
 	if (!isOpen) return

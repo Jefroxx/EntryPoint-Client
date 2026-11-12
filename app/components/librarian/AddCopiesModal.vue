@@ -1,5 +1,5 @@
 <template>
-	<LibrarianModalShell :open="open" size="xl" :title="shellTitle" :subtitle="shellSubtitle" :busy="busy" @close="emit('close')">
+	<LibrarianModalShell :open="open" size="xl" :title="shellTitle" :subtitle="shellSubtitle" :busy="busy" :dirty="dirty && !added" ref="shell" @close="emit('close')">
 		<!-- Done: the copies are in the catalog, and their barcode labels are one tap away. -->
 		<div v-if="added" class="mx-auto max-w-[620px] space-y-4 py-2">
 			<div class="flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50/60 px-4 py-3">
@@ -129,10 +129,10 @@
 				</ButtonsButton>
 			</template>
 			<template v-else-if="stage === 'choose'">
-				<ButtonsButton variant="ghost" @click="emit('close')">Cancel</ButtonsButton>
+				<ButtonsButton variant="ghost" @click="shell?.requestClose()">Cancel</ButtonsButton>
 			</template>
 			<template v-else>
-				<ButtonsButton v-if="fixedBook" variant="ghost" :disabled="busy" @click="emit('close')">Cancel</ButtonsButton>
+				<ButtonsButton v-if="fixedBook" variant="ghost" :disabled="busy" @click="shell?.requestClose()">Cancel</ButtonsButton>
 				<ButtonsButton v-else variant="ghost" :disabled="busy" @click="backToChoose">
 					<Icon name="i-tabler-arrow-left" class="h-3.5 w-3.5" />Back
 				</ButtonsButton>
@@ -259,6 +259,10 @@ function backToChoose() {
 	stage.value = 'choose'
 	void nextTick(() => searchInput.value?.focus())
 }
+
+// What is typed in this window: closing it with changes asks "Discard Changes?" first (see ModalShell, useUnsavedChanges).
+const shell = ref<{ requestClose: () => void } | null>(null)
+const { dirty } = useUnsavedChanges(() => [quantity.value, sourceOfFund.value, cost.value, remarks.value], () => props.open)
 
 watch(() => props.open, (isOpen) => {
 	if (!isOpen) return
