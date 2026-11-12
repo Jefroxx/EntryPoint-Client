@@ -855,6 +855,14 @@ class LibrarianServiceClass extends BaseService {
     return this.apiRequest<DeweyIsbnLookup>("/librarian/dewey/lookup", { method: "POST", body: { isbn } });
   }
 
+  /** The book already catalogued under this ISBN, if any (any usual form of the number). Quick; saves nothing. */
+  findBookByIsbn(isbn: string) {
+    return this.apiRequest<{
+      exists: boolean;
+      book: { bookUuid: string; title: string; authors: string[]; coverImageURL: string | null; callNumber: string | null; copies: number } | null;
+    }>("/librarian/isbn/existing", { method: "POST", body: { isbn } });
+  }
+
   /** What the catalogues know about an ISBN, to fill the Add Book form. Saves nothing; "not found" is a normal answer. */
   lookupIsbnDetails(isbn: string) {
     return this.apiRequest<IsbnDetailsLookup>("/librarian/isbn/lookup", { method: "POST", body: { isbn } });
