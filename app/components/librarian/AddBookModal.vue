@@ -569,6 +569,8 @@ const emit = defineEmits<{
 	(e: 'close'): void
 	(e: 'created'): void
 	(e: 'updated'): void
+	/** The scanned or typed ISBN is already a book in the catalog: the window closes and the caller offers to add a copy of it. */
+	(e: 'exists', book: { bookUuid: string; title: string; authors: string[]; coverImageURL: string | null; callNumber: string | null; copies: number }): void
 	/** Print the barcode labels of the book just added (all its copies). */
 	(e: 'print-labels', bookUuid: string): void
 }>()
@@ -795,6 +797,21 @@ async function findDetails() {
 	const run = ++detailsRun
 	isbnStatus.value = { kind: 'searching' }
 	isbnHints.value = []
+	// A book the library already has is a new copy of it, not a new book: settled before the catalogues are asked anything.
+	if (!isEdit.value) {
+		try {
+			const { exists, book } = await librarianService.findBookByIsbn(isbn)
+			if (run !== detailsRun) return
+			if (exists && book) {
+				isbnStatus.value = { kind: 'idle' }
+				emit('exists', book)
+				return
+			}
+		} catch {
+			// The check itself failed: carry on; the server still refuses a duplicate when the book is saved.
+			if (run !== detailsRun) return
+		}
+	}
 	beginProgress(isbn)
 	try {
 		// Each catalogue is asked on its own, all at once, so each row can say how ITS ask went the moment it is back.
