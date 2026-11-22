@@ -2,7 +2,7 @@
 	<div>
 		<!-- Leaving with unsaved contact details, or a half-typed password, asks first. -->
 		<StudentSheet :open="leaving" title="Discard Changes?" @close="stay">
-			What you've changed here won't be saved.
+			{{ leaveText }}
 			<template #actions>
 				<ButtonsButton variant="danger" class="!h-[46px] !text-[15px]" @click="leave">Yes, Discard</ButtonsButton>
 				<ButtonsButton variant="ghost" class="!h-[46px] !text-[15px]" @click="stay">Keep Editing</ButtonsButton>
@@ -16,8 +16,8 @@
 					{{ initials }}
 				</div>
 				<div class="min-w-0">
-					<h1 class="dashboard-heading truncate text-[26px] font-extrabold leading-tight text-crimson">{{ profile?.fullName ?? `${firstName} ${lastName}` }}</h1>
-					<p class="font-data mt-0.5 truncate text-[13px] text-stone-500">
+					<h1 class="dashboard-heading break-words text-[26px] font-extrabold leading-tight text-crimson">{{ profile?.fullName ?? `${firstName} ${lastName}` }}</h1>
+					<p class="font-data mt-0.5 text-[13px] text-stone-500">
 						{{ profile?.memberIDNumber }}{{ (profile?.academicProgram ?? profile?.department) ? ` · ${profile?.academicProgram ?? profile?.department}` : '' }}
 					</p>
 				</div>
@@ -39,7 +39,7 @@
 							placeholder="0917 123 4567" :maxlength="20" :error="contactErrors.phoneNumber" @update:model-value="contactErrors.phoneNumber = ''" />
 						<LibrarianTextField id="address" v-model="contact.address" label="Address" optional autocomplete="street-address"
 							placeholder="Street, barangay, city" :maxlength="255" :error="contactErrors.address" @update:model-value="contactErrors.address = ''" />
-						<LibrarianTextField id="birthDate" v-model="contact.birthDate" label="Birth date" optional type="date" :max="toYmd()"
+						<BirthDateField id="birthDate" v-model="contact.birthDate" v-model:incomplete="birthIncomplete" label="Birth date" optional
 							:error="contactErrors.birthDate" @update:model-value="contactErrors.birthDate = ''" />
 						<div class="mt-1 flex items-center gap-3">
 							<ButtonsButton type="submit" :disabled="!contactDirty || savingContact">
@@ -248,6 +248,7 @@ const tabs = computed(() => [
 
 /* ---- details: contact form ---- */
 type ContactField = 'phoneNumber' | 'address' | 'birthDate'
+const birthIncomplete = ref(false)
 const contact = reactive<Record<ContactField, string>>({ phoneNumber: '', address: '', birthDate: '' })
 const contactErrors = reactive<Record<ContactField, string>>({ phoneNumber: '', address: '', birthDate: '' })
 const saved = computed<Record<ContactField, string>>(() => ({
@@ -262,10 +263,19 @@ function resetContact() {
 	Object.assign(contactErrors, { phoneNumber: '', address: '', birthDate: '' })
 }
 // Fill the form once the profile arrives, and again after a save; never over the top of unsaved typing.
-watch(saved, () => { if (!contactDirty.value) resetContact() }, { immediate: true })
+// "Typing" means differing from the details as they WERE a moment ago. (Comparing with the new ones would count the
+// empty form as typing whenever the profile is already loaded, and the form would stay blank, with Save ready to erase them.)
+watch(saved, (_, before) => {
+	const typing = before && (Object.keys(contact) as ContactField[]).some((k) => contact[k].trim() !== before[k])
+	if (!typing) resetContact()
+}, { immediate: true })
 
 const savingContact = ref(false)
 async function saveContact() {
+	if (birthIncomplete.value) {
+		contactErrors.birthDate = 'Pick the month, day and year, or leave all three empty.'
+		return
+	}
 	if (contact.birthDate && contact.birthDate > toYmd()) {
 		contactErrors.birthDate = "Birth date can't be in the future."
 		return
@@ -308,7 +318,15 @@ const pwReady = computed(() => !!pw.currentPassword && pwRules.value.every((r) =
 
 // Unsaved contact details, or anything typed into the password boxes: leaving the page (or refreshing it) asks first.
 // (Switching tabs inside this page is only a query change, so it never asks.)
-const { asking: leaving, stay, leave } = useLeaveGuard(() => contactDirty.value || !!(pw.currentPassword || pw.newPassword || pw.confirm))
+const pwTyped = computed(() => !!(pw.currentPassword || pw.newPassword || pw.confirm))
+const { asking: leaving, stay, leave } = useLeaveGuard(() => contactDirty.value || pwTyped.value)
+
+// What the "Discard Changes?" step says is being thrown away: the contact details, the typed password, or both.
+const leaveText = computed(() => contactDirty.value && pwTyped.value
+	? "Your changes to your contact details and the password you typed won't be saved."
+	: contactDirty.value
+		? "Your changes to your contact details won't be saved."
+		: "The password you typed won't be saved.")
 
 const savingPw = ref(false)
 async function savePassword() {

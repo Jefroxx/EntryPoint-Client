@@ -45,7 +45,8 @@
 			</div>
 
 			<!-- Form -->
-			<form v-else key="form" novalidate @submit.prevent="step === 1 ? next() : submit()">
+			<!-- A fixed minimum height: step 2 is taller than step 1, and the pane centres its content, so without it the logo and heading jumped up when you pressed Continue. -->
+			<form v-else key="form" class="min-h-[480px]" novalidate @submit.prevent="step === 1 ? next() : submit()">
 				<h1 class="dashboard-heading text-center text-[30px] font-extrabold leading-[1.15] tracking-[-.02em] text-crimson">Create account</h1>
 				<p class="mt-2 text-center text-[14px] leading-relaxed text-stone-500">
 					We'll email you a link to confirm your address, then a librarian reviews your registration.
@@ -78,16 +79,16 @@
 					<legend class="sr-only">About you</legend>
 					<div class="grid gap-3 sm:grid-cols-[1fr_84px_1fr]" @focusout="touch">
 						<LibrarianTextField id="firstName" v-model="form.firstName" label="First name" autocomplete="given-name"
-							placeholder="Matt" :error="err('firstName')" @update:model-value="clear('firstName')" />
-						<LibrarianTextField id="middleInitial" v-model="form.middleInitial" label="M.I." optional :maxlength="5"
+							placeholder="Juan" :error="err('firstName')" @update:model-value="clear('firstName')" />
+						<LibrarianTextField id="middleInitial" v-model="form.middleInitial" label="M.I." optional :maxlength="1"
 							placeholder="O" :error="err('middleInitial')" @update:model-value="clear('middleInitial')" />
 						<LibrarianTextField id="lastName" v-model="form.lastName" label="Last name" autocomplete="family-name"
-							placeholder="Pojadas" :error="err('lastName')" @update:model-value="clear('lastName')" />
+							placeholder="Dela Cruz" :error="err('lastName')" @update:model-value="clear('lastName')" />
 					</div>
 					<div class="mt-3 grid gap-3 sm:grid-cols-2" @focusout="touch">
-						<LibrarianTextField id="birthDate" v-model="form.birthDate" label="Birth date" optional type="date" :max="toYmd()"
+						<BirthDateField id="birthDate" v-model="form.birthDate" v-model:incomplete="birthIncomplete" label="Birth date" optional class="sm:col-span-2"
 							:error="err('birthDate')" @update:model-value="clear('birthDate')" />
-						<LibrarianTextField id="phoneNumber" v-model="form.phoneNumber" label="Phone" optional type="tel"
+						<LibrarianTextField id="phoneNumber" v-model="form.phoneNumber" label="Phone" optional type="tel" class="sm:col-span-2"
 							autocomplete="tel" placeholder="0917 123 4567" :maxlength="20" :error="err('phoneNumber')"
 							@update:model-value="clear('phoneNumber')" />
 					</div>
@@ -109,7 +110,7 @@
 					<legend class="mb-2.5 text-[10.5px] font-bold uppercase tracking-[.08em] text-stone-500">School</legend>
 					<div class="grid gap-3 sm:grid-cols-2" @focusout="touch">
 						<LibrarianTextField id="memberIDNumber" v-model="form.memberIDNumber" label="Student ID number" mono
-							placeholder="e.g. 2021-00042" hint="As printed on your school ID." :error="err('memberIDNumber')"
+							placeholder="e.g. 02-2024-0001" hint="As printed on your school ID." :error="err('memberIDNumber')"
 							@update:model-value="clear('memberIDNumber')" />
 						<div>
 							<label for="academicProgram" class="mb-1.5 block text-[12.5px] font-semibold text-stone-800">
@@ -215,6 +216,9 @@ async function resend() {
 	}
 }
 
+// True while only some of the birth date's month, day and year are chosen.
+const birthIncomplete = ref(false)
+
 const form = reactive({
 	firstName: '',
 	middleInitial: '',
@@ -245,8 +249,9 @@ const clientErrors = computed<Partial<Record<Field, string>>>(() => {
 	const e: Partial<Record<Field, string>> = {}
 	if (!f.firstName.trim()) e.firstName = 'Enter your first name.'
 	if (!f.lastName.trim()) e.lastName = 'Enter your last name.'
-	if (f.middleInitial.length > 5) e.middleInitial = 'Use 5 characters or fewer.'
-	if (f.birthDate && f.birthDate > today()) e.birthDate = "Birth date can't be in the future."
+	if (f.middleInitial.length > 1) e.middleInitial = 'Use just the first letter, no dot.'
+	if (birthIncomplete.value) e.birthDate = 'Pick the month, day and year, or leave all three empty.'
+	else if (f.birthDate && f.birthDate > today()) e.birthDate = "Birth date can't be in the future."
 	if (f.phoneNumber.length > 20) e.phoneNumber = 'Use 20 characters or fewer.'
 	if (f.address.length > 255) e.address = 'Use 255 characters or fewer.'
 	if (!f.memberIDNumber.trim()) e.memberIDNumber = 'Enter your student ID number.'
@@ -322,7 +327,11 @@ function clear(field: Field) {
 
 // Marks the field as visited when focus leaves it (focusout bubbles from the inner <input>).
 function touch(event: FocusEvent) {
-	const id = (event.target as HTMLElement | null)?.id as Field | undefined
+	const target = event.target as HTMLElement | null
+	const id = target?.id as Field | undefined
+	// The birth date is three boxes: moving from one to the next is not leaving the field.
+	const group = target?.closest('[role=group]')
+	if (group && group.contains(event.relatedTarget as Node | null)) return
 	if (id && id in form) touched.add(id)
 }
 
