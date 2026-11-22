@@ -15,11 +15,16 @@
 				@click="drawer.open('book', book.uuid)">{{ book.title }}</button>
 			<p class="mt-0.5 truncate text-[12.5px] text-stone-500">{{ authorLine(book) }}</p>
 			<div class="mt-2">
-				<StudentAvailability :available="book.availableCopies" :total="book.totalCopies" :queue="book.queueLength" />
+				<!-- No queue count here: a card is narrow, and the queue is in the book's details. --><StudentAvailability :available="book.availableCopies" :total="book.totalCopies" />
 			</div>
 		</div>
 		<div class="mt-auto flex items-center justify-between gap-2 py-3.5 pl-4 pr-3">
-			<ButtonsButton v-if="isInCart(book.bookID)" variant="ghost" size="sm" class="min-w-0 flex-1 !px-2.5 !border-emerald-200 !bg-emerald-50 !text-emerald-700"
+			<!-- A book can be reserved only once at a time, so one that already is says so instead of offering the cart. -->
+			<ButtonsButton v-if="isReserved(book.bookID)" variant="ghost" size="sm" class="min-w-0 flex-1 !px-2.5 !border-amber-200 !bg-amber-50 !text-amber-700"
+				@click="navigateTo({ path: '/student/books', query: { tab: 'reservations' } })">
+				<Icon name="i-tabler-bookmark" class="h-3.5 w-3.5" />In reservation
+			</ButtonsButton>
+			<ButtonsButton v-else-if="isInCart(book.bookID)" variant="ghost" size="sm" class="min-w-0 flex-1 !px-2.5 !border-emerald-200 !bg-emerald-50 !text-emerald-700"
 				@click="drawer.open('cart')">
 				<Icon name="i-tabler-check" class="h-3.5 w-3.5" />In cart
 			</ButtonsButton>
@@ -38,7 +43,7 @@ import type { CatalogBook } from '~/services/studentService'
 const props = defineProps<{ book: CatalogBook }>()
 
 const drawer = useDrawer()
-const { isWished, isInCart, toggleWish, addToCart } = useStudent()
+const { isWished, isInCart, isReserved, toggleWish, addToCart } = useStudent()
 
 const swatch = computed(() => subjectSwatch(props.book.subject?.name ?? props.book.title))
 </script>

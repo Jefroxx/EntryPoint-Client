@@ -8,7 +8,7 @@
 			<h3 class="dashboard-heading text-[22px] font-extrabold text-crimson">Reservation sent</h3>
 			<ul class="mt-2 space-y-1 text-[14px] text-stone-600">
 				<li v-for="line in done" :key="line.title">
-					<b class="text-stone-900">{{ line.title }}</b> · you're #{{ line.queue }} in line
+					<b class="text-stone-900">{{ line.title }}</b> · {{ line.queue > 1 ? `you're #${line.queue} in line` : "you're first in line" }}
 				</li>
 			</ul>
 			<p class="mt-3 text-[14px] text-stone-500">A librarian will review it. We'll notify you when it's ready.</p>
@@ -17,12 +17,11 @@
 		<div v-else>
 			<div class="space-y-3 rounded-2xl border border-stone-200 bg-white p-4">
 				<div>
-					<div class="flex justify-between text-[13px]"><b>Books in cart</b><span class="tabular-nums">{{ cart.length }} / 3</span></div>
-					<StudentMeter class="mt-2" :value="cart.length / 3" />
-				</div>
-				<div>
-					<div class="flex justify-between text-[13px]"><b>Reservation slots left</b><span class="tabular-nums">{{ slotsLeft }} / 3</span></div>
-					<StudentMeter class="mt-2" :value="slotsLeft / 3" />
+					<div class="flex justify-between text-[13px]"><b class="text-stone-900">Books in cart</b><span class="tabular-nums text-stone-700">{{ slotsLeft ? `${cart.length} / ${slotsLeft}` : 'No free slots' }}</span></div>
+					<StudentMeter class="mt-2" :value="slotsLeft ? cart.length / slotsLeft : 1" />
+					<p v-if="slotsLeft < 3" class="mt-2 text-[12.5px] leading-snug text-stone-500">
+						{{ 3 - slotsLeft }} of your 3 reservation slots {{ 3 - slotsLeft === 1 ? 'is' : 'are' }} already in use by books you hold or have reserved.
+					</p>
 				</div>
 			</div>
 
@@ -66,8 +65,8 @@
 				</ButtonsButton>
 			</template>
 
-			<StudentEmptyState v-else title="Your cart is empty"
-				text="Add books from Discover or your wishlist.">
+			<StudentEmptyState v-else :title="slotsLeft ? 'Your cart is empty' : 'No reservation slots free'"
+				:text="slotsLeft ? 'Add books from Discover or your wishlist.' : 'All 3 slots are taken by books you hold or have reserved. Return a book or cancel a reservation to free one.'">
 				<template #icon><StudentCartIcon class="h-7 w-7" /></template>
 				<NuxtLink to="/student/discover">
 					<ButtonsButton>Browse books</ButtonsButton>
@@ -85,7 +84,7 @@
 	</StudentDrawer>
 
 	<!-- Shown when the cart holds a book with no copy free right now: reserving still works, but they'd have to wait. -->
-	<StudentSheet :open="confirmWait" title="No copy available right now" @close="confirmWait = false">
+	<StudentSheet :open="confirmWait" title="No Copy Available Right Now" @close="confirmWait = false">
 		<p>{{ soldOut.length === 1 ? 'This book has' : 'These books have' }} no copy available at the moment:</p>
 		<ul class="mt-2 space-y-1.5">
 			<li v-for="row in soldOut" :key="row.wishlistID" class="rounded-xl bg-stone-50 px-3 py-2">

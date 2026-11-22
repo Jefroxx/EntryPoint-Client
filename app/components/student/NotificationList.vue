@@ -1,7 +1,7 @@
 <template>
 	<div>
-		<StudentEmptyState v-if="!items.length" icon="i-tabler-bell" title="No notifications yet"
-			text="Reservation updates, due dates and rewards will show up here." />
+		<StudentEmptyState v-if="!items.length" icon="i-tabler-bell" :title="emptyTitle ?? 'No notifications yet'"
+			:text="emptyText ?? 'Reservation updates, due dates and rewards will show up here.'" />
 
 		<template v-else>
 			<section v-for="group in groups" :key="group.label" class="last:mb-0">
@@ -9,6 +9,7 @@
 				<div class="overflow-hidden" :class="grouped ? 'rounded-2xl border border-stone-200 bg-white' : ''">
 					<button v-for="item in group.items" :key="item.notificationID" type="button"
 						class="flex w-full items-start gap-3 border-b border-stone-100 px-4 py-3.5 text-left transition-colors duration-150 last:border-0 hover:bg-stone-50 active:bg-stone-100"
+							:class="item.isRead ? '' : 'bg-accent-50'"
 						@click="choose(item)">
 						<span class="mt-px flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[10px]"
 							:class="TONE_SOFT[studentNotificationMeta(item.type).tone]">
@@ -32,7 +33,7 @@ import type { NotificationRecord } from '~/services/notificationService'
 import { TONE_SOFT, studentNotificationMeta } from '~/utils/studentNotifications'
 import { useAlert } from '~/api/alert/useAlert'
 
-const props = withDefaults(defineProps<{ items: NotificationRecord[]; grouped?: boolean }>(), { grouped: true })
+const props = withDefaults(defineProps<{ items: NotificationRecord[]; grouped?: boolean; emptyTitle?: string; emptyText?: string }>(), { grouped: true })
 const emit = defineEmits<{ (e: 'chosen'): void }>()
 
 const alert = useAlert()

@@ -29,7 +29,7 @@
 					<span class="w-[60px] md:hidden" />
 				</header>
 
-				<div class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-5 md:px-5">
+				<div class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-5 [scrollbar-color:var(--color-stone-300)_transparent] [scrollbar-width:thin] md:px-5">
 					<slot />
 				</div>
 

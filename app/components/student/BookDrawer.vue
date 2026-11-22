@@ -23,7 +23,7 @@
 			<div class="rounded-2xl border border-stone-200 bg-white p-4">
 				<div class="flex items-center justify-between gap-2">
 					<b class="text-[14.5px] text-stone-900">
-						{{ !book.totalCopies ? 'No copies available' : book.availableCopies ? `${book.availableCopies} of ${book.totalCopies} copies available` : 'All copies are out' }}
+						{{ book.totalCopies && book.availableCopies ? `${book.availableCopies} of ${book.totalCopies} copies available` : 'No copies available' }}
 					</b>
 					<StudentPill v-if="book.availableCopies" tone="good">Available</StudentPill>
 					<StudentPill v-else-if="book.totalCopies" tone="warn">{{ book.queueLength }} waiting</StudentPill>
@@ -54,7 +54,11 @@
 
 		<template v-if="book" #footer>
 			<StudentHeartButton :active="isWished(book.bookID)" class="border border-stone-200 bg-white" @toggle="toggleWish(book.bookID)" />
-			<ButtonsButton v-if="isInCart(book.bookID)" variant="ghost" class="!h-[46px] flex-1 !border-accent-100 !bg-accent-100 !text-[15px] !text-accent-600"
+			<ButtonsButton v-if="isReserved(book.bookID)" variant="ghost" class="!h-[46px] flex-1 !border-amber-200 !bg-amber-50 !text-[15px] !text-amber-700"
+				@click="goToReservations">
+				<Icon name="i-tabler-bookmark" class="h-4 w-4" />In reservation · View
+			</ButtonsButton>
+			<ButtonsButton v-else-if="isInCart(book.bookID)" variant="ghost" class="!h-[46px] flex-1 !border-accent-100 !bg-accent-100 !text-[15px] !text-accent-600"
 				@click="drawer.open('cart')">
 				<Icon name="i-tabler-check" class="h-4 w-4" />In cart · View cart
 			</ButtonsButton>
@@ -70,7 +74,12 @@ import { studentService, type CatalogBook } from '~/services/studentService'
 import type { BookPagePhoto } from '~/utils/bookPages'
 
 const drawer = useDrawer()
-const { isWished, isInCart, toggleWish, addToCart } = useStudent()
+const { isWished, isInCart, isReserved, toggleWish, addToCart } = useStudent()
+
+async function goToReservations() {
+	drawer.close()
+	await navigateTo({ path: '/student/books', query: { tab: 'reservations' } })
+}
 
 const open = computed(() => drawer.active.value?.kind === 'book')
 

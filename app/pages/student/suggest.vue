@@ -22,11 +22,11 @@
 					<LibrarianTextField id="s-author" v-model="form.author" label="Author" optional placeholder="e.g. Martin Fowler" autocomplete="off"
 						:error="serverErrors.author" />
 					<div>
-						<label for="s-reason" class="mb-1.5 block text-[12.5px] font-semibold text-stone-800">
+						<label for="s-reason" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">
 							Why should we get it? <span class="font-normal text-stone-500">(optional)</span>
 						</label>
 						<textarea id="s-reason" v-model="form.reason" rows="4" maxlength="1000" placeholder="It's on our syllabus for Software Engineering 2."
-							class="w-full resize-none rounded-[10px] border border-stone-200 bg-white px-3 py-2.5 text-[13.5px] leading-relaxed outline-none transition-colors placeholder:text-stone-400 focus:border-accent-500 focus:ring-2 focus:ring-accent-200" />
+							class="w-full resize-none rounded-[10px] border border-stone-200 bg-white px-3 py-2.5 text-[15px] leading-relaxed outline-none transition-colors placeholder:text-stone-400 focus:border-accent-500 focus:ring-2 focus:ring-accent-200" />
 					</div>
 					<ButtonsButton type="submit" class="!h-[46px] w-full !text-[15px]" :disabled="submitting">
 						<span v-if="submitting" class="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />

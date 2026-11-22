@@ -15,7 +15,9 @@ export function useAction() {
   ): Promise<boolean> {
     try {
       const result = await action()
-      alert.success(successTitle, result?.message)
+      // The server's message is shown under the title, unless it only says the title again ("Reservation cancelled" / "Reservation cancelled.").
+      const same = (a: string, b: string) => a.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim() === b.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
+      alert.success(successTitle, result?.message && !same(result.message, successTitle) ? result.message : undefined)
       await Promise.all(refresh.map((fn) => fn()))
       return true
     } catch (error: any) {

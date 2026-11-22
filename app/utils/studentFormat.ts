@@ -16,11 +16,10 @@ export function dueTone(daysLeft: number): 'bad' | 'warn' | 'good' {
   return daysLeft < 0 ? 'bad' : daysLeft <= 2 ? 'warn' : 'good'
 }
 
-/** "3 of 4 available" / "All out · 2 in queue" */
+/** "3 of 4 available" / "No copies available · 2 in queue". One phrase for nothing on the shelf, whether there are no copies or all are out. */
 export function availabilityLabel(available: number, total: number, queue: number): string {
-  if (total === 0) return 'No copies available'
-  if (available > 0) return `${available} of ${total} available`
-  return queue > 0 ? `All out · ${queue} in queue` : 'All copies out'
+  if (total > 0 && available > 0) return `${available} of ${total} available`
+  return queue > 0 ? `No copies available · ${queue} in queue` : 'No copies available'
 }
 
 export function initials(first: string, last: string): string {

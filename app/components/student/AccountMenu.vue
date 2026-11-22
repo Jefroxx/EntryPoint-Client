@@ -21,14 +21,7 @@
 					</div>
 				</div>
 
-				<component :is="link.to ? NuxtLink : 'button'" v-for="link in links" :key="link.label"
-					:to="link.to" :type="link.to ? undefined : 'button'" role="menuitem"
-					class="flex w-full items-center gap-3 px-4 py-3 text-left text-[14px] text-stone-800 transition-colors duration-150 hover:bg-stone-50 active:bg-stone-100"
-					@click="pick(link)">
-					<span class="flex h-8 w-8 items-center justify-center rounded-[10px] bg-accent-100 text-accent-600"><Icon :name="link.icon" class="h-4 w-4" /></span>
-					<span class="flex-1">{{ link.label }}<span v-if="link.hint" class="block text-[12px] text-stone-500">{{ link.hint }}</span></span>
-				</component>
-
+				<!-- Profile, Library ID, Wishlist and Suggest a book are in the sidebar beside it: this menu is for who you are and signing out. -->
 				<div v-if="profile" class="space-y-1.5 border-t border-stone-100 px-4 py-3 text-[12.5px] text-stone-500">
 					<p class="flex items-center gap-2"><Icon name="i-tabler-mail" class="h-3.5 w-3.5" />{{ profile.email }}</p>
 					<p v-if="profile.phoneNumber" class="flex items-center gap-2"><Icon name="i-tabler-phone" class="h-3.5 w-3.5" />{{ profile.phoneNumber }}</p>
@@ -45,7 +38,7 @@
 			</div>
 		</Transition>
 
-		<StudentSheet :open="confirming" title="Sign out?" @close="confirming = false">
+		<StudentSheet :open="confirming" title="Sign Out?" @close="confirming = false">
 			You'll need your email and password to sign back in.
 			<template #actions>
 				<ButtonsButton variant="danger" class="!h-[46px] !text-[15px]" :disabled="signingOut" @click="confirmSignOut">Sign out</ButtonsButton>
@@ -56,31 +49,12 @@
 </template>
 
 <script setup lang="ts">
-import { NuxtLink } from '#components'
-
 const { firstName, lastName } = useAuthSession('student')
-const { summary, wishlist } = useStudent()
+const { summary } = useStudent()
 const { signOutStudent } = useStudentSession()
-const drawer = useDrawer()
 
 const profile = computed(() => summary.value?.profile ?? null)
 const initialsText = computed(() => initials(profile.value?.firstName ?? firstName.value ?? '', profile.value?.lastName ?? lastName.value ?? ''))
-
-interface MenuLink { label: string; hint: string; icon: string; to?: string; action?: () => void }
-
-const { isStudent } = useMemberType()
-
-const links = computed<MenuLink[]>(() => [
-	{ label: 'Profile', hint: isStudent.value ? 'Details, achievements and history' : 'Details and history', icon: 'i-tabler-user-circle', to: '/student/profile' },
-	{ label: 'Library ID', hint: 'Barcode for check-in', icon: 'i-tabler-id', to: '/student/id' },
-	{ label: 'Wishlist', hint: `${wishlist.value.length} saved`, icon: 'i-tabler-heart', to: '/student/wishlist' },
-	{ label: 'Suggest a book', hint: '', icon: 'i-tabler-bulb', to: '/student/suggest' },
-])
-
-function pick(link: MenuLink) {
-	open.value = false
-	link.action?.()
-}
 
 const open = ref(false)
 const confirming = ref(false)

@@ -47,7 +47,21 @@ export function useStudent() {
     }
   }
 
-  const refreshShell = () => Promise.all([refreshProfile(), refreshWishlist()])
+  // The books the student has a reservation for (waiting or accepted). A student can reserve a book only once,
+  // so these show "In reservation" instead of "Add to cart".
+  const reservedIds = useState<number[]>('student-reserved-ids', () => [])
+  const isReserved = (bookID: number): boolean => reservedIds.value.includes(bookID)
+
+  async function refreshReservations() {
+    try {
+      const { reservations } = await studentService.reservations()
+      reservedIds.value = reservations.filter((r) => r.status === 'Waiting' || r.status === 'Accepted').map((r) => r.bookID)
+    } catch {
+      // Keep what we have; the next refresh tries again.
+    }
+  }
+
+  const refreshShell = () => Promise.all([refreshProfile(), refreshWishlist(), refreshReservations()])
 
   /** Returns true when the wishlist now contains the book. */
   async function toggleWish(bookID: number): Promise<boolean> {
@@ -123,8 +137,8 @@ export function useStudent() {
 
   return {
     summary, stats, points, streak, slotsLeft, cart, wishlist, attention, dataVersion, bumpData,
-    isWished, isInCart,
-    refreshProfile, refreshWishlist, refreshShell,
+    isWished, isInCart, isReserved,
+    refreshProfile, refreshWishlist, refreshReservations, refreshShell,
     toggleWish, addToCart, removeFromCart, removeWishlistRow,
   }
 }

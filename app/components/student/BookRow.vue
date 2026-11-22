@@ -4,14 +4,19 @@
 			<StudentCover :book="book" :width="52" />
 			<span class="min-w-0">
 				<span class="block text-[14.5px] font-semibold leading-tight text-stone-900">{{ book.title }}</span>
-				<span class="mt-0.5 block truncate text-[12.5px] text-stone-500">{{ authorLine(book) }}</span>
+				<span class="mt-0.5 line-clamp-2 text-[12.5px] text-stone-500">{{ authorLine(book) }}</span>
 				<span class="mt-1.5 block">
-					<StudentAvailability :available="book.availableCopies" :total="book.totalCopies" :queue="book.queueLength" />
+					<StudentAvailability :available="book.availableCopies" :total="book.totalCopies" wrap />
 				</span>
 			</span>
 		</button>
 		<!-- Phones show this compact row instead of the card, so the cart button lives here too. -->
-		<ButtonsButton v-if="isInCart(book.bookID)" variant="icon" size="md" :aria-label="`${book.title} is in your cart. View cart`"
+		<!-- A book can be reserved only once at a time, so one that already is shows a bookmark (to My books) instead of the cart. -->
+		<ButtonsButton v-if="isReserved(book.bookID)" variant="icon" size="md" :aria-label="`${book.title} is in your reservations. View reservations`"
+			class="shrink-0 !text-amber-600" @click="navigateTo({ path: '/student/books', query: { tab: 'reservations' } })">
+			<Icon name="i-tabler-bookmark-filled" class="h-[18px] w-[18px]" />
+		</ButtonsButton>
+		<ButtonsButton v-else-if="isInCart(book.bookID)" variant="icon" size="md" :aria-label="`${book.title} is in your cart. View cart`"
 			class="shrink-0 !text-emerald-600" @click="drawer.open('cart')">
 			<Icon name="i-tabler-check" class="h-[18px] w-[18px]" />
 		</ButtonsButton>
@@ -29,5 +34,5 @@ import type { CatalogBook } from '~/services/studentService'
 defineProps<{ book: CatalogBook }>()
 
 const drawer = useDrawer()
-const { isWished, isInCart, toggleWish, addToCart } = useStudent()
+const { isWished, isInCart, isReserved, toggleWish, addToCart } = useStudent()
 </script>

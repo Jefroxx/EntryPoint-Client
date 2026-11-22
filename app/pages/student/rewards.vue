@@ -136,7 +136,7 @@
 			</aside>
 		</div>
 
-		<StudentSheet :open="reviewing" title="Redeem these?" @close="reviewing = false">
+		<StudentSheet :open="reviewing" title="Redeem These?" @close="reviewing = false">
 			<div class="mb-3">
 				<div v-for="line in cartLines" :key="line.cartItemID" class="flex justify-between gap-3 border-b border-stone-100 py-2.5 text-[14px]">
 					<span class="text-stone-900">{{ line.item.name }}{{ line.quantity > 1 ? ` ×${line.quantity}` : '' }}</span>

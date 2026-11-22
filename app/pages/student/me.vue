@@ -56,7 +56,7 @@
 			<Icon name="i-tabler-logout" class="h-4 w-4" />Sign out
 		</ButtonsButton>
 
-		<StudentSheet :open="confirming" title="Sign out?" @close="confirming = false">
+		<StudentSheet :open="confirming" title="Sign Out?" @close="confirming = false">
 			You'll need your email and password to sign back in.
 			<template #actions>
 				<ButtonsButton variant="danger" class="!h-[46px] !text-[15px]" :disabled="signingOut"
