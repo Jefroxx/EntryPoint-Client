@@ -84,11 +84,13 @@
                         </div>
                     </div>
                     <hr class="mx-1 mb-1.5 border-stone-100" />
-                    <button type="button"
-                        class="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-[14px] font-medium text-stone-600 transition-colors hover:bg-stone-50"
+                    <!-- Administrators have their own page; librarians and assistants use the Account tab of Settings. -->
+                    <NuxtLink :to="staffRole === 'admin' ? '/admin/account' : '/librarian/settings'"
+                        class="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-[14px] font-medium text-stone-700 transition-colors hover:bg-stone-100"
                         @click="isMenuOpen = false">
-                        <Icon name="i-tabler-settings" class="h-[15px] w-[15px]" />Account settings
-                    </button>
+                        <Icon name="i-tabler-settings" class="h-[15px] w-[15px] text-stone-500" />
+                        Account settings
+                    </NuxtLink>
                     <button type="button" :disabled="isSigningOut"
                         class="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-[14px] font-medium text-red-500 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                         @click="handleLogout">
@@ -114,7 +116,7 @@ defineEmits<{
     (e: 'toggle-sidebar'): void
 }>()
 
-const { firstName, lastName, role, signOut } = useAuthSession()
+const { firstName, lastName, signOut } = useAuthSession()
 const staffRole = useCookie(SESSION_COOKIES.librarian.staffRole)
 
 const initials = computed(() => {
@@ -128,10 +130,9 @@ const fullName = computed(() => {
     return name || 'Librarian'
 })
 
-const roleLabel = computed(() => {
-    const value = role.value ?? 'librarian'
-    return value.charAt(0).toUpperCase() + value.slice(1)
-})
+// The session role is always "librarian" on this side; what the account may do (admin, librarian,
+// student assistant) lives in the staffRole cookie.
+const roleLabel = computed(() => staffRoleLabel(staffRole.value ?? 'librarian'))
 
 const { items, loaded, unreadCount, refresh, markRead, markAllRead } = useNotifications()
 

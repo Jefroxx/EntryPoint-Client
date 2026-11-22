@@ -11,7 +11,7 @@
 					<LibrarianTextField id="account-last" v-model="profile.lastName" label="Last name"
 						:error="profileErrors.lastName" autocomplete="family-name" />
 				</div>
-				<LibrarianTextField v-if="props.account.email !== null" id="account-email" v-model="profile.email" type="email" label="Email"
+				<LibrarianTextField v-if="props.account.email !== null" id="account-email" :model-value="profile.email ?? ''" type="email" label="Email" @update:model-value="profile.email = $event"
 					:error="profileErrors.email" autocomplete="email" />
 			</div>
 

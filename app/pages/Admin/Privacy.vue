@@ -5,15 +5,16 @@
             <p class="dashboard-heading mt-1 text-crimson">Under the Data Privacy Act, people can ask for a copy of their data, or to be forgotten.</p>
         </div>
 
-        <div class="mb-5 grid gap-3 md:grid-cols-2">
-            <div class="flex items-start gap-3 rounded-2xl border border-stone-200 bg-white p-4">
+        <!-- Plain notes, not buttons: flat and tinted, with no border or white card, so nothing here looks like it can be clicked. -->
+        <div class="mb-5 grid gap-x-6 gap-y-3 rounded-2xl bg-stone-100/70 p-4 md:grid-cols-2">
+            <div class="flex items-start gap-3">
                 <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent-50 text-accent-600"><Icon name="i-tabler-file-download" class="h-[18px] w-[18px]" /></span>
                 <div>
                     <h2 class="text-[14.5px] font-bold text-stone-900">A copy of their data</h2>
                     <p class="mt-0.5 text-[13px] leading-snug text-stone-500">Their details, loans, fines, visits, reservations, wishlist, rewards and notifications, in one file to hand over.</p>
                 </div>
             </div>
-            <div class="flex items-start gap-3 rounded-2xl border border-stone-200 bg-white p-4">
+            <div class="flex items-start gap-3">
                 <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-red-50 text-red-600"><Icon name="i-tabler-user-off" class="h-[18px] w-[18px]" /></span>
                 <div>
                     <h2 class="text-[14.5px] font-bold text-stone-900">Anonymize an account</h2>

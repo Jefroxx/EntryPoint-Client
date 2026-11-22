@@ -192,9 +192,9 @@ class AdminServiceClass extends BaseService {
   }
 
   // ---- faculty and staff members
-  members(query: { search?: string; type?: string; page?: number; perPage?: number } = {}) {
+  members(query: { search?: string; type?: string; status?: string; page?: number; perPage?: number } = {}) {
     return this.apiRequest<Page<MemberAccount>>("/admin/members", {
-      query: { search: query.search || undefined, type: query.type || undefined, page: query.page, perPage: query.perPage },
+      query: { search: query.search || undefined, type: query.type || undefined, status: query.status || undefined, page: query.page, perPage: query.perPage },
     });
   }
   createMember(payload: MemberPayload) {

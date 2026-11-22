@@ -1,6 +1,9 @@
 <template>
 	<LibrarianModalShell :open="open" size="lg" :title="announcement ? 'Edit Announcement' : 'New Announcement'"
-		subtitle="It shows at the top of the page for whoever you choose." :busy="busy" :dirty="dirty" ref="shell" @close="emit('close')">
+		subtitle="It shows at the top of the page for whoever you choose." :busy="busy" :dirty="dirty" fixed-height ref="shell"
+		:discard-title="announcement ? 'Discard Announcement Changes?' : 'Discard This Announcement?'"
+		:discard-text="announcement ? 'Your changes to this announcement won\'t be saved.' : 'This announcement won\'t be posted.'"
+		@close="emit('close')">
 		<div class="space-y-4">
 			<LibrarianTextField id="announce-title" v-model="form.title" label="Title" placeholder="e.g. Closed on Friday" :maxlength="120"
 				:error="errors.title" @update:model-value="errors.title = ''" />
@@ -16,16 +19,17 @@
 
 			<fieldset>
 				<legend class="mb-1.5 text-[13.5px] font-semibold text-stone-800">Who sees it<FieldRequired /></legend>
-				<div class="grid gap-2" role="radiogroup">
-					<label v-for="a in AUDIENCES" :key="a.value" class="flex cursor-pointer items-start gap-3 rounded-xl border px-3.5 py-3 transition-colors"
-						:class="form.audience === a.value ? 'border-accent-500 bg-accent-50 ring-1 ring-accent-300' : 'border-stone-200 bg-white hover:bg-stone-50'">
-						<input v-model="form.audience" type="radio" name="announce-audience" :value="a.value" class="mt-1 accent-accent-500" />
-						<span class="min-w-0">
-							<span class="block text-[14.5px] font-semibold text-stone-900">{{ a.label }}</span>
-							<span class="block text-[12.5px] leading-snug text-stone-500">{{ a.hint }}</span>
-						</span>
+				<!-- Three short choices in one row, with what the chosen one means written once underneath: the window then
+					 fits a 768px-tall screen without scrolling. -->
+				<div class="grid grid-cols-3 gap-2" role="radiogroup">
+					<label v-for="a in AUDIENCES" :key="a.value"
+						class="flex h-11 cursor-pointer items-center justify-center rounded-xl border px-2 text-center text-[14px] font-semibold transition-colors focus-within:ring-2 focus-within:ring-accent-200"
+						:class="form.audience === a.value ? 'border-accent-500 bg-accent-50 text-accent-700 ring-1 ring-accent-300' : 'border-stone-200 bg-white text-stone-800 hover:bg-stone-50'">
+						<input v-model="form.audience" type="radio" name="announce-audience" :value="a.value" class="sr-only" />
+						{{ a.label }}
 					</label>
 				</div>
+				<p class="mt-1.5 text-[12.5px] leading-snug text-stone-500">{{ AUDIENCES.find((a) => a.value === form.audience)?.hint }}</p>
 			</fieldset>
 
 			<LibrarianTextField id="announce-end" v-model="form.endDate" type="date" :min="toYmd()" label="Stop showing it after" optional
@@ -59,7 +63,7 @@ const emit = defineEmits<{
 
 const AUDIENCES: { value: AnnouncementAudience; label: string; hint: string }[] = [
 	{ value: 'everyone', label: 'Everyone', hint: 'Students, faculty and staff members, and the librarian side.' },
-	{ value: 'students', label: 'Students and members', hint: 'The student side: students, faculty and staff members.' },
+	{ value: 'students', label: 'Students', hint: 'The student side: students, faculty and staff members.' },
 	{ value: 'staff', label: 'Staff', hint: 'The librarian side: librarians and student assistants.' },
 ]
 
