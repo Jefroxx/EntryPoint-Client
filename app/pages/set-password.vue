@@ -1,5 +1,5 @@
 <template>
-	<main class="flex min-h-screen items-center justify-center bg-parchment px-4 py-10">
+	<main class="set-password-page flex min-h-screen items-center justify-center bg-parchment px-4 py-10">
 		<div class="w-full max-w-[420px] rounded-[28px] border border-stone-200 bg-white p-7 shadow-overlay sm:p-8">
 			<AuthLogo />
 			<h1 class="dashboard-heading text-balance text-center text-[26px] font-extrabold leading-[1.15] tracking-[-.02em] text-crimson">Set your own password</h1>
@@ -30,7 +30,7 @@
 
 			<p class="mt-5 text-center text-[13px] text-stone-500">
 				Not you?
-				<button type="button" class="font-semibold text-accent-600 hover:underline" @click="signOutInstead">Sign out</button>
+				<button type="button" class="relative font-semibold text-accent-600 after:absolute after:-inset-x-2 after:-inset-y-3.5 after:content-[''] hover:underline" @click="signOutInstead">Sign out</button>
 			</p>
 		</div>
 	</main>
@@ -80,7 +80,7 @@ async function submit() {
 	} catch (error) {
 		const fields = serverFieldErrors(error)
 		if (fields) {
-			errors.currentPassword = fields.currentPassword ?? ''
+			errors.currentPassword = fields.currentPassword ? "That isn't your temporary password. Check it and try again." : ''
 			errors.newPassword = fields.newPassword ?? ''
 			if (!errors.currentPassword && !errors.newPassword) failure.value = Object.values(fields)[0] ?? 'Could not save the password.'
 		} else {
@@ -106,3 +106,12 @@ import { useAlert } from '~/api/alert/useAlert'
 const popupAlert = useAlert()
 watch(failure, (message) => { if (message) popupAlert.error('Could not save the password', message) }, { immediate: true })
 </script>
+
+<style>
+/* This page has no layout, so it carries the sign-in pages' 16px rule itself: iOS zooms the page when a smaller field is focused. */
+@media (max-width: 1023px), (pointer: coarse) {
+	.set-password-page input {
+		font-size: 16px;
+	}
+}
+</style>

@@ -51,6 +51,9 @@ export default defineNuxtConfig({
 	vite: { server: { allowedHosts: ['.trycloudflare.com'] } },
 	css: ['~/assets/css/tailwind.css'],
 	modules: ['@nuxt/ui', '@nuxt/icon', '@nuxt/fonts'],
+	// The design is light only. Following a dark system theme left the browser's own controls (radio buttons,
+	// scrollbars) dark inside a light page. A new storage key also drops the old saved "system" choice.
+	colorMode: { preference: 'light', fallback: 'light', storageKey: 'entrypoint-color-mode' },
 	// Icons are looked up by name at runtime. Their default address (/api/_nuxt_icon) sits under /api, which the
 	// rules above forward to Laravel, so any icon not already on the page came back blank. It lives outside /api now,
 	// and every icon the code uses is also bundled into the page up front, so most never need a lookup at all.

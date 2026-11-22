@@ -23,6 +23,12 @@
 			<AuthPasswordField id="password" v-model="password" label="Password" autocomplete="current-password"
 				placeholder="••••••••" @update:model-value="errorMessage = ''" />
 
+			<!-- Students and members can ask for an emailed link; staff passwords are reset by an administrator. -->
+			<p v-if="!isLibrarianPortal" class="-mt-1.5 text-right text-[12.5px]">
+				<NuxtLink to="/forgot-password" class="font-semibold text-accent-600 hover:underline">Forgot password?</NuxtLink>
+			</p>
+			<p v-else class="-mt-1.5 text-[12.5px] text-stone-500">Forgot your password? A library administrator can reset it for you.</p>
+
 
 			<!-- Stays after the error clears: an expired link means typing the email in first, then asking. -->
 			<p v-if="canResend" class="-mt-1 text-[12.5px] text-stone-500">
@@ -78,6 +84,9 @@ const emailDomain = useRuntimeConfig().public.studentEmailDomain as string
 
 const email = ref('')
 const password = ref('')
+// What was typed here carries over to "Forgot password?", so nobody types it twice.
+const carriedEmail = useState<string>('auth-email', () => '')
+watch(email, (value) => { carriedEmail.value = value.trim() })
 const isLoading = ref(false)
 const route = useRoute()
 const { signIn } = useAuthSession(isLibrarianPortal ? 'librarian' : 'student')
@@ -88,8 +97,7 @@ const notice = ref(
 	verified === '1' ? "Email confirmed. A librarian will now review your registration; you can sign in once it's approved."
 		: verified === 'already' ? "That email is already confirmed. You can sign in once a librarian approves your registration."
 			// Accounts an administrator made (staff, faculty): nothing to approve, so they can sign in now.
-			: verified === 'staff' || verified === 'member' ? 'Email confirmed. Sign in with the temporary password the library administrator gave you.'
-				: '',
+			: verified === 'staff' || verified === 'member' ? 'Email confirmed. Sign in with the temporary password the library administrator gave you.'				: '',
 )
 const errorMessage = ref(
 	route.query.expired === 'elsewhere' ? 'You were signed out because this account was signed in somewhere else. Sign in again to use it here.'

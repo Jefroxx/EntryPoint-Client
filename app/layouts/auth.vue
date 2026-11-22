@@ -430,6 +430,28 @@ const shelves = [
 	}
 }
 
+/* Phones and tablets: iOS zooms the page when a field under 16px is focused, and inline text links are only ~15px tall. */
+@media (max-width: 1023px), (pointer: coarse) {
+	.auth-page input,
+	.auth-page select,
+	.auth-page textarea {
+		font-size: 16px;
+	}
+
+	/* A bigger tap area for links and text buttons inside a sentence, without moving anything. */
+	.auth-pane p a,
+	.auth-pane p button {
+		position: relative;
+	}
+
+	.auth-pane p a::after,
+	.auth-pane p button::after {
+		content: '';
+		position: absolute;
+		inset: -14px -8px;
+	}
+}
+
 .auth-page ::selection {
 	background: var(--color-accent-200);
 	color: var(--color-accent-700);

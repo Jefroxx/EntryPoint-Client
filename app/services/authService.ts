@@ -160,6 +160,43 @@ export class AuthService extends BaseService {
     });
   }
 
+  /** "Forgot password?": mails a link to choose a new password. The answer is the same whether or not the email has an account. */
+  async forgotPassword(email: string): Promise<{ message: string }> {
+    const runtimeConfig = useRuntimeConfig();
+
+    return await $fetch<{ message: string }>("/password/forgot", {
+      baseURL: runtimeConfig.public.apiBaseURL,
+      method: "POST",
+      headers: { Accept: "application/json" },
+      body: { email },
+    });
+  }
+
+  /** Asks whether an emailed link can still be used (not used before, not expired). Changes nothing. */
+  async checkResetLink(email: string, token: string): Promise<boolean> {
+    const runtimeConfig = useRuntimeConfig();
+
+    const res = await $fetch<{ usable: boolean }>("/password/check", {
+      baseURL: runtimeConfig.public.apiBaseURL,
+      method: "POST",
+      headers: { Accept: "application/json" },
+      body: { email, token },
+    });
+    return res.usable;
+  }
+
+  /** Uses the emailed link: the token and address come from it. Errors are rethrown for the 422 field messages. */
+  async resetPassword(payload: { email: string; token: string; password: string; password_confirmation: string }): Promise<{ message: string }> {
+    const runtimeConfig = useRuntimeConfig();
+
+    return await $fetch<{ message: string }>("/password/reset", {
+      baseURL: runtimeConfig.public.apiBaseURL,
+      method: "POST",
+      headers: { Accept: "application/json" },
+      body: payload,
+    });
+  }
+
   /** Revokes the token of one session (default: the area of the current page). */
   async logout(area: Area = areaFromPath(useRoute().path)): Promise<void> {
     const runtimeConfig = useRuntimeConfig();
