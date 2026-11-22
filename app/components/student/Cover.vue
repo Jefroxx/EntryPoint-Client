@@ -7,7 +7,7 @@
 		<template v-else>
 			<span class="absolute inset-y-0 left-[5px] w-px bg-white/30" />
 			<span class="dashboard-heading absolute inset-0 flex items-end p-2 pl-3 font-bold leading-[1.12] tracking-tight"
-				:style="{ fontSize: `${Math.max(8, Math.round(width * 0.13))}px` }">{{ book.title }}</span>
+				:style="{ fontSize: `${titleSize}px` }">{{ book.title }}</span>
 		</template>
 	</div>
 </template>
@@ -19,6 +19,15 @@ const props = withDefaults(defineProps<{
 }>(), { width: 56 })
 
 const failed = ref(false)
+
+// The title printed on a cover without a picture: a size by the cover's width, but small enough that the longest
+// word ("Microeconomics") fits across it instead of being cut off at the edge.
+const titleSize = computed(() => {
+	const longest = Math.max(1, ...props.book.title.split(/\s+/).map((word) => word.length))
+	const byWidth = Math.round(props.width * 0.13)
+	const toFit = Math.floor((props.width - 20) / (longest * 0.6))
+	return Math.max(7, Math.min(byWidth, toFit))
+})
 
 // One stable colour per subject, so a subject always looks the same on every shelf.
 const background = computed(() => {

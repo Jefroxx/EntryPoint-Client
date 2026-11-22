@@ -1,5 +1,5 @@
 <template>
-	<StudentSheet :open="!!loan" :title="`Returned “${shown?.book.title ?? ''}”?`" @close="emit('close')">
+	<StudentSheet :open="!!loan" :title="`Did You Return “${shown?.book.title ?? ''}”?`" @close="emit('close')">
 		Only report it once you've handed the book back. A librarian will verify it, and until then the loan stays open{{ shown && shown.daysLeft < 0 ? ' and the fine may keep counting' : '' }}.
 		<template #actions>
 			<ButtonsButton class="!h-[46px] !text-[15px]" :disabled="busy" @click="confirm">

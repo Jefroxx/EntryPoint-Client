@@ -8,8 +8,9 @@
 		<!-- Same filter pattern as Discover: a panel on the right from xl up, a chip toolbar below that. -->
 		<div class="xl:grid xl:grid-cols-[minmax(0,1fr)_240px] xl:items-start xl:gap-6">
 			<div class="min-w-0">
-				<div v-if="types.length" class="st-in mb-4 flex items-center gap-3 xl:hidden" style="animation-delay: 35ms">
-					<div class="no-scrollbar flex min-w-0 flex-1 gap-2 overflow-x-auto [mask-image:linear-gradient(to_right,black_calc(100%-32px),transparent)] md:pr-8"
+				<!-- On a phone the chips take their own row and the "Free" switch sits below them, so neither cuts the other off. -->
+					<div v-if="types.length" class="st-in mb-4 flex flex-wrap items-center gap-x-3 gap-y-2.5 xl:hidden" style="animation-delay: 35ms">
+					<div class="no-scrollbar flex min-w-0 basis-full gap-2 overflow-x-auto sm:basis-0 sm:flex-1 [mask-image:linear-gradient(to_right,black_calc(100%-32px),transparent)] md:pr-8"
 						role="group" aria-label="Filter by category">
 						<button v-for="c in categories" :key="c.value" type="button" :aria-pressed="type === c.value"
 							class="flex h-9 shrink-0 items-center gap-1.5 rounded-xl px-3.5 text-[13.5px] font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-200"

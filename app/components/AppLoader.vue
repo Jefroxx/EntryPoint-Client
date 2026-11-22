@@ -70,6 +70,9 @@ watch(() => props.show, (visible) => {
 	}
 }, { immediate: true })
 
+// A new page change while the loader is still up (clicking through pages quickly): the bar starts over from the beginning.
+watch(() => loader.value.run, () => { if (props.show) shown.value = 4 })
+
 onBeforeUnmount(() => clearInterval(tick))
 </script>
 

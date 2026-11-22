@@ -1,6 +1,9 @@
 <template>
 	<LibrarianModalShell :open="open" size="xl" :title="reviewing ? 'Create This Account?' : account ? 'Edit Staff Account' : 'Add Staff Account'"
-		:subtitle="subtitle" :busy="busy" :dirty="dirty" ref="shell" @close="emit('close')">
+		:subtitle="subtitle" :busy="busy" :dirty="dirty" fixed-height ref="shell"
+		:discard-title="account ? 'Discard Account Changes?' : 'Discard This New Account?'"
+		:discard-text="account ? `Your changes to ${account.firstName}'s staff account won't be saved.` : 'The staff account you started won\'t be created, and nothing will be sent.'"
+		@close="emit('close')">
 		<!-- Step 2 (new accounts only): look it over before anything is created. Back returns to the form with everything kept. -->
 		<div v-if="reviewing" class="space-y-4">
 			<dl class="divide-y divide-stone-100 rounded-xl border border-stone-200 bg-white">
@@ -94,7 +97,7 @@
 				</div>
 
 				<div class="grid gap-3 sm:grid-cols-2">
-					<LibrarianTextField v-if="hasEmail" id="staff-email" v-model="form.email" type="email" label="Email" placeholder="name@stidavao.edu.ph"
+					<LibrarianTextField v-if="hasEmail" id="staff-email" v-model="form.email" type="email" label="Email" placeholder="name@davao.sti.edu.ph"
 						:error="errors.email" autocomplete="off" @update:model-value="errors.email = ''" />
 					<LibrarianTextField id="staff-phone" v-model="form.phoneNumber" type="tel" label="Phone" optional :error="errors.phoneNumber"
 						@update:model-value="errors.phoneNumber = ''" />
@@ -239,7 +242,12 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
 
 // What is typed in this window: closing it with changes asks "Discard Changes?" first (see ModalShell, useUnsavedChanges).
 const shell = ref<{ requestClose: () => void } | null>(null)
-const { dirty } = useUnsavedChanges(() => form, () => props.open)
+// On a new account, the Role and "who is the assistant" choices are modes, not typing: flipping them must not make
+// closing ask "Discard?". What counts is the details typed (or the student picked). When editing, a changed role is a real change.
+const { dirty } = useUnsavedChanges(() => {
+	const { role, assistantSource, ...typed } = form
+	return props.account ? form : typed
+}, () => props.open)
 
 watch(() => props.open, (isOpen) => {
 	if (!isOpen) return

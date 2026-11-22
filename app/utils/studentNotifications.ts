@@ -18,6 +18,9 @@ const META: Record<string, StudentNotificationMeta> = {
   reservation_accepted: { icon: 'i-tabler-check', tone: 'good', to: `${BOOKS}?tab=reservations` },
   reservation_rejected: { icon: 'i-tabler-circle-x', tone: 'bad', to: `${BOOKS}?tab=reservations` },
   reservation_submitted: { icon: 'i-tabler-clock', tone: 'warn', to: `${BOOKS}?tab=reservations` },
+  reservation_cancelled: { icon: 'i-tabler-circle-x', tone: 'neutral', to: `${BOOKS}?tab=reservations` },
+  // A copy came free for the student at the front of the queue: a librarian still has to accept it.
+  reservation_turn: { icon: 'i-tabler-bell-ringing', tone: 'accent', to: `${BOOKS}?tab=reservations` },
   loan_checkout: { icon: 'i-tabler-book', tone: 'accent', to: LOANS },
   loan_due_soon: { icon: 'i-tabler-clock', tone: 'warn', to: LOANS },
   loan_overdue: { icon: 'i-tabler-alert-circle', tone: 'bad', to: LOANS },

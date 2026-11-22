@@ -5,16 +5,11 @@
             <p class="dashboard-heading mt-1 text-crimson">Members who borrow and visit like students. You create their accounts; they have no points or rewards.</p>
         </div>
 
-        <LibrarianSegmentedTabs v-model="tab" class="mb-5" :tabs="[
-            { label: 'All', value: 'all' },
-            { label: 'Faculty', value: 'faculty' },
-            { label: 'Staff', value: 'staff' },
-        ]" />
-
         <div class="phone-toolbar mb-4 flex flex-wrap items-center gap-2">
-            <LibrarianSearchInput id="member-search" v-model="search" placeholder="Search name, employee ID or department" />
+            <LibrarianSearchInput id="member-search" v-model="search" class="!max-w-[560px] !basis-[480px]" placeholder="Search name, ID or department" />
+            <LibrarianFilterMenu v-model="filters" :groups="filterGroups" />
             <div class="flex-1"></div>
-            <LibrarianResetFiltersButton @click="search = ''" />
+            <LibrarianResetFiltersButton @click="search = ''; filters = { type: 'all', status: 'all' }" />
             <ButtonsButton variant="ghost" @click="isImportOpen = true">
                 <Icon name="i-tabler-file-import" class="h-3.5 w-3.5" />Import CSV
             </ButtonsButton>
@@ -99,7 +94,12 @@ const alert = useAlert()
 
 const typeLabel: Record<MemberKind, string> = { faculty: 'Faculty', staff: 'Staff' }
 
-const tab = ref('all')
+const filters = ref({ type: 'all', status: 'all' }) // type: all | faculty | staff; status: all | active | disabled
+const filterGroups = [
+    { key: 'type', title: 'Type', options: [{ value: 'all', label: 'All types' }, { value: 'faculty', label: 'Faculty' }, { value: 'staff', label: 'Staff' }] },
+    { key: 'status', title: 'Account status', options: [{ value: 'all', label: 'Any status' }, { value: 'active', label: 'Active' }, { value: 'disabled', label: 'Disabled' }] },
+]
+const filtered = computed(() => filters.value.type !== 'all' || filters.value.status !== 'all')
 const search = ref('')
 const debouncedSearch = ref('')
 const pageNumber = ref(1)
@@ -109,16 +109,16 @@ watch(search, (value) => {
     clearTimeout(timer)
     timer = setTimeout(() => { debouncedSearch.value = value.trim(); pageNumber.value = 1 }, 300)
 })
-watch(tab, () => { pageNumber.value = 1 })
+watch(filters, () => { pageNumber.value = 1 })
 
 const { data: page, pending, execute: refetch } = useAsyncData(
     'admin-members',
-    () => adminService.members({ search: debouncedSearch.value, type: tab.value, page: pageNumber.value }),
-    { lazy: true, watch: [tab, debouncedSearch, pageNumber] },
+    () => adminService.members({ search: debouncedSearch.value, type: filters.value.type, status: filters.value.status, page: pageNumber.value }),
+    { lazy: true, watch: [filters, debouncedSearch, pageNumber] },
 )
 
 const rows = computed(() => page.value?.data ?? [])
-const emptyText = computed(() => (debouncedSearch.value ? 'No members match your search.' : 'No faculty or staff members yet. Add one to give them a library account.'))
+const emptyText = computed(() => (debouncedSearch.value || filtered.value ? 'No members match these filters.' : 'No faculty or staff members yet. Add one to give them a library account.'))
 
 const isImportOpen = ref(false)
 

@@ -19,6 +19,7 @@ export function usePageLoader() {
 		total: 0, // requests the page has made while loading, and how many of them have answered: the loading bar
 		done: 0,
 		since: 0,
+		run: 0, // which page change the bar is for: a new change while the loader is up starts the bar over
 	}))
 }
 
@@ -33,9 +34,11 @@ export function trackPageRequest<T>(loader: ReturnType<typeof usePageLoader>, re
 
 	loader.value.pending++
 	loader.value.total++
+	const run = loader.value.run
 	const done = () => {
 		loader.value.pending = Math.max(0, loader.value.pending - 1)
-		loader.value.done++
+		// A request of a page the user already left still frees the loader, but no longer fills the new page's bar.
+		if (loader.value.run === run) loader.value.done++
 	}
 	request.then(done, done)
 	return request
@@ -85,6 +88,12 @@ export function setupPageLoader() {
 		// Paths match regardless of capitals: the librarian pages live in a "Librarian" folder, and a query-only
 		// change can report /Librarian/… for what was /librarian/… (still the same page).
 		if (to.path.toLowerCase() === from.path.toLowerCase() || to.meta.layout === 'auth' || to.path === '/') return
+		// Every page change starts its own bar, also when the loader is still up from the one before (clicking through
+		// pages quickly): without this the bar kept the old page's progress and its old request counts.
+		loader.value.run++
+		loader.value.total = 0
+		loader.value.done = 0
+		loader.value.since = performance.now()
 		loader.value.routing = true
 		show()
 	})

@@ -32,7 +32,7 @@
 					</div>
 
 					<div class="mb-2 mt-4 flex items-center justify-between gap-3 text-[12.5px]">
-						<span class="flex items-center gap-1.5 font-semibold"><Icon name="i-tabler-flame" class="h-4 w-4" />{{ streak }}-day visit streak</span>
+						<span class="flex items-center gap-1.5 font-semibold"><Icon name="i-tabler-flame" class="h-4 w-4" />{{ streak > 0 ? `${streak}-day visit streak` : 'No visit streak yet' }}</span>
 						<span v-if="nextStreak" class="text-right text-white/85">{{ nextStreak.threshold - streak }} more → {{ nextStreak.name }}</span>
 					</div>
 					<StudentMeter light :value="nextStreak ? streak / nextStreak.threshold : 1" />
@@ -65,12 +65,12 @@
 									<Icon :name="item.icon" class="h-[17px] w-[17px]" />
 								</span>
 								<span class="min-w-0 flex-1">
-									<span class="block truncate text-[14.5px] font-medium text-stone-900">{{ item.title }}</span>
-									<span class="block truncate text-[12.5px] text-stone-500">{{ item.sub }}</span>
+									<span class="block text-[14.5px] font-medium text-stone-900">{{ item.title }}</span>
+									<span class="block text-[12.5px] text-stone-500">{{ item.sub }}</span>
 								</span>
 								<Icon name="i-tabler-chevron-right" class="h-4 w-4 shrink-0 text-stone-300 md:hidden" />
 							</NuxtLink>
-							<ButtonsButton v-if="item.loan" size="sm" variant="ghost" class="mr-4 hidden !border-accent-100 !bg-accent-100 !text-accent-600 md:inline-flex"
+							<ButtonsButton v-if="item.loan" size="sm" variant="ghost" class="mr-4 !border-accent-100 !bg-accent-100 !text-accent-600 max-md:!hidden"
 								@click="returning = item.loan!">
 								<Icon name="i-tabler-arrow-back-up" class="h-3.5 w-3.5" />I returned this
 							</ButtonsButton>
@@ -129,7 +129,7 @@
 				<div class="mb-4 flex items-start justify-between gap-4">
 					<div class="min-w-0">
 						<h2 class="text-[18px] font-bold text-stone-900">Recommended</h2>
-						<p class="mt-0.5 truncate text-[13px] text-stone-500">{{ recommendedReason }}</p>
+						<p class="mt-0.5 text-[13px] text-stone-500">{{ recommendedReason }}</p>
 					</div>
 					<NuxtLink to="/student/discover"
 						class="inline-flex h-8 shrink-0 items-center gap-1 rounded-lg bg-accent-50 px-3 text-[13px] font-semibold text-accent-600 transition-colors duration-150 hover:bg-accent-100">
@@ -184,7 +184,7 @@
 						:class="isSelected(book.bookID) ? 'bg-accent-50 ring-2 ring-accent-500' : ''"
 						:aria-pressed="isSelected(book.bookID)" @click="pick(book)">
 						<StudentCover :book="book" :width="96" />
-						<span class="mt-2.5 block w-full truncate text-[13.5px] font-semibold text-stone-900">{{ book.title }}</span>
+						<span class="mt-2.5 line-clamp-2 min-h-[2.6em] w-full text-[13.5px] font-semibold leading-snug text-stone-900">{{ book.title }}</span>
 						<span class="block w-full truncate text-[12px] text-stone-500">{{ book.authors[0] ?? 'Unknown author' }}</span>
 					</button>
 				</div>
@@ -237,7 +237,10 @@
 					<!-- Photos of the table of contents, index… (fetched for the selected book; list rows don't carry them). -->
 					<BookPagesGallery v-if="selectedPages.length" dark class="mt-5" :pages="selectedPages" />
 
-					<p class="mt-4 text-pretty text-[13px] leading-relaxed text-accent-100/85">
+					<p v-if="isReserved(selected.bookID)" class="mt-4 text-pretty text-[13px] leading-relaxed text-accent-100/85">
+							You've reserved this book. A librarian will accept it, then you collect it at the desk.
+						</p>
+						<p v-else class="mt-4 text-pretty text-[13px] leading-relaxed text-accent-100/85">
 						{{ selected.availableCopies
 							? 'Add it to your cart and collect it at the desk once a librarian accepts.'
 							: `Every copy is out. Adding it joins the queue — you'd be #${selected.queueLength + 1}.` }}
@@ -246,7 +249,12 @@
 					<div class="mt-auto flex gap-2.5 pt-6">
 						<StudentHeartButton :active="isWished(selected.bookID)" class="!h-12 !w-12 !rounded-xl bg-white/10 [@media(hover:hover)]:hover:!bg-white/20"
 							:class="isWished(selected.bookID) ? '' : '!text-white/80'" @toggle="toggleWish(selected.bookID)" />
-						<button v-if="isInCart(selected.bookID)" type="button"
+						<button v-if="isReserved(selected.bookID)" type="button"
+							class="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl border border-amber-300/60 bg-amber-100/15 text-[14.5px] font-semibold text-amber-100 transition-colors duration-150 hover:bg-amber-100/25"
+							@click="navigateTo({ path: '/student/books', query: { tab: 'reservations' } })">
+							<Icon name="i-tabler-bookmark" class="h-4 w-4" />In reservation · View
+						</button>
+						<button v-else-if="isInCart(selected.bookID)" type="button"
 							class="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl border border-white/30 text-[14.5px] font-semibold transition-colors duration-150 hover:bg-white/10"
 							@click="drawer.open('cart')">
 							<Icon name="i-tabler-check" class="h-4 w-4" />In cart · View cart
@@ -283,7 +291,7 @@ useHead({ title: 'Home' })
 const drawer = useDrawer()
 const { firstName } = useAuthSession('student')
 const { isStudent } = useMemberType()
-const { summary, points, streak, wishlist, isWished, isInCart, toggleWish, addToCart } = useStudent()
+const { summary, points, streak, wishlist, isWished, isInCart, isReserved, toggleWish, addToCart } = useStudent()
 
 const profile = computed(() => summary.value?.profile ?? null)
 const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })
@@ -413,12 +421,18 @@ const attentionItems = computed<AttentionItem[]>(() => {
 		key: `s${l.loanID}`, tone: 'warn', icon: 'i-tabler-clock', title: l.book.title,
 		sub: `${dueLabel(l.daysLeft)} · ${formatDate(l.dueDate)}`, to: '/student/books?tab=loans', loan: l,
 	}))
+	// A return the student already reported: still on the list (it is still overdue or open, and My books counts it), but
+	// saying what it is waiting for instead of offering "I returned this" again.
+	const waiting = data.value.loans.filter((l) => l.status === 'Reported' || l.status === 'Received').map<AttentionItem>((l) => ({
+		key: `w${l.loanID}`, tone: 'warn', icon: 'i-tabler-hourglass-high', title: l.book.title,
+		sub: l.status === 'Reported' ? 'Return reported · waiting for a librarian to verify it' : 'Handed in · a librarian is checking the book', to: '/student/books?tab=loans',
+	}))
 	const ready = data.value.reservations.filter((r) => r.status === 'Accepted').map<AttentionItem>((r) => ({
 		key: `r${r.reservationID}`, tone: 'good', icon: 'i-tabler-check', title: r.book.title,
 		sub: 'Ready for pickup at the desk', to: '/student/books?tab=reservations',
 	}))
 
-	return [...overdue, ...soon, ...ready]
+	return [...overdue, ...soon, ...waiting, ...ready]
 })
 
 // The next streak achievement still ahead of you, so the meter has something to fill towards.
@@ -432,7 +446,7 @@ const nextStreak = computed(() => {
 
 const week = computed(() => lastSevenDays(data.value?.visitedDates ?? []))
 
-const tiles = computed(() => [
+const tiles = computed<{ label: string; icon: string; to?: string; action?: () => void }[]>(() => [
 	{ label: 'My ID', icon: 'i-tabler-id', to: '/student/id' },
 	{ label: 'Wishlist', icon: 'i-tabler-heart', to: '/student/wishlist' },
 	{ label: 'Suggest', icon: 'i-tabler-bulb', to: '/student/suggest' },

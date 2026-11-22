@@ -6,7 +6,7 @@
 				<p class="mt-1 text-[14px] text-stone-500">Search the catalog and see what's on the shelf right now.</p>
 			</div>
 			<NuxtLink to="/student/suggest"
-				class="hidden items-center gap-1.5 text-[13px] font-semibold text-accent-600 hover:underline md:inline-flex">
+				class="hidden min-h-9 items-center gap-1.5 text-[13px] font-semibold text-accent-600 hover:underline md:inline-flex">
 				<Icon name="i-tabler-bulb" class="h-4 w-4" />Can't find it? Suggest a book
 			</NuxtLink>
 		</div>
@@ -14,58 +14,28 @@
 		<!-- Phones: the search box lives on the page (wide screens use the one in the top bar) -->
 		<div class="st-in relative mb-3 md:hidden" style="animation-delay: 35ms">
 			<Icon name="i-tabler-search" class="pointer-events-none absolute left-3.5 top-[13px] h-[18px] w-[18px] text-stone-400" />
-			<input v-model="search" type="search" placeholder="Title, author or subject" autocomplete="off" enterkeyhint="search" aria-label="Search books"
+			<input v-model="search" type="search" placeholder="Search by title, author or subject" autocomplete="off" enterkeyhint="search" aria-label="Search books"
 				class="h-11 w-full rounded-[13px] border border-transparent bg-stone-100 pl-10 pr-3 text-[16px] outline-none transition-[border-color,box-shadow,background-color] duration-150 placeholder:text-stone-400 focus:border-accent-500 focus:bg-white focus:ring-[3px] focus:ring-accent-100">
 		</div>
 
-		<!-- Phones: the genre list, as a bottom sheet. -->
-		<StudentSheet :open="genreOpen" title="Genre" @close="genreOpen = false">
-			<div class="-mx-2 mt-1" role="group" aria-label="Filter by genre">
-				<button v-for="s in subjectOptions" :key="s.id" type="button" :aria-pressed="subjectID === s.id"
-					class="flex w-full items-center justify-between gap-3 rounded-xl px-3 py-3 text-left text-[15.5px] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-200"
-					:class="subjectID === s.id ? 'bg-accent-100 font-semibold text-accent-700' : 'text-stone-700 active:bg-stone-100'"
-					@click="pickGenre(s.id)">
-					<span class="flex min-w-0 items-center gap-2.5">
-						<Icon v-if="subjectID === s.id" name="i-tabler-check" class="h-[18px] w-[18px] shrink-0" aria-hidden="true" />
-						<span class="min-w-0 truncate">{{ s.name }}</span>
-					</span>
-					<span class="font-data shrink-0 text-[13px]" :class="subjectID === s.id ? 'text-accent-700/70' : 'text-stone-500'">{{ s.books }}</span>
-				</button>
-			</div>
-		</StudentSheet>
 
 		<!-- From xl up the filters are a panel on the right (nav on the left, books in the middle, filters beside them).
-			 Narrower screens have no room for it, so they get the chip toolbar instead. -->
+			 Narrower screens have no room for it, so they get a toolbar (Genre button and two switches) instead. -->
 		<div class="xl:grid xl:grid-cols-[minmax(0,1fr)_240px] xl:items-start xl:gap-6">
 		<div class="min-w-0">
 		<div ref="sentinel" aria-hidden="true" />
 		<div class="st-in z-20 -mx-4 mb-4 px-4 py-2.5 md:sticky md:top-[68px] md:-mx-6 md:px-6 lg:-mx-8 lg:px-8 xl:hidden"
 			:class="stuck ? 'border-b border-stone-200 bg-parchment/90 backdrop-blur-sm' : 'border-b border-transparent'"
 			style="animation-delay: 70ms">
-			<div class="flex items-center gap-3">
-				<!-- Phones: one Genre button that opens a list (a scrolling row of chips doesn't read as scrollable on a phone). -->
-				<button type="button" aria-haspopup="dialog" :aria-label="activeSubject ? `Genre: ${activeSubject}. Change genre` : 'Choose a genre'"
-					class="flex h-9 min-w-0 flex-1 items-center justify-between gap-2 rounded-xl px-3.5 text-[13.5px] font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-200 md:hidden"
-					:class="subjectID ? 'bg-accent-500 text-white' : 'bg-accent-50 text-accent-700'"
-					@click="genreOpen = true">
-					<span class="flex min-w-0 items-center gap-2">
-						<Icon name="i-tabler-category" class="h-4 w-4 shrink-0" aria-hidden="true" />
-						<span class="truncate">{{ activeSubject ?? 'Genre' }}</span>
-					</span>
-					<Icon name="i-tabler-chevron-down" class="h-4 w-4 shrink-0" aria-hidden="true" />
-				</button>
+			<div class="flex flex-wrap items-center gap-x-2 gap-y-2 sm:gap-x-3">
+				<!-- The Genre button and window: the same as the Filter button on the librarian and admin screens, at every width. The old
+					 phone-only button and bottom sheet, and the scrolling row of chips on tablets (whose far end could not be reached), are gone. -->
+				<LibrarianFilterMenu v-model="filterValue" :groups="filterGroups" label="Genre" icon="i-tabler-category" title="Genre" subtitle="Pick a genre, then press Show results."
+						prominent class="min-w-[5.5rem] flex-1 md:min-w-[15rem] md:max-w-[26rem]" />
 
-				<div class="no-scrollbar hidden min-w-0 flex-1 gap-2 overflow-x-auto [mask-image:linear-gradient(to_right,black_calc(100%-32px),transparent)] md:flex md:pr-8"
-					role="group" aria-label="Filter by subject">
-					<button v-for="s in subjectOptions" :key="s.id" type="button" :aria-pressed="subjectID === s.id"
-						class="flex h-9 shrink-0 items-center gap-1.5 rounded-xl px-3.5 text-[13.5px] font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-200"
-						:class="subjectID === s.id ? 'bg-accent-500 text-white' : 'bg-accent-50 text-accent-700 hover:bg-accent-100'"
-						@click="setParam({ subject: s.id ? String(s.id) : undefined })">
-						{{ s.name }}
-						<span class="font-data text-[11.5px] font-medium" :class="subjectID === s.id ? 'text-white/75' : 'text-accent-700/60'">{{ s.books }}</span>
-					</button>
-				</div>
 
+				<!-- The two switches stay in the row at every width: one tap, no window needed. -->
+				<div class="contents">
 				<button type="button" role="switch" :aria-checked="availableOnly"
 					class="flex h-9 shrink-0 items-center gap-2.5 rounded-xl border bg-white pl-3 pr-2 text-[13.5px] font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-200"
 					:class="availableOnly ? 'border-emerald-200 text-emerald-700' : 'border-stone-200 text-stone-600 hover:border-stone-300'"
@@ -86,11 +56,12 @@
 						<span class="absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform duration-[250ms] ease-drawer" :class="newOnly ? 'translate-x-3.5' : ''" />
 					</span>
 				</button>
+				</div>
 			</div>
 		</div>
 
-		<section class="st-in" style="animation-delay: 105ms">
-			<div v-if="pending && !data" aria-busy="true">
+		<section ref="resultsEl" class="st-in" style="animation-delay: 105ms">
+			<div v-if="!data" aria-busy="true">
 				<div class="space-y-3 md:hidden">
 					<div v-for="n in 5" :key="n" class="h-[92px] animate-pulse rounded-2xl bg-stone-200/70" />
 				</div>
@@ -201,8 +172,24 @@ useHead({ title: 'Discover' })
 const route = useRoute()
 const router = useRouter()
 
-// Full rows at five across (beside the filter panel) and at three across, and short enough to scan.
-const PER_PAGE = 15
+// A page is three full rows of the grid, whatever the window width makes of it: the grid fits as many 200px columns as
+// the room allows (see the grid's own columns below), so the page size follows that count and no row ends half empty.
+// On a phone the books are a plain list, so it is a flat 15.
+const ROWS = 3
+const LIST_PER_PAGE = 15
+const GRID_MIN = 200 // keep in step with minmax(200px, 1fr) on the grid
+const GRID_GAP = 16 // gap-4
+const columns = ref(5)
+const showsGrid = ref(false)
+const perPage = computed(() => (showsGrid.value ? Math.min(60, columns.value * ROWS) : LIST_PER_PAGE)) // 60 is the most the server gives
+const resultsEl = ref<HTMLElement | null>(null)
+let sizeObserver: ResizeObserver | undefined
+
+function measureGrid() {
+	showsGrid.value = window.matchMedia('(min-width: 768px)').matches
+	const width = resultsEl.value?.clientWidth ?? 0
+	if (width) columns.value = Math.max(1, Math.floor((width + GRID_GAP) / (GRID_MIN + GRID_GAP)))
+}
 
 /* The URL is the single source of truth: ?q=&subject=&available=1&page= (so filters survive a refresh and the back button). */
 const str = (v: unknown) => (typeof v === 'string' ? v : '')
@@ -216,13 +203,6 @@ const hasFilters = computed(() => !!(q.value || subjectID.value || availableOnly
 
 function setParam(patch: Record<string, string | undefined>, keepPage = false) {
 	void router.replace({ query: { ...route.query, ...(keepPage ? {} : { page: undefined }), ...patch } })
-}
-
-// The phone's genre sheet: picking a genre applies it and closes the sheet.
-const genreOpen = ref(false)
-function pickGenre(id: number) {
-	setParam({ subject: id ? String(id) : undefined })
-	genreOpen.value = false
 }
 
 function reset() {
@@ -244,15 +224,42 @@ const subjectOptions = computed(() => {
 	const list = subjectData.value?.subjects ?? []
 	return [{ id: 0, name: 'All', books: list.reduce((sum, s) => sum + s.books, 0) }, ...list.map((s) => ({ id: s.subjectID, name: s.name, books: s.books }))]
 })
+// The Genre window (every width below where the side panel takes over): the genre list is too long for chips.
+// Availability and New arrivals stay as the two switches beside it.
+const filterGroups = computed(() => [
+	{ key: 'genre', title: 'Genre', options: subjectOptions.value.map((s) => ({ value: s.id ? String(s.id) : 'all', label: s.id ? `${s.name} (${s.books})` : 'All genres', badge: s.name })) },
+])
+// The URL stays the source of truth: reading builds the window's value from it, and choosing writes it back.
+const filterValue = computed({
+	get: () => ({ genre: subjectID.value ? String(subjectID.value) : 'all' }),
+	set: (value: Record<string, string>) => setParam({ subject: value.genre && value.genre !== 'all' ? value.genre : undefined }),
+})
 const activeSubject = computed(() => (subjectID.value ? subjectOptions.value.find((s) => s.id === subjectID.value)?.name : null))
 
 const { dataVersion } = useStudent()
 const { data, pending, refresh } = useLiveAsyncData(
 	'student-catalog',
-	() => studentService.catalog({ search: q.value, subjectID: subjectID.value || undefined, availableOnly: availableOnly.value, newArrivalsOnly: newOnly.value, page: page.value, perPage: PER_PAGE }),
-	{ lazy: true, watch: [q, subjectID, availableOnly, newOnly, page] },
+	() => studentService.catalog({ search: q.value, subjectID: subjectID.value || undefined, availableOnly: availableOnly.value, newArrivalsOnly: newOnly.value, page: page.value, perPage: perPage.value }),
+	// Browser only, and not until the grid has been measured, so the first request already asks for the right number.
+	{ lazy: true, server: false, immediate: false, watch: [q, subjectID, availableOnly, newOnly, page, perPage] },
 )
 watch(dataVersion, () => { void refresh() })
+// A different page size (the window was resized past a column) starts from the first page: page 3 of 15 is not page 3 of 18.
+watch(perPage, () => { if (page.value > 1) setParam({ page: undefined }) })
+
+onMounted(() => {
+	measureGrid()
+	void refresh()
+	if (typeof ResizeObserver !== 'undefined' && resultsEl.value) {
+		sizeObserver = new ResizeObserver(measureGrid)
+		sizeObserver.observe(resultsEl.value)
+	}
+	window.addEventListener('resize', measureGrid)
+})
+onBeforeUnmount(() => {
+	sizeObserver?.disconnect()
+	window.removeEventListener('resize', measureGrid)
+})
 
 // Paging happens at the bottom of the list; bring the reader back up to the first book of the new page.
 watch(page, () => {

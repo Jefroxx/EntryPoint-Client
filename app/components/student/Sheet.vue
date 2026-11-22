@@ -12,7 +12,7 @@
 				leave-active-class="transition-[transform,translate,scale,opacity] duration-150 ease-out"
 				leave-to-class="scale-[.96] opacity-0">
 				<div v-if="open" role="dialog" aria-modal="true" :aria-label="title"
-					class="student-app pointer-events-auto w-full max-w-[400px] overflow-y-auto overscroll-contain rounded-3xl bg-white p-5 shadow-[0_18px_44px_-18px_rgba(40,25,8,.45)] md:p-6"
+					class="student-app pointer-events-auto w-full max-w-[400px] overflow-y-auto overscroll-contain rounded-3xl [scrollbar-color:var(--color-stone-300)_transparent] [scrollbar-width:thin] bg-white p-5 shadow-[0_18px_44px_-18px_rgba(40,25,8,.45)] md:p-6"
 					style="max-height: 88dvh">
 					<h3 class="dashboard-heading mb-1.5 text-[20px] font-extrabold text-crimson">{{ title }}</h3>
 					<div class="text-[14px] leading-relaxed text-stone-600">

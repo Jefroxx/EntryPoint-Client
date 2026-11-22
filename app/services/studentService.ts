@@ -258,6 +258,7 @@ export function briefOf(book: RawBook | BookBrief): BookBrief {
   const authors = (book.authors ?? []).map((a) => (typeof a === "string" ? a : a.name));
   return {
     bookID: book.bookID,
+    uuid: book.uuid,
     title: book.title,
     coverImageURL: book.coverImageURL ?? null,
     subject: book.subject ?? null,

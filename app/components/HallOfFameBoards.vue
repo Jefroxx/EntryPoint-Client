@@ -11,7 +11,7 @@
 
 	<ul v-else class="grid grid-cols-1 gap-3" :class="gridClass">
 		<li v-for="category in board.categories" :key="category.key"
-			class="flex flex-col rounded-2xl border border-stone-200 bg-parchment/60 p-4">
+			class="flex flex-col rounded-2xl border border-stone-300/70 bg-white p-4 shadow-[0_1px_2px_rgba(60,35,10,.06),0_8px_20px_-14px_rgba(60,35,10,.25)]">
 			<div class="flex items-start gap-2.5">
 				<span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent-100 text-accent-600">
 					<Icon :name="category.icon" class="h-[17px] w-[17px]" />
@@ -25,14 +25,14 @@
 				</div>
 			</div>
 
-			<p v-if="!category.leaders.length" class="mt-3 flex-1 rounded-xl bg-white px-3 py-5 text-center text-[13px] text-stone-500">
+			<p v-if="!category.leaders.length" class="mt-3 flex-1 rounded-xl bg-stone-50 px-3 py-5 text-center text-[13px] text-stone-500">
 				{{ staff ? 'No one has placed yet.' : 'No one yet. The first to get here takes the top spot.' }}
 			</p>
 
 			<ol v-else class="mt-3 flex-1 space-y-1.5">
 				<li v-for="leader in category.leaders" :key="`${category.key}-${leader.rank}-${leader.name}`"
 					class="flex items-center gap-2.5 rounded-xl px-2 py-1.5"
-					:class="leader.isYou ? 'bg-accent-50 ring-1 ring-accent-200' : leader.rank === 1 ? 'bg-white' : ''">
+					:class="leader.isYou ? 'bg-accent-50 ring-1 ring-accent-200' : leader.rank === 1 ? 'bg-stone-50' : ''">
 					<!-- Place medal: gold (oak) for first, silver for second, bronze (leather) for third. -->
 					<span class="font-data flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11.5px] font-bold"
 						:class="HALL_OF_FAME_MEDAL[leader.rank] ?? HALL_OF_FAME_MEDAL[3]" :aria-label="`${ordinal(leader.rank)} place`">{{ leader.rank }}</span>
@@ -53,7 +53,7 @@
 
 			<!-- Librarians can turn a board into a Facebook poster. -->
 			<button v-if="staff && category.leaders.length" type="button"
-				class="mt-3 flex items-center justify-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3 py-2 text-[13px] font-semibold text-stone-700 transition-colors hover:bg-stone-50"
+				class="mt-3 flex items-center justify-center gap-1.5 rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-[13px] font-semibold text-stone-700 transition-colors hover:bg-stone-100"
 				@click="emit('post', category)">
 				<Icon name="i-tabler-brand-facebook" class="h-4 w-4" aria-hidden="true" />Create post
 			</button>
@@ -61,8 +61,10 @@
 			<!-- Where the viewing student stands when they aren't on the board: a nudge, not a ranking. -->
 			<p v-if="category.yourValue !== undefined && !category.leaders.some((l) => l.isYou)"
 				class="mt-3 border-t border-stone-200/80 pt-2.5 text-[12.5px] text-stone-500">
-				<span class="font-semibold text-stone-700">You:</span> {{ hallOfFameAmount(category.yourValue, category.unit) }}
-				<template v-if="category.leaders.length && category.yourValue > 0"> · {{ gapToBoard(category) }}</template>
+				<span class="font-semibold text-stone-700">Your result:</span> {{ hallOfFameAmount(category.yourValue, category.unit) }}
+				<span class="text-stone-400"> · </span>
+				<template v-if="category.leaders.length && category.yourValue > 0">{{ gapToBoard(category) }}</template>
+				<template v-else>not on the board yet</template>
 			</p>
 		</li>
 	</ul>

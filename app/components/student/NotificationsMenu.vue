@@ -18,9 +18,14 @@
 					<b class="text-[15px] text-stone-900">Notifications</b>
 					<button v-if="unreadCount" type="button" class="text-[13px] font-medium text-accent-500 hover:underline" @click="readAll">Mark all read</button>
 				</div>
-				<div class="max-h-[480px] overflow-y-auto overscroll-contain">
+				<div class="max-h-[480px] overflow-y-auto overscroll-contain [scrollbar-color:var(--color-stone-300)_transparent] [scrollbar-width:thin]">
 					<StudentNotificationList :items="items" :grouped="false" @chosen="open = false" />
 				</div>
+				<NuxtLink to="/student/notifications"
+					class="block border-t border-stone-100 px-4 py-2.5 text-center text-[13.5px] font-semibold text-accent-500 transition-colors hover:bg-stone-50"
+					@click="open = false">
+					See all notifications
+				</NuxtLink>
 			</div>
 		</Transition>
 	</div>

@@ -4,7 +4,7 @@
 			<slot name="icon"><Icon v-if="icon" :name="icon" class="h-6 w-6" /></slot>
 		</div>
 		<h3 class="text-[16px] font-semibold text-stone-900">{{ title }}</h3>
-		<p class="mx-auto mt-1 max-w-[34ch] text-[13.5px] text-stone-500">{{ text }}</p>
+		<p class="mx-auto mt-1 max-w-[54ch] text-[13.5px] text-stone-500">{{ text }}</p>
 		<div v-if="$slots.default" class="mt-4 flex justify-center">
 			<slot />
 		</div>

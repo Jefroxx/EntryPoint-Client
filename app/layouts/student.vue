@@ -65,7 +65,7 @@
 			<label class="relative w-full max-w-[420px]">
 				<span class="sr-only">Search books</span>
 				<Icon name="i-tabler-search" class="pointer-events-none absolute left-3 top-[11px] h-4 w-4 text-stone-400" />
-				<input ref="searchInput" v-model="search" type="search" placeholder="Search books by title or author" autocomplete="off"
+				<input ref="searchInput" v-model="search" type="search" placeholder="Search by title, author or subject" autocomplete="off"
 					class="h-[40px] w-full rounded-xl border border-stone-200 bg-white pl-9 pr-9 text-[15px] outline-none transition-[border-color,box-shadow] duration-150 placeholder:text-stone-400 focus:border-accent-500 focus:ring-[3px] focus:ring-accent-100"
 					@input="onSearch">
 				<kbd class="font-data pointer-events-none absolute right-2 top-[10px] rounded-md border border-stone-200 bg-stone-50 px-1.5 text-[11px] text-stone-500">/</kbd>
@@ -107,7 +107,9 @@
 					<Icon name="i-tabler-chevron-left" class="h-5 w-5" aria-hidden="true" />Back
 				</button>
 				<NuxtLink v-else to="/student/home" class="flex items-center leading-none" aria-label="EntryPoint home">
-					<img src="~/assets/css/logo/EntryPointLogo.png" alt="EntryPoint" class="h-7 w-auto" />
+					<!-- Once the page title fades in, the wordmark gives way to the round mark: the title needs the room the wordmark took. -->
+						<img v-if="!scrolled" src="~/assets/css/logo/EntryPointLogo.png" alt="EntryPoint" class="h-7 w-auto" />
+						<img v-else src="/favicon.png" alt="EntryPoint" class="h-7 w-7" />
 				</NuxtLink>
 				<p class="truncate px-1 text-center text-[15px] font-semibold text-stone-900 transition-[opacity,transform,translate,scale] duration-200 ease-out"
 					:class="scrolled ? 'translate-y-0 opacity-100' : 'translate-y-1 opacity-0'">{{ route.meta.title }}</p>
@@ -137,9 +139,11 @@
 		<!-- The page loader covers only the page area: the sidebar, top bar and phone tab bar stay above it. -->
 		<div class="relative min-h-dvh md:min-h-[calc(100dvh-68px)]">
 			<main
-				class="mx-auto w-full max-w-[1120px] px-4 pb-[calc(6.5rem+env(safe-area-inset-bottom,0px))] pt-[calc(3.5rem+env(safe-area-inset-top,0px))] md:px-6 md:pb-20 md:pt-8 lg:px-8"
+				class="mx-auto w-full max-w-[1400px] px-4 pb-[calc(6.5rem+env(safe-area-inset-bottom,0px))] pt-[calc(3.5rem+env(safe-area-inset-top,0px))] md:px-6 md:pb-20 md:pt-8 lg:px-8"
 				:class="route.meta.wide ? 'xl:max-w-[1400px]' : ''">
-				<slot />
+				<!-- Every page starts at the same left edge, so the heading doesn't jump as you move between pages. The ones that
+					 read better narrow (forms, lists, the ID) stop at a narrower width, on the left. -->
+				<div :class="route.meta.wide ? '' : ['max-w-[1056px]', route.meta.centered ? 'mx-auto' : '']"><slot /></div>
 			</main>
 			<AppLoader :show="loader.active" contained />
 		</div>

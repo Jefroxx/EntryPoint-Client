@@ -13,10 +13,10 @@
 				leave-from-class="scale-100 translate-y-0 opacity-100" leave-to-class="scale-95 translate-y-1 opacity-0 max-sm:translate-x-full max-sm:translate-y-0 max-sm:scale-100 max-sm:opacity-100 max-sm:motion-reduce:translate-x-0 max-sm:motion-reduce:opacity-0">
 				<div v-if="open" role="dialog" aria-modal="true" :aria-labelledby="titleId"
 					class="relative z-10 flex w-full flex-col rounded-[22px] bg-white shadow-overlay max-sm:h-dvh max-sm:max-h-none max-sm:max-w-none max-sm:rounded-none max-sm:shadow-none"
-						:class="widthClass">
+						:class="[widthClass, fixedHeight && !discarding ? heightClass : '']">
 					<div class="flex flex-shrink-0 items-start justify-between gap-3 border-b border-stone-100 px-6 py-5 max-sm:items-center max-sm:px-4 max-sm:py-3">
 							<div class="min-w-0 max-sm:flex-1">
-								<h2 :id="titleId" class="dashboard-heading text-2xl font-bold text-crimson max-sm:text-xl">{{ discarding ? 'Discard Changes?' : title }}</h2>
+								<h2 :id="titleId" class="dashboard-heading text-2xl font-bold text-crimson max-sm:text-xl">{{ discarding ? discardTitle : title }}</h2>
 							<p v-if="subtitle && !discarding" class="dashboard-heading text-[13.5px] text-crimson">{{ subtitle }}</p>
 						</div>
 						<ButtonsButton variant="icon" size="md" aria-label="Close" class="shrink-0" @click="requestClose">
@@ -63,14 +63,27 @@ const props = withDefaults(defineProps<{
 	 * and only closes once they say yes.
 	 */
 	dirty?: boolean
-	/** What the "Discard Changes?" step says. */
+	/** The heading of the discard step: name what is being thrown away ("Discard This New Account?"). */
+	discardTitle?: string
+	/** What the discard step says. */
 	discardText?: string
+	/**
+	 * Always as tall as the window allows, instead of growing and shrinking with its content. For forms whose content
+	 * changes while they are used (a choice that swaps fields, validation messages appearing), so the window and its
+	 * buttons stay put. The discard step is a short question, so it drops back to its own small size.
+	 */
+	fixedHeight?: boolean
 }>(), {
 	size: 'md',
 	busy: false,
 	dirty: false,
+	discardTitle: 'Discard Changes?',
 	discardText: "What you've entered here won't be saved.",
+	fixedHeight: false,
 })
+
+// One scrollbar: the window's own, with the page behind held still.
+useBodyScrollLock(toRef(props, 'open'))
 
 const emit = defineEmits<{ (e: 'close'): void }>()
 
@@ -83,6 +96,9 @@ const widthClass = computed(() => ({
 	// A wide, tall window for screens that show a lot at once (the return confirmation): up to the screen's own height.
 	xl: 'max-w-[940px] max-h-[calc(100vh-48px)]',
 }[props.size]))
+
+// Same ceiling as widthClass, but as the height itself. On a phone the window is already the full screen.
+const heightClass = computed(() => (props.size === 'xl' ? 'h-[min(720px,calc(100vh-48px))]' : 'h-[min(680px,calc(100vh-48px))]'))
 
 // "Discard Changes?" is a second step inside this window (never another pop-up on top of it).
 const discarding = ref(false)

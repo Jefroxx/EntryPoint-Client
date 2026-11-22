@@ -312,7 +312,7 @@ const AREAS: Record<string, string> = {
 	thesis: 'Thesis', journal: 'Journal', dissertation: 'Dissertation',
 }
 
-const bookFields = computed(() => {
+const bookFields = computed<{ label: string; value: string; mono?: boolean; wide?: boolean }[]>(() => {
 	const b = props.preview?.book
 	if (!b) return []
 	return [

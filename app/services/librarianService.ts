@@ -134,7 +134,6 @@ export interface StudentStats {
 export interface BookSuggestion {
   suggestionID: number;
   uuid: string;
-  uuid: string;
   title: string;
   author: string | null;
   reason: string | null;
@@ -198,6 +197,8 @@ export interface BookDetail {
   coverImageURL: string | null;
   shelfLocation: string | null;
   deweyNumber?: string | null;
+  /** Ticked for a book the library marked as new. */
+  isNewArrival?: boolean;
   deweySource?: DeweySource | null;
   deweyStatus?: DeweyStatus;
   spineLabel?: SpineLabelData;
@@ -306,7 +307,7 @@ export interface CopyCatalogRow {
     publicationYear: number | null;
     volume: string | null;
     edition: string | null;
-    pages: number | null;
+    pageCount: number | null;
     publisher: string | null;
     sourceOfFund: string | null;
     cost: string | number | null;
@@ -606,7 +607,7 @@ export interface NewBookPayload {
   publisher?: string | null;
   edition?: string | null;
   volume?: string | null;
-  pages?: number | null;
+  pageCount?: number | null;
   sourceOfFund?: string | null;
   cost?: number | null;
   remarks?: string | null;
@@ -799,7 +800,7 @@ class LibrarianServiceClass extends BaseService {
   }
 
   /** The stock log: every copy added or removed, newest first. */
-  fetchStockLogs(params: { search?: string; action?: "added" | "removed"; bookID?: number; page?: number; perPage?: number } = {}) {
+  fetchStockLogs(params: { search?: string; action?: "added" | "removed" | "edited"; bookID?: number; page?: number; perPage?: number } = {}) {
     return this.apiRequest<PaginatedStockLogs>("/librarian/stock-logs", { query: params });
   }
 

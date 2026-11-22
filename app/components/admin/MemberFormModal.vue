@@ -1,6 +1,9 @@
 <template>
 	<LibrarianModalShell :open="open" size="lg" :title="reviewing ? 'Create This Member?' : member ? 'Edit Member' : 'Add Faculty or Staff Member'"
-		:subtitle="subtitle" :busy="busy" :dirty="dirty" ref="shell" @close="emit('close')">
+		:subtitle="subtitle" :busy="busy" :dirty="dirty" fixed-height ref="shell"
+		:discard-title="member ? 'Discard Member Changes?' : 'Discard This New Member?'"
+		:discard-text="member ? `Your changes to ${member.firstName}'s details won't be saved.` : 'The faculty or staff member you started won\'t be created, and nothing will be sent.'"
+		@close="emit('close')">
 		<!-- Step 2 (new members only): look it over before anything is created. Back returns to the form with everything kept. -->
 		<div v-if="reviewing" class="space-y-4">
 			<dl class="divide-y divide-stone-100 rounded-xl border border-stone-200 bg-white">

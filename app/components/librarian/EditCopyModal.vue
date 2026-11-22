@@ -162,7 +162,7 @@ const shown = (s: string) => s || '—'
 
 const changes = computed(() => {
 	const rows: { label: string; from: string; to: string }[] = []
-	if (statusChanged.value) rows.push({ label: 'Status', from: STATUS_LABEL[props.copy?.status ?? ''] ?? '—', to: STATUS_LABEL[status.value] })
+	if (statusChanged.value) rows.push({ label: 'Status', from: STATUS_LABEL[props.copy?.status ?? ''] ?? '—', to: STATUS_LABEL[status.value] ?? '—' })
 	if (costChanged.value) rows.push({ label: 'Cost', from: peso(original.value.cost), to: peso(Number(cost.value)) })
 	if (fundChanged.value) rows.push({ label: 'Source of fund', from: shown(original.value.sourceOfFund), to: shown(sourceOfFund.value.trim()) })
 	if (remarksChanged.value) rows.push({ label: 'Remarks', from: shown(original.value.remarks), to: shown(remarks.value.trim()) })

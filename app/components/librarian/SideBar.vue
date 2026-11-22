@@ -39,15 +39,18 @@
             </NuxtLink>
         </nav>
 
-        <div class="mx-3 my-4 h-px shrink-0 bg-stone-100" />
+        <!-- Pinned to the bottom of the sidebar, whatever the number of links (mt-auto takes all the spare height). -->
+        <div class="mt-auto shrink-0 pt-4">
+            <div class="mx-3 mb-3 h-px bg-stone-100" />
 
-        <button type="button" :title="open ? undefined : 'Logout'"
-            class="flex h-11 w-full shrink-0 items-center gap-3 rounded-xl text-[14.5px] font-medium text-stone-500 transition-colors duration-150 hover:bg-stone-50 hover:text-stone-900 disabled:cursor-not-allowed disabled:opacity-50"
-            :class="open ? 'px-3.5' : 'justify-center px-0'"
-            :disabled="isSigningOut" @click="handleLogout">
-            <Icon name="i-tabler-logout" class="h-[19px] w-[19px] shrink-0" />
-            <span class="whitespace-nowrap" :class="open ? '' : 'sr-only'">{{ isSigningOut ? 'Signing out...' : 'Logout' }}</span>
-        </button>
+            <button type="button" :title="open ? undefined : 'Logout'"
+                class="flex h-11 w-full shrink-0 items-center gap-3 rounded-xl text-[14.5px] font-medium text-stone-500 transition-colors duration-150 hover:bg-stone-50 hover:text-stone-900 disabled:cursor-not-allowed disabled:opacity-50"
+                :class="open ? 'px-3.5' : 'justify-center px-0'"
+                :disabled="isSigningOut" @click="handleLogout">
+                <Icon name="i-tabler-logout" class="h-[19px] w-[19px] shrink-0" />
+                <span class="whitespace-nowrap" :class="open ? '' : 'sr-only'">{{ isSigningOut ? 'Signing out...' : 'Logout' }}</span>
+            </button>
+        </div>
     </aside>
 </template>
 

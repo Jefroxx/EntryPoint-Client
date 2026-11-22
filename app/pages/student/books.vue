@@ -91,7 +91,8 @@
 
 				<!-- RESERVATIONS -->
 				<template v-else-if="data && tab === 'reservations'">
-					<div class="mb-3.5 flex items-start gap-2.5 rounded-2xl bg-accent-100 px-3.5 py-3 text-[13px] md:px-5 md:py-4 md:text-[15px] leading-snug text-accent-600">
+					<!-- Below lg the "At a glance" card is hidden, so this carries its slots and desk note; from lg up the card says it. -->
+					<div class="mb-3.5 flex items-start gap-2.5 rounded-2xl bg-accent-100 px-3.5 py-3 text-[13px] md:px-5 md:py-4 md:text-[15px] leading-snug text-accent-600 lg:hidden">
 						<Icon name="i-tabler-id" class="mt-px h-4 w-4 shrink-0 md:h-5 md:w-5" />
 						<span>{{ slotsLeft }} of 3 reservation slots free. Books are handed over at the desk once accepted.</span>
 					</div>
@@ -110,7 +111,7 @@
 								<StudentCover :book="briefOf(r.book)" :width="wide ? 64 : 44" />
 								<div class="min-w-0">
 									<p class="text-[14.5px] md:text-[17px] font-semibold leading-tight text-stone-900">{{ r.book.title }}</p>
-									<p class="mt-0.5 truncate text-[12.5px] md:text-[14.5px] text-stone-500">{{ authorLine(briefOf(r.book)) }} · Reserved {{ formatDate(r.reservedAt) }}</p>
+									<p class="mt-0.5 text-[12.5px] md:text-[14.5px] text-stone-500">{{ authorLine(briefOf(r.book)) }} · Reserved {{ formatDate(r.reservedAt) }}</p>
 									<div class="mt-2">
 										<StudentPill class="md:!h-7 md:!px-3 md:!text-[13px]" v-if="r.status === 'Waiting'" tone="warn"><Icon name="i-tabler-clock" class="h-3 w-3" />#{{ r.queuePosition }} in line</StudentPill>
 										<StudentPill class="md:!h-7 md:!px-3 md:!text-[13px]" v-else tone="good"><Icon name="i-tabler-check" class="h-3 w-3" />Ready for pickup</StudentPill>
@@ -119,7 +120,7 @@
 							</div>
 							<p class="mt-3 text-[12.5px] md:text-[14.5px] text-stone-500 md:mt-0 md:w-[210px]">
 								{{ r.status === 'Waiting'
-									? ((r.queuePosition ?? 1) > 1 ? `${(r.queuePosition ?? 1) - 1} ahead of you` : "You're next")
+									? ((r.queuePosition ?? 1) > 1 ? `${(r.queuePosition ?? 1) - 1} ahead of you` : 'A librarian will review it soon.')
 									: 'Bring your ID to the desk to collect it.' }}
 							</p>
 							<ButtonsButton v-if="r.status === 'Waiting'" variant="danger" size="sm" class="mt-3 !h-10 w-full !text-[14px] md:mt-0 md:!h-10 md:w-auto md:!px-5 md:!text-[14.5px]"
@@ -154,7 +155,11 @@
 							<p class="dashboard-heading text-[36px] md:text-[46px] font-extrabold tabular-nums" :class="data.unpaidTotal ? 'text-red-600' : 'text-emerald-600'">{{ formatPeso(data.unpaidTotal) }}</p>
 						</div>
 						<p class="mx-auto max-w-[36ch] text-[12.5px] md:text-[14.5px] text-stone-500 md:mx-0">
-							{{ data.unpaidTotal ? 'Fines are settled with a librarian at the desk, once the book is back.' : "You're all clear." }}
+							{{ data.unpaidTotal
+								? 'Fines are settled with a librarian at the desk, once the book is back.'
+								: (stats?.overdueLoans ?? 0) > 0
+									? `You have ${stats?.overdueLoans} overdue ${stats?.overdueLoans === 1 ? 'book' : 'books'}. A fine is added for each day it stays out, so return it soon.`
+									: "You're all clear." }}
 						</p>
 					</div>
 
@@ -233,7 +238,7 @@
 			</template>
 		</StudentDrawer>
 
-		<StudentSheet :open="!!cancelling" title="Cancel this reservation?" @close="cancelling = null">
+		<StudentSheet :open="!!cancelling" title="Cancel This Reservation?" @close="cancelling = null">
 			You'll lose your place in line for <b class="text-stone-900">{{ (cancelling ?? lastCancelled)?.book.title }}</b>. You can reserve it again, but you'd join the back of the queue.
 			<template #actions>
 				<ButtonsButton variant="danger" class="!h-[46px] !text-[15px]" :disabled="cancelBusy" @click="confirmCancel">Cancel reservation</ButtonsButton>
@@ -264,7 +269,7 @@ onMounted(() => {
 })
 const router = useRouter()
 const { perform } = useAction()
-const { stats, slotsLeft, refreshProfile, bumpData } = useStudent()
+const { stats, slotsLeft, refreshProfile, refreshReservations, bumpData } = useStudent()
 
 // In the order a borrow happens: reserve it, borrow it, settle any fine. Reservations opens by default.
 const TABS = ['reservations', 'loans', 'fines']
@@ -368,7 +373,7 @@ async function confirmCancel() {
 	const target = cancelling.value
 	cancelBusy.value = true
 
-	const ok = await perform(() => studentService.cancelReservation(target.uuid), 'Reservation cancelled', 'Could not cancel it', [refreshProfile])
+	const ok = await perform(() => studentService.cancelReservation(target.uuid), 'Reservation cancelled', 'Could not cancel it', [refreshProfile, refreshReservations])
 	cancelBusy.value = false
 
 	if (ok) {

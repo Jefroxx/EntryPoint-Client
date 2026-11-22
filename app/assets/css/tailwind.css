@@ -350,6 +350,9 @@ body {
 	html {
 		-webkit-font-smoothing: antialiased;
 		-moz-osx-font-smoothing: grayscale;
+		/* Keeps room for the scrollbar even on a short page, so the header and content don't shift sideways
+		   (about 12px) when moving between a short page and a long one. */
+		scrollbar-gutter: stable;
 	}
 
 	h1,
@@ -371,4 +374,10 @@ body {
 		transition-duration: 0.01ms !important;
 		transition-delay: 0ms !important;
 	}
+}
+
+/* Light only (see colorMode in nuxt.config.ts): native controls and scrollbars stay light under a dark system theme. */
+:root,
+:root.dark {
+	color-scheme: light;
 }

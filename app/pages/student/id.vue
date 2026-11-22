@@ -5,7 +5,8 @@
 			<p class="dashboard-heading mt-1 text-crimson">Show this at the entrance to check in and out.</p>
 		</div>
 
-		<div class="md:grid md:grid-cols-[minmax(0,420px)_minmax(0,1fr)] md:items-start md:gap-10">
+		<!-- Side by side only from lg: at tablet width the right column was narrower than its seven day circles and the page scrolled sideways. -->
+			<div class="lg:grid lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)] lg:items-start lg:gap-10">
 			<div class="st-in" style="animation-delay: 35ms">
 				<div
 					class="max-w-[420px] overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-[0_24px_44px_-30px_rgba(60,35,10,.55)]">
@@ -64,9 +65,9 @@
 				</div>
 			</div>
 
-			<div class="st-in mt-2 md:mt-0" style="animation-delay: 70ms">
+			<div class="st-in mt-2 lg:mt-0" style="animation-delay: 70ms">
 				<h2
-					class="mb-2.5 mt-5 px-0.5 text-[11px] font-semibold uppercase tracking-[.08em] text-stone-400 md:mt-0">
+					class="mb-2.5 mt-5 px-0.5 text-[11px] font-semibold uppercase tracking-[.08em] text-stone-400 lg:mt-0">
 					{{ isStudent ? 'Visit streak' : 'Recent visits' }}</h2>
 				<div class="rounded-2xl border border-stone-200 bg-white p-4">
 					<div class="flex items-center gap-2.5">

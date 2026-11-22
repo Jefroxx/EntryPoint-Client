@@ -7,7 +7,7 @@
 				<span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-highlight-100 text-highlight-700">
 					<Icon name="i-tabler-trophy" class="h-[17px] w-[17px]" />
 				</span>
-				<h2 id="hall-of-fame-title" class="truncate text-[16px] font-bold text-stone-900">
+				<h2 id="hall-of-fame-title" class="text-[16px] font-bold leading-tight text-stone-900">
 					Hall of Fame<span v-if="board" class="font-medium text-stone-500"> · {{ board.month }}</span>
 				</h2>
 			</div>
@@ -26,14 +26,14 @@
 			The Hall of Fame couldn't load. It'll try again in a moment.
 		</p>
 
-		<ul v-else class="no-scrollbar -mx-4 flex snap-x scroll-pl-4 gap-2.5 overflow-x-auto px-4 pb-0.5 md:mx-0 md:scroll-pl-0 md:grid md:grid-cols-3 md:overflow-visible md:px-0 lg:grid-cols-6 xl:grid-cols-3 2xl:grid-cols-6">
+		<ul v-else class="no-scrollbar -mx-4 flex snap-x scroll-pl-4 gap-2.5 overflow-x-auto px-4 pb-0.5 md:mx-0 md:scroll-pl-0 md:grid md:grid-cols-3 md:overflow-visible md:px-0 xl:grid-cols-3 2xl:grid-cols-6">
 			<li v-for="category in board.categories" :key="category.key" class="w-[152px] shrink-0 snap-start md:w-auto">
 				<button type="button" class="flex h-full w-full flex-col rounded-xl border px-3 py-2.5 text-left transition-colors duration-150"
-					:class="winnerIsYou(category) ? 'border-accent-200 bg-accent-50 hover:bg-accent-100' : 'border-stone-200 bg-parchment/60 hover:bg-parchment'"
+					:class="winnerIsYou(category) ? 'border-accent-200 bg-accent-50 hover:bg-accent-100' : 'border-stone-300/80 bg-parchment shadow-[0_1px_2px_rgba(60,35,10,.05)] hover:border-stone-300 hover:bg-stone-100'"
 					:aria-label="tileLabel(category)" @click="open = true">
 					<span class="flex items-center gap-1.5 text-[11.5px] font-semibold text-stone-500">
 						<Icon :name="category.icon" class="h-3.5 w-3.5 shrink-0 text-accent-500" />
-						<span class="truncate">{{ category.title }}</span>
+						<span class="line-clamp-2 leading-tight">{{ category.title }}</span>
 					</span>
 
 					<template v-if="winner(category)">
@@ -53,8 +53,14 @@
 		</ul>
 
 		<StudentDrawer :open="open" title="Hall of Fame" @close="open = false">
-			<div class="p-4 md:p-5">
-				<p v-if="board" class="mb-3 text-[13px] text-stone-500">{{ board.month }}'s standouts. Monthly boards start over on the 1st.</p>
+			<!-- The drawer already pads its content, so no extra padding here. --><div>
+				<!-- Where the student stands, said first and plainly, then the boards. -->
+				<div v-if="board" class="mb-4 rounded-2xl border border-accent-200 bg-accent-50 p-4">
+					<p class="text-[15px] font-bold text-stone-900">{{ standing }}</p>
+					<p class="mt-1 text-[12.5px] leading-snug text-stone-600">
+						{{ board.month }}'s standouts. Four boards start over on the 1st, so anyone can reach the top. Longest Streak is live, and Achievement Hunter counts all time.
+					</p>
+				</div>
 				<HallOfFameBoards :board="board" :loading="loading" grid-class="grid-cols-1" />
 			</div>
 		</StudentDrawer>
@@ -64,12 +70,22 @@
 <script setup lang="ts">
 import type { HallOfFame, HallOfFameCategory } from '~/services/studentService'
 
-defineProps<{
+const props = defineProps<{
 	board: HallOfFame | null
 	loading: boolean
 }>()
 
 const open = ref(false)
+
+/** "You're on 2 of 6 boards", or how to get on one. */
+const standing = computed(() => {
+	const categories = props.board?.categories ?? []
+	const on = categories.filter((c) => c.leaders.some((l) => l.isYou)).length
+	if (!categories.length) return ''
+	return on
+		? `You're on ${on} of ${categories.length} boards`
+		: `You're not on a board yet (${categories.length} to aim for)`
+})
 
 /** The tile shows one #1; when several share first place, you first, then the listing order. */
 function winner(category: HallOfFameCategory) {

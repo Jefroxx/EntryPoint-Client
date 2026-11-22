@@ -57,7 +57,7 @@
                     :class="reservationStatus === tile.status ? 'ring-2 ring-accent-500' : ''"
                     :aria-pressed="reservationStatus === tile.status"
                     @click="reservationStatus = reservationStatus === tile.status ? 'open' : tile.status">
-                    <LibrarianCatalogStatTile :label="tile.label" :value="tile.value" :icon="tile.icon" :tone="tile.tone" />
+                    <LibrarianCatalogStatTile :label="tile.label" :value="tile.value" :icon="tile.icon" :tone="tile.tone" interactive />
                 </button>
             </div>
 

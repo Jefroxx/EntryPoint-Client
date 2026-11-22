@@ -3,17 +3,19 @@
 		 time on a wide screen and the rest are a swipe or an arrow away; on a phone about two and a half show, so it is
 		 clear the row continues. -->
 	<div class="relative">
-		<div ref="scroller" class="no-scrollbar -mx-5 flex snap-x scroll-pl-5 gap-4 overflow-x-auto px-5 pb-1 md:mx-0 md:scroll-pl-0 md:px-0" @scroll.passive="measure">
+		<!-- The row scrolls sideways, and a scrolling box clips whatever pokes out of it, including the ring that marks the
+				 selected book. So the box has a few pixels of room on every side (cancelled by the negative margins), and the ring fits inside it. -->
+			<div ref="scroller" class="no-scrollbar -mx-5 -my-2 flex snap-x scroll-pl-5 gap-4 overflow-x-auto px-5 py-2 md:-mx-2 md:scroll-pl-2 md:px-2" @scroll.passive="measure">
 			<button v-for="book in books" :key="book.bookID" type="button"
 				class="group w-[148px] shrink-0 snap-start rounded-2xl text-left focus-visible:outline-none md:w-[calc((100%-48px)/4)]"
 				:aria-pressed="isSelected(book.bookID)" @click="emit('pick', book)">
 				<span class="relative flex h-[200px] items-center justify-center rounded-2xl transition-shadow duration-200 group-focus-visible:ring-2 group-focus-visible:ring-accent-500"
-					:class="isSelected(book.bookID) ? 'ring-2 ring-accent-500 ring-offset-2' : ''"
+					:class="isSelected(book.bookID) ? 'ring-2 ring-accent-500 ring-offset-2 ring-offset-white' : ''"
 					:style="{ background: tint(book) }">
 					<span v-if="showNew" class="absolute left-2.5 top-2.5 rounded-full bg-accent-500 px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-wide text-white">New</span>
 					<StudentCover :book="book" :width="112" class="transition-transform duration-300 ease-out group-hover:-translate-y-1.5" />
 				</span>
-				<span class="mt-2.5 block truncate px-0.5 text-[14px] font-semibold text-stone-900">{{ book.title }}</span>
+				<span class="mt-2.5 line-clamp-2 min-h-[2.6em] px-0.5 text-[14px] font-semibold leading-snug text-stone-900">{{ book.title }}</span>
 				<span class="block truncate px-0.5 text-[12.5px] text-stone-500">{{ book.authors[0] ?? 'Unknown author' }}</span>
 			</button>
 		</div>

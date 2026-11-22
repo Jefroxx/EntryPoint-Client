@@ -13,16 +13,17 @@
         </div>
 
         <div class="phone-toolbar mb-4 flex flex-wrap items-center gap-2">
-            <LibrarianSearchInput id="staff-search" v-model="search" placeholder="Search name, email or username" />
+            <LibrarianSearchInput id="staff-search" v-model="search" class="!max-w-[560px] !basis-[480px]" placeholder="Search name, email or username" />
+            <LibrarianFilterMenu v-model="filters" :groups="filterGroups" />
             <div class="flex-1"></div>
-            <LibrarianResetFiltersButton @click="search = ''" />
+            <LibrarianResetFiltersButton @click="search = ''; filters = { role: 'all', status: 'all' }" />
             <ButtonsButton variant="primary" @click="openCreate">
                 <Icon name="i-tabler-plus" class="h-3.5 w-3.5" />Add staff account
             </ButtonsButton>
         </div>
 
         <LibrarianTableShell :columns="['Name', 'Email / username', 'Role', 'Status', '']" :loading="pending && !data" :empty="shown.length === 0"
-            :empty-text="search ? 'No staff accounts match your search.' : 'No staff accounts yet.'" min-width="760px">
+            :empty-text="search || filtered ? 'No staff accounts match these filters.' : 'No staff accounts yet.'" min-width="760px">
             <!-- Phones: one card per account. -->
             <template #cards>
                 <li v-for="account in shown" :key="`card-${account.uuid}`" class="px-4 py-3.5" :class="account.isDisabled ? 'bg-stone-50/70' : ''">
@@ -92,9 +93,21 @@ const search = ref('')
 const { data, pending, execute: refetch } = useAsyncData('admin-staff', () => adminService.staff(), { lazy: true })
 
 const all = computed(() => data.value?.staff ?? [])
+// The whole list is loaded, so the search and the filters narrow it here.
+const filters = ref({ role: 'all', status: 'all' }) // role: all | admin | librarian | assistant; status: all | active | awaiting | disabled
+const filterGroups = [
+    { key: 'role', title: 'Role', options: [{ value: 'all', label: 'All roles' }, { value: 'admin', label: 'Administrator' }, { value: 'librarian', label: 'Librarian' }, { value: 'assistant', label: 'Student assistant' }] },
+    { key: 'status', title: 'Account status', options: [{ value: 'all', label: 'Any status' }, { value: 'active', label: 'Active' }, { value: 'awaiting', label: 'Awaiting email' }, { value: 'disabled', label: 'Disabled' }] },
+]
+const filtered = computed(() => filters.value.role !== 'all' || filters.value.status !== 'all')
+const statusKey = (a: StaffAccount) => (a.isDisabled ? 'disabled' : a.emailConfirmed === false ? 'awaiting' : 'active')
+
 const shown = computed(() => {
     const q = search.value.trim().toLowerCase()
-    return q ? all.value.filter((a) => `${a.name} ${signInName(a)} ${a.roleLabel}`.toLowerCase().includes(q)) : all.value
+    return all.value.filter((a) =>
+        (filters.value.role === 'all' || a.role === filters.value.role)
+        && (filters.value.status === 'all' || statusKey(a) === filters.value.status)
+        && (!q || `${a.name} ${signInName(a)} ${a.roleLabel}`.toLowerCase().includes(q)))
 })
 
 /** What they sign in with: their email, or a student assistant's username. */
