@@ -79,7 +79,7 @@
 						<td class="px-4 py-3 tabular-nums group-hover:bg-accent-50">{{ copy.book.publicationYear ?? '—' }}</td>
 						<td class="px-4 py-3 tabular-nums group-hover:bg-accent-50">{{ copy.book.pageCount ?? '—' }}</td>
 						<td class="whitespace-nowrap px-4 py-3 group-hover:bg-accent-50">{{ copy.sourceOfFund || copy.book.sourceOfFund || '—' }}</td>
-						<td class="whitespace-nowrap px-4 py-3 tabular-nums group-hover:bg-accent-50">{{ (copy.cost ?? copy.book.cost) != null ? formatPeso(copy.cost ?? copy.book.cost) : '—' }}</td>
+						<td class="whitespace-nowrap px-4 py-3 tabular-nums group-hover:bg-accent-50">{{ (copy.cost ?? copy.book.cost) != null ? formatPeso(copy.cost ?? copy.book.cost ?? 0) : '—' }}</td>
 						<td class="whitespace-nowrap px-4 py-3 group-hover:bg-accent-50">{{ copy.book.shelfLocation || '—' }}</td>
 						<td class="font-data whitespace-nowrap px-4 py-3 text-[12.5px] text-stone-500 group-hover:bg-accent-50">{{ copy.barcodeValue || '—' }}</td>
 						<td class="px-4 py-3 group-hover:bg-accent-50" @click.stop>

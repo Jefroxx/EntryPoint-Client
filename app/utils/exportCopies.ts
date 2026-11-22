@@ -75,7 +75,7 @@ export async function exportCopiesToExcel(filters: Omit<NonNullable<CopyFilters>
 			year: book.publicationYear,
 			edition: book.edition ?? '',
 			volume: book.volume ?? '',
-			pages: book.pages,
+			pages: book.pageCount,
 			fund: copy.sourceOfFund ?? book.sourceOfFund ?? '',
 			cost: toNumber(copy.cost) ?? toNumber(book.cost),
 			// Same fallback as fund and cost: remarks typed on the book itself reach every copy that has none of its own.
