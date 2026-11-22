@@ -244,7 +244,7 @@
             @approve="handleApprove" @reject="handleReject" />
 
         <LibrarianAddBookModal :open="isAddModalOpen" :categories="bookCategories" :book="editingBook"
-            @close="isAddModalOpen = false" @created="handleBookCreated" @updated="handleBookUpdated"
+            @close="isAddModalOpen = false" @created="handleBookCreated" @updated="handleBookUpdated" @exists="addCopiesToExisting"
             @print-labels="printNewBookLabels" />
 
         <LibrarianAddCopiesModal :open="isAddCopiesOpen" :book="addCopiesBook" :busy="stockBusy" :added="addedCopies"
@@ -561,6 +561,15 @@ function openAddCopies(copy?: CopyCatalogRow) {
         : null
     addedCopies.value = null
     isAddCopiesOpen.value = true
+}
+
+// An ISBN scanned in Add Book that the library already has: this window gives way to adding a copy of that book.
+function addCopiesToExisting(book: { bookUuid: string; title: string; authors: string[]; coverImageURL: string | null; callNumber: string | null; copies: number }) {
+    isAddModalOpen.value = false
+    addCopiesBook.value = { bookUuid: book.bookUuid, title: book.title, authors: book.authors, coverImageURL: book.coverImageURL, callNumber: book.callNumber }
+    addedCopies.value = null
+    isAddCopiesOpen.value = true
+    alert.success('Already in the catalog', `"${book.title}" has ${book.copies} ${book.copies === 1 ? 'copy' : 'copies'}. Add another copy of it here.`)
 }
 
 async function saveAddCopies(payload: { bookUuid: string; title: string; quantity: number; sourceOfFund: string; cost: number; remarks: string | undefined }) {
