@@ -3,9 +3,10 @@ import type { ReservationStatus } from '~/services/circulationService'
 /** What each reservation state is called at the desk, and the colors of its little status line (cards and pop-up share it). */
 export const reservationLook: Record<ReservationStatus, { label: string; short: string; text: string; dot: string }> = {
   Waiting: { label: 'Waiting for review', short: 'Waiting', text: 'text-amber-700', dot: 'bg-amber-500' },
-  Accepted: { label: 'Ready for pickup', short: 'Ready', text: 'text-emerald-700', dot: 'bg-emerald-500' },
+  Accepted: { label: 'Ready for pickup', short: 'Ready for pickup', text: 'text-emerald-700', dot: 'bg-emerald-500' },
   Rejected: { label: 'Rejected', short: 'Rejected', text: 'text-red-600', dot: 'bg-red-500' },
   Fulfilled: { label: 'Checked out', short: 'Checked out', text: 'text-stone-500', dot: 'bg-stone-400' },
+  Expired: { label: 'Expired: not collected in time', short: 'Expired', text: 'text-stone-500', dot: 'bg-stone-400' },
 }
 
 /** "Jane Doe, John Roe" for a reserved book; empty when its authors aren't known. */

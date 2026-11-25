@@ -1,8 +1,32 @@
 <template>
-	<LibrarianModalShell :open="open" size="xl" title="Print Barcode Labels"
-		:subtitle="loading ? 'Gathering the labels…' : `${labels.length} ${labels.length === 1 ? 'label' : 'labels'} · ${pages.length} ${pages.length === 1 ? 'sheet' : 'sheets'}`"
+	<LibrarianModalShell :open="open" size="xl" :title="confirmingUnverified ? 'Print Unverified Labels?' : 'Print Barcode Labels'"
+		:subtitle="confirmingUnverified ? 'Check the list, then print or go back.' : loading ? 'Gathering the labels…' : `${labels.length} ${labels.length === 1 ? 'label' : 'labels'} · ${pages.length} ${pages.length === 1 ? 'sheet' : 'sheets'}`"
 		@close="emit('close')">
-		<div class="grid gap-6 md:grid-cols-[minmax(0,300px)_minmax(0,1fr)]">
+		<!-- Some Dewey numbers are only a guess from the category: they print as they are, but the librarian is asked first, inside this same
+			 window (never a second pop-up), with the copies in question listed. -->
+		<div v-if="confirmingUnverified" class="space-y-4">
+			<div class="flex items-start gap-3">
+				<span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-50 text-amber-600">
+					<Icon name="i-tabler-alert-triangle" class="h-5 w-5" />
+				</span>
+				<p class="pt-1 text-[15px] leading-relaxed text-stone-600">
+					{{ labels.length === 1 ? 'This label is' : `${unverified.length} of the ${labels.length} labels are` }} for {{ unverified.length === 1 ? 'a copy whose Dewey number hasn\x27t' : 'copies whose Dewey numbers haven\x27t' }} been verified yet.
+					{{ unverified.length === 1 ? 'It prints' : 'They print' }} on the label{{ unverified.length === 1 ? '' : 's' }} as {{ unverified.length === 1 ? 'it is' : 'they are' }} now, but {{ unverified.length === 1 ? 'it' : 'they' }} may be wrong, so check {{ unverified.length === 1 ? 'it' : 'them' }} before the labels go on the shelf.
+				</p>
+			</div>
+			<ul class="max-h-[340px] divide-y divide-stone-100 overflow-y-auto rounded-xl border border-stone-200" aria-label="Copies with an unverified Dewey number">
+				<li v-for="item in unverified" :key="item.uuid" class="flex items-center gap-3 px-3.5 py-2.5">
+					<span class="font-data flex h-9 min-w-9 shrink-0 items-center justify-center rounded-lg bg-stone-100 px-2 text-[13.5px] font-bold text-stone-900">{{ item.accessionNumber }}</span>
+					<span class="min-w-0 flex-1">
+						<span class="block break-words text-[14px] font-semibold text-stone-900">{{ item.title }}</span>
+						<span class="block text-[12.5px] text-stone-500">Dewey {{ item.dewey ?? 'not set' }}<template v-if="item.cutter"> · {{ item.cutter }}</template></span>
+					</span>
+					<span class="shrink-0 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10.5px] font-semibold text-amber-700">Unverified</span>
+				</li>
+			</ul>
+		</div>
+
+		<div v-show="!confirmingUnverified" class="grid gap-6 md:grid-cols-[minmax(0,300px)_minmax(0,1fr)]">
 			<!-- Left: which labels, and how the sheet is laid out. Always shown, so the numbers can be changed while it reloads. -->
 			<div class="min-w-0 space-y-4">
 				<form autocomplete="off" @submit.prevent="applyNumbers">
@@ -53,19 +77,10 @@
 				<p v-if="truncated" class="rounded-xl bg-amber-50 px-3.5 py-2.5 text-[13px] leading-snug text-amber-900">
 					More than {{ labels.length }} copies matched, so only the first {{ labels.length }} are included. Narrow it down with accession numbers or the filters.
 				</p>
-				<!-- Books whose Dewey number is only a guess from the category: their call number and Cutter lines are left blank so nobody
-					 shelves by a wrong number. Printing the guess anyway is the librarian's call. -->
-				<label v-if="unconfirmedCount || (loading && sawUnconfirmed)" class="flex cursor-pointer items-start gap-3 rounded-xl border px-3.5 py-3 transition-colors"
-					:class="includeUnconfirmed ? 'border-amber-300 bg-amber-50' : 'border-stone-200 bg-stone-50 hover:bg-stone-100'">
-					<input v-model="includeUnconfirmed" type="checkbox" class="mt-0.5 h-4 w-4 shrink-0 accent-accent-500" :disabled="loading" @change="reload" />
-					<span class="min-w-0">
-						<span class="block text-[13.5px] font-semibold text-stone-900">Print the unconfirmed call numbers too</span>
-						<span class="mt-0.5 block text-[12.5px] leading-snug text-stone-600">
-							{{ unconfirmedCount }} {{ unconfirmedCount === 1 ? 'label is' : 'labels are' }} for books whose Dewey number is only a guess from the category.
-							{{ includeUnconfirmed ? 'Their guessed call number and Cutter are printed. They may be wrong, so check them before shelving.' : 'Left unticked, their call number and Cutter lines stay blank; the rest of the label still prints.' }}
-						</span>
-					</span>
-				</label>
+				<!-- Books whose Dewey number is only a guess from the category print it as it is; the librarian is asked to check the list first. -->
+				<p v-if="unverified.length" class="rounded-xl bg-amber-50 px-3.5 py-2.5 text-[13px] leading-snug text-amber-900">
+					{{ unverified.length }} {{ unverified.length === 1 ? 'label has' : 'labels have' }} a Dewey number that isn't verified yet. {{ unverified.length === 1 ? 'It prints' : 'They print' }} as {{ unverified.length === 1 ? 'it is' : 'they are' }}; you'll be shown the list before printing.
+				</p>
 			</div>
 
 			<!-- Right: the sheet as it will print (scaled down), one sheet at a time. -->
@@ -110,10 +125,20 @@
 		</AppTeleport>
 
 		<template #footer>
-			<ButtonsButton variant="ghost" @click="emit('close')">Close</ButtonsButton>
-			<ButtonsButton variant="primary" :disabled="loading || !labels.length" @click="print">
-				<Icon name="i-tabler-printer" class="h-4 w-4" />Print {{ labels.length }} {{ labels.length === 1 ? 'label' : 'labels' }}
-			</ButtonsButton>
+			<template v-if="confirmingUnverified">
+				<ButtonsButton variant="ghost" @click="confirmingUnverified = false">
+					<Icon name="i-tabler-arrow-left" class="h-4 w-4" />Back
+				</ButtonsButton>
+				<ButtonsButton variant="primary" @click="printAnyway">
+					<Icon name="i-tabler-printer" class="h-4 w-4" />Print anyway
+				</ButtonsButton>
+			</template>
+			<template v-else>
+				<ButtonsButton variant="ghost" @click="emit('close')">Close</ButtonsButton>
+				<ButtonsButton variant="primary" :disabled="loading || !labels.length" @click="print">
+					<Icon name="i-tabler-printer" class="h-4 w-4" />Print {{ labels.length }} {{ labels.length === 1 ? 'label' : 'labels' }}
+				</ButtonsButton>
+			</template>
 		</template>
 	</LibrarianModalShell>
 </template>
@@ -134,8 +159,8 @@ const props = defineProps<{
 
 const emit = defineEmits<{
 	(e: 'close'): void
-	/** The librarian typed accession numbers (or cleared them: an empty list), or changed the unconfirmed-numbers choice: load the labels again. */
-	(e: 'refine', ranges: AccessionRange[], options: { includeUnconfirmed: boolean }): void
+	/** The librarian typed accession numbers (or cleared them: an empty list): load the labels again. */
+	(e: 'refine', ranges: AccessionRange[]): void
 }>()
 
 const LAYOUT_LIST = Object.values(LABEL_LAYOUTS)
@@ -153,21 +178,12 @@ const printCopy = ref<HTMLElement | null>(null)
 const numbers = ref('')
 const numbersError = ref('')
 
-// Print the call number and Cutter of books whose Dewey number is only a guess? Off by default (those lines stay blank).
-const includeUnconfirmed = ref(false)
-// The numbers last applied, so ticking the box above reloads the same labels instead of whatever is half typed.
-let appliedRanges: AccessionRange[] = []
 
 function applyNumbers() {
 	const { ranges, error } = parseAccessionRanges(numbers.value)
 	numbersError.value = error
 	if (error) return
-	appliedRanges = ranges
-	emit('refine', ranges, { includeUnconfirmed: includeUnconfirmed.value })
-}
-
-function reload() {
-	emit('refine', appliedRanges, { includeUnconfirmed: includeUnconfirmed.value })
+	emit('refine', ranges)
 }
 
 // The last layout used is remembered: a library tends to use the same sheets every time.
@@ -196,10 +212,11 @@ const pages = computed(() => paginateLabels(props.labels, perPage.value, skip.va
 
 const previewW = computed(() => Math.round(paperSize.value.w * MM * PREVIEW_SCALE))
 const previewH = computed(() => Math.round(paperSize.value.h * MM * PREVIEW_SCALE))
-const unconfirmedCount = computed(() => props.labels.filter((l) => l.unconfirmed).length)
-// While the labels reload after ticking the box, the box stays where it is instead of vanishing and coming back.
-const sawUnconfirmed = ref(false)
-watch(unconfirmedCount, (n) => { if (n > 0) sawUnconfirmed.value = true })
+// Copies whose Dewey number is only a guess from the category: they print, but the librarian is asked first.
+const unverified = computed(() => props.labels.filter((l) => l.unconfirmed))
+const confirmingUnverified = ref(false)
+// New labels (other numbers, a reload) start the question over.
+watch(() => props.labels, () => { confirmingUnverified.value = false })
 
 // The sheet the preview shows can't be past the last one; and a fresh set of labels starts at the top.
 watch(pages, (list) => { if (sheet.value > list.length - 1) sheet.value = Math.max(0, list.length - 1) })
@@ -209,9 +226,7 @@ watch(() => props.open, (isOpen) => {
 	startAt.value = 1
 	numbers.value = ''
 	numbersError.value = ''
-	includeUnconfirmed.value = false
-	sawUnconfirmed.value = false
-	appliedRanges = []
+	confirmingUnverified.value = false
 })
 watch([layoutKey, paperKey], () => { startAt.value = 1 })
 
@@ -219,6 +234,16 @@ watch([layoutKey, paperKey], () => { startAt.value = 1 })
 const pageRule = computed(() => `@page { size: ${paperSize.value.w}mm ${paperSize.value.h}mm; margin: 0; }`)
 
 function print() {
+	// Unverified Dewey numbers are listed and confirmed first (a step in this window); otherwise it goes straight to the printer.
+	if (unverified.value.length) {
+		confirmingUnverified.value = true
+		return
+	}
+	printOnly(printCopy.value)
+}
+
+function printAnyway() {
+	confirmingUnverified.value = false
 	printOnly(printCopy.value)
 }
 </script>

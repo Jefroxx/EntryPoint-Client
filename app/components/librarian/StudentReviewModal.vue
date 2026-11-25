@@ -10,6 +10,7 @@
 					<span class="font-data">{{ student.memberIDNumber }}</span> · {{ student.academicProgram || 'No program' }} · {{ email || 'no email' }}
 				</p>
 				<p class="mt-2.5 text-[14px]" :class="words.confirmLabelTone">{{ words.outcome }}</p>
+				<p v-if="mode === 'reject'" class="mt-3 rounded-lg bg-white/70 px-3 py-2 text-[14px] text-stone-800"><b>Reason they will see:</b> {{ reason.trim() }}</p>
 			</section>
 		</div>
 
@@ -29,6 +30,14 @@
 					<p class="text-[15px] font-bold">{{ words.bannerTitle }}</p>
 					<p class="mt-0.5 text-[14px] leading-snug">{{ words.bannerText }}</p>
 				</div>
+			</section>
+
+			<!-- Rejecting: the student is told why, so the reason is written here, in the same window. -->
+			<section v-if="mode === 'reject'">
+				<label for="reject-reason" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">Reason the student will see<FieldRequired /></label>
+				<textarea id="reject-reason" v-model="reason" rows="3" maxlength="500" placeholder="e.g. The student ID number does not match your school ID"
+					class="w-full resize-none rounded-[10px] border border-stone-200 bg-white px-3 py-2.5 text-[14.5px] text-stone-900 outline-none placeholder:text-stone-400 focus:border-accent-500 focus:ring-2 focus:ring-accent-200" />
+				<p class="mt-1 text-[12.5px] text-stone-500">They get it as a notification and in the email.</p>
 			</section>
 
 			<div class="grid gap-3 md:grid-cols-3">
@@ -94,7 +103,7 @@
 				<ButtonsButton variant="ghost" :disabled="busy" @click="step = 'details'">
 					<Icon name="i-tabler-arrow-left" class="h-3.5 w-3.5" />Back
 				</ButtonsButton>
-				<ButtonsButton :variant="mode === 'reject' ? 'danger' : 'primary'" :disabled="busy" @click="emit('submit')">
+				<ButtonsButton :variant="mode === 'reject' ? 'danger' : 'primary'" :disabled="busy" @click="emit('submit', reason.trim())">
 					<Icon v-if="busy" name="i-tabler-loader-2" class="h-3.5 w-3.5 animate-spin" />
 					<Icon v-else :name="words.icon" class="h-3.5 w-3.5" />
 					{{ words.confirm }}
@@ -102,7 +111,7 @@
 			</template>
 			<template v-else>
 				<ButtonsButton variant="ghost" :disabled="busy" @click="emit('close')">Cancel</ButtonsButton>
-				<ButtonsButton variant="primary" :disabled="!student || blocked" @click="step = 'confirm'">
+				<ButtonsButton variant="primary" :disabled="!student || blocked || (mode === 'reject' && reason.trim().length < 3)" @click="step = 'confirm'">
 					Continue<Icon name="i-tabler-arrow-right" class="h-3.5 w-3.5" />
 				</ButtonsButton>
 			</template>
@@ -123,12 +132,14 @@ const props = defineProps<{
 
 const emit = defineEmits<{
 	(e: 'close'): void
-	(e: 'submit'): void
+	/** `reason` is what the student is told when rejecting (empty otherwise). */
+	(e: 'submit', reason: string): void
 }>()
 
 // Two steps: the details, then a last look before anything is changed.
 const step = ref<'details' | 'confirm'>('details')
-watch(() => [props.open, props.student?.studentID, props.mode], () => { step.value = 'details' })
+const reason = ref('')
+watch(() => [props.open, props.student?.studentID, props.mode], () => { step.value = 'details'; reason.value = '' })
 
 const WORDS = {
 	approve: {
@@ -143,8 +154,8 @@ const WORDS = {
 		title: 'Reject This Registration?', subtitle: 'Check the details, then continue.',
 		confirmTitle: 'Confirm the Rejection', confirmSubtitle: 'This is the last step. Check it, then reject the registration.',
 		banner: 'border-amber-300 bg-amber-50 text-amber-900', icon: 'i-tabler-circle-x',
-		bannerTitle: 'Rejecting stops this student from logging in.', bannerText: 'They are told by notification and email to contact the library. You can reinstate them later from the Rejected tab.',
-		about: 'You are about to reject', outcome: 'They stay unable to log in until a librarian reinstates them. They are told to contact the library.',
+		bannerTitle: 'Rejecting stops this student from logging in.', bannerText: 'They are told your reason by notification and email, and to contact the library. You can reinstate them later from the Rejected tab.',
+		about: 'You are about to reject', outcome: 'They stay unable to log in until a librarian reinstates them. They are sent the reason and told to contact the library.',
 		confirmBox: 'border-amber-300 bg-amber-50', confirmLabelTone: 'text-amber-900', confirm: 'Yes, reject the registration',
 	},
 	reinstate: {
@@ -196,7 +207,8 @@ const registrationFields = computed(() => {
 	return [
 		{ label: 'Registered', value: s.created_at ? formatDateTime(s.created_at) : '' },
 		...(s.reviewedAt ? [{ label: s.registrationStatus === 'rejected' ? 'Rejected on' : 'Reviewed on', value: formatDateTime(s.reviewedAt) }] : []),
-		{ label: 'Visit streak', value: `${s.visitStreak} days` },
+		...(s.registrationStatus === 'rejected' && s.rejectionReason ? [{ label: 'Reason', value: s.rejectionReason }] : []),
+		{ label: 'Visit streak', value: `${s.visitStreak} ${s.visitStreak === 1 ? 'day' : 'days'}` },
 		{ label: 'Knowledge score', value: `${s.knowledgeScore} pts` },
 	]
 })

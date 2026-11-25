@@ -28,9 +28,13 @@
 						<p class="mb-0.5 text-[12px] font-bold uppercase tracking-wide text-stone-500">{{ isStudent ? 'Status' : 'Type' }}</p>
 						<p class="text-[15px] font-medium capitalize text-stone-800">{{ isStudent ? student.registrationStatus : student.memberType }}</p>
 					</div>
+					<div v-if="student.registrationStatus === 'rejected' && student.rejectionReason" class="col-span-2">
+						<p class="mb-0.5 text-[12px] font-bold uppercase tracking-wide text-stone-500">Reason for rejection</p>
+						<p class="text-[14px] font-medium text-stone-800">{{ student.rejectionReason }}</p>
+					</div>
 					<div v-if="isStudent">
 						<p class="mb-0.5 text-[12px] font-bold uppercase tracking-wide text-stone-500">Visit streak</p>
-						<p class="text-[15px] font-medium text-stone-800">{{ student.visitStreak }} days</p>
+						<p class="text-[15px] font-medium text-stone-800">{{ student.visitStreak }} {{ student.visitStreak === 1 ? 'day' : 'days' }}</p>
 					</div>
 					<div v-if="isStudent">
 						<p class="mb-0.5 text-[12px] font-bold uppercase tracking-wide text-stone-500">Knowledge score</p>

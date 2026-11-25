@@ -10,6 +10,11 @@
 				:height="barHeight(s.values[i] ?? 0)" rx="4" :fill="s.color">
 				<title>{{ s.name }} · {{ label }}: {{ s.values[i] ?? 0 }}</title>
 			</rect>
+			<!-- The value above each bar, so it can be read without hovering (a phone cannot); left out when the bars are too close. -->
+			<template v-if="band >= 34">
+				<text v-for="(s, k) in series" :key="`v-${s.name}`" v-show="(s.values[i] ?? 0) > 0" :x="barX(i, k) + (barWidth - 3) / 2" :y="barY(s.values[i] ?? 0) - 3"
+					text-anchor="middle" font-size="9.5" font-weight="600" fill="#57534e">{{ s.values[i] ?? 0 }}</text>
+			</template>
 			<text :x="LEFT + band * i + band / 2" :y="height - 7" text-anchor="middle" font-size="10.5" fill="#6b6156">
 				{{ band < 56 ? label.split(' ')[0] : label }}
 			</text>

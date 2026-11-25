@@ -94,7 +94,7 @@
 					<!-- Below lg the "At a glance" card is hidden, so this carries its slots and desk note; from lg up the card says it. -->
 					<div class="mb-3.5 flex items-start gap-2.5 rounded-2xl bg-accent-100 px-3.5 py-3 text-[13px] md:px-5 md:py-4 md:text-[15px] leading-snug text-accent-600 lg:hidden">
 						<Icon name="i-tabler-id" class="mt-px h-4 w-4 shrink-0 md:h-5 md:w-5" />
-						<span>{{ slotsLeft }} of 3 reservation slots free. Books are handed over at the desk once accepted.</span>
+						<span>{{ slotsLeft }} of {{ maxBooks }} reservation slots free. Books are handed over at the desk once accepted.</span>
 					</div>
 
 					<StudentEmptyState v-if="!activeReservations.length" icon="i-tabler-clock" title="No active reservations"
@@ -178,6 +178,19 @@
 										<template v-else-if="f.paymentStatus === 'Paid'">{{ f.kind === 'lost' ? 'Lost' : 'Damaged' }} book · paid{{ f.settledAt ? ` ${formatDate(f.settledAt)}` : '' }}</template>
 										<template v-else>{{ f.kind === 'lost' ? 'Lost' : 'Damaged' }} book · pay it at the desk, or bring a replacement copy</template>
 									</p>
+									<p v-if="f.kind !== 'overdue' && f.reason" class="mt-0.5 text-[12.5px] md:text-[14px] text-stone-500">{{ f.reason }}</p>
+									<!-- Pay or replace: the student says which, so the desk knows what to expect. Nothing is settled until it happens at the desk. -->
+									<div v-if="f.kind !== 'overdue' && f.paymentStatus === 'Unpaid'" class="mt-2.5 flex flex-wrap gap-2" role="group" aria-label="How will you settle this?">
+										<button v-for="option in SETTLE_OPTIONS" :key="option.value" type="button" :aria-pressed="f.studentChoice === option.value" :disabled="choosing === f.uuid"
+											class="inline-flex h-9 items-center gap-1.5 rounded-full border px-3.5 text-[13px] font-semibold transition-colors disabled:opacity-60 md:h-10 md:text-[14px]"
+											:class="f.studentChoice === option.value ? 'border-accent-500 bg-accent-500 text-white' : 'border-stone-200 bg-white text-stone-700 hover:bg-stone-50'"
+											@click="choosePenalty(f, option.value)">
+											<Icon :name="option.icon" class="h-4 w-4" />{{ option.label }}
+										</button>
+									</div>
+									<p v-if="f.kind !== 'overdue' && f.paymentStatus === 'Unpaid' && f.studentChoice" class="mt-1.5 text-[12px] md:text-[13.5px] text-stone-500">
+										{{ f.studentChoice === 'replace' ? 'Bring a replacement copy to the library desk.' : 'Pay it at the library desk.' }} You can change this until it's settled.
+									</p>
 									<p v-else class="text-[12.5px] md:text-[14.5px] text-stone-500">
 										{{ f.unitsLate }} {{ f.rateUnit }}{{ f.unitsLate === 1 ? '' : 's' }} late{{ f.rate ? ` × ${formatPeso(f.rate)}` : '' }}{{ f.paymentStatus === 'Paid' && f.settledAt ? ` · paid ${formatDate(f.settledAt)}` : '' }}
 									</p>
@@ -249,7 +262,7 @@
 </template>
 
 <script setup lang="ts">
-import { studentService, briefOf, type LoanRow, type ReservationRow } from '~/services/studentService'
+import { studentService, briefOf, type LoanRow, type PenaltyRow, type ReservationRow } from '~/services/studentService'
 import type { LoanReceipt as LoanReceiptData } from '~/services/circulationService'
 import { TONE_SOFT, type StudentTone } from '~/utils/studentNotifications'
 
@@ -269,7 +282,7 @@ onMounted(() => {
 })
 const router = useRouter()
 const { perform } = useAction()
-const { stats, slotsLeft, refreshProfile, refreshReservations, bumpData } = useStudent()
+const { stats, maxBooks, slotsLeft, refreshProfile, refreshReservations, bumpData } = useStudent()
 
 // In the order a borrow happens: reserve it, borrow it, settle any fine. Reservations opens by default.
 const TABS = ['reservations', 'loans', 'fines']
@@ -278,7 +291,7 @@ const tab = computed<string>({
 	set: (value) => { void router.replace({ query: { ...route.query, tab: value } }) },
 })
 
-const { data, pending } = useStudentData('student-books', async () => {
+const { data, pending, refresh } = useStudentData('student-books', async () => {
 	const [loans, reservations, penalties] = await Promise.all([studentService.loans(), studentService.reservations(), studentService.penalties()])
 	return { loans: loans.loans, reservations: reservations.reservations, penalties: penalties.penalties, unpaidTotal: penalties.unpaidTotal }
 })
@@ -286,7 +299,7 @@ const { data, pending } = useStudentData('student-books', async () => {
 const openLoans = computed(() => (data.value?.loans ?? []).filter((l) => l.status !== 'Returned'))
 const returnedLoans = computed(() => (data.value?.loans ?? []).filter((l) => l.status === 'Returned').slice(0, 5))
 const activeReservations = computed(() => (data.value?.reservations ?? []).filter((r) => r.status === 'Waiting' || r.status === 'Accepted'))
-const pastReservations = computed(() => (data.value?.reservations ?? []).filter((r) => r.status === 'Rejected' || r.status === 'Fulfilled').slice(0, 8))
+const pastReservations = computed(() => (data.value?.reservations ?? []).filter((r) => r.status === 'Rejected' || r.status === 'Fulfilled' || r.status === 'Expired').slice(0, 8))
 
 const tabs = computed(() => [
 	{ label: 'Reservations', value: 'reservations', badge: activeReservations.value.filter((r) => r.status === 'Accepted').length || undefined },
@@ -306,7 +319,7 @@ const glance = computed(() => [
 	{ label: 'Active loans', value: String(stats.value?.activeLoans ?? '—') },
 	{ label: 'Overdue', value: String(stats.value?.overdueLoans ?? '—'), bad: (stats.value?.overdueLoans ?? 0) > 0 },
 	{ label: 'Ready for pickup', value: String(stats.value?.readyReservations ?? '—') },
-	{ label: 'Reservation slots', value: `${slotsLeft.value} of 3 free` },
+	{ label: 'Reservation slots', value: `${slotsLeft.value} of ${maxBooks.value} free` },
 	{ label: 'Unpaid fines', value: formatPeso(stats.value?.unpaidFines ?? 0) },
 ])
 
@@ -367,6 +380,20 @@ const cancelling = ref<ReservationRow | null>(null)
 const lastCancelled = ref<ReservationRow | null>(null)
 const cancelBusy = ref(false)
 watch(cancelling, (r) => { if (r) lastCancelled.value = r })
+
+// Lost or damaged book: how the student will settle it. Told to the librarians; the desk records the payment or the replacement.
+const SETTLE_OPTIONS = [
+	{ value: 'pay', label: "I'll pay it", icon: 'i-tabler-cash' },
+	{ value: 'replace', label: "I'll replace the book", icon: 'i-tabler-book-upload' },
+] as const
+const choosing = ref<string | null>(null)
+
+async function choosePenalty(f: PenaltyRow, choice: 'pay' | 'replace') {
+	if (choosing.value || f.studentChoice === choice) return
+	choosing.value = f.uuid
+	await perform(() => studentService.choosePenalty(f.uuid, choice), choice === 'replace' ? 'You will replace the book' : 'You will pay it', 'Could not save your choice', [() => refresh()])
+	choosing.value = null
+}
 
 async function confirmCancel() {
 	if (!cancelling.value || cancelBusy.value) return

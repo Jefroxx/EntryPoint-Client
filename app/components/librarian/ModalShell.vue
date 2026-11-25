@@ -14,14 +14,18 @@
 				<div v-if="open" role="dialog" aria-modal="true" :aria-labelledby="titleId"
 					class="relative z-10 flex w-full flex-col rounded-[22px] bg-white shadow-overlay max-sm:h-dvh max-sm:max-h-none max-sm:max-w-none max-sm:rounded-none max-sm:shadow-none"
 						:class="[widthClass, fixedHeight && !discarding ? heightClass : '']">
-					<div class="flex flex-shrink-0 items-start justify-between gap-3 border-b border-stone-100 px-6 py-5 max-sm:items-center max-sm:px-4 max-sm:py-3">
+					<div class="flex-shrink-0 border-b border-stone-100 px-6 py-5 max-sm:px-4 max-sm:py-3">
+						<div class="flex items-start justify-between gap-3 max-sm:items-center">
 							<div class="min-w-0 max-sm:flex-1">
 								<h2 :id="titleId" class="dashboard-heading text-2xl font-bold text-crimson max-sm:text-xl">{{ discarding ? discardTitle : title }}</h2>
-							<p v-if="subtitle && !discarding" class="dashboard-heading text-[13.5px] text-crimson">{{ subtitle }}</p>
+								<p v-if="subtitle && !discarding" class="dashboard-heading text-[13.5px] text-crimson">{{ subtitle }}</p>
+							</div>
+							<ButtonsButton variant="icon" size="md" aria-label="Close" class="shrink-0" @click="requestClose">
+								<Icon name="i-tabler-x" class="h-[18px] w-[18px]" />
+							</ButtonsButton>
 						</div>
-						<ButtonsButton variant="icon" size="md" aria-label="Close" class="shrink-0" @click="requestClose">
-							<Icon name="i-tabler-x" class="h-[18px] w-[18px]" />
-						</ButtonsButton>
+						<!-- Optional step bar, the same look as Add Book and Checkout. -->
+						<div v-if="$slots.steps && !discarding" class="mt-4"><slot name="steps" /></div>
 					</div>
 
 					<div class="flex-1 overflow-y-auto px-6 py-5 max-sm:px-4">

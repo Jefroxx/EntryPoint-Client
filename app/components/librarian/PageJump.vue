@@ -4,7 +4,7 @@
 	<label class="flex items-center gap-1 text-[13.5px] font-semibold tabular-nums text-stone-700">
 		<span class="sr-only">Go to page</span>
 		<input v-model="draft" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" :aria-label="`Page ${page} of ${lastPage}. Type a page number`"
-			class="h-8 rounded-lg border border-stone-200 bg-white text-center font-semibold text-stone-800 transition-colors duration-150 focus:border-accent-400 focus:outline-none focus:ring-2 focus:ring-accent-200"
+			class="h-10 min-w-[2.75rem] rounded-lg border border-stone-200 bg-white text-center font-semibold text-stone-800 transition-colors duration-150 focus:border-accent-400 focus:outline-none focus:ring-2 focus:ring-accent-200 md:h-8 md:min-w-0"
 			:style="{ width: `calc(${String(lastPage).length}ch + 1.4rem)` }"
 			@focus="($event.target as HTMLInputElement).select()" @input="draft = draft.replace(/\D/g, '')"
 			@keydown.enter.prevent="($event.target as HTMLInputElement).blur()" @keydown.esc.prevent="cancel" @blur="commit" />

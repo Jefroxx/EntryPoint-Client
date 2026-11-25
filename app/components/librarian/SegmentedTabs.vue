@@ -1,10 +1,15 @@
 <template>
-	<div ref="rootRef" class="no-scrollbar relative inline-flex max-w-full gap-0.5 overflow-x-auto rounded-xl bg-stone-100 p-1">
-		<div ref="thumbRef"
+	<div ref="rootRef" class="relative rounded-xl bg-stone-100 p-1"
+		:class="wrap ? 'flex w-full flex-wrap gap-1' : 'no-scrollbar inline-flex max-w-full gap-0.5 overflow-x-auto'">
+		<div v-if="!wrap" ref="thumbRef"
 			class="absolute top-1 bottom-1 left-1 rounded-lg bg-white shadow-sm transition-[transform,width] duration-300 ease-[cubic-bezier(.22,1,.36,1)]" />
 		<button v-for="tab in tabs" :key="tab.value" ref="btnRefs" type="button"
-			class="relative z-10 inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-2 text-[14px] font-semibold transition-colors duration-200 sm:px-4 sm:text-[15px]"
-			:class="tab.value === modelValue ? 'text-stone-900' : 'text-stone-500 hover:text-stone-700'"
+			class="relative z-10 inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 py-2 text-[13.5px] font-semibold transition-colors duration-200 sm:px-4 sm:text-[15px]"
+			:class="[
+				wrap ? [tabs.length === 3 ? 'min-w-[calc(33.333%-3px)]' : 'min-w-[calc(50%-2px)]', 'grow justify-center sm:min-w-0'] : 'shrink-0',
+				tab.value === modelValue ? 'text-stone-900' : 'text-stone-500 hover:text-stone-700',
+				wrap && tab.value === modelValue ? 'bg-white shadow-sm' : '',
+			]"
 			@click="select(tab.value)">
 			<template v-if="tab.short"><span class="sm:hidden">{{ tab.short }}</span><span class="hidden sm:inline">{{ tab.label }}</span></template>
 				<template v-else>{{ tab.label }}</template>
@@ -17,6 +22,8 @@
 const props = defineProps<{
 	tabs: { label: string; value: string; badge?: number; /** Shown instead of the label below 640px. */ short?: string }[]
 	modelValue: string
+	/** Instead of one scrolling row: the tabs wrap onto a second row and share the full width (the active one is highlighted itself). */
+	wrap?: boolean
 }>()
 
 const emit = defineEmits<{ (e: 'update:modelValue', value: string): void }>()

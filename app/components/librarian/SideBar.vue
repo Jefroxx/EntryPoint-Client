@@ -73,7 +73,7 @@ const ALL_LINKS = [
     { label: 'Resources', to: '/librarian/resources', icon: 'i-tabler-device-desktop' },
     { label: 'Engagement', to: '/librarian/engagement', icon: 'i-tabler-trophy' },
     { label: 'Reports', to: '/librarian/reports', icon: 'i-tabler-clipboard-list' },
-    { label: 'Notifications', to: '/librarian/notifications', icon: 'i-tabler-bell' },
+    // Notifications live on the header bell (its "View all" opens the full page), as on the student and admin sides.
     { label: 'Settings', to: '/librarian/settings', icon: 'i-tabler-settings' },
 ]
 

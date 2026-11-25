@@ -2,6 +2,18 @@
 	<LibrarianModalShell :open="open" size="xl" :title="step === 'confirm' ? words.confirmTitle : words.title"
 		:subtitle="step === 'confirm' ? words.confirmSubtitle : words.subtitle"
 		:busy="busy" @close="emit('close')">
+		<template #steps>
+			<ol class="grid grid-cols-2 gap-2.5" aria-label="Steps">
+				<li v-for="(label, i) in ['Check the details', 'Confirm']" :key="label" :aria-current="(step === 'details' ? 0 : 1) === i ? 'step' : undefined">
+					<span class="block h-1 rounded-full transition-colors duration-300" :class="i <= (step === 'details' ? 0 : 1) ? 'bg-accent-500' : 'bg-stone-200'" />
+					<span class="mt-2 flex items-center gap-1.5 text-[12.5px] font-semibold transition-colors duration-300" :class="(step === 'details' ? 0 : 1) === i ? 'text-accent-600' : 'text-stone-500'">
+						<Icon v-if="i < (step === 'details' ? 0 : 1)" name="i-tabler-check" class="h-3.5 w-3.5" />
+						<span v-else class="tabular-nums">{{ i + 1 }}.</span>
+						{{ label }}
+					</span>
+				</li>
+			</ol>
+		</template>
 		<div v-if="loading" class="space-y-3" aria-busy="true">
 			<div class="h-24 animate-pulse rounded-xl bg-stone-100" />
 			<div class="h-32 animate-pulse rounded-xl bg-stone-100" />
@@ -307,10 +319,7 @@ const confirmLabel = computed(() => {
 	return feePaid.value ? `${base}. Fee paid` : `${base}. Fee unpaid`
 })
 
-const AREAS: Record<string, string> = {
-	circulation: 'Circulation', reserved: 'Reserved', filipiniana: 'Filipiniana', fiction: 'Fiction',
-	thesis: 'Thesis', journal: 'Journal', dissertation: 'Dissertation',
-}
+const AREAS = LIBRARY_AREAS
 
 const bookFields = computed<{ label: string; value: string; mono?: boolean; wide?: boolean }[]>(() => {
 	const b = props.preview?.book

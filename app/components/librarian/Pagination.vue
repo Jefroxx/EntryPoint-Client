@@ -23,7 +23,7 @@
 			<Transition enter-active-class="transition duration-200 ease-out" enter-from-class="translate-y-3 opacity-0"
 				leave-active-class="transition duration-150 ease-out" leave-to-class="translate-y-3 opacity-0">
 				<nav v-show="!inlineVisible" aria-label="Pages"
-					class="fixed bottom-[calc(1rem+env(safe-area-inset-bottom,0px))] left-1/2 z-40 -ml-[6.5rem] flex w-52 items-center justify-between gap-1 rounded-full border border-stone-200 bg-white/95 p-1 shadow-overlay backdrop-blur md:hidden">
+					class="fixed bottom-[calc(1rem+env(safe-area-inset-bottom,0px))] left-3 z-40 flex w-52 items-center justify-between gap-1 rounded-full border border-stone-200 bg-white/95 p-1 shadow-overlay backdrop-blur md:hidden">
 					<ButtonsButton variant="icon" size="sm" aria-label="Previous page" :disabled="page <= 1" @click="emit('change', page - 1)">
 						<Icon name="i-tabler-chevron-left" class="h-4 w-4" />
 					</ButtonsButton>

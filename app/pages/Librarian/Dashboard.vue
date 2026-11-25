@@ -69,7 +69,7 @@
             { label: 'Today', value: 'today', badge: attentionTotal || undefined },
             { label: 'Loans', value: 'loans', badge: today?.overdue || undefined },
             { label: 'Trends', value: 'trends' },
-            { label: 'Hall of Fame', value: 'hall' },
+            { label: 'Hall of Fame', short: 'Fame', value: 'hall' },
         ]" />
 
         <!-- 1 · Act now: every queue waiting on a librarian, as a strip like "Today" below. Each cell opens

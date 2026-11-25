@@ -16,11 +16,11 @@
 						<Icon name="i-tabler-circle-check" class="h-4 w-4" />
 						<b class="tabular-nums">{{ stats?.currentlyInLibrary ?? '—' }}</b> in the library
 					</span>
-					<span class="hidden h-9 items-center gap-2 rounded-xl bg-accent-50 px-3 text-[13.5px] text-accent-600 sm:inline-flex">
+					<span class="hidden h-9 items-center gap-2 rounded-xl bg-accent-50 px-3 text-[13.5px] text-accent-600 lg:inline-flex">
 						<Icon name="i-tabler-user-check" class="h-4 w-4" />
 						<b class="tabular-nums">{{ stats?.totalVisitsToday ?? '—' }}</b> visits today
 					</span>
-					<span class="font-data hidden px-1 text-[15px] font-semibold tabular-nums text-stone-700 md:inline">{{ time }}</span>
+					<span class="font-data hidden px-1 text-[15px] font-semibold tabular-nums text-stone-700 lg:inline">{{ time }}</span>
 
 					<button v-if="canFullscreen" type="button"
 						class="flex h-9 w-9 items-center justify-center rounded-lg text-stone-500 transition-[transform,background-color] duration-150 ease-out hover:bg-stone-100 active:scale-[0.96]"
@@ -141,16 +141,25 @@ const isEndOpen = ref(false)
 const endBusy = ref(false)
 
 const endMessage = computed(() => {
-	const students = stats.value?.inside.students ?? 0
-	const visitors = stats.value?.inside.visitors ?? 0
-	const who = [
-		students ? `${students} ${students === 1 ? 'student' : 'students'}` : '',
-		visitors ? `${visitors} ${visitors === 1 ? 'visitor' : 'visitors'}` : '',
-	].filter(Boolean).join(' and ')
+    const inside = stats.value?.inside
+    const earlier = inside?.earlier ?? { students: 0, visitors: 0 }
+    // Who is in now, apart from visits left open from an earlier day (those are closed too, and said separately).
+    const students = (inside?.students ?? 0) - earlier.students
+    const visitors = (inside?.visitors ?? 0) - earlier.visitors
+    const old = earlier.students + earlier.visitors
+    const who = [
+        students ? `${students} ${students === 1 ? 'student' : 'students'}` : '',
+        visitors ? `${visitors} ${visitors === 1 ? 'visitor' : 'visitors'}` : '',
+    ].filter(Boolean).join(' and ')
+    const oldNote = old ? `${old} ${old === 1 ? 'visit' : 'visits'} left open from an earlier day ${old === 1 ? 'is' : 'are'} closed too.` : ''
 
-	return who
-		? `${who} ${students + visitors === 1 ? 'is' : 'are'} still in the library. Ending the session logs ${students + visitors === 1 ? 'them' : 'all of them'} out and ends any computer or room session they have running.`
-		: 'Nobody is in the library right now. End the scan station?'
+    if (!who) {
+        return old
+            ? `Nobody is in the library right now, but ${old} ${old === 1 ? 'visit is' : 'visits are'} still open from an earlier day. Ending the session closes ${old === 1 ? 'it' : 'them'}.`
+            : 'Nobody is in the library right now. End the scan station?'
+    }
+    const count = students + visitors
+    return `${who} ${count === 1 ? 'is' : 'are'} still in the library. Ending the session logs ${count === 1 ? 'them' : 'all of them'} out and ends any computer or room session they have running.${oldNote ? ' ' + oldNote : ''}`
 })
 
 async function askEndSession() {
@@ -169,6 +178,8 @@ async function confirmEndSession() {
 }
 
 function endSession() {
+	// The next session starts with an empty list of recent scans.
+	try { sessionStorage.removeItem('station-feed') } catch { /* private window */ }
 	announceClosed()
 	// A tab opened from the Attendance page may close itself; one opened by hand (a phone) can't.
 	window.close()

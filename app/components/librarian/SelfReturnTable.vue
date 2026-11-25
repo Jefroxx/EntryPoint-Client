@@ -4,50 +4,26 @@
 		<!-- Phones: one card per row, with the row's buttons on it. -->
 		<template #cards>
 			<li v-for="report in reports" :key="`card-${report.reportID}`">
-				<div role="button" tabindex="0" class="px-4 py-3.5 transition-colors active:bg-accent-50" @click="selected = report" @keydown.enter.self="selected = report">
-					<div class="flex items-start justify-between gap-3">
-						<LibrarianPersonCell :name="personName(report.loan?.student?.user)" :sub="report.loan?.student?.memberIDNumber" />
-						<LibrarianStatusPill label="Pending" tone="warning" class="shrink-0" />
-					</div>
-					<p class="mt-2 text-[14.5px] font-semibold leading-snug text-stone-900">{{ report.loan?.copy?.book?.title ?? 'Removed book' }}</p>
-					<p class="mt-0.5 text-[12.5px] text-stone-500">Returned {{ formatDateTime(report.reportedAt) }}</p>
-					<p v-if="report.loan" class="mt-0.5 text-[12.5px] text-stone-500">Due {{ formatDate(report.loan.dueDate) }} ·
-						<span class="font-semibold" :class="lateness(report) ? 'text-red-600' : 'text-emerald-700'">{{ lateness(report) ?? 'On time' }}</span>
-					</p>
-					<div class="mt-3 flex gap-2" @click.stop>
-						<ButtonsButton variant="danger" class="flex-1" @click="emit('reject', report)">Reject</ButtonsButton>
-						<ButtonsButton variant="primary" class="flex-[1.4]" @click="emit('verify', report)">Verify</ButtonsButton>
+				<div class="relative px-4 py-3.5 transition-colors active:bg-accent-50">
+					<button type="button" class="card-cover" :aria-label="`Open the report for ${report.loan?.copy?.book?.title ?? 'a removed book'}`" @click="selected = report" />
+					<div class="card-body">
+						<div class="flex items-start justify-between gap-3">
+							<LibrarianPersonCell :name="personName(report.loan?.student?.user)" :sub="report.loan?.student?.memberIDNumber" />
+							<LibrarianStatusPill label="Pending" tone="warning" class="shrink-0" />
+						</div>
+						<LibrarianBookCell class="mt-3" :book="report.loan?.copy?.book" :title="report.loan?.copy?.book?.title ?? 'Removed book'" :sub="report.loan?.copy ? `Acc. no. ${report.loan.copy.accessionNumber}` : undefined" />
+						<p class="mt-0.5 text-[12.5px] text-stone-500">Returned {{ formatDateTime(report.reportedAt) }}</p>
+						<p v-if="report.loan" class="mt-0.5 text-[12.5px] text-stone-500">Due {{ formatDate(report.loan.dueDate) }} ·
+							<span class="font-semibold" :class="lateness(report) ? 'text-red-600' : 'text-emerald-700'">{{ lateness(report) ?? 'On time' }}</span>
+						</p>
+						<div class="card-action mt-3 flex gap-2">
+							<ButtonsButton variant="danger" class="flex-1" @click="emit('reject', report)">Reject</ButtonsButton>
+							<ButtonsButton variant="primary" class="flex-[1.4]" @click="emit('verify', report)">Verify</ButtonsButton>
+						</div>
 					</div>
 				</div>
 			</li>
 		</template>
-		<tr v-for="(report, index) in reports" :key="report.reportID" tabindex="0" @click="selected = report" @keydown.enter.self="selected = report"
-			class="row-fade-in cursor-pointer border-b border-stone-100 transition-colors duration-150 last:border-0 hover:bg-accent-50"
-			:style="{ animationDelay: `${index * 40}ms` }">
-			<td class="px-4 py-3">
-				<LibrarianPersonCell :name="personName(report.loan?.student?.user)" :sub="report.loan?.student?.memberIDNumber" />
-			</td>
-			<td class="px-4 py-3">
-				<LibrarianBookCell :title="report.loan?.copy?.book?.title ?? 'Removed book'" :sub="report.loan?.copy?.accessionNumber" />
-			</td>
-			<td class="px-4 py-3">
-				<template v-if="report.loan">
-					<p class="font-data text-[13.5px] text-stone-700">{{ formatDate(report.loan.dueDate) }}</p>
-					<p class="text-[12.5px] font-semibold" :class="lateness(report) ? 'text-red-600' : 'text-emerald-700'">{{ lateness(report) ?? 'On time' }}</p>
-				</template>
-				<span v-else class="text-stone-500">—</span>
-			</td>
-			<td class="font-data px-4 py-3 text-[13.5px] text-stone-500">{{ formatDateTime(report.reportedAt) }}</td>
-			<td class="px-4 py-3">
-				<LibrarianStatusPill label="Pending" tone="warning" />
-			</td>
-			<td class="px-4 py-3" @click.stop>
-				<div class="flex items-center justify-end gap-1.5">
-					<ButtonsButton variant="primary" size="sm" @click="emit('verify', report)">Verify</ButtonsButton>
-					<ButtonsButton variant="danger" size="sm" @click="emit('reject', report)">Reject</ButtonsButton>
-				</div>
-			</td>
-		</tr>
 	<!-- Teleports to <body>; it lives in the slot only so the table keeps a single root element. -->
 		<LibrarianRecordDrawer :open="!!selected" heading="Self-return report" :title="selected?.loan?.copy?.book?.title ?? 'Removed book'"
 			:subtitle="selected ? `Report #${selected.reportID}` : ''" :status="{ label: 'Pending', tone: 'warning' }"

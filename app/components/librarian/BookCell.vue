@@ -1,6 +1,7 @@
 <template>
 	<div class="flex items-center gap-3">
-		<div class="h-9 w-[26px] shrink-0 rounded-[4px] bg-gradient-to-br from-accent-100 to-stone-200 shadow-sm" />
+		<!-- The real cover when the book has one; otherwise the same coloured title cover the reservations use. -->
+		<StudentCover :book="book ?? { title }" :width="34" />
 		<div class="min-w-0">
 			<p class="truncate text-[15px] font-medium text-stone-800">{{ title }}</p>
 			<p v-if="sub" class="font-data truncate text-[12px] text-stone-500">{{ sub }}</p>
@@ -12,5 +13,6 @@
 defineProps<{
 	title: string
 	sub?: string | number
+	book?: { title: string; coverImageURL?: string | null; subject?: { name: string } | null } | null
 }>()
 </script>

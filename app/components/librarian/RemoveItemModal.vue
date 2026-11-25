@@ -1,5 +1,5 @@
 <template>
-	<LibrarianModalShell :open="open" size="xl" :title="step === PAGES.length ? 'Confirm Deletion' : 'Delete This Item?'"
+	<LibrarianModalShell :open="open" size="xl" :title="step === PAGES.length ? 'Confirm Deletion' : 'Delete This Reward?'"
 		:subtitle="item?.name" :busy="busy" @close="emit('close')">
 		<!-- A fixed minimum height, so the window does not jump in size from page to page. -->
 		<div v-if="item" class="min-h-[400px] space-y-5">
@@ -27,7 +27,7 @@
 				</div>
 				<dl class="divide-y divide-stone-100 rounded-xl border border-stone-200 text-[14px]">
 					<div class="flex justify-between gap-4 px-4 py-2.5"><dt class="text-stone-500">Cost</dt><dd class="font-semibold text-stone-900">{{ item.pointCost }} points</dd></div>
-					<div class="flex justify-between gap-4 px-4 py-2.5"><dt class="text-stone-500">Stock</dt><dd class="font-semibold text-stone-900">{{ item.stock === 0 ? 'Retired (0)' : item.stock }}</dd></div>
+					<div class="flex justify-between gap-4 px-4 py-2.5"><dt class="text-stone-500">Stock</dt><dd class="font-semibold text-stone-900">{{ item.stock === 0 ? 'Out of stock (0)' : item.stock }}</dd></div>
 					<div class="flex justify-between gap-4 px-4 py-2.5"><dt class="text-stone-500">Photo</dt><dd class="font-semibold text-stone-900">{{ item.photoURL ? 'Uploaded' : 'None' }}</dd></div>
 				</dl>
 			</div>
@@ -84,7 +84,7 @@
 			<ButtonsButton v-else-if="item" variant="primary" class="!border-red-500 !bg-red-500 hover:!bg-red-600" :disabled="busy || blocked" @click="emit('confirm')">
 				<Icon v-if="busy" name="i-tabler-loader-2" class="h-3.5 w-3.5 animate-spin" />
 				<Icon v-else name="i-tabler-check" class="h-3.5 w-3.5" />
-				Yes, delete item
+				Yes, delete reward
 			</ButtonsButton>
 		</template>
 	</LibrarianModalShell>

@@ -33,6 +33,7 @@
 					<LibrarianSearchSelect v-model="student" input-id="session-student" placeholder="Search name or student ID"
 						:fetcher="searchStudents" :get-label="label" :get-sublabel="sublabel" :invalid="!!error" />
 					<p v-if="error" class="mt-1 text-[12.5px] text-red-500">{{ error }}</p>
+					<p v-else class="mt-1 text-[12.5px] text-stone-500">Only people who are in the library are listed. Someone else scans in at the Station first.</p>
 				</div>
 
 				<div v-if="student" class="flex items-center gap-4 rounded-2xl border border-stone-200 p-4">
@@ -92,7 +93,7 @@ watch(() => props.open, (isOpen) => {
 watch(student, () => { error.value = '' })
 
 async function searchStudents(query: string) {
-	const result = await librarianService.fetchStudents({ search: query || undefined, status: 'approved', perPage: 6 })
+	const result = await librarianService.fetchStudents({ search: query || undefined, status: 'approved', inLibrary: true, perPage: 6 })
 	return result.data
 }
 
@@ -107,11 +108,19 @@ async function findStudent(raw: string) {
 	finding.value = true
 	scanError.value = ''
 	try {
-		const result = await librarianService.fetchStudents({ search: value, status: 'approved', perPage: 5 })
+		const result = await librarianService.fetchStudents({ search: value, status: 'approved', inLibrary: true, perPage: 5 })
 		const exact = result.data.find((s) => s.memberIDNumber.toLowerCase() === value.toLowerCase())
 		const found = exact ?? (result.data.length === 1 ? result.data[0] : undefined)
 		if (found) student.value = found
-		else scanError.value = result.data.length > 1 ? 'More than one student matches. Search by name below.' : 'No approved student has that ID.'
+		else if (result.data.length > 1) scanError.value = 'More than one student matches. Search by name below.'
+		else {
+			// Not among those inside: either not in the library, or no such student. Say which.
+			const anywhere = await librarianService.fetchStudents({ search: value, status: 'approved', perPage: 5 })
+			const known = anywhere.data.find((s) => s.memberIDNumber.toLowerCase() === value.toLowerCase()) ?? (anywhere.data.length === 1 ? anywhere.data[0] : undefined)
+			scanError.value = known
+				? `${personName(known.user)} is not in the library. Scan their ID at the Station first.`
+				: 'No approved student has that ID.'
+		}
 		code.value = ''
 	} catch (e: any) {
 		scanError.value = e?.data?.message ?? 'Could not look that student up.'

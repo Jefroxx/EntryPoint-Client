@@ -5,32 +5,31 @@
 		<!-- Phones: one card per row, with the row's buttons on it. -->
 		<template #cards>
 			<li v-for="log in logs" :key="`card-${log.logID}`">
-				<div role="button" tabindex="0" class="px-4 py-3.5 transition-colors active:bg-accent-50" @click="selected = log" @keydown.enter.self="selected = log">
-					<div class="flex items-start gap-3">
-						<span class="font-data flex h-10 min-w-10 shrink-0 items-center justify-center rounded-xl bg-stone-100 px-2 text-[14px] font-bold text-stone-900">{{ log.accessionNumber ?? '—' }}</span>
-						<div class="min-w-0 flex-1">
-							<p class="line-clamp-2 text-[14.5px] font-semibold leading-snug text-stone-900">{{ log.bookTitle }}</p>
-							<p class="mt-0.5 truncate text-[12.5px] text-stone-500">{{ [log.reason, log.librarianName].filter(Boolean).join(' · ') || '—' }}</p>
-							<p class="font-data mt-0.5 text-[12px] text-stone-500">{{ formatDateTime(log.created_at) }}</p>
+				<div class="relative px-4 py-3.5 transition-colors active:bg-accent-50">
+					<button type="button" class="card-cover" :aria-label="`Open the entry for ${log.bookTitle}`" @click="selected = log" />
+					<div class="card-body">
+						<div class="flex items-start gap-3">
+							<!-- A copy shows its accession number; a change to the book's own record (no copy) shows a book. -->
+							<span v-if="log.accessionNumber" class="font-data flex h-10 min-w-10 shrink-0 flex-col items-center justify-center rounded-xl bg-stone-100 px-2 text-center leading-none" :title="`Accession no. ${log.accessionNumber}`">
+								<span class="text-[9px] font-semibold uppercase tracking-wide text-stone-500">Acc.</span>
+								<span class="mt-0.5 text-[14px] font-bold text-stone-900">{{ log.accessionNumber }}</span>
+							</span>
+							<span v-else class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-stone-100 text-stone-500" title="The book's own record"><Icon name="i-tabler-book-2" class="h-5 w-5" /></span>
+							<div class="min-w-0 flex-1">
+								<p class="break-words text-[14.5px] font-semibold leading-snug text-stone-900">{{ log.bookTitle }}</p>
+								<p class="mt-0.5 break-words text-[13px] font-semibold text-stone-700">{{ log.reason ?? '—' }}</p>
+							</div>
+							<LibrarianStatusPill :label="ACTION[log.action].label" :tone="ACTION[log.action].tone" class="shrink-0" />
 						</div>
-						<LibrarianStatusPill :label="ACTION[log.action].label" :tone="ACTION[log.action].tone" class="shrink-0" />
+						<!-- What actually changed, one line each ("Status: Borrowed → Lost", "Reason: ..."), so the card says it without opening. -->
+						<ul v-if="noteLines(log).length" class="mt-2 space-y-1 rounded-xl bg-stone-50 px-3 py-2 text-[13px] leading-snug text-stone-700">
+							<li v-for="(line, i) in noteLines(log)" :key="i" class="break-words">{{ line }}</li>
+						</ul>
+						<p class="mt-2 text-[12px] text-stone-500">{{ [log.librarianName, formatDateTime(log.created_at)].filter(Boolean).join(' · ') }}</p>
 					</div>
 				</div>
 			</li>
 		</template>
-		<tr v-for="(log, index) in logs" :key="log.logID" tabindex="0" @click="selected = log" @keydown.enter.self="selected = log"
-			class="row-fade-in cursor-pointer border-b border-stone-100 text-[14px] text-stone-600 transition-colors duration-150 last:border-0 hover:bg-accent-50"
-			:style="{ animationDelay: `${index * 30}ms` }">
-			<td class="font-data whitespace-nowrap px-4 py-3 text-[13.5px] text-stone-500">{{ formatDateTime(log.created_at) }}</td>
-			<td class="px-4 py-3">
-				<LibrarianStatusPill :label="ACTION[log.action].label" :tone="ACTION[log.action].tone" />
-			</td>
-			<td class="font-data px-4 py-3 text-[14px] font-bold text-stone-900">{{ log.accessionNumber ?? '—' }}</td>
-			<td class="max-w-[280px] px-4 py-3 text-[14.5px] font-semibold text-stone-900"><span class="line-clamp-2">{{ log.bookTitle }}</span></td>
-			<td class="whitespace-nowrap px-4 py-3">{{ log.reason ?? '—' }}</td>
-			<td class="max-w-[260px] px-4 py-3 text-[13.5px] text-stone-500"><span class="line-clamp-2">{{ log.note || '—' }}</span></td>
-			<td class="whitespace-nowrap px-4 py-3 text-[13.5px]">{{ log.librarianName ?? '—' }}</td>
-		</tr>
 	<!-- Teleports to <body>; it lives in the slot only so the table keeps a single root element. -->
 		<LibrarianRecordDrawer :open="!!selected" heading="Stock log entry" :title="selected?.bookTitle ?? ''"
 			:subtitle="selected ? `Entry #${selected.logID}` : ''"
@@ -49,6 +48,12 @@ defineProps<{
 	filtered?: boolean
 }>()
 const selected = ref<StockLogRow | null>(null)
+
+/** The note as separate lines: an edit lists its changes ("Title: A → B; Area: X → Y") and then the reason ("Status: ... . Reason: ..."). */
+function noteLines(log: StockLogRow): string[] {
+	if (!log.note) return []
+	return log.note.split(/;\s+|\.\s+(?=Reason:)/).map((l) => l.trim().replace(/\.$/, '')).filter(Boolean)
+}
 
 const ACTION: Record<StockLogRow['action'], { label: string; tone: 'success' | 'danger' | 'neutral' }> = {
 	added: { label: 'Added', tone: 'success' },

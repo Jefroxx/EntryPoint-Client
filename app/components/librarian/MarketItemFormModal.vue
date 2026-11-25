@@ -1,10 +1,10 @@
 <template>
-	<LibrarianModalShell :open="open" :title="confirming ? 'Confirm Changes' : item ? 'Edit Item' : 'Add Item'"
+	<LibrarianModalShell :open="open" :title="confirming ? 'Confirm Changes' : item ? 'Edit Reward' : 'Add Reward'"
 		:subtitle="confirming ? 'Check the changes before they are saved.' : 'Students spend knowledge points on these rewards.'" :busy="busy" :dirty="dirty" ref="shell" @close="emit('close')">
 		<!-- Step 2 (editing only): what will change. It replaces the form in this same window (no second pop-up). -->
 		<div v-if="confirming" class="space-y-4">
 			<div class="rounded-xl bg-stone-50 px-4 py-3">
-				<p class="text-[12px] font-semibold uppercase tracking-wide text-stone-500">Item</p>
+				<p class="text-[12px] font-semibold uppercase tracking-wide text-stone-500">Reward</p>
 				<p class="text-[15px] font-semibold text-stone-900">{{ item?.name }}</p>
 			</div>
 			<dl class="divide-y divide-stone-100 rounded-xl border border-stone-200 text-[14px]">
@@ -27,7 +27,7 @@
 					</dd>
 				</div>
 			</dl>
-			<p v-if="Number(form.stock) === 0 && Number(item?.stock) > 0" class="rounded-xl bg-amber-50 px-3.5 py-2.5 text-[13.5px] text-amber-900">A stock of 0 retires the item: students can no longer redeem it.</p>
+			<p v-if="Number(form.stock) === 0 && Number(item?.stock) > 0" class="rounded-xl bg-amber-50 px-3.5 py-2.5 text-[13.5px] text-amber-900">A stock of 0 marks the reward out of stock: students can't redeem it until you add more.</p>
 		</div>
 
 		<div v-else class="space-y-4">
@@ -56,13 +56,22 @@
 			<LibrarianTextField id="item-name" v-model="form.name" label="Name" placeholder="e.g. Free Print Voucher"
 				:error="errors.name" @update:model-value="errors.name = ''" />
 
-			<LibrarianTextField id="item-type" v-model="form.type" label="Type" optional placeholder="e.g. Merch, Voucher" />
+			<!-- The type is picked from the list kept under Reward Types, so it is always spelled the same way. -->
+			<div>
+				<label for="item-type" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">Type <span class="font-normal text-stone-500">(optional)</span></label>
+				<select id="item-type" v-model="form.type"
+					class="h-11 w-full rounded-[10px] border border-stone-200 bg-white px-3 text-[15px] text-stone-900 outline-none transition-colors focus:border-accent-500 focus:ring-2 focus:ring-accent-200">
+					<option value="">No type</option>
+					<option v-for="type in types" :key="type" :value="type">{{ type }}</option>
+				</select>
+				<p class="mt-1 text-[12.5px] text-stone-500">Need another kind? Add it in the Reward Types tab.</p>
+			</div>
 
 			<div class="grid grid-cols-2 gap-3">
 				<LibrarianTextField id="item-cost" v-model="form.pointCost" type="number" :min="0" label="Cost (points)"
 					:error="errors.pointCost" @update:model-value="errors.pointCost = ''" />
 				<LibrarianTextField id="item-stock" v-model="form.stock" type="number" :min="0" label="Stock"
-					hint="Set to 0 to retire the item." :error="errors.stock" @update:model-value="errors.stock = ''" />
+					hint="0 means out of stock: students can't redeem it." :error="errors.stock" @update:model-value="errors.stock = ''" />
 			</div>
 		</div>
 
@@ -80,7 +89,7 @@
 				<ButtonsButton variant="primary" :disabled="busy || preparing || (!!item && !hasChanges)" @click="submit">
 					<Icon v-if="busy" name="i-tabler-loader-2" class="h-3.5 w-3.5 animate-spin" />
 					<Icon v-else-if="item" name="i-tabler-arrow-right" class="h-3.5 w-3.5" />
-					{{ item ? 'Review' : 'Add Item' }}
+					{{ item ? 'Review' : 'Add Reward' }}
 				</ButtonsButton>
 			</template>
 		</template>
@@ -97,6 +106,8 @@ const PHOTO_MAX_SIDE = 800
 const props = defineProps<{
 	open: boolean
 	item: MarketItemRecord | null
+	/** The names on the list of reward types. */
+	types: string[]
 	busy?: boolean
 }>()
 

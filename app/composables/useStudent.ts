@@ -22,7 +22,8 @@ export function useStudent() {
   const stats = computed(() => summary.value?.stats ?? null)
   const points = computed(() => summary.value?.points ?? 0)
   const streak = computed(() => summary.value?.visitStreak ?? 0)
-  const slotsLeft = computed(() => stats.value?.slotsLeft ?? 3)
+  const maxBooks = computed(() => stats.value?.maxBooks ?? 3)
+  const slotsLeft = computed(() => stats.value?.slotsLeft ?? maxBooks.value)
   const cart = computed(() => rows.value.filter((row) => row.inCart))
   const attention = computed(() => (stats.value?.overdueLoans ?? 0) + (stats.value?.readyReservations ?? 0))
 
@@ -136,7 +137,7 @@ export function useStudent() {
   }
 
   return {
-    summary, stats, points, streak, slotsLeft, cart, wishlist, attention, dataVersion, bumpData,
+    summary, stats, points, streak, maxBooks, slotsLeft, cart, wishlist, attention, dataVersion, bumpData,
     isWished, isInCart, isReserved,
     refreshProfile, refreshWishlist, refreshReservations, refreshShell,
     toggleWish, addToCart, removeFromCart, removeWishlistRow,

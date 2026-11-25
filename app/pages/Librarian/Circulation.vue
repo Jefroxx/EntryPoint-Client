@@ -6,36 +6,21 @@
                 penalties.</p>
         </div>
 
-        <LibrarianSegmentedTabs v-model="activeTab" class="mb-5" :tabs="tabs" />
+        <!-- Four tabs. On a phone or tablet they wrap onto a second row and fill the width, so none is hidden off the edge. -->
+        <LibrarianSegmentedTabs v-model="activeTab" wrap class="mb-5" :tabs="tabs" />
 
         <!-- Active loans -->
         <template v-if="activeTab === 'loans'">
-            <div class="phone-stats mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <LibrarianCatalogStatTile label="Active Loans" :value="loanStats?.active ?? '—'"
-                    icon="i-tabler-book" tone="accent" />
-                <LibrarianCatalogStatTile label="Due Soon" :value="loanStats?.dueSoon ?? '—'"
-                    icon="i-tabler-clock" tone="warning" />
-                <LibrarianCatalogStatTile label="Overdue" :value="loanStats?.overdue ?? '—'"
-                    icon="i-tabler-alert-circle" tone="danger" />
-                <LibrarianCatalogStatTile label="To Check" :value="loanStats?.received ?? '—'"
-                    icon="i-tabler-checklist" tone="success" />
+            <!-- Four counts, and each one is the filter for its list. -->
+            <div class="phone-stats mb-5 grid grid-cols-2 gap-3 xl:grid-cols-4">
+                <LibrarianStatTileButton v-for="tile in loanTiles" :key="tile.status" :label="tile.label" :value="tile.value" :icon="tile.icon" :tone="tile.tone"
+                    :active="loanStatus === tile.status" @click="loanStatus = loanStatus === tile.status ? '' : tile.status" />
             </div>
 
-            <div class="phone-toolbar mb-4 flex flex-wrap items-center gap-2">
-                <LibrarianSearchInput id="loan-search" v-model="loanSearch" placeholder="Search student or book" />
-
-                <select v-model="loanStatus"
-                    class="h-[42px] rounded-xl border border-stone-200 bg-white px-3 text-[14px] text-stone-500 transition-colors hover:bg-stone-50">
-                    <option value="">All loans</option>
-                    <option value="active">Active loans</option>
-                    <option value="overdue">Overdue only</option>
-                    <option value="received">Handed in, to check</option>
-                    <option value="returned">Returned</option>
-                </select>
-
+            <div class="phone-toolbar toolbar-nowrap mb-4 flex flex-wrap items-center gap-2">
+                <LibrarianSearchInput id="loan-search" v-model="loanSearch" class="!min-w-[210px] !max-w-[560px] !basis-[480px]" placeholder="Search student or book" />
+                <LibrarianFilterMenu class="toolbar-full" v-model="loanFilters" :groups="loanFilterGroups" />
                 <div class="flex-1"></div>
-
-                <LibrarianResetFiltersButton @click="loanSearch = ''; loanStatus = ''" />
                 <ButtonsButton variant="primary" class="toolbar-full" @click="checkoutCode = undefined; checkoutAuto = false; isCheckoutOpen = true">
                     <Icon name="i-tabler-plus" class="h-3.5 w-3.5" />Checkout Book
                 </ButtonsButton>
@@ -49,41 +34,24 @@
 
         <!-- Reservations -->
         <template v-else-if="activeTab === 'reservations'">
-            <!-- The old stat tiles were the filter in disguise: the counts live on the tabs now, so one tap narrows the list. -->
-            <!-- The three counts are also the filter: tap one to show only those, tap it again to go back to everything open. -->
-            <div class="phone-stats mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
-                <button v-for="tile in reservationTiles" :key="tile.status" type="button"
-                    class="rounded-2xl text-left outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-accent-200 sm:rounded-[18px]"
-                    :class="reservationStatus === tile.status ? 'ring-2 ring-accent-500' : ''"
+            <!-- One count per status, and each is also the filter: tap one to show only those, tap it again to go back to what is open. -->
+            <div class="mb-5 grid grid-cols-6 gap-2 sm:gap-3 xl:grid-cols-5">
+                <button v-for="(tile, i) in reservationTiles" :key="tile.status" type="button"
+                    class="rounded-2xl text-left xl:col-span-1 outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-accent-200 sm:rounded-[18px]"
+                    :class="i < 3 ? 'col-span-2' : 'col-span-3'"
                     :aria-pressed="reservationStatus === tile.status"
                     @click="reservationStatus = reservationStatus === tile.status ? 'open' : tile.status">
-                    <LibrarianCatalogStatTile :label="tile.label" :value="tile.value" :icon="tile.icon" :tone="tile.tone" interactive />
+                    <LibrarianCatalogStatTile :label="tile.label" :value="tile.value" :icon="tile.icon" :tone="tile.tone" :active="reservationStatus === tile.status" interactive />
                 </button>
             </div>
 
-            <div class="phone-toolbar mb-4 flex flex-wrap items-center gap-2">
-                <LibrarianSearchInput id="reservation-search" v-model="reservationSearch" placeholder="Search student or book" />
-
-                <select v-model="reservationBook" aria-label="Filter by book"
-                    class="h-[42px] max-w-[260px] rounded-xl border border-stone-200 bg-white px-3 text-[14px] text-stone-500 transition-colors hover:bg-stone-50">
-                    <option value="">All books</option>
-                    <option v-for="b in reservationBookOptions" :key="b.bookID" :value="b.bookID">{{ b.title }} ({{ b.count }})</option>
-                </select>
-
+            <div class="phone-toolbar toolbar-nowrap mb-4 flex flex-wrap items-center gap-2">
+                <LibrarianSearchInput id="reservation-search" v-model="reservationSearch" class="!min-w-[210px] !max-w-[560px] !basis-[480px]" placeholder="Search student or book" />
+                <LibrarianFilterMenu class="toolbar-full" v-model="reservationFilters" :groups="reservationFilterGroups" />
                 <div class="flex-1"></div>
-
-                <LibrarianResetFiltersButton @click="reservationSearch = ''; reservationStatus = 'open'; reservationBook = ''" />
             </div>
 
-            <p v-if="reservationBookTitle" class="mb-3 flex flex-wrap items-center gap-2 text-[13px] text-stone-600">
-                Showing {{ filteredReservations.length }} reservations for
-                <button type="button" class="inline-flex items-center gap-1.5 rounded-full bg-accent-50 py-1 pl-3 pr-1.5 text-[13px] font-semibold text-crimson"
-                    aria-label="Clear the book filter" @click="reservationBook = ''">
-                    {{ reservationBookTitle }}<Icon name="i-tabler-x" class="h-3.5 w-3.5" />
-                </button>
-            </p>
-
-            <LibrarianReservationsTable :reservations="pagedReservations" :queue-positions="queuePositions" :loading="reservationsPending" @review="openReview" />
+            <LibrarianReservationsTable :reservations="pagedReservations" :queue-positions="queuePositions" :loading="reservationsPending" :max-books="reservationsResponse?.maxBooks" @review="openReview" />
 
             <LibrarianPagination :shown="pagedStudentKeys.length" :total="reservationStudentKeys.length"
                 noun="students" :page="reservationPage" :last-page="reservationTotalPages"
@@ -97,114 +65,68 @@
                     icon="i-tabler-clock" tone="warning" />
             </div>
 
-            <div class="phone-toolbar mb-4 flex flex-wrap items-center gap-2">
-                <LibrarianSearchInput id="self-return-search" v-model="selfReturnSearch" placeholder="Search student or book" />
-
-                <select v-model="selfReturnBook" aria-label="Filter by book"
-                    class="h-[42px] max-w-[260px] rounded-xl border border-stone-200 bg-white px-3 text-[14px] text-stone-500 transition-colors hover:bg-stone-50">
-                    <option value="">All books</option>
-                    <option v-for="b in selfReturnBookOptions" :key="b.bookID" :value="b.bookID">{{ b.title }} ({{ b.count }})</option>
-                </select>
-
+            <div class="phone-toolbar toolbar-nowrap mb-4 flex flex-wrap items-center gap-2">
+                <LibrarianSearchInput id="self-return-search" v-model="selfReturnSearch" class="!min-w-[210px] !max-w-[560px] !basis-[480px]" placeholder="Search student or book" />
+                <LibrarianFilterMenu class="toolbar-full" v-model="selfReturnFilters" :groups="selfReturnFilterGroups" />
                 <div class="flex-1"></div>
-
-                <LibrarianResetFiltersButton @click="selfReturnSearch = ''; selfReturnBook = ''" />
             </div>
-
-            <p v-if="selfReturnBookTitle" class="mb-3 flex flex-wrap items-center gap-2 text-[13px] text-stone-600">
-                Showing {{ filteredSelfReturns.length }} of {{ selfReturns.length }} reports for
-                <button type="button" class="inline-flex items-center gap-1.5 rounded-full bg-accent-50 py-1 pl-3 pr-1.5 text-[13px] font-semibold text-crimson"
-                    aria-label="Clear the book filter" @click="selfReturnBook = ''">
-                    {{ selfReturnBookTitle }}<Icon name="i-tabler-x" class="h-3.5 w-3.5" />
-                </button>
-            </p>
 
             <LibrarianSelfReturnTable :reports="filteredSelfReturns" :loading="selfReturnsPending"
                 @verify="handleVerifySelfReturn" @reject="handleRejectSelfReturn" />
         </template>
 
-        <!-- Lost and damaged books: penalties for a student who lost or damaged one. They pay it, or replace the book. -->
-        <template v-else-if="activeTab === 'lostdamaged'">
-            <div class="phone-stats mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <LibrarianCatalogStatTile label="Unpaid" :value="copyStats?.unpaidCount ?? '—'"
-                    icon="i-tabler-alert-circle" tone="danger" />
-                <LibrarianCatalogStatTile label="Unpaid Total"
-                    :value="copyStats ? formatPeso(copyStats.unpaidTotal) : '—'"
-                    icon="i-tabler-coin" tone="warning" />
-                <LibrarianCatalogStatTile label="Paid" :value="copyStats?.paidCount ?? '—'"
-                    icon="i-tabler-circle-check" tone="success" />
-                <LibrarianCatalogStatTile label="Replaced" :value="copyStats?.replacedCount ?? '—'"
-                    icon="i-tabler-books" tone="accent" />
-            </div>
-
-            <div class="phone-toolbar mb-4 flex flex-wrap items-center gap-2">
-                <LibrarianSearchInput id="copy-penalty-search" v-model="copyPenaltySearch" placeholder="Search student or book" />
-
-                <select v-model="copyPenaltyStatus" aria-label="Filter by status"
-                    class="h-[42px] rounded-xl border border-stone-200 bg-white px-3 text-[14px] text-stone-500 transition-colors hover:bg-stone-50">
-                    <option value="">All penalties</option>
-                    <option value="Unpaid">Unpaid</option>
-                    <option value="Paid">Paid</option>
-                    <option value="Replaced">Replaced</option>
-                    <option value="longUnpaid">Unpaid {{ copyStats?.longUnpaidDays ?? 30 }}+ days</option>
-                </select>
-
-                <div class="flex-1"></div>
-
-                <LibrarianResetFiltersButton @click="copyPenaltySearch = ''; copyPenaltyStatus = ''" />
-                <ButtonsButton variant="primary" class="toolbar-full" @click="openIssuePenalty">
-                    <Icon name="i-tabler-gavel" class="h-3.5 w-3.5" />Issue Penalty
-                </ButtonsButton>
-            </div>
-
-            <LibrarianPenaltiesTable :penalties="copyPenalties?.data ?? []" :loading="copyPenaltiesPending"
-                :long-unpaid-days="copyStats?.longUnpaidDays ?? 30"
-                empty-text="No lost or damaged books on record. Use Issue Penalty when a student loses or damages one."
-                @settle="handleSettle" @replace="handleReplace" @cancel="handleCancel" />
-
-            <LibrarianPagination v-if="copyPenalties" :shown="copyPenalties.data.length" :total="copyPenalties.total"
-                noun="penalties" :page="copyPenalties.current_page" :last-page="copyPenalties.last_page"
-                @change="goToCopyPenaltyPage" />
-        </template>
-
-        <!-- Penalties -->
+        <!-- Penalties: late fees, and lost or damaged books (technically penalties too) -->
         <template v-else>
-            <div class="phone-stats mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <LibrarianCatalogStatTile label="Unpaid Fines" :value="penaltyStats?.unpaidCount ?? '—'"
-                    icon="i-tabler-alert-circle" tone="danger" />
-                <LibrarianCatalogStatTile label="Unpaid Total"
-                    :value="penaltyStats ? formatPeso(penaltyStats.unpaidTotal) : '—'"
-                    icon="i-tabler-coin" tone="warning" />
-                <LibrarianCatalogStatTile label="Settled" :value="penaltyStats?.paidCount ?? '—'"
-                    icon="i-tabler-circle-check" tone="success" />
-                <LibrarianCatalogStatTile :label="`Unpaid ${longUnpaidDays}+ Days`" :value="penaltyStats?.longUnpaidCount ?? '—'"
-                    icon="i-tabler-hourglass-high" tone="danger" />
-            </div>
+            <LibrarianSegmentedTabs v-model="penaltyView" wrap class="mb-5" :tabs="penaltyViews" />
 
-            <div class="phone-toolbar mb-4 flex flex-wrap items-center gap-2">
-                <LibrarianSearchInput id="penalty-search" v-model="penaltySearch" placeholder="Search student" />
+            <!-- Late fees -->
+            <template v-if="penaltyView === 'late'">
+                <div class="phone-stats mb-5 grid grid-cols-2 gap-3 xl:grid-cols-4">
+                    <LibrarianStatTileButton v-for="tile in lateTiles" :key="tile.label" :label="tile.label" :value="tile.value" :icon="tile.icon" :tone="tile.tone"
+                        :active="penaltyStatus === tile.status" @click="penaltyStatus = penaltyStatus === tile.status ? '' : tile.status" />
+                </div>
 
-                <select v-model="penaltyStatus"
-                    class="h-[42px] rounded-xl border border-stone-200 bg-white px-3 text-[14px] text-stone-500 transition-colors hover:bg-stone-50">
-                    <option value="">All fines</option>
-                    <option value="Unpaid">Unpaid</option>
-                    <option value="Paid">Paid</option>
-                    <option value="longUnpaid">Unpaid {{ longUnpaidDays }}+ days</option>
-                </select>
+                <div class="phone-toolbar toolbar-nowrap mb-4 flex flex-wrap items-center gap-2">
+                    <LibrarianSearchInput id="penalty-search" v-model="penaltySearch" class="!min-w-[210px] !max-w-[560px] !basis-[480px]" placeholder="Search student or book" />
+                    <LibrarianFilterMenu class="toolbar-full" v-model="penaltyFilters" :groups="penaltyFilterGroups" />
+                    <div class="flex-1"></div>
+                </div>
 
-                <div class="flex-1"></div>
+                <LibrarianPenaltiesTable :penalties="penalties?.data ?? []" :loading="penaltiesPending"
+                    :long-unpaid-days="longUnpaidDays" empty-text="No late fees match your filters." @settle="handleSettle" @edit="handleEdit" @waive="handleWaive" />
 
-                <LibrarianResetFiltersButton @click="penaltySearch = ''; penaltyStatus = ''" />
-            </div>
+                <LibrarianPagination v-if="penalties" :shown="penalties.data.length" :total="penalties.total"
+                    noun="late fees" :page="penalties.current_page" :last-page="penalties.last_page"
+                    @change="goToPenaltyPage" />
+            </template>
 
-            <LibrarianPenaltiesTable :penalties="penalties?.data ?? []" :loading="penaltiesPending"
-                :long-unpaid-days="longUnpaidDays" @settle="handleSettle" />
+            <!-- Lost and damaged books: the student pays it, or replaces the book. -->
+            <template v-else>
+                <div class="phone-stats mb-5 grid grid-cols-2 gap-3 xl:grid-cols-4">
+                    <LibrarianStatTileButton v-for="tile in lostTiles" :key="tile.label" :label="tile.label" :value="tile.value" :icon="tile.icon" :tone="tile.tone"
+                        :active="copyPenaltyStatus === tile.status" @click="copyPenaltyStatus = copyPenaltyStatus === tile.status ? '' : tile.status" />
+                </div>
 
-            <LibrarianPagination v-if="penalties" :shown="penalties.data.length" :total="penalties.total"
-                noun="fines" :page="penalties.current_page" :last-page="penalties.last_page"
-                @change="goToPenaltyPage" />
+                <div class="phone-toolbar toolbar-nowrap mb-4 flex flex-wrap items-center gap-2">
+                    <LibrarianSearchInput id="copy-penalty-search" v-model="copyPenaltySearch" class="!min-w-[210px] !max-w-[560px] !basis-[480px]" placeholder="Search student or book" />
+                    <LibrarianFilterMenu class="toolbar-full" v-model="copyPenaltyFilters" :groups="copyPenaltyFilterGroups" />
+                    <div class="flex-1"></div>
+                    <ButtonsButton variant="primary" class="toolbar-full" @click="openIssuePenalty">
+                        <Icon name="i-tabler-gavel" class="h-3.5 w-3.5" />Issue Penalty
+                    </ButtonsButton>
+                </div>
+
+                <LibrarianPenaltiesTable :penalties="copyPenalties?.data ?? []" :loading="copyPenaltiesPending"
+                    :long-unpaid-days="copyStats?.longUnpaidDays ?? 30"
+                    empty-text="No lost or damaged books on record. Use Issue Penalty when a student loses or damages one."
+                    @settle="handleSettle" @replace="handleReplace" @cancel="handleCancel" @edit="handleEdit" />
+
+                <LibrarianPagination v-if="copyPenalties" :shown="copyPenalties.data.length" :total="copyPenalties.total"
+                    noun="penalties" :page="copyPenalties.current_page" :last-page="copyPenalties.last_page"
+                    @change="goToCopyPenaltyPage" />
+            </template>
         </template>
-    
+
 
         <LibrarianReservationReviewModal :open="isReviewOpen" :items="reviewItems" :queue-positions="queuePositions" :busy="reviewBusy"
             @close="isReviewOpen = false" @accept="acceptMany" @reject="rejectMany" @checkout="checkoutFromReview" />
@@ -224,7 +146,7 @@
         <LibrarianReturnLoanModal :open="isReturnOpen" :preview="returnPreview" :loading="returnLoading" :error="returnError"
             :busy="returnBusy" @close="isReturnOpen = false" @submit="confirmReturn" />
 
-        <LibrarianIssuePenaltyModal :open="isIssueOpen" :busy="issueBusy"
+        <LibrarianIssuePenaltyModal :open="isIssueOpen" :busy="issueBusy" :prefill="issuePrefill"
             @close="isIssueOpen = false" @submit="saveIssuePenalty" />
 
         <LibrarianConfirmModal :open="isReplaceOpen" title="Replacement Received?" confirm-label="Yes, replacement received"
@@ -236,6 +158,16 @@
             :confirm-label="cancellingPenalty?.penalty_type?.kind === 'lost' ? 'Yes, it was found' : 'Yes, it was repaired'"
             :danger="false" :loading="cancelBusy" :message="cancelMessage"
             @close="isCancelOpen = false" @confirm="confirmCancel" />
+
+        <LibrarianEditPenaltyModal :open="isEditOpen" :penalty="editingPenalty" :busy="editBusy" @close="isEditOpen = false" @submit="saveEdit" />
+
+        <LibrarianConfirmModal :open="isWaiveOpen" title="Waive This Fine?" confirm-label="Yes, waive it" :danger="false" :loading="waiveBusy" :confirm-disabled="waiveReason.trim().length < 3"
+            :message="waiveMessage" @close="isWaiveOpen = false" @confirm="confirmWaive">
+            <label for="waive-reason" class="mb-1.5 mt-4 block text-[13.5px] font-semibold text-stone-800">Reason the student will see<FieldRequired /></label>
+            <textarea id="waive-reason" v-model="waiveReason" rows="3" maxlength="500" placeholder="e.g. The library was closed on the due date"
+                class="w-full resize-none rounded-[10px] border border-stone-200 bg-white px-3 py-2.5 text-[14.5px] text-stone-900 outline-none placeholder:text-stone-400 focus:border-accent-500 focus:ring-2 focus:ring-accent-200" />
+            <p v-if="waiveError" class="mt-1 text-[12.5px] text-red-500">{{ waiveError }}</p>
+        </LibrarianConfirmModal>
 
         <LibrarianFinishReturnModal :open="isFinishOpen" :summary="finishSummary" :busy="finishBusy"
             @close="isFinishOpen = false" @submit="saveFinishReturn" />
@@ -259,6 +191,7 @@ import {
     penaltyCopy,
     penaltyStudent,
 } from '~/services/circulationService'
+import { LIBRARY_AREAS, librarianService, type CatalogBook } from '~/services/librarianService'
 import AlertToast from '~/api/alert/AlertToast.vue'
 import { useAlert } from '~/api/alert/useAlert'
 
@@ -271,7 +204,17 @@ useHead({ title: 'Circulation' })
 
 
 const route = useRoute()
-const activeTab = ref(['loans', 'reservations', 'selfreturn', 'lostdamaged', 'penalties'].includes(String(route.query.tab)) ? String(route.query.tab) : 'loans')
+// Lost & Damaged is a view inside Penalties now; the old address (?tab=lostdamaged) still lands there.
+const requestedTab = String(route.query.tab)
+const activeTab = ref(['loans', 'reservations', 'selfreturn', 'penalties'].includes(requestedTab) ? requestedTab : requestedTab === 'lostdamaged' ? 'penalties' : 'loans')
+const penaltyView = ref<'late' | 'lost'>(requestedTab === 'lostdamaged' || route.query.view === 'lost' ? 'lost' : 'late')
+
+// The Filter window deals in strings with 'all' meaning "no filter"; each list keeps its own typed refs, so these translate.
+const ALL = 'all'
+const areaOptions = computed(() => [
+    { value: ALL, label: 'All collections' },
+    ...Object.entries(LIBRARY_AREAS).map(([value, label]) => ({ value, label: String(label) })),
+])
 const isCheckoutOpen = ref(false)
 // Checking out a reservation starts with a scan of its pickup slip; the form is the manual way.
 const isScanOpen = ref(false)
@@ -302,7 +245,8 @@ function debounced(fn: () => void, ms = 300) {
 
 // ---- Active loans ----
 const loanSearch = ref('')
-const loanStatus = ref<'' | 'active' | 'overdue' | 'received' | 'returned'>('')
+const loanStatus = ref<'' | 'later' | 'dueSoon' | 'overdue' | 'received' | 'returned'>(route.query.status === 'overdue' ? 'overdue' : '')
+const loanArea = ref('')
 const loanPage = ref(1)
 
 const { data: loanStats, execute: refetchLoanStats } =
@@ -313,6 +257,7 @@ const { data: loans, pending: loansPending, execute: refetchLoans } = useLiveAsy
     () => circulationService.fetchLoans({
         search: loanSearch.value || undefined,
         status: loanStatus.value || undefined,
+        area: loanArea.value || undefined,
         page: loanPage.value,
         perPage: 12,
     }),
@@ -323,7 +268,18 @@ watch(loanSearch, debounced(() => {
     loanPage.value = 1
     refetchLoans()
 }))
-watch(loanStatus, () => {
+const loanFilterGroups = computed(() => [
+    { key: 'status', title: 'Status', options: [{ value: ALL, label: 'Any status' }, { value: 'later', label: 'Due later' }, { value: 'dueSoon', label: 'Due within a day' }, { value: 'overdue', label: 'Overdue' }, { value: 'received', label: 'To check' }, { value: 'returned', label: 'Returned' }] },
+    { key: 'area', title: 'Collection', options: areaOptions.value },
+])
+const loanFilters = computed({
+    get: () => ({ status: loanStatus.value || ALL, area: loanArea.value || ALL }),
+    set: (v) => {
+        loanStatus.value = (v.status === ALL ? '' : v.status) as typeof loanStatus.value
+        loanArea.value = v.area === ALL ? '' : v.area
+    },
+})
+watch([loanStatus, loanArea], () => {
     loanPage.value = 1
     refetchLoans()
 })
@@ -332,6 +288,14 @@ function goToLoanPage(next: number) {
     loanPage.value = next
     refetchLoans()
 }
+
+// The counts above the list: due later, due within a day, overdue, and books handed in at the desk that still need checking.
+const loanTiles = computed(() => [
+    { status: 'later' as const, label: 'Due Later', value: loanStats.value?.later ?? '—', icon: 'i-tabler-book', tone: 'accent' as const },
+    { status: 'dueSoon' as const, label: 'Due Within a Day', value: loanStats.value?.dueSoon ?? '—', icon: 'i-tabler-clock', tone: 'warning' as const },
+    { status: 'overdue' as const, label: 'Overdue', value: loanStats.value?.overdue ?? '—', icon: 'i-tabler-alert-circle', tone: 'danger' as const },
+    { status: 'received' as const, label: 'To Check', value: loanStats.value?.received ?? '—', icon: 'i-tabler-checklist', tone: 'success' as const },
+])
 
 // ---- Reservations (fetched once, filtered + paged in the browser) ----
 const { data: reservationsResponse, pending: reservationsPending, execute: refetchReservations } =
@@ -350,13 +314,17 @@ const reservationStats = computed(() => ({
     waiting: reservations.value.filter((r) => r.status === 'Waiting').length,
     accepted: reservations.value.filter((r) => r.status === 'Accepted').length,
     fulfilled: reservations.value.filter((r) => r.status === 'Fulfilled').length,
+    rejected: reservations.value.filter((r) => r.status === 'Rejected').length,
+    expired: reservations.value.filter((r) => r.status === 'Expired').length,
 }))
 
-// The three counts at the top, which double as filters. With none picked the list shows everything open (waiting + accepted).
+// One count for every status, at the top, and each doubles as its filter. With none picked the list shows what is open (waiting for review + ready for pickup).
 const reservationTiles = computed(() => [
-    { status: 'Waiting' as const, label: 'Waiting', value: reservationStats.value.waiting, icon: 'i-tabler-clock', tone: 'warning' as const },
-    { status: 'Accepted' as const, label: 'Accepted', value: reservationStats.value.accepted, icon: 'i-tabler-circle-check', tone: 'success' as const },
-    { status: 'Fulfilled' as const, label: 'Fulfilled', value: reservationStats.value.fulfilled, icon: 'i-tabler-book', tone: 'accent' as const },
+    { status: 'Waiting' as const, label: 'Waiting for Review', value: reservationStats.value.waiting, icon: 'i-tabler-clock', tone: 'warning' as const },
+    { status: 'Accepted' as const, label: 'Ready for Pickup', value: reservationStats.value.accepted, icon: 'i-tabler-circle-check', tone: 'success' as const },
+    { status: 'Fulfilled' as const, label: 'Checked Out', value: reservationStats.value.fulfilled, icon: 'i-tabler-book', tone: 'accent' as const },
+    { status: 'Rejected' as const, label: 'Rejected', value: reservationStats.value.rejected, icon: 'i-tabler-circle-x', tone: 'danger' as const },
+    { status: 'Expired' as const, label: 'Expired', value: reservationStats.value.expired, icon: 'i-tabler-clock-off', tone: 'accent' as const },
 ])
 
 // The API returns reservations oldest-first, so the running count per book is its FIFO queue position.
@@ -413,6 +381,19 @@ const pagedReservations = computed(() => {
 watch([reservationSearch, reservationStatus, reservationBook], () => {
     reservationPage.value = 1
 })
+
+// 'open' (waiting for review, or ready for pickup) is what the list shows when nothing is picked.
+const reservationFilterGroups = computed(() => [
+    { key: 'status', title: 'Status', allValue: 'open', options: [{ value: 'open', label: 'Open (waiting or ready)' }, { value: 'Waiting', label: 'Waiting for review' }, { value: 'Accepted', label: 'Ready for pickup' }, { value: 'Fulfilled', label: 'Checked out' }, { value: 'Rejected', label: 'Rejected' }, { value: 'Expired', label: 'Expired' }, { value: 'every', label: 'All statuses' }] },
+    { key: 'book', title: 'Book', options: [{ value: ALL, label: 'All books' }, ...reservationBookOptions.value.map((b) => ({ value: String(b.bookID), label: `${b.title} (${b.count})`, badge: b.title }))] },
+])
+const reservationFilters = computed({
+    get: () => ({ status: reservationStatus.value === '' ? 'every' : reservationStatus.value, book: reservationBook.value === '' ? ALL : String(reservationBook.value) }),
+    set: (v) => {
+        reservationStatus.value = (v.status === 'every' ? '' : v.status) as typeof reservationStatus.value
+        reservationBook.value = v.book === ALL ? '' : Number(v.book)
+    },
+})
 // A book that has no reservations left in this view (handled, or another status picked) can't stay selected.
 watch(reservationBookOptions, (options) => {
     if (reservationBook.value !== '' && !options.some((b) => b.bookID === reservationBook.value)) reservationBook.value = ''
@@ -427,6 +408,8 @@ const selfReturns = computed(() => selfReturnResponse.value?.reports ?? [])
 // Filter the pending reports by student or book (all in the browser, like the reservations).
 const selfReturnSearch = ref('')
 const selfReturnBook = ref<number | ''>('')
+// When it was reported: today, in the last 7 days, or longer ago.
+const selfReturnWhen = ref<'' | 'today' | '7' | 'older'>('')
 
 const selfReturnBookOptions = computed(() => bookOptions(selfReturns.value.map((r) => r.loan?.copy?.book)))
 const selfReturnBookTitle = computed(() => selfReturnBookOptions.value.find((b) => b.bookID === selfReturnBook.value)?.title ?? '')
@@ -435,12 +418,28 @@ const filteredSelfReturns = computed(() => {
     const term = selfReturnSearch.value.trim().toLowerCase()
     return selfReturns.value.filter((r) => {
         if (selfReturnBook.value !== '' && r.loan?.copy?.book?.bookID !== selfReturnBook.value) return false
+        if (selfReturnWhen.value) {
+            const days = (Date.now() - new Date(r.reportedAt).getTime()) / 86_400_000
+            if (selfReturnWhen.value === 'today' ? days >= 1 : selfReturnWhen.value === '7' ? days >= 7 : days < 7) return false
+        }
         if (!term) return true
         return (
             personName(r.loan?.student?.user).toLowerCase().includes(term) ||
             (r.loan?.copy?.book?.title ?? '').toLowerCase().includes(term)
         )
     })
+})
+
+const selfReturnFilterGroups = computed(() => [
+    { key: 'book', title: 'Book', options: [{ value: ALL, label: 'All books' }, ...selfReturnBookOptions.value.map((b) => ({ value: String(b.bookID), label: `${b.title} (${b.count})`, badge: b.title }))] },
+    { key: 'when', title: 'Reported', options: [{ value: ALL, label: 'Any time' }, { value: 'today', label: 'Today' }, { value: '7', label: 'In the last 7 days' }, { value: 'older', label: 'Longer ago' }] },
+])
+const selfReturnFilters = computed({
+    get: () => ({ book: selfReturnBook.value === '' ? ALL : String(selfReturnBook.value), when: selfReturnWhen.value || ALL }),
+    set: (v) => {
+        selfReturnBook.value = v.book === ALL ? '' : Number(v.book)
+        selfReturnWhen.value = (v.when === ALL ? '' : v.when) as typeof selfReturnWhen.value
+    },
 })
 
 // Same for a book whose last pending report was just handled.
@@ -463,6 +462,7 @@ function bookOptions(books: Array<{ bookID: number; title: string } | null | und
 // ---- Penalties (late fees) ----
 const penaltySearch = ref('')
 const penaltyStatus = ref<'' | PenaltyFilter>('')
+const penaltyArea = ref('')
 const penaltyPage = ref(1)
 
 const { data: penaltyStats, execute: refetchPenaltyStats } =
@@ -476,6 +476,7 @@ const { data: penalties, pending: penaltiesPending, execute: refetchPenalties } 
     () => circulationService.fetchPenalties({
         search: penaltySearch.value || undefined,
         status: penaltyStatus.value || undefined,
+        area: penaltyArea.value || undefined,
         kind: 'late',
         page: penaltyPage.value,
         perPage: 12,
@@ -487,7 +488,25 @@ watch(penaltySearch, debounced(() => {
     penaltyPage.value = 1
     refetchPenalties()
 }))
-watch(penaltyStatus, () => {
+const lateTiles = computed(() => [
+    { status: 'Unpaid' as const, label: 'Unpaid', value: penaltyStats.value?.unpaidCount ?? '—', icon: 'i-tabler-alert-circle', tone: 'danger' as const },
+    { status: 'Unpaid' as const, label: 'Unpaid Total', value: penaltyStats.value ? formatPeso(penaltyStats.value.unpaidTotal) : '—', icon: 'i-tabler-coin', tone: 'warning' as const },
+    { status: 'Paid' as const, label: 'Paid', value: penaltyStats.value?.paidCount ?? '—', icon: 'i-tabler-circle-check', tone: 'success' as const },
+    { status: 'longUnpaid' as const, label: `Unpaid ${longUnpaidDays.value}+ Days`, value: penaltyStats.value?.longUnpaidCount ?? '—', icon: 'i-tabler-hourglass-high', tone: 'danger' as const },
+])
+
+const penaltyFilterGroups = computed(() => [
+    { key: 'status', title: 'Status', options: [{ value: ALL, label: 'Any status' }, { value: 'Unpaid', label: 'Unpaid' }, { value: 'Paid', label: 'Paid' }, { value: 'Waived', label: 'Waived' }, { value: 'longUnpaid', label: `Unpaid ${longUnpaidDays.value}+ days` }] },
+    { key: 'area', title: 'Collection', options: areaOptions.value },
+])
+const penaltyFilters = computed({
+    get: () => ({ status: penaltyStatus.value || ALL, area: penaltyArea.value || ALL }),
+    set: (v) => {
+        penaltyStatus.value = (v.status === ALL ? '' : v.status) as typeof penaltyStatus.value
+        penaltyArea.value = v.area === ALL ? '' : v.area
+    },
+})
+watch([penaltyStatus, penaltyArea], () => {
     penaltyPage.value = 1
     refetchPenalties()
 })
@@ -501,6 +520,7 @@ function goToPenaltyPage(next: number) {
 // The same kind of list as the late fees, for penalties over a book that is lost or damaged.
 const copyPenaltySearch = ref('')
 const copyPenaltyStatus = ref<'' | PenaltyFilter>('')
+const copyPenaltyType = ref<'' | 'lost' | 'damaged'>('')
 const copyPenaltyPage = ref(1)
 
 const { data: copyStats, execute: refetchCopyStats } =
@@ -511,6 +531,7 @@ const { data: copyPenalties, pending: copyPenaltiesPending, execute: refetchCopy
     () => circulationService.fetchPenalties({
         search: copyPenaltySearch.value || undefined,
         status: copyPenaltyStatus.value || undefined,
+        type: copyPenaltyType.value || undefined,
         kind: 'copy',
         page: copyPenaltyPage.value,
         perPage: 12,
@@ -522,7 +543,25 @@ watch(copyPenaltySearch, debounced(() => {
     copyPenaltyPage.value = 1
     refetchCopyPenalties()
 }))
-watch(copyPenaltyStatus, () => {
+const lostTiles = computed(() => [
+    { status: 'Unpaid' as const, label: 'Unpaid', value: copyStats.value?.unpaidCount ?? '—', icon: 'i-tabler-alert-circle', tone: 'danger' as const },
+    { status: 'Unpaid' as const, label: 'Unpaid Total', value: copyStats.value ? formatPeso(copyStats.value.unpaidTotal) : '—', icon: 'i-tabler-coin', tone: 'warning' as const },
+    { status: 'Paid' as const, label: 'Paid', value: copyStats.value?.paidCount ?? '—', icon: 'i-tabler-circle-check', tone: 'success' as const },
+    { status: 'Replaced' as const, label: 'Replaced', value: copyStats.value?.replacedCount ?? '—', icon: 'i-tabler-books', tone: 'accent' as const },
+])
+
+const copyPenaltyFilterGroups = computed(() => [
+    { key: 'status', title: 'Status', options: [{ value: ALL, label: 'Any status' }, { value: 'Unpaid', label: 'Unpaid' }, { value: 'Paid', label: 'Paid' }, { value: 'Waived', label: 'Waived' }, { value: 'Replaced', label: 'Replaced' }, { value: 'longUnpaid', label: `Unpaid ${copyStats.value?.longUnpaidDays ?? 30}+ days` }] },
+    { key: 'type', title: 'What happened', options: [{ value: ALL, label: 'Lost or damaged' }, { value: 'lost', label: 'Lost' }, { value: 'damaged', label: 'Damaged' }] },
+])
+const copyPenaltyFilters = computed({
+    get: () => ({ status: copyPenaltyStatus.value || ALL, type: copyPenaltyType.value || ALL }),
+    set: (v) => {
+        copyPenaltyStatus.value = (v.status === ALL ? '' : v.status) as typeof copyPenaltyStatus.value
+        copyPenaltyType.value = (v.type === ALL ? '' : v.type) as typeof copyPenaltyType.value
+    },
+})
+watch([copyPenaltyStatus, copyPenaltyType], () => {
     copyPenaltyPage.value = 1
     refetchCopyPenalties()
 })
@@ -539,10 +578,35 @@ const refetchPenaltyData = () => [refetchPenalties, refetchPenaltyStats, refetch
 // still out is closed, and the student is charged. They then pay it (Mark paid) or replace the book (Replaced).
 const isIssueOpen = ref(false)
 const issueBusy = ref(false)
+// Sent here from a copy in the Library page (Edit copy > Go to Lost & Damaged): the book and copy come along.
+const issuePrefill = ref<{ type: 'lost' | 'damaged'; book: CatalogBook; copyID: number } | null>(null)
 
 function openIssuePenalty() {
+    issuePrefill.value = null
     isIssueOpen.value = true
 }
+
+onMounted(async () => {
+    const bookUuid = String(route.query.issueBook ?? '')
+    const copyUuid = String(route.query.issueCopy ?? '')
+    if (!bookUuid || !copyUuid) return
+
+    // Drop the flags from the address so a refresh doesn't reopen the window (address bar only, as for the checkout flag above).
+    const url = new URL(window.location.href)
+    url.searchParams.delete('issueBook')
+    url.searchParams.delete('issueCopy')
+    window.history.replaceState(window.history.state, '', url)
+
+    try {
+        const { book } = await librarianService.fetchBook(bookUuid)
+        const copy = book.copies.find((c) => c.uuid === copyUuid)
+        if (!copy) return
+        issuePrefill.value = { type: copy.status === 'damaged' ? 'damaged' : 'lost', book: book as unknown as CatalogBook, copyID: copy.copyID }
+        isIssueOpen.value = true
+    } catch {
+        // Could not load the book: the window can still be opened by hand with "Issue a Penalty".
+    }
+})
 
 async function saveIssuePenalty(payload: IssuePenaltyPayload) {
     issueBusy.value = true
@@ -608,14 +672,85 @@ async function confirmCancel() {
     if (ok) isCancelOpen.value = false
 }
 
+// Edit an unpaid penalty (its note, and its amount once settled), or waive a late fee.
+const isEditOpen = ref(false)
+const editingPenalty = ref<PenaltyRecord | null>(null)
+const editBusy = ref(false)
+
+function handleEdit(penalty: PenaltyRecord) {
+    editingPenalty.value = penalty
+    isEditOpen.value = true
+}
+
+async function saveEdit(payload: { amount?: number; reason: string }) {
+    const penalty = editingPenalty.value
+    if (!penalty) return
+    editBusy.value = true
+    const ok = await perform(() => circulationService.updatePenalty(penalty.uuid, payload),
+        'Penalty updated', 'Could not update the penalty', refetchPenaltyData())
+    editBusy.value = false
+    if (ok) isEditOpen.value = false
+}
+
+const isWaiveOpen = ref(false)
+const waivingPenalty = ref<PenaltyRecord | null>(null)
+const waiveBusy = ref(false)
+const waiveReason = ref('')
+const waiveError = ref('')
+
+const waiveMessage = computed(() => {
+    const p = waivingPenalty.value
+    if (!p) return ''
+    return `${personName(penaltyStudent(p)?.user)} no longer owes the ${formatPeso(p.amount)} late fee, and is told. This can't be undone.`
+})
+
+function handleWaive(penalty: PenaltyRecord) {
+    waivingPenalty.value = penalty
+    waiveReason.value = ''
+    waiveError.value = ''
+    isWaiveOpen.value = true
+}
+
+async function confirmWaive() {
+    const penalty = waivingPenalty.value
+    if (!penalty) return
+    if (waiveReason.value.trim().length < 3) { waiveError.value = 'Write a short reason.'; return }
+    waiveBusy.value = true
+    const ok = await perform(() => circulationService.waivePenalty(penalty.uuid, { reason: waiveReason.value.trim() }),
+        'Fine waived', 'Could not waive the fine', refetchPenaltyData())
+    waiveBusy.value = false
+    if (ok) isWaiveOpen.value = false
+}
+
 // ---- Tabs ----
 const tabs = computed(() => [
-    { label: 'Active Loans', short: 'Loans', value: 'loans', badge: loanStats.value?.received || undefined },
-    { label: 'Reservations', short: 'Reserved', value: 'reservations', badge: reservationStats.value.waiting },
-    { label: 'Self-Return Reports', short: 'Self-returns', value: 'selfreturn', badge: selfReturns.value.length },
-    { label: 'Lost & Damaged', short: 'Lost', value: 'lostdamaged', badge: copyStats.value?.unpaidCount || undefined },
-    { label: 'Penalties', short: 'Fines', value: 'penalties' },
+    { label: 'Active Loans', short: 'Loans', value: 'loans' },
+    { label: 'Reservations', short: 'Reservations', value: 'reservations', badge: reservationStats.value.waiting },
+    { label: 'Self-Return Reports', short: 'Self-Returns', value: 'selfreturn', badge: selfReturns.value.length },
+    { label: 'Penalties', short: 'Penalties', value: 'penalties', badge: copyStats.value?.unpaidCount || undefined },
 ])
+
+// Penalties: late fees, and lost or damaged books (which are penalties too).
+const penaltyViews = computed(() => [
+    { label: 'Late Fees', value: 'late' },
+    { label: 'Lost & Damaged', short: 'Lost', value: 'lost', badge: copyStats.value?.unpaidCount || undefined },
+])
+
+// ---- Leaving a tab clears its search and filters ----
+// Nothing typed or picked should be waiting, forgotten, when you come back.
+function clearLoans() { loanSearch.value = ''; loanStatus.value = ''; loanArea.value = '' }
+function clearReservations() { reservationSearch.value = ''; reservationStatus.value = 'open'; reservationBook.value = '' }
+function clearSelfReturns() { selfReturnSearch.value = ''; selfReturnBook.value = ''; selfReturnWhen.value = '' }
+function clearLate() { penaltySearch.value = ''; penaltyStatus.value = ''; penaltyArea.value = '' }
+function clearLost() { copyPenaltySearch.value = ''; copyPenaltyStatus.value = ''; copyPenaltyType.value = '' }
+
+watch(activeTab, (_, left) => {
+    if (left === 'loans') clearLoans()
+    else if (left === 'reservations') clearReservations()
+    else if (left === 'selfreturn') clearSelfReturns()
+    else if (left === 'penalties') { clearLate(); clearLost() }
+})
+watch(penaltyView, (_, left) => { if (left === 'late') clearLate(); else clearLost() })
 
 // ---- Actions ----
 const { perform } = useAction()
@@ -696,9 +831,9 @@ const popupAlert = useAlert()
 
 const studentKeyOf = (r: ReservationRecord) => r.student?.memberIDNumber ?? `reservation-${r.reservationID}`
 
-// Read from the live list, so the pop-up shows the new state as soon as the list reloads after accepting.
+// Every reservation of that student, read from the live list, so the pop-up shows the new state as soon as the list reloads.
 const reviewItems = computed(() => reservations.value.filter((r) =>
-    studentKeyOf(r) === reviewKey.value && (r.status === 'Waiting' || r.status === 'Accepted')))
+    studentKeyOf(r) === reviewKey.value))
 
 function openReview(key: string) {
     reviewKey.value = key
@@ -725,7 +860,8 @@ async function decideMany(list: ReservationRecord[], action: 'accept' | 'reject'
     const verb = action === 'accept' ? 'accepted' : 'rejected'
     if (done) popupAlert.success(`${done} ${done === 1 ? 'reservation' : 'reservations'} ${verb}`, 'The student has been told.')
     if (failed.length) popupAlert.error(`Could not ${action} ${failed.length === 1 ? 'one reservation' : `${failed.length} reservations`}`, failed.join('\n'))
-    if (!reviewItems.value.length) isReviewOpen.value = false
+    // Nothing open left for this student (the finished ones stay listed): the pop-up has done its job.
+    if (!reviewItems.value.some((r) => r.status === 'Waiting' || r.status === 'Accepted')) isReviewOpen.value = false
 }
 
 // The pop-up asks for the confirmation itself (as a second step inside the same window), so these just do the work.

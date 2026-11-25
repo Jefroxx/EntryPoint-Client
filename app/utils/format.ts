@@ -39,6 +39,14 @@ export function formatDuration(start: string, end: string | null, nowMs: number 
   return minutes < 60 ? `${minutes}m` : `${Math.floor(minutes / 60)}h ${minutes % 60}m`
 }
 
+/** A length of time given in minutes: "42m", "1h 25m", "2h". Rounded to the minute. */
+export function formatMinutes(value: number): string {
+  const minutes = Math.max(0, Math.round(value))
+  if (minutes < 60) return `${minutes}m`
+  const rest = minutes % 60
+  return rest ? `${Math.floor(minutes / 60)}h ${rest}m` : `${Math.floor(minutes / 60)}h`
+}
+
 export function isSameDay(a: Date, b: Date): boolean {
   return a.toDateString() === b.toDateString()
 }

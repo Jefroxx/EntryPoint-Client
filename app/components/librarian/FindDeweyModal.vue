@@ -12,7 +12,7 @@
 				</div>
 				<p class="text-[14px] leading-snug text-stone-600">
 					First, each book is looked up by its ISBN in the Library of Congress catalogue, then Open Library. Then you get <b class="text-stone-800">the list of every book still waiting</b>,
-					each with a number to check: the one the catalogue found, or the guess from its category.
+					each with the number the catalogue found, or blank for you to type. A number is never guessed.
 					Edit any number that is wrong, tick the ones you are happy with, and accept them all at once.
 				</p>
 				<p class="text-[13px] leading-snug text-stone-500">
@@ -42,7 +42,7 @@
 
 		<!-- 3. Every book still waiting: edit a number, tick the ones to accept. -->
 		<div v-else-if="phase === 'review'" class="space-y-3">
-			<p v-if="stopped" class="rounded-xl bg-amber-50 px-3.5 py-2.5 text-[13px] text-amber-900">Stopped early: {{ books.length - checked }} books were not looked up, so they show their category guess.</p>
+			<p v-if="stopped" class="rounded-xl bg-amber-50 px-3.5 py-2.5 text-[13px] text-amber-900">Stopped early: {{ books.length - checked }} books were not looked up, so they are still blank.</p>
 
 			<!-- Find a book in the list: by title, author, ISBN or the number it has now. -->
 			<LibrarianSearchInput id="dewey-search" v-model="search" placeholder="Search title, author, ISBN or number" />
@@ -73,7 +73,7 @@
 						<p class="truncate text-[14px] font-semibold text-stone-900">{{ row.title }}</p>
 						<p class="flex flex-wrap items-center gap-x-2 text-[12px] text-stone-500">
 							<span class="rounded-full px-2 py-0.5 text-[11px] font-semibold" :class="ORIGIN[row.origin].pill">{{ ORIGIN[row.origin].label }}</span>
-							<span class="truncate">{{ row.origin === 'catalogue' ? row.source : row.authors || row.subject || '' }}</span>
+							<span class="truncate">{{ row.origin === 'catalogue' ? row.source : row.authors || '' }}</span>
 						</p>
 					</div>
 					<div class="shrink-0">
@@ -155,7 +155,7 @@ const emit = defineEmits<{
 
 type Phase = 'intro' | 'running' | 'review' | 'accepting' | 'done'
 /** Where a row's number came from: a catalogue match, the guess from the book's category, or nothing at all. */
-type Origin = 'catalogue' | 'guess' | 'none'
+type Origin = 'catalogue' | 'none'
 interface Row {
 	uuid: string; title: string; isbn: string | null; authors: string; subject: string
 	number: string; origin: Origin; source: string; ticked: boolean
@@ -173,13 +173,11 @@ const SUBTITLES: Record<Phase, string> = {
 }
 const ORIGIN: Record<Origin, { label: string; pill: string }> = {
 	catalogue: { label: 'Found', pill: 'bg-emerald-100 text-emerald-800' },
-	guess: { label: 'Category guess', pill: 'bg-amber-100 text-amber-800' },
 	none: { label: 'No number', pill: 'bg-stone-200 text-stone-600' },
 }
 const FILTERS: { key: 'all' | Origin; label: string }[] = [
 	{ key: 'all', label: 'All' },
 	{ key: 'catalogue', label: 'Found' },
-	{ key: 'guess', label: 'Category guess' },
 	{ key: 'none', label: 'No number' },
 ]
 
@@ -271,7 +269,7 @@ async function loadAllBooks() {
 function buildRows() {
 	rows.value = books.value.map((b) => ({
 		uuid: b.uuid, title: b.title, isbn: b.isbn, authors: b.authors, subject: b.subject,
-		number: b.guess, origin: b.guess ? 'guess' : 'none', source: '', ticked: false,
+		number: b.guess, origin: 'none', source: '', ticked: false,
 	}))
 }
 

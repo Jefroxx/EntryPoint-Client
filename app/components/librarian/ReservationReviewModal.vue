@@ -55,7 +55,7 @@
 			<section v-if="ready.length && !confirming" aria-labelledby="review-ready">
 				<h3 id="review-ready" class="mb-2.5 text-[14.5px] font-bold text-stone-900">Ready for pickup <span class="font-medium text-stone-500">({{ ready.length }})</span></h3>
 				<ul class="divide-y divide-stone-100 overflow-hidden rounded-2xl border border-stone-200">
-					<li v-for="r in ready" :key="r.reservationID" class="flex items-center gap-4 px-4 py-4 sm:px-5">
+					<li v-for="r in ready" :key="r.reservationID" class="grid grid-cols-[64px_minmax(0,1fr)] items-center gap-x-4 gap-y-3 px-4 py-4 sm:grid-cols-[64px_minmax(0,1fr)_auto] sm:px-5">
 						<StudentCover :book="r.book ?? { title: 'Removed book' }" :width="64" />
 						<span class="min-w-0 flex-1">
 							<span class="block text-[16px] font-semibold leading-snug text-stone-900">{{ r.book?.title ?? 'Removed book' }}</span>
@@ -66,14 +66,31 @@
 								<span v-if="r.pickupCode" class="font-data text-stone-500">{{ r.pickupCode }}</span>
 							</span>
 						</span>
-						<ButtonsButton variant="primary" class="shrink-0 !h-11" :disabled="busy" @click="emit('checkout', r)">
+						<ButtonsButton variant="primary" class="col-span-2 !h-11 w-full sm:col-span-1 sm:w-auto" :disabled="busy" @click="emit('checkout', r)">
 							<Icon name="i-tabler-scan" class="h-4 w-4" />Check out
 						</ButtonsButton>
 					</li>
 				</ul>
 			</section>
 
-			<p v-if="!waiting.length && !ready.length" class="rounded-xl bg-stone-50 px-4 py-10 text-center text-[14.5px] text-stone-500">
+			<!-- Finished ones (collected, declined, or not collected in time): for looking at, nothing to do. -->
+			<section v-if="past.length && !confirming" aria-labelledby="review-past">
+				<h3 id="review-past" class="mb-2.5 text-[14.5px] font-bold text-stone-900">Earlier <span class="font-medium text-stone-500">({{ past.length }})</span></h3>
+				<ul class="divide-y divide-stone-100 overflow-hidden rounded-2xl border border-stone-200">
+					<li v-for="r in past" :key="r.reservationID" class="flex items-center gap-4 px-4 py-3.5 sm:px-5">
+						<StudentCover :book="r.book ?? { title: 'Removed book' }" :width="48" />
+						<span class="min-w-0 flex-1">
+							<span class="block break-words text-[15px] font-semibold leading-snug text-stone-900">{{ r.book?.title ?? 'Removed book' }}</span>
+							<span class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px]">
+								<span class="inline-flex items-center gap-1.5 font-semibold" :class="reservationLook[r.status].text"><span class="h-1.5 w-1.5 rounded-full" :class="reservationLook[r.status].dot" aria-hidden="true" />{{ reservationLook[r.status].label }}</span>
+								<span class="text-stone-500">Reserved {{ formatDateTime(r.reservedAt) }}</span>
+							</span>
+						</span>
+					</li>
+				</ul>
+			</section>
+
+			<p v-if="!waiting.length && !ready.length && !past.length" class="rounded-xl bg-stone-50 px-4 py-10 text-center text-[14.5px] text-stone-500">
 				Nothing left to do for this student.
 			</p>
 		</div>
@@ -105,7 +122,7 @@ import type { ReservationRecord } from '~/services/circulationService'
 
 const props = defineProps<{
 	open: boolean
-	/** One student's reservations that are still open (waiting or accepted), live from the page. */
+	/** One student's reservations, live from the page: the open ones (waiting or accepted) and the finished ones. */
 	items: ReservationRecord[]
 	queuePositions: Record<number, number>
 	busy?: boolean
@@ -119,6 +136,7 @@ const emit = defineEmits<{
 
 const waiting = computed(() => props.items.filter((r) => r.status === 'Waiting'))
 const ready = computed(() => props.items.filter((r) => r.status === 'Accepted'))
+const past = computed(() => props.items.filter((r) => r.status !== 'Waiting' && r.status !== 'Accepted'))
 const student = computed(() => props.items[0]?.student ?? null)
 const studentName = computed(() => (student.value ? personName(student.value.user) : 'this student'))
 
@@ -136,7 +154,7 @@ const shownWaiting = computed(() => (confirming.value ? pickedItems.value : wait
 const title = computed(() => (student.value ? personName(student.value.user) : 'Reservations'))
 const subtitle = computed(() => {
 	const id = student.value?.memberIDNumber
-	const open = props.items.length
+	const open = waiting.value.length + ready.value.length
 	return `${id ? `${id} · ` : ''}${open} open ${open === 1 ? 'reservation' : 'reservations'}`
 })
 

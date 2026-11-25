@@ -7,12 +7,13 @@
 
 <script setup lang="ts">
 const props = defineProps<{
-	status: 'Pending' | 'Approved' | 'Rejected'
+	status: 'Pending' | 'Approved' | 'Arrived' | 'Rejected'
 }>()
 
 const toneMap = {
 	Pending: { classes: 'border-amber-200 bg-amber-50 text-amber-700', icon: 'i-tabler-clock' },
 	Approved: { classes: 'border-emerald-200 bg-emerald-50 text-emerald-700', icon: 'i-tabler-check' },
+	Arrived: { classes: 'border-sky-200 bg-sky-50 text-sky-700', icon: 'i-tabler-books' },
 	Rejected: { classes: 'border-red-200 bg-red-50 text-red-700', icon: 'i-tabler-x' },
 }
 
