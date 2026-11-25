@@ -35,7 +35,7 @@
 
 						<!-- The title has the whole width of the card: beside the checkbox, the number, the status and the menu it was squeezed to a word a line. -->
 						<div class="mt-2.5 min-w-0">
-							<p class="break-words text-[15px] font-semibold leading-snug text-stone-900">{{ copy.book.title }}</p>
+							<p class="line-clamp-2 break-words text-[15px] font-semibold leading-snug text-stone-900" :title="copy.book.title">{{ copy.book.title }}</p>
 							<p class="break-words text-[13px] text-stone-500">{{ copy.book.authors.join(', ') || '—' }}</p>
 						</div>
 

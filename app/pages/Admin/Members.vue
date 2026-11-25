@@ -40,21 +40,6 @@
                 </li>
             </template>
 
-            <tr v-for="(member, index) in rows" :key="member.uuid" class="row-fade-in border-b border-stone-100 last:border-0"
-                :class="member.isDisabled ? 'bg-stone-50/70' : ''" :style="{ animationDelay: `${index * 30}ms` }">
-                <td class="px-4 py-3"><LibrarianPersonCell :name="member.name" /></td>
-                <td class="font-data px-4 py-3 text-[13.5px] text-stone-600">{{ member.employeeIDNumber }}</td>
-                <td class="px-4 py-3"><LibrarianStatusPill :label="typeLabel[member.memberType]" tone="info" /></td>
-                <td class="px-4 py-3 text-[14px] text-stone-600">{{ member.department || '—' }}</td>
-                <td class="font-data px-4 py-3 text-[13px] text-stone-500">{{ member.email }}</td>
-                <td class="px-4 py-3"><LibrarianStatusPill :label="member.isDisabled ? 'Disabled' : 'Active'" :tone="member.isDisabled ? 'danger' : 'success'" /></td>
-                <td class="px-4 py-3">
-                    <div class="flex items-center justify-end gap-1.5">
-                        <ButtonsButton variant="ghost" size="sm" @click="openEdit(member)">Edit</ButtonsButton>
-                        <LibrarianRowMenu :items="menuFor(member)" :label="`More actions for ${member.name}`" @select="(key: string) => onMenu(key, member)" />
-                    </div>
-                </td>
-            </tr>
         </LibrarianTableShell>
 
         <LibrarianPagination v-if="page" :shown="rows.length" :total="page.total" noun="members"

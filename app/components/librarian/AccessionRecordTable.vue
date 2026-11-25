@@ -9,7 +9,7 @@
 					<div class="card-body flex gap-3">
 						<StudentCover :book="book" :width="48" />
 						<div class="min-w-0 flex-1">
-							<p class="text-[15px] font-semibold leading-snug text-stone-900">{{ book.title }}</p>
+							<p class="line-clamp-2 break-words text-[15px] font-semibold leading-snug text-stone-900" :title="book.title">{{ book.title }}</p>
 							<p class="break-words text-[13px] text-stone-500">{{ authorNames(book) }}</p>
 							<span v-if="book.areaOfLibrary"
 									class="mt-1.5 inline-flex items-center rounded-full bg-stone-100 px-2.5 py-0.5 text-[12px] font-semibold text-stone-700">{{ LIBRARY_AREAS[book.areaOfLibrary] ?? book.areaOfLibrary }}</span>

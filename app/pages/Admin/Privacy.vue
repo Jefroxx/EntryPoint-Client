@@ -17,7 +17,7 @@
             <div class="flex items-start gap-3">
                 <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-red-50 text-red-600"><Icon name="i-tabler-user-off" class="h-[18px] w-[18px]" /></span>
                 <div>
-                    <h2 class="text-[14.5px] font-bold text-stone-900">Anonymize an account</h2>
+                    <h2 class="text-[14.5px] font-bold text-stone-900">Archive an account</h2>
                     <p class="mt-0.5 text-[13px] leading-snug text-stone-500">Removes their name, email, phone, address, birth date and ID, and closes the account. The library's loan, fine and visit records stay, but are no longer about a named person.</p>
                 </div>
             </div>
@@ -42,7 +42,7 @@
                             <div class="mt-1.5 flex flex-wrap items-center gap-1.5">
                                 <LibrarianStatusPill :label="typeLabel[m.memberType]" tone="info" />
                                 <span v-if="m.detail" class="text-[12.5px] text-stone-500">{{ m.detail }}</span>
-                                <LibrarianStatusPill v-if="m.isAnonymized" label="Anonymized" tone="neutral" />
+                                <LibrarianStatusPill v-if="m.isAnonymized" label="Archived" tone="neutral" />
                                 <LibrarianStatusPill v-else-if="m.isDisabled" label="Disabled" tone="danger" />
                             </div>
                         </div>
@@ -53,21 +53,21 @@
                             <Icon :name="busyUuid === m.uuid ? 'i-tabler-loader-2' : 'i-tabler-download'" class="h-3.5 w-3.5" :class="busyUuid === m.uuid ? 'animate-spin' : ''" />Download their data
                         </ButtonsButton>
                         <ButtonsButton variant="danger" class="flex-1 sm:flex-none" :disabled="m.blockers.length > 0 || busyUuid === m.uuid" @click="ask(m)">
-                            <Icon name="i-tabler-user-off" class="h-3.5 w-3.5" />Anonymize
+                            <Icon name="i-tabler-user-off" class="h-3.5 w-3.5" />Archive
                         </ButtonsButton>
                     </div>
                 </div>
 
                 <p v-if="!m.isAnonymized && m.blockers.length" class="mt-3 flex items-start gap-2 rounded-xl bg-amber-50 px-3.5 py-2.5 text-[13px] leading-snug text-amber-900">
                     <Icon name="i-tabler-alert-triangle" class="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-                    <span>Can't be anonymized yet. {{ m.blockers.join(' ') }} Settle those first.</span>
+                    <span>Can't be archived yet. {{ m.blockers.join(' ') }} Settle those first.</span>
                 </p>
             </li>
         </ul>
 
-        <LibrarianConfirmModal :open="isConfirmOpen" title="Anonymize This Account?"
+        <LibrarianConfirmModal :open="isConfirmOpen" title="Archive This Account?"
             :message="`This removes ${target ? target.name + '’s' : 'their'} name, email, phone, address, birth date and ID, and closes the account for good. Their loans, fines and visits stay in the library's records without a name. This can't be undone. Download their data first if they asked for a copy.`"
-            confirm-label="Anonymize account" :loading="anonymizing" @close="isConfirmOpen = false" @confirm="anonymize" />
+            confirm-label="Archive account" :loading="anonymizing" @close="isConfirmOpen = false" @confirm="anonymize" />
 
         <AlertToast />
     </div>
@@ -151,13 +151,13 @@ async function anonymize() {
     anonymizing.value = true
     try {
         await adminService.anonymizeMember(member.uuid)
-        alert.success('The account was anonymized')
+        alert.success('The account was archived')
         isConfirmOpen.value = false
         term.value = ''
         results.value = []
     } catch (error) {
         const fields = serverFieldErrors(error)
-        alert.error('Could not anonymize the account', fields?.account ?? apiErrorMessage(error))
+        alert.error('Could not archive the account', fields?.account ?? apiErrorMessage(error))
         isConfirmOpen.value = false
         await runSearch()
     } finally {

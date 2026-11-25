@@ -268,6 +268,20 @@ watch(() => props.open, (isOpen) => {
 	if (pickingStudent.value) void loadCandidates()
 })
 
+// Switching between "a registered student" and "someone from outside" starts that side fresh: nothing typed or picked on
+// the other side carries over.
+watch(() => form.assistantSource, () => {
+	if (props.account) return
+	form.firstName = ''
+	form.middleInitial = ''
+	form.lastName = ''
+	form.email = ''
+	form.phoneNumber = ''
+	form.studentUuid = ''
+	studentSearch.value = ''
+	for (const k of Object.keys(errors)) errors[k] = ''
+})
+
 // The server refused something (a taken email, say): back to the form, where the message sits under the field.
 watch(() => props.serverErrors, (incoming) => {
 	if (!incoming) return

@@ -15,34 +15,25 @@
             </ButtonsButton>
         </div>
 
-        <LibrarianTableShell :columns="['When', 'Who', 'What happened']" :loading="!data && !error" :empty="rows.length === 0"
+        <LibrarianTableShell single-column :columns="['When', 'Who', 'What happened']" :loading="!data && !error" :empty="rows.length === 0"
             :empty-text="hasFilters ? 'Nothing in the log matches these filters.' : 'Nothing has been recorded yet.'" min-width="720px">
             <!-- Phones: one card per entry. -->
             <template #cards>
                 <li v-for="entry in rows" :key="`card-${entry.logID}`">
                     <div role="button" tabindex="0" class="h-full cursor-pointer px-4 py-3.5 transition-colors duration-150 hover:bg-stone-100 focus-visible:bg-stone-100 focus-visible:outline-none active:bg-stone-200"
                         @click="selected = entry" @keydown.enter.self="selected = entry">
-                        <p class="text-[14.5px] font-medium leading-snug text-stone-900">{{ entry.summary }}</p>
-                        <p class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[12.5px] text-stone-500">
+                        <div class="sm:flex sm:items-center sm:justify-between sm:gap-6">
+                        <p class="min-w-0 text-[14.5px] font-medium leading-snug text-stone-900">{{ entry.summary }}</p>
+                        <p class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[12.5px] text-stone-500 sm:mt-0 sm:shrink-0 sm:justify-end">
                             <span class="font-semibold text-stone-700">{{ entry.actorName }}</span>
                             <span class="text-stone-300">·</span>{{ roleLabel(entry.actorRole) }}
                             <span class="text-stone-300">·</span><span class="font-data">{{ formatDateTime(entry.created_at) }}</span>
                         </p>
+                        </div>
                     </div>
                 </li>
             </template>
 
-            <tr v-for="(entry, index) in rows" :key="entry.logID" tabindex="0"
-                class="row-fade-in cursor-pointer border-b border-stone-100 transition-colors duration-150 last:border-0 hover:bg-accent-50"
-                @click="selected = entry" @keydown.enter.self="selected = entry"
-                :style="{ animationDelay: `${index * 25}ms` }">
-                <td class="font-data whitespace-nowrap px-4 py-3 text-[13px] text-stone-500">{{ formatDateTime(entry.created_at) }}</td>
-                <td class="px-4 py-3">
-                    <p class="text-[14.5px] font-semibold text-stone-900">{{ entry.actorName }}</p>
-                    <p class="text-[12.5px] text-stone-500">{{ roleLabel(entry.actorRole) }}</p>
-                </td>
-                <td class="px-4 py-3 text-[14.5px] text-stone-800">{{ entry.summary }}</td>
-            </tr>
 
             <!-- Teleports to <body>; it lives in the slot only so the table keeps a single root element. -->
             <LibrarianRecordDrawer :open="!!selected" heading="Activity details" :title="selectedParts.what"
@@ -75,23 +66,8 @@ watch(search, (value) => {
 })
 watch(area, () => { pageNumber.value = 1 })
 
-// The page size follows the card grid (1 column on phones, 2 from 640px, 3 from 1536px: the same breakpoints as the
-// grid in TableShell), as whole rows, so no page ends a row with a gap. A resize that changes the columns starts over at page 1.
-const ROWS = 6
-const columnsNow = () => (!import.meta.client ? 1 : window.matchMedia('(min-width: 1536px)').matches ? 3 : window.matchMedia('(min-width: 640px)').matches ? 2 : 1)
-const columns = ref(columnsNow()) // the list is fetched in the browser only (server: false below), where the width is known
-const perPage = computed(() => columns.value * ROWS)
-watch(perPage, () => { pageNumber.value = 1 })
-
-onMounted(() => {
-    const two = window.matchMedia('(min-width: 640px)')
-    const three = window.matchMedia('(min-width: 1536px)')
-    const measure = () => { columns.value = columnsNow() }
-    // Resizing across a breakpoint (a rotated tablet, a dragged window) changes the page size.
-    two.addEventListener('change', measure)
-    three.addEventListener('change', measure)
-    onBeforeUnmount(() => { two.removeEventListener('change', measure); three.removeEventListener('change', measure) })
-})
+// One entry per row, so the page size is just a count of rows.
+const perPage = ref(10)
 
 const { data, error } = useAsyncData(
     'admin-audit',

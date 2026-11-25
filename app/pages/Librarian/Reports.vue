@@ -7,7 +7,13 @@
 
         <!-- One period for the whole page: everything below is for these days, except where it says otherwise. -->
         <div class="phone-toolbar mb-5 flex flex-wrap items-center gap-2">
-            <LibrarianSegmentedTabs v-model="period" :tabs="PERIODS" />
+            <!-- A dropdown you pick from (a native select: nothing can be typed into it). -->
+            <label class="flex items-center gap-2 text-[13.5px] font-semibold text-stone-600">Period
+                <select v-model="period" aria-label="Report period"
+                    class="h-[42px] cursor-pointer rounded-xl border border-accent-300 bg-white px-3 text-[14.5px] font-normal text-stone-800 outline-none focus:ring-2 focus:ring-accent-200">
+                    <option v-for="p in PERIODS" :key="p.value" :value="p.value">{{ p.label }}</option>
+                </select>
+            </label>
 
             <div v-if="period === 'custom'" class="toolbar-full flex flex-wrap items-center gap-x-4 gap-y-2">
                 <label class="flex items-center gap-2 text-[13.5px] font-semibold text-stone-600">From
@@ -105,7 +111,7 @@
             <section class="report-card">
                 <header class="mb-3 flex items-baseline justify-between gap-2">
                     <h2 class="report-title">Books by category</h2>
-                    <span class="text-[12.5px] text-stone-500">Whole collection</span>
+                    <span class="text-[12.5px] text-stone-500">Every title the library owns, grouped by category</span>
                 </header>
                 <LibrarianRankedBars :items="shownCategories" empty="No categories yet." />
                 <button v-if="categories.length > CATEGORIES_SHOWN" type="button"
@@ -120,6 +126,11 @@
                     <h2 class="report-title">Collection</h2>
                     <span class="text-[12.5px] text-stone-500">Every physical copy, by where it is now · {{ overview?.collection.total ?? '—' }} copies</span>
                 </header>
+                <p class="mb-3 text-[13px] leading-snug text-stone-500">
+                    The "collection" is everything the library owns. One title can have several copies, and each copy is counted once here, so this is a count of
+                    copies, not titles. It is a snapshot of today and does not change with the period above. "Damaged" copies are out for repair; "Lost or retired"
+                    copies can no longer be lent.
+                </p>
                 <LibrarianCollectionBar :items="collectionItems" :total="overview?.collection.total ?? 0" />
             </section>
 
@@ -159,7 +170,7 @@
             <section class="report-card lg:col-span-2" aria-label="Collection use">
                 <header class="mb-3 flex flex-wrap items-baseline justify-between gap-x-3">
                     <h2 class="report-title">Collection use</h2>
-                    <span class="text-[12.5px] text-stone-500">How hard the books are working</span>
+                    <span class="text-[12.5px] text-stone-500">How hard the books are working · loans in the period above, against today's collection</span>
                 </header>
                 <div class="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
                     <div class="rounded-xl bg-stone-50 px-3.5 py-3">
@@ -178,8 +189,25 @@
                         <p class="text-[12.5px] text-stone-500">{{ busiestSubject ? `${busiestSubject.perCopy} loans per copy` : '' }}</p>
                     </div>
                 </div>
-                <p class="mb-2 text-[12.5px] font-medium text-stone-500">Loans by subject, most first (each subject's copies in brackets)</p>
-                <LibrarianRankedBars :items="subjectUse" empty="No loans in this period." />
+                <p class="mb-2 text-[12.5px] font-medium text-stone-500">Loans by subject, most borrowed first</p>
+                <!-- Column headings so each number says what it is; a line under every row, as in Overdue records. -->
+                <div v-if="subjectUse.length" class="flex items-center gap-3 border-b border-stone-200 pb-1.5 text-[11.5px] font-semibold uppercase tracking-wide text-stone-400">
+                    <span class="min-w-0 flex-1">Subject</span>
+                    <span class="hidden w-24 shrink-0 sm:block sm:w-40"></span>
+                    <span class="w-16 shrink-0 text-right">Copies</span>
+                    <span class="w-16 shrink-0 text-right">Loans</span>
+                </div>
+                <ul v-if="subjectUse.length" class="divide-y divide-stone-100">
+                    <li v-for="s in subjectUse" :key="s.name" class="flex items-center gap-3 py-2.5 text-[14px]">
+                        <span class="line-clamp-2 min-w-0 flex-1 break-words font-medium leading-snug text-stone-800" :title="s.name">{{ s.name }}</span>
+                        <span class="hidden h-1.5 w-24 shrink-0 overflow-hidden rounded-full bg-stone-100 sm:block sm:w-40" aria-hidden="true">
+                            <span class="block h-full rounded-full bg-accent-500" :style="{ width: `${subjectMax ? (s.loans / subjectMax) * 100 : 0}%` }" />
+                        </span>
+                        <span class="w-16 shrink-0 text-right tabular-nums text-stone-500" :title="`${s.name} has ${s.copies} ${s.copies === 1 ? 'copy' : 'copies'} in the library`">{{ s.copies }}</span>
+                        <span class="w-16 shrink-0 text-right font-bold tabular-nums text-stone-900" :title="`${s.loans} ${s.loans === 1 ? 'loan' : 'loans'} ${periodPhrase}`">{{ s.loans }}</span>
+                    </li>
+                </ul>
+                <p v-else class="py-6 text-center text-[15px] text-stone-500">No loans in this period.</p>
             </section>
 
             <!-- Computers, rooms and the like -->
@@ -341,7 +369,8 @@ const subjectUse = computed(() => (overview.value?.utilization.bySubject ?? [])
     .filter((s) => s.loans > 0)
     .sort((a, b) => b.loans - a.loans)
     .slice(0, 8)
-    .map((s) => ({ label: `${s.name} (${s.copies})`, value: s.loans })))
+    .map((s) => ({ name: s.name, copies: s.copies, loans: s.loans })))
+const subjectMax = computed(() => Math.max(0, ...subjectUse.value.map((s) => s.loans)))
 const busiestSubject = computed(() => (overview.value?.utilization.bySubject ?? []).find((s) => s.loans > 0))
 
 const utilizationRate = computed(() => overview.value?.utilization.rate != null ? `${overview.value.utilization.rate}%` : '—')

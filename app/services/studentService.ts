@@ -288,7 +288,7 @@ class StudentServiceClass extends BaseService {
   }
 
   /** The contact details a student may change themselves. Returns the refreshed profile. */
-  updateContact(body: { phoneNumber: string | null; address: string | null; birthDate: string | null }) {
+  updateContact(body: { memberIDNumber?: string; phoneNumber: string | null; address: string | null; birthDate: string | null }) {
     return this.apiRequest<ProfileResponse & { message: string }>("/student/profile", { method: "PATCH", body });
   }
 
@@ -378,10 +378,11 @@ class StudentServiceClass extends BaseService {
     return this.apiRequest<{ reservations: ReservationRow[] }>("/student/reservations");
   }
 
-  reserveCart() {
+  /** Reserves the given cart rows, or the whole cart when none are named. */
+  reserveCart(wishlistIDs?: number[]) {
     return this.apiRequest<{ message: string; reservations: { reservationID: number; bookID: number }[] }>(
       "/student/reservations",
-      { method: "POST" },
+      { method: "POST", ...(wishlistIDs ? { body: { wishlistIDs } } : {}) },
     );
   }
 

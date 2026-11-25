@@ -17,8 +17,8 @@
 		<div v-else>
 			<div class="space-y-3 rounded-2xl border border-stone-200 bg-white p-4">
 				<div>
-					<div class="flex justify-between text-[13px]"><b class="text-stone-900">Books in cart</b><span class="tabular-nums text-stone-700">{{ slotsLeft ? `${cart.length} / ${slotsLeft}` : 'No free slots' }}</span></div>
-					<StudentMeter class="mt-2" :value="slotsLeft ? cart.length / slotsLeft : 1" />
+					<div class="flex justify-between text-[13px]"><b class="text-stone-900">Books selected</b><span class="tabular-nums text-stone-700">{{ slotsLeft ? `${selected.length} / ${slotsLeft}` : 'No free slots' }}</span></div>
+					<StudentMeter class="mt-2" :value="slotsLeft ? selected.length / slotsLeft : 1" />
 					<p v-if="slotsLeft < maxBooks" class="mt-2 text-[12.5px] leading-snug text-stone-500">
 						{{ maxBooks - slotsLeft }} of your {{ maxBooks }} reservation {{ maxBooks === 1 ? 'slot' : 'slots' }} {{ maxBooks - slotsLeft === 1 ? 'is' : 'are' }} already in use by books you hold or have reserved.
 					</p>
@@ -30,16 +30,23 @@
 				<Icon name="i-tabler-alert-circle" class="mt-px h-4 w-4 shrink-0" />
 				<span>
 					You have {{ slotsLeft }} reservation slot{{ slotsLeft === 1 ? '' : 's' }} left. Remove
-					{{ cart.length - slotsLeft }} book{{ cart.length - slotsLeft === 1 ? '' : 's' }} to continue.
+					{{ selected.length - slotsLeft }} book{{ selected.length - slotsLeft === 1 ? '' : 's' }} to continue.
 				</span>
 			</div>
 
 			<template v-if="cart.length">
-				<TransitionGroup tag="div" class="relative mt-4 overflow-hidden rounded-2xl border border-stone-200 bg-white"
+				<label class="mt-4 flex cursor-pointer items-center gap-2.5 px-1 text-[13px] font-semibold text-stone-700">
+						<input type="checkbox" class="h-[18px] w-[18px] shrink-0 cursor-pointer accent-accent-500" :checked="allSelected"
+							:indeterminate="!!selected.length && !allSelected" @change="toggleAll" />
+						Select all
+					</label>
+					<TransitionGroup tag="div" class="relative mt-2 overflow-hidden rounded-2xl border border-stone-200 bg-white"
 					leave-active-class="absolute inset-x-0 transition-[opacity,transform,translate,scale] duration-200 ease-out"
 					leave-to-class="-translate-x-3 opacity-0" move-class="transition-transform duration-200 ease-out">
 					<div v-for="row in cart" :key="row.wishlistID" class="relative flex items-center gap-3.5 border-b border-stone-100 bg-white p-3.5 last:border-0">
-						<StudentCover :book="briefOf(row.book)" :width="44" />
+						<input type="checkbox" class="h-[18px] w-[18px] shrink-0 cursor-pointer accent-accent-500" :checked="isSelected(row)"
+								:aria-label="`Select ${row.book.title}`" @change="toggle(row)" />
+							<StudentCover :book="briefOf(row.book)" :width="44" />
 						<div class="min-w-0 flex-1">
 							<p class="text-[14px] font-semibold leading-tight text-stone-900">{{ row.book.title }}</p>
 							<p class="mt-0.5 truncate text-[12.5px] text-stone-500">{{ authorLine(briefOf(row.book)) }}</p>
@@ -59,9 +66,9 @@
 				</div>
 
 				<!-- Phones: the pinned footer button can sit under the browser's own toolbar, so it is repeated here. -->
-				<ButtonsButton class="mt-4 !h-[46px] w-full !text-[15px] md:!hidden" :disabled="over || reserving" @click="onReserveClick">
+				<ButtonsButton class="mt-4 !h-[46px] w-full !text-[15px] md:!hidden" :disabled="!selected.length || over || reserving" @click="onReserveClick">
 					<span v-if="reserving" class="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-					{{ reserving ? 'Reserving…' : `Reserve ${cart.length} book${cart.length === 1 ? '' : 's'}` }}
+					{{ reserving ? 'Reserving…' : `Reserve ${selected.length} book${selected.length === 1 ? '' : 's'}` }}
 				</ButtonsButton>
 			</template>
 
@@ -76,9 +83,9 @@
 
 		<template #footer>
 			<ButtonsButton v-if="done" class="!h-[46px] w-full !text-[15px]" @click="viewReservations">View reservations</ButtonsButton>
-			<ButtonsButton v-else class="!h-[46px] w-full !text-[15px]" :disabled="!cart.length || over || reserving" @click="onReserveClick">
+			<ButtonsButton v-else class="!h-[46px] w-full !text-[15px]" :disabled="!selected.length || over || reserving" @click="onReserveClick">
 				<span v-if="reserving" class="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-				{{ reserving ? 'Reserving…' : `Reserve ${cart.length || ''} book${cart.length === 1 ? '' : 's'}` }}
+				{{ reserving ? 'Reserving…' : `Reserve ${selected.length || ''} book${selected.length === 1 ? '' : 's'}` }}
 			</ButtonsButton>
 		</template>
 	</StudentDrawer>
@@ -111,18 +118,33 @@ const alert = useAlert()
 const { cart, maxBooks, slotsLeft, removeFromCart, refreshShell, bumpData } = useStudent()
 
 const open = computed(() => drawer.active.value?.kind === 'cart')
-const over = computed(() => cart.value.length > slotsLeft.value)
+// Everything is ticked by default; we remember what the student unticked, so books added later start ticked.
+const unticked = ref(new Set<number>())
+const isSelected = (row: WishlistRow) => !unticked.value.has(row.wishlistID)
+const selected = computed(() => cart.value.filter(isSelected))
+const allSelected = computed(() => cart.value.length > 0 && selected.value.length === cart.value.length)
+const over = computed(() => selected.value.length > slotsLeft.value)
+
+function toggle(row: WishlistRow) {
+	const next = new Set(unticked.value)
+	if (!next.delete(row.wishlistID)) next.add(row.wishlistID)
+	unticked.value = next
+}
+
+function toggleAll() {
+	unticked.value = allSelected.value ? new Set(cart.value.map((r) => r.wishlistID)) : new Set()
+}
 
 const reserving = ref(false)
 const confirmWait = ref(false)
 
 // Copies free to promise right now. Falls back to the raw shelf count if the server didn't say.
 const availableOf = (row: WishlistRow) => row.book.availableCopies ?? copyCounts(row.book.copies).available
-const soldOut = computed(() => cart.value.filter((row) => availableOf(row) === 0))
+const soldOut = computed(() => selected.value.filter((row) => availableOf(row) === 0))
 
 // Reserving a book nobody can lend right now means joining a queue, so ask first.
 function onReserveClick() {
-	if (!cart.value.length || over.value || reserving.value) return
+	if (!selected.value.length || over.value || reserving.value) return
 	if (soldOut.value.length) confirmWait.value = true
 	else reserve()
 }
@@ -138,16 +160,17 @@ watch(open, (isOpen) => {
 	if (!isOpen) return
 	done.value = null
 	confirmWait.value = false
+	unticked.value = new Set()
 	// Fresh availability, so the warning reflects the shelf as it is now.
 	refreshShell()
 })
 
 async function reserve() {
-	if (!cart.value.length || over.value || reserving.value) return
+	if (!selected.value.length || over.value || reserving.value) return
 	reserving.value = true
 
 	try {
-		const { reservations } = await studentService.reserveCart()
+		const { reservations } = await studentService.reserveCart(selected.value.map((r) => r.wishlistID))
 		const created = new Set(reservations.map((r) => r.reservationID))
 		const [{ reservations: all }] = await Promise.all([studentService.reservations(), refreshShell()])
 

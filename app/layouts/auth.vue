@@ -131,7 +131,7 @@ const lists = {
 	desk: [
 		{ title: 'Attendance', body: 'Scan students in and out at the door.', icon: 'i-tabler-user-check' },
 		{ title: 'Circulation', body: 'Check books out and take returns.', icon: 'i-tabler-book' },
-		{ title: 'Students', body: 'Approve new registrations.', icon: 'i-tabler-users' },
+		{ title: 'Members', body: 'Approve new registrations.', icon: 'i-tabler-users' },
 	],
 } as const
 

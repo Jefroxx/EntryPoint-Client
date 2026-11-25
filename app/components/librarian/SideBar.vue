@@ -68,7 +68,7 @@ const ALL_LINKS = [
     { label: 'Dashboard', to: '/librarian/dashboard', icon: 'i-tabler-home' },
     { label: 'Library', to: '/librarian/library', icon: 'i-tabler-book-2' },
     { label: 'Circulation', to: '/librarian/circulation', icon: 'i-tabler-book' },
-    { label: 'Students', to: '/librarian/students', icon: 'i-tabler-users' },
+    { label: 'Members', to: '/librarian/students', icon: 'i-tabler-users' },
     { label: 'Attendance', to: '/librarian/attendance', icon: 'i-tabler-user-check' },
     { label: 'Resources', to: '/librarian/resources', icon: 'i-tabler-device-desktop' },
     { label: 'Engagement', to: '/librarian/engagement', icon: 'i-tabler-trophy' },

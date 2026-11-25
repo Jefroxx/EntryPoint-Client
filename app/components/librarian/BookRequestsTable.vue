@@ -12,7 +12,7 @@
 							{{ coverInitials(suggestion.title) }}
 						</div>
 						<div class="min-w-0 flex-1">
-							<p class="break-words text-[15px] font-semibold leading-snug text-stone-900">{{ suggestion.title }}</p>
+							<p class="line-clamp-2 break-words text-[15px] font-semibold leading-snug text-stone-900" :title="suggestion.title">{{ suggestion.title }}</p>
 							<p class="break-words text-[13px] text-stone-500">{{ suggestion.author || 'No author listed' }}</p>
 						</div>
 						<LibrarianRequestStatusPill :status="suggestion.status" class="shrink-0" />

@@ -35,6 +35,8 @@
 					<p class="mt-0.5 text-[13px] text-stone-500">So the library can reach you about loans and pickups.</p>
 
 					<form class="mt-4 grid gap-3.5" novalidate @submit.prevent="saveContact">
+						<LibrarianTextField id="memberIDNumber" v-model="contact.memberIDNumber" :label="isStudent ? 'Student ID' : 'Employee ID'" :maxlength="50"
+							:error="contactErrors.memberIDNumber" @update:model-value="contactErrors.memberIDNumber = ''" />
 						<LibrarianTextField id="phoneNumber" v-model="contact.phoneNumber" label="Phone" optional type="tel" autocomplete="tel"
 							placeholder="0917 123 4567" :maxlength="20" :error="contactErrors.phoneNumber" @update:model-value="contactErrors.phoneNumber = ''" />
 						<LibrarianTextField id="address" v-model="contact.address" label="Address" optional autocomplete="street-address"
@@ -56,7 +58,7 @@
 				<div class="grid gap-5">
 					<section class="rounded-[22px] border border-stone-200 bg-white p-5 md:p-6">
 						<h2 class="text-[17px] font-bold text-stone-900">School record</h2>
-						<p class="mt-0.5 text-[13px] text-stone-500">Checked by a librarian when your account was approved. Ask at the desk to change these.</p>
+						<p class="mt-0.5 text-[13px] text-stone-500">Checked by a librarian when your account was approved. Ask at the desk to change these. Your ID number can be changed under Contact details.</p>
 						<dl class="mt-3">
 							<div v-for="row in lockedRows" :key="row.label" class="flex items-center justify-between gap-4 border-b border-stone-100 py-2.5 text-[14px] last:border-0">
 								<dt class="flex items-center gap-2 text-stone-500"><Icon name="i-tabler-lock" class="h-3.5 w-3.5 text-stone-400" />{{ row.label }}</dt>
@@ -247,11 +249,12 @@ const tabs = computed(() => [
 ])
 
 /* ---- details: contact form ---- */
-type ContactField = 'phoneNumber' | 'address' | 'birthDate'
+type ContactField = 'memberIDNumber' | 'phoneNumber' | 'address' | 'birthDate'
 const birthIncomplete = ref(false)
-const contact = reactive<Record<ContactField, string>>({ phoneNumber: '', address: '', birthDate: '' })
-const contactErrors = reactive<Record<ContactField, string>>({ phoneNumber: '', address: '', birthDate: '' })
+const contact = reactive<Record<ContactField, string>>({ memberIDNumber: '', phoneNumber: '', address: '', birthDate: '' })
+const contactErrors = reactive<Record<ContactField, string>>({ memberIDNumber: '', phoneNumber: '', address: '', birthDate: '' })
 const saved = computed<Record<ContactField, string>>(() => ({
+	memberIDNumber: profile.value?.memberIDNumber ?? '',
 	phoneNumber: profile.value?.phoneNumber ?? '',
 	address: profile.value?.address ?? '',
 	birthDate: profile.value?.birthDate ?? '',
@@ -260,7 +263,7 @@ const contactDirty = computed(() => (Object.keys(contact) as ContactField[]).som
 
 function resetContact() {
 	Object.assign(contact, saved.value)
-	Object.assign(contactErrors, { phoneNumber: '', address: '', birthDate: '' })
+	Object.assign(contactErrors, { memberIDNumber: '', phoneNumber: '', address: '', birthDate: '' })
 }
 // Fill the form once the profile arrives, and again after a save; never over the top of unsaved typing.
 // "Typing" means differing from the details as they WERE a moment ago. (Comparing with the new ones would count the
@@ -283,6 +286,7 @@ async function saveContact() {
 	savingContact.value = true
 	try {
 		const res = await studentService.updateContact({
+			memberIDNumber: contact.memberIDNumber.trim(),
 			phoneNumber: contact.phoneNumber.trim() || null,
 			address: contact.address.trim() || null,
 			birthDate: contact.birthDate || null,
@@ -301,7 +305,6 @@ async function saveContact() {
 
 const lockedRows = computed(() => [
 	{ label: 'Name', value: profile.value?.fullName },
-	{ label: isStudent.value ? 'Student ID' : 'Employee ID', value: profile.value?.memberIDNumber, mono: true },
 	{ label: isStudent.value ? 'Program' : 'Department', value: isStudent.value ? profile.value?.academicProgram : profile.value?.department },
 	{ label: 'Email', value: profile.value?.email },
 ])

@@ -42,21 +42,6 @@
                 </li>
             </template>
 
-            <tr v-for="(account, index) in shown" :key="account.uuid" class="row-fade-in border-b border-stone-100 last:border-0"
-                :class="account.isDisabled ? 'bg-stone-50/70' : ''" :style="{ animationDelay: `${index * 30}ms` }">
-                <td class="px-4 py-3">
-                    <LibrarianPersonCell :name="account.name" :sub="account.isYou ? 'This is you' : undefined" />
-                </td>
-                <td class="font-data px-4 py-3 text-[13.5px] text-stone-600">{{ signInName(account) }}</td>
-                <td class="px-4 py-3"><LibrarianStatusPill :label="account.roleLabel" :tone="roleTone[account.role]" /></td>
-                <td class="px-4 py-3"><LibrarianStatusPill :label="statusOf(account).label" :tone="statusOf(account).tone" /></td>
-                <td class="px-4 py-3">
-                    <div class="flex items-center justify-end gap-1.5">
-                        <ButtonsButton variant="ghost" size="sm" @click="openEdit(account)">Edit</ButtonsButton>
-                        <LibrarianRowMenu :items="menuFor(account)" :label="`More actions for ${account.name}`" @select="(key: string) => onMenu(key, account)" />
-                    </div>
-                </td>
-            </tr>
         </LibrarianTableShell>
 
         <AdminStaffFormModal :open="isFormOpen" :account="editing" :busy="busy" :server-errors="serverErrors"
