@@ -4,76 +4,58 @@
 		<!-- Phones: one card per row, with the row's buttons on it. -->
 		<template #cards>
 			<li v-for="penalty in penalties" :key="`card-${penalty.penaltyID}`">
-				<div role="button" tabindex="0" class="px-4 py-3.5 transition-colors active:bg-accent-50" :class="{ 'bg-red-50/60': isLongUnpaid(penalty) }"
-					@click="selected = penalty" @keydown.enter.self="selected = penalty">
-					<div class="flex items-start justify-between gap-3">
-						<LibrarianPersonCell :name="personName(penaltyStudent(penalty)?.user)" :sub="penaltyStudent(penalty)?.memberIDNumber" />
-						<LibrarianStatusPill :label="penalty.paymentStatus" :tone="statusTone(penalty)" class="shrink-0" />
-					</div>
-					<p class="mt-2 text-[14.5px] font-semibold leading-snug text-stone-900">{{ bookTitle(penalty) }}</p>
-					<div class="mt-1 flex items-center justify-between gap-3">
-						<p class="text-[12.5px] capitalize text-stone-500">{{ penalty.penalty_type?.label ?? '—' }}<template v-if="penaltyCopy(penalty)"> · acc. {{ penaltyCopy(penalty)!.accessionNumber }}</template> · {{ formatDate(penalty.computedAt) }}<template v-if="penalty.receiptNumber"> · <span class="font-data normal-case">{{ penalty.receiptNumber }}</span></template></p>
-						<p class="font-data text-[16px] font-bold text-stone-900">{{ formatPeso(penalty.amount) }}</p>
-					</div>
-					<p v-if="unpaidLabel(penalty)" class="mt-1 text-[12.5px]"
-						:class="isLongUnpaid(penalty) ? 'font-semibold text-red-600' : 'text-stone-500'">{{ unpaidLabel(penalty) }}</p>
-					<div v-if="penalty.paymentStatus === 'Unpaid'" class="mt-3" @click.stop>
-						<div v-if="isCopyPenalty(penalty)" class="flex items-center gap-2">
-							<ButtonsButton variant="primary" class="flex-1" @click="emit('settle', penalty)">Mark paid</ButtonsButton>
-							<ButtonsButton variant="ghost" class="flex-1" @click="emit('replace', penalty)">Replaced</ButtonsButton>
-							<LibrarianRowMenu :items="menu(penalty)" :label="`More actions for ${bookTitle(penalty)}`" @select="() => emit('cancel', penalty)" />
+				<div class="relative px-4 py-3.5 transition-colors active:bg-accent-50" :class="{ 'bg-red-50/60': isLongUnpaid(penalty) }">
+					<button type="button" class="card-cover" :aria-label="`Open the penalty for ${bookTitle(penalty)}`" @click="selected = penalty" />
+					<div class="card-body">
+						<div class="flex items-start justify-between gap-3">
+							<LibrarianPersonCell :name="personName(penaltyStudent(penalty)?.user)" :sub="penaltyStudent(penalty)?.memberIDNumber" />
+							<div class="flex shrink-0 items-center gap-1">
+								<LibrarianStatusPill :label="penalty.paymentStatus" :tone="statusTone(penalty)" />
+								<!-- The three dots stay in the top right corner (their own click, so the card doesn't open). -->
+								<div v-if="penalty.paymentStatus === 'Unpaid'" class="card-action -mr-1.5">
+									<LibrarianRowMenu :items="menu(penalty)" :label="`More actions for ${bookTitle(penalty)}`" @select="(key: string) => onMenu(key, penalty)" />
+								</div>
+							</div>
 						</div>
-						<ButtonsButton v-else-if="penalty.loan?.status === 'Returned'" variant="primary" class="w-full" @click="emit('settle', penalty)">Mark paid</ButtonsButton>
-						<p v-else class="text-center text-[12.5px] text-stone-500">Still accruing</p>
+						<p class="mt-2 text-[14.5px] font-semibold leading-snug text-stone-900">{{ bookTitle(penalty) }}</p>
+						<div class="mt-1 flex items-center justify-between gap-3">
+							<p class="text-[12.5px] capitalize text-stone-500">{{ penalty.penalty_type?.label ?? '—' }}<template v-if="penaltyCopy(penalty)"> · Acc. no. {{ penaltyCopy(penalty)!.accessionNumber }}</template> · {{ formatDate(penalty.computedAt) }}<template v-if="penalty.receiptNumber"> · <span class="font-data normal-case">{{ penalty.receiptNumber }}</span></template></p>
+							<p class="font-data text-[16px] font-bold text-stone-900">{{ formatPeso(penalty.amount) }}</p>
+						</div>
+						<p v-if="penalty.reason" class="mt-1 line-clamp-2 text-[12.5px] leading-snug text-stone-600">{{ penalty.reason }}</p>
+						<p v-if="penalty.studentChoice && penalty.paymentStatus === 'Unpaid'" class="mt-1 inline-flex items-center gap-1.5 rounded-full bg-sky-50 px-2.5 py-1 text-[12px] font-semibold text-sky-700">
+							<Icon :name="penalty.studentChoice === 'replace' ? 'i-tabler-book-upload' : 'i-tabler-cash'" class="h-3.5 w-3.5" />
+							{{ penalty.studentChoice === 'replace' ? 'Student will replace the book' : 'Student will pay it' }}
+						</p>
+						<p v-if="unpaidLabel(penalty)" class="mt-1 text-[12.5px]"
+							:class="isLongUnpaid(penalty) ? 'font-semibold text-red-600' : 'text-stone-500'">{{ unpaidLabel(penalty) }}</p>
+						<div v-if="penalty.paymentStatus === 'Unpaid'" class="card-action mt-3">
+							<div v-if="isCopyPenalty(penalty)" class="flex items-center gap-2">
+								<ButtonsButton variant="primary" class="flex-1" @click="emit('settle', penalty)">Mark paid</ButtonsButton>
+								<ButtonsButton variant="ghost" class="flex-1" @click="emit('replace', penalty)">Replaced</ButtonsButton>
+							</div>
+							<ButtonsButton v-else-if="penalty.loan?.status === 'Returned'" variant="primary" class="w-full" @click="emit('settle', penalty)">Mark paid</ButtonsButton>
+							<p v-else class="text-center text-[12.5px] text-stone-500">Still accruing</p>
+						</div>
 					</div>
 				</div>
 			</li>
 		</template>
-		<tr v-for="(penalty, index) in penalties" :key="penalty.penaltyID" tabindex="0"
-			class="row-fade-in cursor-pointer border-b border-stone-100 transition-colors duration-150 last:border-0 hover:bg-accent-50"
-			:class="{ 'bg-red-50/60': isLongUnpaid(penalty) }"
-			@click="selected = penalty" @keydown.enter.self="selected = penalty"
-			:style="{ animationDelay: `${index * 40}ms` }">
-			<td class="px-4 py-3">
-				<LibrarianPersonCell :name="personName(penaltyStudent(penalty)?.user)" :sub="penaltyStudent(penalty)?.memberIDNumber" />
-			</td>
-			<td class="px-4 py-3">
-				<LibrarianBookCell :title="bookTitle(penalty)" :sub="penaltyCopy(penalty) ? `Accession no. ${penaltyCopy(penalty)!.accessionNumber}` : undefined" />
-			</td>
-			<td class="px-4 py-3 text-[14px] capitalize text-stone-600">{{ penalty.penalty_type?.label ?? '—' }}</td>
-			<td class="font-data px-4 py-3 text-[14px] font-semibold text-stone-900">{{ formatPeso(penalty.amount) }}</td>
-			<td class="font-data px-4 py-3 text-[13.5px] text-stone-500">{{ formatDate(penalty.computedAt) }}</td>
-			<td class="px-4 py-3">
-				<LibrarianStatusPill :label="penalty.paymentStatus" :tone="statusTone(penalty)" />
-				<p v-if="unpaidLabel(penalty)" class="mt-1 text-[12px]"
-					:class="isLongUnpaid(penalty) ? 'font-semibold text-red-600' : 'text-stone-500'">{{ unpaidLabel(penalty) }}</p>
-			</td>
-			<td class="font-data px-4 py-3 text-[13.5px] text-stone-700">{{ penalty.receiptNumber || '—' }}</td>
-			<td class="px-4 py-3" @click.stop>
-				<div v-if="penalty.paymentStatus === 'Unpaid'" class="flex items-center justify-end gap-1.5">
-					<template v-if="isCopyPenalty(penalty)">
-						<ButtonsButton variant="primary" size="sm" @click="emit('settle', penalty)">Mark paid</ButtonsButton>
-						<ButtonsButton variant="ghost" size="sm" @click="emit('replace', penalty)">Replaced</ButtonsButton>
-						<LibrarianRowMenu :items="menu(penalty)" :label="`More actions for ${bookTitle(penalty)}`" @select="() => emit('cancel', penalty)" />
-					</template>
-					<ButtonsButton v-else-if="penalty.loan?.status === 'Returned'" variant="primary" size="sm"
-						@click="emit('settle', penalty)">
-						Mark paid
-					</ButtonsButton>
-					<span v-else class="text-[12.5px] text-stone-500">Still accruing</span>
-				</div>
-			</td>
-		</tr>
-
 		<!-- Teleports to <body>; it lives in the slot only so the table keeps a single root element. -->
 		<LibrarianRecordDrawer :open="!!selected" :heading="selected && isCopyPenalty(selected) ? 'Penalty details' : 'Fine details'" :title="selected ? formatPeso(selected.amount) : ''"
 			:subtitle="selected ? bookTitle(selected) : ''"
 			:status="selected ? { label: selected.paymentStatus, tone: statusTone(selected) } : undefined"
 			:fields="penaltyFields" @close="selected = null">
-			<template v-if="selected && selected.paymentStatus === 'Unpaid' && (isCopyPenalty(selected) || selected.loan?.status === 'Returned')" #footer>
-				<div class="flex w-full gap-2">
-					<ButtonsButton variant="primary" class="flex-1" @click="settleSelected(selected)">Mark paid</ButtonsButton>
-					<ButtonsButton v-if="isCopyPenalty(selected)" variant="ghost" class="flex-1" @click="replaceSelected(selected)">Replaced</ButtonsButton>
+			<template v-if="selected && selected.paymentStatus === 'Unpaid'" #footer>
+				<div class="flex w-full flex-col gap-2">
+					<div v-if="isCopyPenalty(selected) || selected.loan?.status === 'Returned'" class="flex gap-2">
+						<ButtonsButton variant="primary" class="flex-1" @click="settleSelected(selected)">Mark paid</ButtonsButton>
+						<ButtonsButton v-if="isCopyPenalty(selected)" variant="ghost" class="flex-1" @click="replaceSelected(selected)">Replaced</ButtonsButton>
+					</div>
+					<div class="flex gap-2">
+						<ButtonsButton variant="ghost" class="flex-1" @click="editSelected(selected)">Edit</ButtonsButton>
+						<ButtonsButton v-if="!isCopyPenalty(selected)" variant="ghost" class="flex-1" @click="waiveSelected(selected)">Waive fine</ButtonsButton>
+					</div>
 				</div>
 			</template>
 		</LibrarianRecordDrawer>
@@ -100,6 +82,10 @@ const emit = defineEmits<{
 	(e: 'replace', penalty: PenaltyRecord): void
 	/** Only for a lost or damaged book: it turned up (or was repaired), so the unpaid penalty is cancelled. */
 	(e: 'cancel', penalty: PenaltyRecord): void
+	/** Change the note or amount of an unpaid penalty. */
+	(e: 'edit', penalty: PenaltyRecord): void
+	/** Forgive a late fee. */
+	(e: 'waive', penalty: PenaltyRecord): void
 }>()
 
 function bookTitle(p: PenaltyRecord): string {
@@ -107,17 +93,26 @@ function bookTitle(p: PenaltyRecord): string {
 }
 
 function statusTone(p: PenaltyRecord): 'success' | 'info' | 'danger' {
-	return p.paymentStatus === 'Paid' ? 'success' : p.paymentStatus === 'Replaced' ? 'info' : 'danger'
+	return p.paymentStatus === 'Paid' ? 'success' : p.paymentStatus === 'Replaced' || p.paymentStatus === 'Waived' ? 'info' : 'danger'
 }
 
 // The row's own menu: the way out when the book turns up (lost) or is fixed (damaged).
 function menu(p: PenaltyRecord) {
-	return [{
-		key: 'cancel',
-		label: p.penalty_type?.kind === 'lost' ? 'Book was found: cancel penalty' : 'Book was repaired: cancel penalty',
-		icon: 'i-tabler-arrow-back-up',
-		tone: 'success' as const,
-	}]
+	const items: { key: string; label: string; icon: string; tone?: 'success' }[] = [{ key: 'edit', label: 'Edit', icon: 'i-tabler-pencil' }]
+	if (isCopyPenalty(p)) {
+		items.push({
+			key: 'cancel',
+			label: p.penalty_type?.kind === 'lost' ? 'Book was found: cancel penalty' : 'Book was repaired: cancel penalty',
+			icon: 'i-tabler-arrow-back-up',
+			tone: 'success',
+		})
+	}
+	return items
+}
+
+function onMenu(key: string, p: PenaltyRecord) {
+	if (key === 'edit') emit('edit', p)
+	else if (key === 'cancel') emit('cancel', p)
 }
 
 // A late fee is payable once its book is back, so it counts as unpaid from the return date. A lost/damaged penalty
@@ -144,6 +139,8 @@ const selected = ref<PenaltyRecord | null>(null)
 // The details panel's buttons close it, then start the same flow as the row's buttons.
 function settleSelected(p: PenaltyRecord) { selected.value = null; emit('settle', p) }
 function replaceSelected(p: PenaltyRecord) { selected.value = null; emit('replace', p) }
+function editSelected(p: PenaltyRecord) { selected.value = null; emit('edit', p) }
+function waiveSelected(p: PenaltyRecord) { selected.value = null; emit('waive', p) }
 
 const penaltyFields = computed(() => {
 	const p = selected.value
@@ -153,10 +150,12 @@ const penaltyFields = computed(() => {
 	return [
 		{ label: 'Student', value: personName(student?.user), wide: true },
 		{ label: 'Student ID', value: student?.memberIDNumber, mono: true },
-		{ label: 'Reason', value: p.penalty_type?.label },
+		{ label: 'Type', value: p.penalty_type?.label },
+		{ label: 'What happened', value: p.reason, wide: true },
+		{ label: 'Student chose', value: p.paymentStatus === 'Unpaid' && p.studentChoice ? (p.studentChoice === 'replace' ? 'To replace the book' : 'To pay the penalty') : null },
 		{ label: 'Accession no.', value: copy ? String(copy.accessionNumber) : null, mono: true },
 		{ label: 'Issued', value: formatDateTime(p.computedAt) },
-		{ label: p.paymentStatus === 'Replaced' ? 'Replaced' : 'Settled', value: p.settledAt ? formatDateTime(p.settledAt) : null },
+		{ label: p.paymentStatus === 'Replaced' ? 'Replaced' : p.paymentStatus === 'Waived' ? 'Waived' : 'Settled', value: p.settledAt ? formatDateTime(p.settledAt) : null },
 		{ label: 'Receipt no.', value: p.receiptNumber, mono: true },
 		{ label: 'Unpaid for', value: unpaidLabel(p) ? unpaidLabel(p)!.replace(/^Unpaid (for|since) /, '') : null },
 		{ label: 'Loan due', value: p.loan ? formatDateTime(p.loan.dueDate) : null },

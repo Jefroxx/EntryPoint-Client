@@ -34,6 +34,7 @@ const META: Record<string, StudentNotificationMeta> = {
   redemption_fulfilled: { icon: 'i-tabler-gift', tone: 'good', to: '/student/profile?tab=history' },
   redemption_cancelled: { icon: 'i-tabler-circle-x', tone: 'bad', to: '/student/profile?tab=history' },
   book_suggestion_approved: { icon: 'i-tabler-bulb', tone: 'good', to: '/student/suggest' },
+  book_suggestion_arrived: { icon: 'i-tabler-books', tone: 'good', to: '/student/suggest' },
   book_suggestion_rejected: { icon: 'i-tabler-bulb', tone: 'neutral', to: '/student/suggest' },
   resource_session_started: { icon: 'i-tabler-device-desktop', tone: 'accent', to: '/student/facilities' },
   resource_session_ended: { icon: 'i-tabler-device-desktop', tone: 'neutral', to: '/student/facilities' },

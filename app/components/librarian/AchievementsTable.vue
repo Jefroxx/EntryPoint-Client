@@ -15,30 +15,13 @@
 					<div class="mt-2.5 flex items-center justify-between gap-2" @click.stop>
 						<p class="text-[12.5px] text-stone-500"><b class="tabular-nums text-stone-900">{{ achievement.unlockedCount }}</b> unlocked · <b class="tabular-nums text-stone-900">{{ achievement.redeemedCount }}</b> redeemed</p>
 						<div class="flex items-center gap-1.5">
-							<ButtonsButton variant="ghost" size="sm" @click="emit('edit', achievement)">Edit</ButtonsButton>
 							<ButtonsButton variant="danger" size="sm" @click="emit('delete', achievement)">Delete</ButtonsButton>
+							<ButtonsButton variant="ghost" size="sm" @click="emit('edit', achievement)">Edit</ButtonsButton>
 						</div>
 					</div>
 				</div>
 			</li>
 		</template>
-		<tr v-for="(achievement, index) in achievements" :key="achievement.achievementID" tabindex="0" @click="selected = achievement" @keydown.enter.self="selected = achievement"
-			class="row-fade-in cursor-pointer border-b border-stone-100 transition-colors duration-150 last:border-0 hover:bg-accent-50"
-			:style="{ animationDelay: `${index * 40}ms` }">
-			<td class="px-4 py-3 text-[15px] font-semibold text-stone-900">{{ achievement.name }}</td>
-			<td class="font-data px-4 py-3 text-[13.5px] text-stone-500">{{ criteria(achievement) }}</td>
-			<td class="px-4 py-3">
-				<span class="rounded-full bg-accent-100 px-2.5 py-1 text-[12px] font-bold text-accent-700">+{{ achievement.pointsReward }} pts</span>
-			</td>
-			<td class="px-4 py-3 font-bold tabular-nums text-stone-900">{{ achievement.unlockedCount }}</td>
-			<td class="px-4 py-3 font-bold tabular-nums text-stone-900">{{ achievement.redeemedCount }}</td>
-			<td class="px-4 py-3" @click.stop>
-				<div class="flex items-center justify-end gap-1.5">
-					<ButtonsButton variant="ghost" size="sm" @click="emit('edit', achievement)">Edit</ButtonsButton>
-					<ButtonsButton variant="danger" size="sm" @click="emit('delete', achievement)">Delete</ButtonsButton>
-				</div>
-			</td>
-		</tr>
 	<!-- Teleports to <body>; it lives in the slot only so the table keeps a single root element. -->
 		<LibrarianRecordDrawer :open="!!selected" heading="Achievement details" :title="selected?.name ?? ''"
 			:subtitle="selected ? criteria(selected) : ''" :fields="fields" @close="selected = null">
@@ -54,8 +37,7 @@
 					</button>
 				</div>
 
-				<input v-model="studentSearch" type="search" placeholder="Search name or student ID" aria-label="Search students"
-					class="mt-3 h-10 w-full rounded-xl border border-stone-200 bg-white px-3 text-[14px] text-stone-700 placeholder:text-stone-400 focus:border-accent-300 focus:outline-none" />
+				<LibrarianSearchInput id="achievement-students-search" v-model="studentSearch" class="mt-3 !max-w-none" placeholder="Search name or student ID" />
 
 				<p v-if="studentsLoading" class="py-6 text-center text-[13.5px] text-stone-500">Loading students…</p>
 				<p v-else-if="studentsError" class="py-6 text-center text-[13.5px] text-red-600">{{ studentsError }}</p>
@@ -84,9 +66,11 @@
 <script setup lang="ts">
 import { engagementService, type AchievementRecord, type AchievementStudent } from '~/services/engagementService'
 
-defineProps<{
+const props = defineProps<{
 	achievements: AchievementRecord[]
 	loading: boolean
+	/** The names of the goals, to word a rule that has no description. */
+	metrics?: { key: string; label: string }[]
 }>()
 
 const emit = defineEmits<{
@@ -98,7 +82,7 @@ const emit = defineEmits<{
 function criteria(achievement: AchievementRecord): string {
 	if (achievement.description) return achievement.description
 	const { metric, threshold } = achievement.criteriaJSON
-	return `${metric} ≥ ${threshold}`
+	return `${props.metrics?.find((m) => m.key === metric)?.label ?? metric} ≥ ${threshold}`
 }
 const selected = ref<AchievementRecord | null>(null)
 
@@ -159,7 +143,6 @@ const fields = computed(() => {
 	return [
 		{ label: 'Unlocks when', value: criteria(a), wide: true },
 		{ label: 'Reward', value: `+${a.pointsReward} pts` },
-		{ label: 'Achievement ID', value: a.achievementID, mono: true },
 		{ label: 'Students unlocked', value: a.unlockedCount },
 		{ label: 'Rewards redeemed', value: a.redeemedCount },
 	]

@@ -1,8 +1,8 @@
 <template>
 	<LibrarianModalShell :open="open" size="xl" title="Issue a Penalty"
-		subtitle="Charge a student for a book that is lost or damaged." :busy="busy" :dirty="dirty" ref="shell" @close="emit('close')">
-		<div class="grid gap-x-8 gap-y-5 md:grid-cols-2">
-		<div class="space-y-5">
+		subtitle="Charge a student for a book that is lost or damaged." :busy="busy" :dirty="dirty" fixed-height ref="shell" @close="emit('close')">
+		<div class="grid gap-x-8 gap-y-5 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+		<div class="min-w-0 space-y-5">
 			<!-- What happened to the book. -->
 			<fieldset>
 				<legend class="mb-2 text-[13.5px] font-semibold text-stone-800">What happened to the book?<FieldRequired /></legend>
@@ -55,7 +55,7 @@
 
 		</div>
 
-		<div class="space-y-5">
+		<div class="min-w-0 space-y-5">
 			<!-- Once we know the copy, what it costs and who is charged. -->
 			<section v-if="target" class="rounded-2xl border border-stone-200 p-4">
 				<dl class="grid grid-cols-2 gap-3">
@@ -77,10 +77,19 @@
 					class="font-data h-11 w-full rounded-[10px] border border-stone-200 bg-white px-3 text-[14px] text-stone-900 outline-none focus:border-accent-500 focus:ring-2 focus:ring-accent-200"
 					@input="amount = decimalOnly(String(amount), 2); amountEdited = true" @keydown.enter.prevent="submit">
 				<p class="mt-1.5 text-[12.5px] text-stone-600">
-					<template v-if="!target">Pick the book first: the amount starts at its full price.</template>
-					<template v-else-if="target.price !== null">Starts at the book's full price. Lower it only if the damage is light.</template>
-					<template v-else>This book has no price on record, so type the amount.</template>
+					<template v-if="!pickedCopy">Pick the copy first: the amount fills in from its price.</template>
+					<template v-else-if="price !== null">Filled in from this copy's price. Lower it only if the damage is light.</template>
+					<template v-else>This copy has no price on record, so type the amount.</template>
 				</p>
+			</div>
+
+			<div>
+				<label for="penalty-reason" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">What happened?<FieldRequired /></label>
+				<textarea id="penalty-reason" v-model="reason" rows="3" maxlength="500" placeholder="e.g. Spilled water on it in the reading room"
+					class="w-full resize-none rounded-[10px] border bg-white px-3 py-2.5 text-[14.5px] text-stone-900 outline-none transition-colors placeholder:text-stone-400 focus:border-accent-500 focus:ring-2 focus:ring-accent-200"
+					:class="reasonError ? 'border-red-400 bg-red-50' : 'border-stone-200'" @input="reasonError = ''" />
+				<p v-if="reasonError" class="mt-1 text-[12.5px] text-red-500">{{ reasonError }}</p>
+				<p v-else class="mt-1 text-[12.5px] text-stone-500">Kept on the penalty and the stock log, and the student sees it in their notice.</p>
 			</div>
 
 			<p class="flex items-start gap-2 rounded-xl bg-stone-50 px-4 py-3 text-[13.5px] leading-snug text-stone-700">
@@ -109,6 +118,8 @@ import { librarianService, type BookDetail, type CatalogBook, type StudentRecord
 const props = defineProps<{
 	open: boolean
 	busy?: boolean
+	/** Sent here from a copy on the Library page: the book and the copy are already chosen, only the student is left. */
+	prefill?: { type: 'lost' | 'damaged'; book: CatalogBook; copyID: number } | null
 }>()
 
 const emit = defineEmits<{
@@ -137,11 +148,15 @@ const copyID = ref<number | ''>('')
 const amount = ref('')
 // Once the librarian types an amount, picking another book no longer overwrites it.
 const amountEdited = ref(false)
+const reason = ref('')
+const reasonError = ref('')
+// The copy to select once the prefilled book's copies have loaded.
+let pendingCopyID: number | null = null
 
 // A fresh window every time.
 // What is typed in this window: closing it with changes asks "Discard Changes?" first (see ModalShell, useUnsavedChanges).
 const shell = ref<{ requestClose: () => void } | null>(null)
-const { dirty } = useUnsavedChanges(() => [type.value, mode.value, loan.value, student.value, book.value, copyID.value, amount.value], () => props.open)
+const { dirty } = useUnsavedChanges(() => [type.value, mode.value, loan.value, student.value, book.value, copyID.value, amount.value, reason.value], () => props.open)
 
 watch(() => props.open, (isOpen) => {
 	if (!isOpen) return
@@ -154,6 +169,16 @@ watch(() => props.open, (isOpen) => {
 	copyID.value = ''
 	amount.value = ''
 	amountEdited.value = false
+	reason.value = ''
+	reasonError.value = ''
+	pendingCopyID = null
+
+	if (props.prefill) {
+		type.value = props.prefill.type
+		mode.value = 'student'
+		pendingCopyID = props.prefill.copyID
+		book.value = props.prefill.book
+	}
 })
 
 // ---- Searching ----
@@ -187,7 +212,10 @@ watch(book, async (chosen) => {
 	loadingBook.value = true
 	try {
 		const { book: detail } = await librarianService.fetchBook(chosen.uuid)
-		if (book.value?.uuid === chosen.uuid) bookDetail.value = detail
+		if (book.value?.uuid === chosen.uuid) {
+			bookDetail.value = detail
+			if (pendingCopyID !== null) { copyID.value = pendingCopyID; pendingCopyID = null }
+		}
 	} catch {
 		// The copies stay empty; the window says so.
 	} finally {
@@ -223,16 +251,33 @@ const target = computed(() => {
 	}
 })
 
-// The amount starts at the price, until the librarian types their own.
-watch(target, (t) => {
-	if (!amountEdited.value) amount.value = t?.price != null ? String(t.price) : ''
+/** The price of the copy chosen (its own cost, or the book's), known as soon as the copy is: the student isn't needed for it. */
+const pickedCopy = computed(() => {
+	if (mode.value === 'loan') return loan.value?.copy ?? null
+	return copies.value.find((c) => c.copyID === copyID.value) ?? null
+})
+const price = computed(() => {
+	if (mode.value === 'loan') {
+		const c = loan.value?.copy
+		return c ? cost(c.cost) ?? cost(c.book?.cost) : null
+	}
+	const c = copies.value.find((x) => x.copyID === copyID.value)
+	return c && bookDetail.value ? cost(c.cost) ?? cost(bookDetail.value.cost) : null
+})
+
+// Whenever another copy (or loan) is chosen the amount follows its price; typing in the box only holds until the next choice.
+watch(price, (p) => {
+	amount.value = p != null ? String(p) : ''
+	amountEdited.value = false
 })
 
 const ready = computed(() => !!target.value && Number(amount.value) > 0)
 
 function submit() {
 	if (!ready.value || props.busy) return
-	const base = { type: type.value, amount: Number(amount.value) }
+	reasonError.value = reason.value.trim() ? '' : 'Say what happened to the book.'
+	if (reasonError.value) return
+	const base = { type: type.value, amount: Number(amount.value), reason: reason.value.trim() }
 
 	emit('submit', mode.value === 'loan'
 		? { ...base, loan: loan.value!.uuid }

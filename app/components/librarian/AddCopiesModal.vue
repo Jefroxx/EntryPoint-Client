@@ -92,6 +92,10 @@
 			</aside>
 
 			<div class="space-y-4">
+				<!-- Where these copies came from comes first: Donated sets the cost below to 0. Source of fund and cost are required; remarks are not. -->
+				<LibrarianFundField id="add-copies-fund" :model-value="sourceOfFund" :error="errors.sourceOfFund"
+					@update:model-value="onFundInput" />
+
 				<!-- How many, and what each one cost, side by side. -->
 				<div class="grid items-start gap-4 sm:grid-cols-2">
 					<LibrarianTextField id="add-copies-quantity" v-model="quantity" type="number" label="How many copies" :min="1" :max="50"
@@ -99,14 +103,10 @@
 						@update:model-value="errors.quantity = ''" />
 
 					<LibrarianTextField id="add-copies-cost" v-model="cost" type="number" label="Cost per copy (₱)" :min="0" step="0.01"
-						placeholder="0.00" :error="errors.cost" hint="Enter 0 for a donated copy."
+						placeholder="0.00" :error="errors.cost" :disabled="donated"
+						:hint="donated ? 'Donated copies cost nothing, so this is set to 0.' : 'Enter 0 for a donated copy.'"
 						@update:model-value="errors.cost = ''" />
 				</div>
-
-				<!-- Where these copies came from. The source of fund and the cost are required; remarks are not. -->
-				<LibrarianTextField id="add-copies-fund" v-model="sourceOfFund" label="Source of fund" :maxlength="255"
-					placeholder="e.g. Library budget, Donation, Alumni gift" :error="errors.sourceOfFund"
-					@update:model-value="errors.sourceOfFund = ''" />
 
 				<LibrarianTextField id="add-copies-remarks" v-model="remarks" label="Remarks" optional :maxlength="1000"
 					placeholder="e.g. Donated by the Class of 2025, or Purchase order #1042" />
@@ -188,6 +188,23 @@ const sourceOfFund = ref('')
 const cost = ref<string | number>('')
 const remarks = ref('')
 const errors = reactive({ quantity: '', sourceOfFund: '', cost: '' })
+
+// A donated copy cost nothing: choosing Donated sets the cost to 0 (and greys it out); choosing something else gives back what was typed.
+const donated = computed(() => isDonatedFund(sourceOfFund.value))
+let costBeforeDonation: string | number = ''
+function onFundInput(value: string) {
+	const was = donated.value
+	sourceOfFund.value = value
+	errors.sourceOfFund = ''
+	const now = isDonatedFund(value)
+	if (now && !was) {
+		costBeforeDonation = cost.value
+		cost.value = '0'
+		errors.cost = ''
+	} else if (!now && was) {
+		cost.value = costBeforeDonation
+	}
+}
 
 // Once the details validate, `pending` holds what was typed and `confirming` swaps in the summary.
 const confirming = ref(false)
@@ -271,6 +288,7 @@ watch(() => props.open, (isOpen) => {
 	quantity.value = 1
 	sourceOfFund.value = ''
 	cost.value = ''
+	costBeforeDonation = ''
 	remarks.value = ''
 	errors.quantity = ''
 	errors.sourceOfFund = ''

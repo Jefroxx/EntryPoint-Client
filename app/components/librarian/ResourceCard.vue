@@ -93,6 +93,9 @@ const typeIcon = computed(() => {
 	const type = props.resource.resourceType.toLowerCase()
 	if (type.includes('computer') || type.includes('pc')) return 'i-tabler-device-desktop'
 	if (type.includes('room')) return 'i-tabler-door-enter'
+	// Before 'table': a tablet is not a study table.
+	if (type.includes('tablet') || type.includes('ipad')) return 'i-tabler-device-tablet'
+	if (type.includes('projector')) return 'i-tabler-presentation'
 	if (type.includes('table') || type.includes('desk')) return 'i-tabler-users'
 	return 'i-tabler-box'
 })

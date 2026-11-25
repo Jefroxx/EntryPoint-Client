@@ -14,8 +14,9 @@
 					<li class="flex items-start gap-2"><Icon name="i-tabler-package" class="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
 						<span>{{ redemption.quantity }} {{ redemption.quantity === 1 ? 'unit goes' : 'units go' }} back in stock: {{ item?.stock ?? '?' }} → <b class="tabular-nums">{{ (item?.stock ?? 0) + redemption.quantity }}</b>.</span></li>
 					<li class="flex items-start gap-2"><Icon name="i-tabler-bell" class="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-						<span>{{ studentFirst }} is told it was cancelled and refunded.</span></li>
+						<span>{{ studentFirst }} is told it was cancelled and refunded, with your reason.</span></li>
 				</ul>
+				<p v-if="mode === 'cancel'" class="mt-3 rounded-lg bg-white/70 px-3 py-2 text-[14px] text-stone-800"><b>Reason they will see:</b> {{ reason.trim() }}</p>
 				<p v-else class="mt-2.5 text-[14px]" :class="words.tone">{{ words.outcome }}</p>
 			</section>
 		</div>
@@ -30,10 +31,17 @@
 				</div>
 			</section>
 
+			<!-- Cancelling: the student is told why, so the reason is written here, in the same window. -->
+			<section v-if="mode === 'cancel'">
+				<label for="cancel-reason" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">Reason the student will see<FieldRequired /></label>
+				<textarea id="cancel-reason" v-model="reason" rows="3" maxlength="500" placeholder="e.g. The reward ran out before it could be handed over"
+					class="w-full resize-none rounded-[10px] border border-stone-200 bg-white px-3 py-2.5 text-[14.5px] text-stone-900 outline-none placeholder:text-stone-400 focus:border-accent-500 focus:ring-2 focus:ring-accent-200" />
+			</section>
+
 			<div class="grid gap-3 md:grid-cols-3">
 				<section class="rounded-xl border border-stone-200 p-4">
 					<h3 class="mb-2.5 flex items-center gap-2 text-[12px] font-bold uppercase tracking-wide text-stone-500">
-						<Icon name="i-tabler-gift" class="h-4 w-4" aria-hidden="true" />Item
+						<Icon name="i-tabler-gift" class="h-4 w-4" aria-hidden="true" />Reward
 					</h3>
 					<p class="text-[15.5px] font-bold leading-snug text-stone-900">{{ itemName }}</p>
 					<dl class="mt-3 grid grid-cols-1 gap-y-2.5">
@@ -61,7 +69,7 @@
 				<section class="rounded-xl border border-stone-200 p-4">
 					<div class="mb-2.5 flex items-center justify-between gap-3">
 						<h3 class="flex items-center gap-2 text-[12px] font-bold uppercase tracking-wide text-stone-500">
-							<Icon name="i-tabler-receipt" class="h-4 w-4" aria-hidden="true" />Redemption #{{ redemption.redemptionID }}
+							<Icon name="i-tabler-receipt" class="h-4 w-4" aria-hidden="true" />Redemption
 						</h3>
 						<LibrarianStatusPill :label="redemption.fulfillmentStatus" tone="warning" />
 					</div>
@@ -80,7 +88,7 @@
 				<ButtonsButton variant="ghost" :disabled="busy" @click="step = 'details'">
 					<Icon name="i-tabler-arrow-left" class="h-3.5 w-3.5" />Back
 				</ButtonsButton>
-				<ButtonsButton :variant="mode === 'cancel' ? 'danger' : 'primary'" :disabled="busy" @click="emit('submit')">
+				<ButtonsButton :variant="mode === 'cancel' ? 'danger' : 'primary'" :disabled="busy" @click="emit('submit', reason.trim())">
 					<Icon v-if="busy" name="i-tabler-loader-2" class="h-3.5 w-3.5 animate-spin" />
 					<Icon v-else :name="words.icon" class="h-3.5 w-3.5" />
 					{{ words.confirm }}
@@ -88,7 +96,7 @@
 			</template>
 			<template v-else>
 				<ButtonsButton variant="ghost" :disabled="busy" @click="emit('close')">Close</ButtonsButton>
-				<ButtonsButton variant="primary" :disabled="!redemption" @click="step = 'confirm'">
+				<ButtonsButton variant="primary" :disabled="!redemption || (mode === 'cancel' && reason.trim().length < 3)" @click="step = 'confirm'">
 					Continue<Icon name="i-tabler-arrow-right" class="h-3.5 w-3.5" />
 				</ButtonsButton>
 			</template>
@@ -109,12 +117,14 @@ const props = defineProps<{
 
 const emit = defineEmits<{
 	(e: 'close'): void
-	(e: 'submit'): void
+	/** `reason` is what the student is told when cancelling (empty otherwise). */
+	(e: 'submit', reason: string): void
 }>()
 
 // Two steps: the details, then a last look before anything is changed.
 const step = ref<'details' | 'confirm'>('details')
-watch(() => [props.open, props.redemption?.redemptionID, props.mode], () => { step.value = 'details' })
+const reason = ref('')
+watch(() => [props.open, props.redemption?.redemptionID, props.mode], () => { step.value = 'details'; reason.value = '' })
 
 const WORDS = {
 	fulfill: {
@@ -129,7 +139,7 @@ const WORDS = {
 		title: 'Cancel This Redemption?', subtitle: 'Check the details, then continue.',
 		confirmTitle: 'Confirm the Cancellation', confirmSubtitle: 'This is the last step. Check it, then cancel the redemption.',
 		banner: 'border-amber-300 bg-amber-50 text-amber-900', icon: 'i-tabler-circle-x',
-		bannerTitle: 'Cancelling refunds the student.', bannerText: 'Use this when the reward turned out to be unavailable. Their points go back and the item is restocked.',
+		bannerTitle: 'Cancelling refunds the student.', bannerText: 'Use this when the reward turned out to be unavailable. Their points go back and the reward is restocked. Tell them why below.',
 		about: 'You are about to cancel', outcome: '',
 		confirmBox: 'border-amber-300 bg-amber-50', tone: 'text-amber-900', confirm: 'Yes, cancel and refund',
 	},

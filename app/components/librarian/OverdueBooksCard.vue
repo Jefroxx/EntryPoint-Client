@@ -44,7 +44,7 @@
 						<td class="py-3 pr-4 text-stone-700">{{ loan.bookTitle }}</td>
 						<td class="py-3">
 							<span class="inline-flex items-center gap-1 rounded-full border border-red-200 bg-red-50 px-2.5 py-1 text-[13px] font-bold text-red-700">
-								<Icon name="i-tabler-alert-circle" class="h-3 w-3" />{{ loan.daysOverdue }} Days
+								<Icon name="i-tabler-alert-circle" class="h-3 w-3" />{{ loan.daysOverdue }} {{ loan.daysOverdue === 1 ? 'day' : 'days' }}
 							</span>
 						</td>
 					</tr>

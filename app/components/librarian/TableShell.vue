@@ -8,9 +8,10 @@
 				<slot name="cards" />
 			</ul>
 			<p v-if="empty && !loading" class="rounded-2xl border border-stone-200 bg-white px-4 py-10 text-center text-[15px] text-stone-500">{{ emptyText }}</p>
+			<slot />
 		</template>
 
-		<div ref="scroller" class="max-h-[480px] overflow-auto" :class="$slots.cards ? 'hidden' : ''" @scroll.passive="measure">
+		<div v-if="!$slots.cards" ref="scroller" class="max-h-[480px] overflow-auto" @scroll.passive="measure">
 			<table class="shell-table w-full border-collapse text-left" :style="{ minWidth }">
 				<thead>
 					<tr>
@@ -30,7 +31,7 @@
 		</div>
 
 		<!-- A soft fade on the right edge while there is more to swipe to. -->
-		<div v-if="moreToRight" aria-hidden="true"
+		<div v-if="moreToRight && !$slots.cards" aria-hidden="true"
 			class="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-stone-300/40 to-transparent"
 			:class="$slots.cards ? 'hidden' : ''" />
 

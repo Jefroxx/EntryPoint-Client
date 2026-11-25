@@ -34,12 +34,8 @@
 									v-if="a.role && a.role !== 'Author'" class="text-stone-500"> ({{ a.role.toLowerCase() }})</span></template>
 							<template v-if="!book.authors.length">No author recorded</template>
 						</p>
-						<span v-if="book.subject"
-							class="mt-2.5 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[12.5px] font-semibold text-stone-700"
-							:style="{ backgroundColor: `${subjectSwatch(book.subject.name)}1f` }">
-							<span class="h-2 w-2 shrink-0 rounded-[3px]" :style="{ backgroundColor: subjectSwatch(book.subject.name) }" />
-							{{ book.subject.name }}
-						</span>
+						<span v-if="book.areaOfLibrary"
+							class="mt-2.5 inline-flex items-center rounded-full bg-stone-100 px-2.5 py-1 text-[12.5px] font-semibold text-stone-700">{{ AREAS[book.areaOfLibrary] ?? book.areaOfLibrary }}</span>
 					</div>
 				</div>
 
@@ -68,7 +64,7 @@
 							<template v-if="book.spineLabel.pending">
 								<p class="mt-1 font-semibold text-amber-700">Dewey number not checked yet</p>
 								<p class="mt-0.5 text-stone-500">
-									{{ book.deweyNumber ? `It is a guess (${book.deweyNumber}) from the category, so students don't see it.` : 'No number yet.' }}
+									{{ book.deweyNumber ? `${book.deweyNumber} hasn't been checked yet, so students don't see it.` : 'No number yet. Type one in Edit Book, or find it from the ISBN.' }}
 									Edit the book to confirm it: the number is accepted on the last page.
 								</p>
 							</template>
@@ -92,14 +88,21 @@
 					Copies <span class="font-medium normal-case tracking-normal text-stone-500">({{ book.copies.length }})</span>
 				</h4>
 				<ul v-if="book.copies.length" class="overflow-hidden rounded-2xl border border-stone-200">
-					<li v-for="copy in book.copies" :key="copy.copyID"
-						class="flex items-center justify-between gap-3 border-b border-stone-100 px-3.5 py-2.5 last:border-0">
+					<li v-for="copy in book.copies" :key="copy.copyID" class="border-b border-stone-100 last:border-0">
+					<!-- Pressing a copy opens that copy's own details. -->
+					<button type="button" :aria-label="`Open details of accession no. ${copy.accessionNumber}`"
+						class="group flex w-full items-center justify-between gap-3 px-3.5 py-2.5 text-left transition-colors duration-150 hover:bg-accent-50 focus-visible:bg-accent-50 focus-visible:outline-none"
+						@click="emit('view-copy', copy)">
 						<div class="min-w-0">
 							<p class="font-data text-[13.5px] font-medium text-stone-800">{{ copy.accessionNumber }}</p>
-							<p class="font-data truncate text-[12px] text-stone-500">{{ copy.barcodeValue }}</p>
+							<p class="font-data break-all text-[12px] text-stone-500">{{ copy.barcodeValue }}</p>
 						</div>
-						<LibrarianStatusPill :label="COPY_STATUS[copy.status]?.label ?? copy.status" :tone="COPY_STATUS[copy.status]?.tone ?? 'neutral'" />
-					</li>
+						<span class="flex shrink-0 items-center gap-1.5">
+							<LibrarianStatusPill :label="COPY_STATUS[copy.status]?.label ?? copy.status" :tone="COPY_STATUS[copy.status]?.tone ?? 'neutral'" />
+							<Icon name="i-tabler-chevron-right" class="h-4 w-4 text-stone-400 transition-transform duration-150 group-hover:translate-x-0.5 group-hover:text-accent-600" aria-hidden="true" />
+						</span>
+					</button>
+				</li>
 				</ul>
 				<p v-else class="rounded-2xl border border-dashed border-stone-200 px-4 py-5 text-center text-[13.5px] text-stone-500">
 					No copies. Edit the book to add some.
@@ -131,6 +134,7 @@ const props = defineProps<{
 const emit = defineEmits<{
 	(e: 'close'): void
 	(e: 'edit' | 'remove', book: BookDetail): void
+	(e: 'view-copy', copy: BookDetail['copies'][number]): void
 }>()
 
 const COPY_STATUS: Record<string, { label: string; tone: 'success' | 'warning' | 'danger' | 'neutral' }> = {

@@ -19,8 +19,8 @@
 				<div>
 					<div class="flex justify-between text-[13px]"><b class="text-stone-900">Books in cart</b><span class="tabular-nums text-stone-700">{{ slotsLeft ? `${cart.length} / ${slotsLeft}` : 'No free slots' }}</span></div>
 					<StudentMeter class="mt-2" :value="slotsLeft ? cart.length / slotsLeft : 1" />
-					<p v-if="slotsLeft < 3" class="mt-2 text-[12.5px] leading-snug text-stone-500">
-						{{ 3 - slotsLeft }} of your 3 reservation slots {{ 3 - slotsLeft === 1 ? 'is' : 'are' }} already in use by books you hold or have reserved.
+					<p v-if="slotsLeft < maxBooks" class="mt-2 text-[12.5px] leading-snug text-stone-500">
+						{{ maxBooks - slotsLeft }} of your {{ maxBooks }} reservation {{ maxBooks === 1 ? 'slot' : 'slots' }} {{ maxBooks - slotsLeft === 1 ? 'is' : 'are' }} already in use by books you hold or have reserved.
 					</p>
 				</div>
 			</div>
@@ -66,7 +66,7 @@
 			</template>
 
 			<StudentEmptyState v-else :title="slotsLeft ? 'Your cart is empty' : 'No reservation slots free'"
-				:text="slotsLeft ? 'Add books from Discover or your wishlist.' : 'All 3 slots are taken by books you hold or have reserved. Return a book or cancel a reservation to free one.'">
+				:text="slotsLeft ? 'Add books from Discover or your wishlist.' : `All ${maxBooks} ${maxBooks === 1 ? 'slot is' : 'slots are'} taken by books you hold or have reserved. Return a book or cancel a reservation to free one.`">
 				<template #icon><StudentCartIcon class="h-7 w-7" /></template>
 				<NuxtLink to="/student/discover">
 					<ButtonsButton>Browse books</ButtonsButton>
@@ -108,7 +108,7 @@ import { useAlert } from '~/api/alert/useAlert'
 
 const drawer = useDrawer()
 const alert = useAlert()
-const { cart, slotsLeft, removeFromCart, refreshShell, bumpData } = useStudent()
+const { cart, maxBooks, slotsLeft, removeFromCart, refreshShell, bumpData } = useStudent()
 
 const open = computed(() => drawer.active.value?.kind === 'cart')
 const over = computed(() => cart.value.length > slotsLeft.value)

@@ -9,8 +9,17 @@
 						<LibrarianPersonCell :name="personName(redemption.student?.user)" />
 						<LibrarianStatusPill :label="redemption.fulfillmentStatus" :tone="tones[redemption.fulfillmentStatus]" class="shrink-0" />
 					</div>
-					<p class="mt-2 text-[14.5px] font-semibold leading-snug text-stone-900">{{ redemption.quantity > 1 ? `${redemption.quantity} × ` : '' }}{{ redemption.item?.name ?? 'Removed item' }}</p>
-					<p class="mt-0.5 text-[12.5px] text-stone-500">{{ redemption.pointsSpent }} pts · {{ formatDate(redemption.redeemedAt) }}</p>
+					<div class="mt-2.5 flex items-center gap-3">
+						<img v-if="redemption.item?.photoURL" :src="redemption.item.photoURL" alt="" loading="lazy" class="h-11 w-11 shrink-0 rounded-lg object-cover" />
+						<div v-else class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-stone-100 text-stone-400"><Icon name="i-tabler-gift" class="h-5 w-5" /></div>
+						<div class="min-w-0">
+							<p class="text-[14.5px] font-semibold leading-snug text-stone-900">{{ redemption.quantity > 1 ? `${redemption.quantity} × ` : '' }}{{ redemption.item?.name ?? 'Removed reward' }}</p>
+							<p class="mt-0.5 text-[12.5px] text-stone-500">{{ redemption.pointsSpent }} pts · {{ formatDate(redemption.redeemedAt) }}</p>
+						</div>
+					</div>
+					<!-- Still waiting: how long, so the oldest are seen first and a forgotten one stands out. -->
+					<p v-if="waiting(redemption)" class="mt-2 text-[12.5px] font-semibold" :class="waiting(redemption)!.late ? 'text-red-600' : 'text-amber-700'">{{ waiting(redemption)!.text }}</p>
+					<p v-else-if="redemption.fulfillmentStatus === 'Cancelled' && redemption.cancelReason" class="mt-2 text-[12.5px] text-stone-500">Cancelled: {{ redemption.cancelReason }}</p>
 					<div v-if="redemption.fulfillmentStatus === 'Pending'" class="mt-3 flex gap-2" @click.stop>
 						<ButtonsButton variant="danger" class="flex-1" @click="emit('cancel', redemption)">Cancel</ButtonsButton>
 						<ButtonsButton variant="primary" class="flex-[1.4]" @click="emit('fulfill', redemption)">Fulfill</ButtonsButton>
@@ -18,29 +27,9 @@
 				</div>
 			</li>
 		</template>
-		<tr v-for="(redemption, index) in redemptions" :key="redemption.redemptionID" tabindex="0" @click="selected = redemption" @keydown.enter.self="selected = redemption"
-			class="row-fade-in cursor-pointer border-b border-stone-100 transition-colors duration-150 last:border-0 hover:bg-accent-50"
-			:style="{ animationDelay: `${index * 40}ms` }">
-			<td class="px-4 py-3">
-				<LibrarianPersonCell :name="personName(redemption.student?.user)" />
-			</td>
-			<td class="px-4 py-3 text-[15px] font-medium text-stone-800">{{ redemption.item?.name ?? 'Removed item' }}</td>
-			<td class="font-data px-4 py-3 text-[13.5px] text-stone-500">{{ redemption.quantity }}</td>
-			<td class="font-data px-4 py-3 text-[13.5px] text-stone-500">{{ redemption.pointsSpent }} pts</td>
-			<td class="font-data px-4 py-3 text-[13.5px] text-stone-500">{{ formatDate(redemption.redeemedAt) }}</td>
-			<td class="px-4 py-3">
-				<LibrarianStatusPill :label="redemption.fulfillmentStatus" :tone="tones[redemption.fulfillmentStatus]" />
-			</td>
-			<td class="px-4 py-3" @click.stop>
-				<div v-if="redemption.fulfillmentStatus === 'Pending'" class="flex items-center justify-end gap-1.5">
-					<ButtonsButton variant="primary" size="sm" @click="emit('fulfill', redemption)">Fulfill</ButtonsButton>
-					<ButtonsButton variant="danger" size="sm" @click="emit('cancel', redemption)">Cancel</ButtonsButton>
-				</div>
-			</td>
-		</tr>
 	<!-- Teleports to <body>; it lives in the slot only so the table keeps a single root element. -->
-		<LibrarianRecordDrawer :open="!!selected" heading="Redemption details" :title="selected?.item?.name ?? 'Removed item'"
-			:subtitle="selected ? `Redemption #${selected.redemptionID}` : ''"
+		<LibrarianRecordDrawer :open="!!selected" heading="Redemption details" :title="selected?.item?.name ?? 'Removed reward'"
+			:subtitle="selected ? personName(selected.student?.user) : ''"
 			:status="selected ? { label: selected.fulfillmentStatus, tone: tones[selected.fulfillmentStatus] } : undefined"
 			:fields="fields" @close="selected = null">
 			<template v-if="selected && selected.fulfillmentStatus === 'Pending'" #footer>
@@ -74,6 +63,14 @@ const tones: Record<FulfillmentStatus, 'warning' | 'success' | 'danger'> = {
 }
 const selected = ref<RedemptionRecord | null>(null)
 
+/** A pending redemption's wait: "Waiting 5 days" (red from a week), nothing when it is less than a day old or already dealt with. */
+function waiting(r: RedemptionRecord): { text: string; late: boolean } | null {
+	if (r.fulfillmentStatus !== 'Pending') return null
+	const days = Math.floor((Date.now() - new Date(r.redeemedAt).getTime()) / 86_400_000)
+	if (days < 1) return null
+	return { text: `Waiting ${days} ${days === 1 ? 'day' : 'days'}`, late: days >= 7 }
+}
+
 const fields = computed(() => {
 	const r = selected.value
 	if (!r) return []
@@ -82,8 +79,9 @@ const fields = computed(() => {
 		{ label: 'Quantity', value: r.quantity },
 		{ label: 'Points spent', value: `${r.pointsSpent} pts` },
 		{ label: 'Redeemed', value: formatDateTime(r.redeemedAt), wide: true },
-		{ label: 'Student no.', value: r.student?.studentID, mono: true },
-		{ label: 'Item ID', value: r.item?.itemID, mono: true },
+		{ label: 'Student ID', value: r.student?.memberIDNumber, mono: true },
+		...(waiting(r) ? [{ label: 'Waiting', value: waiting(r)!.text.replace(/^Waiting /, ''), wide: true }] : []),
+		...(r.fulfillmentStatus === 'Cancelled' && r.cancelReason ? [{ label: 'Cancelled because', value: r.cancelReason, wide: true }] : []),
 	]
 })
 </script>

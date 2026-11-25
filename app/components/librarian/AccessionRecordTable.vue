@@ -4,31 +4,46 @@
 		<LibrarianCardSkeleton v-if="loading" />
 		<ul v-else class="grid gap-3 sm:grid-cols-2 2xl:grid-cols-3 [&>li]:overflow-hidden [&>li]:rounded-2xl [&>li]:border [&>li]:border-stone-200 [&>li]:bg-white">
 			<li v-for="book in books" :key="`card-${book.bookID}`">
-				<div role="button" tabindex="0" class="flex gap-3 px-4 py-3.5 transition-colors active:bg-accent-50"
-					@click="emit('view', book)" @keydown.enter.self="emit('view', book)">
-					<StudentCover :book="book" :width="48" />
-					<div class="min-w-0 flex-1">
-						<p class="text-[15px] font-semibold leading-snug text-stone-900">{{ book.title }}</p>
-						<p class="truncate text-[13px] text-stone-500">{{ authorNames(book) }}</p>
-						<div class="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1">
-							<span v-if="book.subject"
-								class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[12px] font-semibold text-stone-700"
-								:style="{ backgroundColor: `${subjectSwatch(book.subject.name)}1f` }">
-								<span class="h-2 w-2 shrink-0 rounded-[3px]" :style="{ backgroundColor: subjectSwatch(book.subject.name) }" />{{ book.subject.name }}
-							</span>
-							<span class="font-data text-[12px] text-stone-500">{{ book.callNumber }}</span>
-								<span v-if="book.deweyStatus === 'needs_review'" class="rounded-full bg-amber-100 px-1.5 py-0.5 text-[10.5px] font-semibold text-amber-700" title="The Dewey number hasn't been verified yet">Unverified</span>
-								<span v-else class="rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10.5px] font-semibold text-emerald-700" title="The Dewey number has been verified">Verified</span>
+				<div class="relative px-4 py-3.5 transition-colors active:bg-accent-50">
+					<button type="button" class="card-cover" :aria-label="`Open ${book.title}`" @click="emit('view', book)" />
+					<div class="card-body flex gap-3">
+						<StudentCover :book="book" :width="48" />
+						<div class="min-w-0 flex-1">
+							<p class="text-[15px] font-semibold leading-snug text-stone-900">{{ book.title }}</p>
+							<p class="break-words text-[13px] text-stone-500">{{ authorNames(book) }}</p>
+							<span v-if="book.areaOfLibrary"
+									class="mt-1.5 inline-flex items-center rounded-full bg-stone-100 px-2.5 py-0.5 text-[12px] font-semibold text-stone-700">{{ LIBRARY_AREAS[book.areaOfLibrary] ?? book.areaOfLibrary }}</span>
+
+								<!-- Every number says what it is: the Dewey (call) number, the copies' accession numbers, how many are in. -->
+								<dl class="mt-2 space-y-1 text-[13px]">
+									<div class="flex items-baseline gap-2">
+										<dt class="w-[88px] shrink-0 text-stone-500">Dewey no.</dt>
+										<dd class="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
+											<span v-if="book.callNumber" class="font-data font-semibold text-stone-800">{{ book.callNumber }}</span>
+											<span v-else class="text-stone-400">Not set</span>
+											<span v-if="book.deweyStatus === 'needs_review'" class="rounded-full bg-amber-100 px-1.5 py-0.5 text-[10.5px] font-semibold text-amber-700" title="The Dewey number hasn't been verified yet">Unverified</span>
+											<span v-else class="rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10.5px] font-semibold text-emerald-700" title="The Dewey number has been verified">Verified</span>
+										</dd>
+									</div>
+									<div class="flex items-baseline gap-2">
+										<dt class="w-[88px] shrink-0 text-stone-500">Accession no.</dt>
+										<dd class="font-data min-w-0 font-semibold tabular-nums text-stone-800" :title="accessionList(book)">{{ accessionSummary(book) }}</dd>
+									</div>
+									<div class="flex items-baseline gap-2">
+										<dt class="w-[88px] shrink-0 text-stone-500">On the shelf</dt>
+										<dd class="tabular-nums text-stone-500">
+											<b :class="availableCopies(book) === 0 ? 'text-red-500' : 'text-stone-900'">{{ availableCopies(book) }}</b> of {{ book.copies.length }} {{ book.copies.length === 1 ? 'copy' : 'copies' }}
+										</dd>
+									</div>
+								</dl>
 						</div>
-						<p class="mt-1.5 text-[13px] tabular-nums text-stone-500">
-							<b :class="availableCopies(book) === 0 ? 'text-red-500' : 'text-stone-900'">{{ availableCopies(book) }}</b> of {{ book.copies.length }} on the shelf
-						</p>
-					</div>
-					<div class="flex shrink-0 flex-col items-center gap-0.5" @click.stop>
-						<ButtonsButton variant="icon" size="sm" :aria-label="`Edit ${book.title}`" @click="emit('edit', book)">
-							<Icon name="i-tabler-pencil" class="h-[15px] w-[15px]" />
-						</ButtonsButton>
-						<LibrarianRowMenu :items="BOOK_MENU" :label="`More actions for ${book.title}`" @select="(key: string) => onMenu(key, book)" />
+						<!-- Top right: the pencil, then the ⋮ menu in the corner. -->
+						<div class="card-action -mr-1.5 -mt-1 flex shrink-0 items-start gap-0.5">
+							<ButtonsButton variant="icon" size="sm" :aria-label="`Edit ${book.title}`" @click="emit('edit', book)">
+								<Icon name="i-tabler-pencil" class="h-[15px] w-[15px]" />
+							</ButtonsButton>
+							<LibrarianRowMenu :items="BOOK_MENU" :label="`More actions for ${book.title}`" @select="(key: string) => onMenu(key, book)" />
+						</div>
 					</div>
 				</div>
 			</li>
@@ -36,89 +51,6 @@
 		<p v-if="!loading && books.length === 0" class="rounded-2xl border border-stone-200 bg-white px-4 py-10 text-center text-[15px] text-stone-500">
 			{{ filtered ? 'No books match these filters.' : 'No books in the catalog yet.' }}
 		</p>
-
-		<div class="max-h-[480px] overflow-auto hidden">
-			<table class="w-full min-w-[860px] border-collapse text-left">
-				<thead>
-					<tr>
-						<th class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-stone-500">Book</th>
-						<th class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-stone-500">Author</th>
-						<th class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-stone-500">Category</th>
-						<th class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-stone-500">Call No.</th>
-						<th class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-stone-500">Accession No.</th>
-						<th class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-stone-500">Copies</th>
-						<th class="sticky top-0 z-10 border-b border-stone-100 bg-stone-50 px-4 py-3"></th>
-					</tr>
-				</thead>
-				<tbody>
-					<tr v-for="(book, index) in books" :key="book.bookID" tabindex="0" @click="emit('view', book)" @keydown.enter.self="emit('view', book)"
-						class="row-enter cursor-pointer border-b border-stone-100 opacity-0 transition-colors duration-150 last:border-0 hover:bg-accent-50"
-						:style="{ animationDelay: `${index * 40}ms` }">
-						<td class="px-4 py-3">
-							<div class="flex items-center gap-3">
-								<StudentCover :book="book" :width="32" />
-								<div>
-									<button type="button" class="text-left text-[15px] font-semibold text-stone-900 hover:text-accent-600 hover:underline"
-										@click="emit('view', book)">{{ book.title }}</button>
-									<p v-if="book.isbn" class="font-data text-[12px] text-stone-500">ISBN {{ book.isbn }}</p>
-								</div>
-							</div>
-						</td>
-						<td class="px-4 py-3 text-[14px] text-stone-600">{{ authorNames(book) }}</td>
-						<td class="px-4 py-3">
-							<span v-if="book.subject"
-								class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[12.5px] font-semibold text-stone-700"
-								:style="{ backgroundColor: `${subjectSwatch(book.subject.name)}1f` }">
-								<span class="h-2 w-2 shrink-0 rounded-[3px]" :style="{ backgroundColor: subjectSwatch(book.subject.name) }" />
-								{{ book.subject.name }}
-							</span>
-							<span v-else class="text-stone-300">—</span>
-						</td>
-						<td class="font-data px-4 py-3 text-[13.5px] text-stone-500">{{ book.callNumber }}</td>
-						<!-- Every copy's accession number, tinted by that copy's status; long lists fold behind "+N more". -->
-						<td class="w-[260px] px-4 py-3">
-							<ul v-if="book.copies.length" class="flex max-w-[260px] flex-wrap gap-1" :aria-label="`Accession numbers of ${book.title}`">
-								<li v-for="copy in shownCopies(book)" :key="copy.copyID"
-									class="font-data rounded-md px-1.5 py-0.5 text-[12.5px] font-semibold tabular-nums"
-									:class="COPY_TONE[copy.status] ?? COPY_TONE.available"
-									:title="`Accession no. ${copy.accessionNumber} · ${COPY_LABEL[copy.status] ?? copy.status}`">
-									{{ copy.accessionNumber }}
-								</li>
-								<li v-if="book.copies.length > COLLAPSED_COUNT">
-									<button type="button"
-										class="rounded-md px-1.5 py-0.5 text-[12.5px] font-semibold text-accent-600 hover:bg-accent-50 hover:underline"
-										@click.stop="toggleExpanded(book.bookID)">
-										{{ expanded.has(book.bookID) ? 'Show less' : `+${book.copies.length - COLLAPSED_COUNT} more` }}
-									</button>
-								</li>
-							</ul>
-							<span v-else class="text-stone-300">—</span>
-						</td>
-						<td class="px-4 py-3 tabular-nums">
-							<span class="font-bold" :class="availableCopies(book) === 0 ? 'text-red-500' : 'text-stone-900'">
-								{{ availableCopies(book) }}
-							</span>
-							<span class="text-stone-500"> / {{ book.copies.length }}</span>
-						</td>
-						<td class="px-4 py-3" @click.stop>
-							<div class="flex items-center justify-end gap-1">
-								<ButtonsButton variant="icon" size="sm" :aria-label="`Edit ${book.title}`" @click="emit('edit', book)">
-									<Icon name="i-tabler-pencil" class="h-[15px] w-[15px]" />
-								</ButtonsButton>
-								<LibrarianRowMenu :items="BOOK_MENU" :label="`More actions for ${book.title}`"
-									@select="(key: string) => onMenu(key, book)" />
-							</div>
-						</td>
-					</tr>
-
-					<tr v-if="!loading && books.length === 0">
-						<td colspan="7" class="py-10 text-center text-[15px] text-stone-500">
-							{{ filtered ? 'No books match these filters.' : 'No books in the catalog yet.' }}
-						</td>
-					</tr>
-				</tbody>
-			</table>
-		</div>
 
 	</div>
 </template>
@@ -175,6 +107,32 @@ function toggleExpanded(bookID: number) {
 function shownCopies(book: CatalogBook) {
 	const sorted = [...book.copies].sort((a, b) => a.accessionNumber - b.accessionNumber)
 	return expanded.value.has(book.bookID) ? sorted : sorted.slice(0, COLLAPSED_COUNT)
+}
+
+/** Accession numbers as ranges ("1–3, 5, 8–9"), so a book with many copies still fits on its card. */
+const SUMMARY_GROUPS = 4
+
+function accessionGroups(book: CatalogBook): string[] {
+	const numbers = [...new Set(book.copies.map((c) => c.accessionNumber))].sort((a, b) => a - b)
+	const groups: string[] = []
+	for (let i = 0; i < numbers.length; i++) {
+		let j = i
+		while (j + 1 < numbers.length && numbers[j + 1] === numbers[j]! + 1) j++
+		groups.push(j > i ? `${numbers[i]}–${numbers[j]}` : String(numbers[i]))
+		i = j
+	}
+	return groups
+}
+
+function accessionSummary(book: CatalogBook): string {
+	const groups = accessionGroups(book)
+	if (!groups.length) return '—'
+	return groups.length > SUMMARY_GROUPS ? `${groups.slice(0, SUMMARY_GROUPS).join(', ')} +${groups.length - SUMMARY_GROUPS} more` : groups.join(', ')
+}
+
+function accessionList(book: CatalogBook): string {
+	const groups = accessionGroups(book)
+	return groups.length ? `Accession no. ${groups.join(', ')}` : 'No copies'
 }
 
 function availableCopies(book: CatalogBook): number {

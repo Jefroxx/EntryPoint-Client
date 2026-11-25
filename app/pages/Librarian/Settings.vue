@@ -2,7 +2,7 @@
     <div>
         <div class="mb-6">
             <h1 class="dashboard-heading text-3xl font-bold text-crimson">Settings</h1>
-            <p class="dashboard-heading mt-1 text-crimson">Configure loan periods, fines and your account.</p>
+            <p class="dashboard-heading mt-1 text-crimson">Configure borrowing, fines, rewards and your account.</p>
         </div>
 
         <div class="grid max-w-[940px] grid-cols-1 items-start gap-6 md:grid-cols-[200px_1fr]">
@@ -17,10 +17,10 @@
 
             <div class="relative min-h-[200px]">
                 <template v-if="settings">
-                    <LibrarianLoanPeriodsSettings v-if="active === 'loans'" :periods="settings.loanPeriods"
-                        @saved="refetch" />
+                    <LibrarianBorrowingSettings v-if="active === 'borrowing'" :hold-hours="settings.reservationHoldHours" :max-books-allowed="settings.maxBooks" @saved="refetch" />
                     <LibrarianFineRulesSettings v-else-if="active === 'fines'" :rules="settings.fineRules"
                         @saved="refetch" />
+                    <LibrarianRewardsSettings v-else-if="active === 'rewards'" :low-stock-at-saved="settings.lowStockAt" @saved="refetch" />
                     <LibrarianAccountSettings v-else :account="settings.account" @saved="refetch" />
                 </template>
                 <div v-else-if="error" role="alert" class="rounded-2xl border border-red-100 bg-red-50 p-5 text-[15px] text-red-600">
@@ -52,11 +52,12 @@ useHead({ title: 'Settings' })
 
 const { can } = useStaffAccess()
 const sections = computed(() => [
-    { label: 'Loan periods', value: 'loans' },
+    { label: 'Borrowing', value: 'borrowing' },
     { label: 'Fines', value: 'fines' },
+    { label: 'Rewards', value: 'rewards' },
     { label: 'Account', value: 'account' },
 ].filter((s) => s.value === 'account' || can('settings')))
-const active = ref(can('settings') ? 'loans' : 'account')
+const active = ref(can('settings') ? 'borrowing' : 'account')
 
 const { data: settings, pending, error, execute: refetch } =
     useAsyncData('librarian-settings', () => settingsService.fetchSettings(), { lazy: true })

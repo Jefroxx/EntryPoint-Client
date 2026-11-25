@@ -17,7 +17,12 @@ export interface FineRule {
 }
 
 export interface SettingsOverview {
-  loanPeriods: Record<CollectionArea, number>;
+  /** Hours an accepted reservation holds a copy before it expires (24 = a day). */
+  reservationHoldHours: number;
+  /** The most books one student can have at a time (loans and reservations together). */
+  maxBooks: number;
+  /** A reward with this many left, or fewer, counts as running low in the Rewards Market. */
+  lowStockAt: number;
   fineRules: FineRule[];
   account: { firstName: string; lastName: string; email: string | null };
 }
@@ -27,8 +32,12 @@ class SettingsServiceClass extends BaseService {
     return this.apiRequest<SettingsOverview>("/librarian/settings");
   }
 
-  saveLoanPeriods(payload: Record<CollectionArea, number>) {
-    return this.apiRequest<{ message: string }>("/librarian/settings/loan-periods", { method: "PUT", body: payload });
+  saveRewards(lowStockAt: number) {
+    return this.apiRequest<{ message: string }>("/librarian/settings/rewards", { method: "PUT", body: { lowStockAt } });
+  }
+
+  saveBorrowing(holdHours: number, maxBooks: number) {
+    return this.apiRequest<{ message: string }>("/librarian/settings/borrowing", { method: "PUT", body: { holdHours, maxBooks } });
   }
 
   saveFineRule(area: CollectionArea, payload: { rate: number; rateUnit: "day" | "hour"; gracePeriodDays: number }) {

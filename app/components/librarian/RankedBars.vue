@@ -5,8 +5,9 @@
 				class="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-accent-100 text-[12px] font-bold text-accent-700">
 				{{ index + 1 }}
 			</span>
-			<span class="min-w-0 flex-1 truncate font-medium text-stone-800" :title="item.label">{{ item.label }}</span>
-			<span class="h-1.5 w-28 shrink-0 overflow-hidden rounded-full bg-stone-100">
+			<!-- A long title wraps onto a second line instead of being cut off. -->
+			<span class="line-clamp-2 min-w-0 flex-1 break-words font-medium leading-snug text-stone-800" :title="item.label">{{ item.label }}</span>
+			<span class="h-1.5 w-16 shrink-0 sm:w-28 overflow-hidden rounded-full bg-stone-100">
 				<span class="block h-full rounded-full bg-accent-500 transition-[width] duration-500 ease-out"
 					:style="{ width: `${max ? (item.value / max) * 100 : 0}%` }" />
 			</span>

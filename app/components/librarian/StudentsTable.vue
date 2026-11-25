@@ -12,98 +12,29 @@
 							<p class="truncate text-[15px] font-semibold text-stone-900">{{ studentName(student) }}</p>
 							<p class="font-data text-[12px] text-stone-500">{{ student.memberIDNumber }}</p>
 							<p class="mt-0.5 truncate text-[13px] text-stone-500">{{ student.academicProgram ?? student.department ?? '—' }}</p>
-							<p v-if="!members" class="mt-1 flex items-center gap-3 text-[12.5px] text-stone-500">
-								<span class="inline-flex items-center gap-1"><Icon name="i-tabler-flame" class="h-3 w-3 text-amber-500" />{{ student.visitStreak }} day streak</span>
+							<p v-if="members" class="font-data truncate text-[12px] text-stone-500">{{ student.user?.email ?? '—' }}</p>
+							<!-- A streak and points only mean something once the student is approved and using the library. -->
+							<p v-if="!members && student.registrationStatus === 'approved'" class="mt-1 flex items-center gap-3 text-[12.5px] text-stone-500">
+								<span class="inline-flex items-center gap-1"><Icon name="i-tabler-flame" class="h-3 w-3 text-amber-500" />{{ student.visitStreak }}-day streak</span>
 								<span class="tabular-nums">{{ student.knowledgeScore }} pts</span>
 							</p>
 						</div>
-						<span class="inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[12px] font-bold" :class="members ? 'bg-sky-50 text-sky-700' : statusClass(student.registrationStatus)">
-							<span class="h-1.5 w-1.5 rounded-full" :class="members ? 'bg-sky-500' : statusDotClass(student.registrationStatus)" />
-							{{ members ? typeLabel(student) : statusLabel(student.registrationStatus) }}
+						<!-- A student's tab already says where they stand, so the pill is only for faculty and staff (Faculty or Staff). -->
+						<span v-if="members" class="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-sky-50 px-2.5 py-1 text-[12px] font-bold text-sky-700">
+							<span class="h-1.5 w-1.5 rounded-full bg-sky-500" />{{ typeLabel(student) }}
 						</span>
 					</div>
 					<div v-if="student.registrationStatus === 'pending'" class="mt-3 flex gap-2" @click.stop>
-						<button type="button" class="h-10 flex-1 rounded-xl bg-red-50 text-[14px] font-bold text-red-600 active:scale-[0.96]" @click="emit('reject', student)">Reject</button>
-						<button type="button" class="h-10 flex-[1.4] rounded-xl bg-emerald-600 text-[14px] font-bold text-white active:scale-[0.96]" @click="emit('approve', student)">Approve</button>
+						<ButtonsButton variant="danger" class="flex-1" @click="emit('reject', student)">Reject</ButtonsButton>
+						<ButtonsButton variant="primary" class="flex-[1.4]" @click="emit('approve', student)">Approve</ButtonsButton>
 					</div>
 					<div v-else-if="student.registrationStatus === 'rejected'" class="mt-3" @click.stop>
-						<button type="button" class="h-10 w-full rounded-xl bg-emerald-600 text-[14px] font-bold text-white active:scale-[0.96]" @click="emit('reinstate', student)">Reinstate</button>
+						<ButtonsButton variant="primary" class="w-full" @click="emit('reinstate', student)">Reinstate</ButtonsButton>
 					</div>
 				</div>
 			</li>
 		</ul>
 		<p v-if="!loading && students.length === 0" class="rounded-2xl border border-stone-200 bg-white px-4 py-10 text-center text-[15px] text-stone-500">{{ emptyText ?? 'No students match your search.' }}</p>
-
-		<div class="max-h-[480px] overflow-auto hidden">
-			<table class="w-full border-collapse text-left" :class="members ? 'min-w-[760px]' : 'min-w-[920px]'">
-				<thead>
-					<tr>
-						<th class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-stone-500">Student</th>
-						<th class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-stone-500">{{ members ? 'Department' : 'Program' }}</th>
-						<th class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-stone-500">Email</th>
-						<th class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-stone-500" v-if="!members">Visit Streak</th>
-						<th class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-stone-500" v-if="!members">Knowledge Score</th>
-						<th class="sticky top-0 z-10 whitespace-nowrap border-b border-stone-100 bg-stone-50 px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-stone-500">Status</th>
-						<th class="sticky top-0 z-10 border-b border-stone-100 bg-stone-50 px-4 py-3"></th>
-					</tr>
-				</thead>
-				<tbody>
-					<tr v-for="(student, index) in students" :key="student.studentID"
-						class="row-enter cursor-pointer border-b border-stone-100 opacity-0 transition-colors duration-150 last:border-0 hover:bg-accent-50"
-						:style="{ animationDelay: `${index * 40}ms` }" @click="emit('view', student)">
-						<td class="px-4 py-3">
-							<div class="flex items-center gap-3">
-								<LibrarianStudentAvatar :name="studentName(student)" />
-								<div>
-									<p class="text-[15px] font-semibold text-stone-900">{{ studentName(student) }}</p>
-									<p class="font-data text-[12px] text-stone-500">{{ student.memberIDNumber }}</p>
-								</div>
-							</div>
-						</td>
-						<td class="px-4 py-3 text-[14px] text-stone-600">{{ student.academicProgram ?? student.department ?? '—' }}</td>
-						<td class="font-data px-4 py-3 text-[13px] text-stone-500">{{ student.user?.email ?? '—' }}</td>
-						<td v-if="!members" class="px-4 py-3">
-							<span class="inline-flex items-center gap-1 font-semibold tabular-nums text-stone-700">
-								<Icon name="i-tabler-flame" class="h-3 w-3 text-amber-500" />{{ student.visitStreak }}
-							</span>
-						</td>
-						<td v-if="!members" class="font-data px-4 py-3 text-[13.5px] text-stone-500">{{ student.knowledgeScore }}</td>
-						<td class="px-4 py-3">
-							<span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[12px] font-bold" :class="members ? 'bg-sky-50 text-sky-700' : statusClass(student.registrationStatus)">
-								<span class="h-1.5 w-1.5 rounded-full" :class="members ? 'bg-sky-500' : statusDotClass(student.registrationStatus)" />
-								{{ members ? typeLabel(student) : statusLabel(student.registrationStatus) }}
-							</span>
-						</td>
-						<td class="px-4 py-3">
-							<div v-if="student.registrationStatus === 'rejected'" class="flex items-center justify-end" @click.stop>
-								<button type="button"
-									class="h-7 rounded-lg bg-emerald-600 px-2.5 text-[12.5px] font-bold text-white transition-[background-color,transform] duration-150 hover:bg-emerald-700 active:scale-[0.96]"
-									@click="emit('reinstate', student)">
-									Reinstate
-								</button>
-							</div>
-							<div v-else-if="student.registrationStatus === 'pending'" class="flex items-center justify-end gap-1.5" @click.stop>
-								<button type="button"
-									class="h-7 rounded-lg bg-emerald-600 px-2.5 text-[12.5px] font-bold text-white transition-[background-color,transform] duration-150 hover:bg-emerald-700 active:scale-[0.96]"
-									@click="emit('approve', student)">
-									Approve
-								</button>
-								<button type="button"
-									class="h-7 rounded-lg bg-red-50 px-2.5 text-[12.5px] font-bold text-red-600 transition-[background-color,transform] duration-150 hover:bg-red-100 active:scale-[0.96]"
-									@click="emit('reject', student)">
-									Reject
-								</button>
-							</div>
-						</td>
-					</tr>
-
-					<tr v-if="!loading && students.length === 0">
-						<td :colspan="members ? 5 : 7" class="py-10 text-center text-[15px] text-stone-500">{{ emptyText ?? 'No students match your search.' }}</td>
-					</tr>
-				</tbody>
-			</table>
-		</div>
-
 	</div>
 </template>
 
@@ -135,38 +66,4 @@ function typeLabel(student: StudentRecord): string {
 	return student.memberType === 'staff' ? 'Staff' : 'Faculty'
 }
 
-function statusLabel(status: StudentRecord['registrationStatus']): string {
-	return status.charAt(0).toUpperCase() + status.slice(1)
-}
-
-function statusClass(status: StudentRecord['registrationStatus']): string {
-	if (status === 'pending') return 'bg-amber-50 text-amber-700'
-	if (status === 'rejected') return 'bg-red-50 text-red-600'
-	return 'bg-emerald-50 text-emerald-700'
-}
-
-function statusDotClass(status: StudentRecord['registrationStatus']): string {
-	if (status === 'pending') return 'bg-amber-500'
-	if (status === 'rejected') return 'bg-red-500'
-	return 'bg-emerald-500'
-}
 </script>
-
-<style scoped>
-.row-enter {
-	animation: studentRowIn .4s cubic-bezier(.22,1,.36,1) forwards;
-}
-
-@keyframes studentRowIn {
-	to {
-		opacity: 1;
-	}
-}
-
-@media (prefers-reduced-motion: reduce) {
-	.row-enter {
-		animation: none !important;
-		opacity: 1 !important;
-	}
-}
-</style>

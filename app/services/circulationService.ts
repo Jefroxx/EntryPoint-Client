@@ -21,8 +21,10 @@ export interface LoanRecord {
     accessionNumber: number;
     /** What this copy cost, if recorded (a lost/damaged penalty starts from it). */
     cost?: string | number | null;
-    book: { bookID: number; title: string; cost?: string | number | null } | null;
+    book: { bookID: number; title: string; cost?: string | number | null; coverImageURL?: string | null } | null;
   } | null;
+  /** What an overdue loan has run up so far (what returning it right now would charge). */
+  fineSoFar?: number | null;
 }
 
 /** The "Return this book?" window: everything about the loan, plus the late fee returning it right now would charge. */
@@ -74,11 +76,13 @@ export interface LoanStats {
   active: number;
   dueSoon: number;
   overdue: number;
+  /** Out, not late, and more than a day from due (so the four counts never overlap). */
+  later: number;
   /** Handed in, waiting for the librarian to check the book. */
   received: number;
 }
 
-export type ReservationStatus = "Waiting" | "Accepted" | "Rejected" | "Fulfilled";
+export type ReservationStatus = "Waiting" | "Accepted" | "Rejected" | "Fulfilled" | "Expired";
 
 export interface ReservationRecord {
   reservationID: number;
@@ -124,9 +128,13 @@ export interface PenaltyRecord {
   computedAt: string;
   settledAt: string | null;
   /** `Replaced`: a lost/damaged book that the student replaced instead of paying for. */
-  paymentStatus: "Unpaid" | "Paid" | "Replaced";
+  paymentStatus: "Unpaid" | "Paid" | "Replaced" | "Waived";
   /** The cashier's official receipt number, written down when the fine was marked paid. */
   receiptNumber: string | null;
+  /** What happened to a lost or damaged book, as the librarian wrote it. */
+  reason?: string | null;
+  /** How the student said they will settle a lost or damaged book (set in their app); the desk still records it. */
+  studentChoice?: "pay" | "replace" | null;
   /** The loan behind it: always for a late fee; none for a book lost or damaged inside the library. */
   loan: LoanRecord | null;
   /** Who owes it and for which copy: set on every penalty, with or without a loan. */
@@ -157,7 +165,7 @@ export interface PenaltyStats {
 }
 
 /** `longUnpaid`: unpaid long after the book came back (see PenaltyStats.longUnpaidDays). */
-export type PenaltyFilter = "Unpaid" | "Paid" | "Replaced" | "longUnpaid";
+export type PenaltyFilter = "Unpaid" | "Paid" | "Replaced" | "Waived" | "longUnpaid";
 
 /** `copy`: a lost or damaged book (the Lost & Damaged tab); `late`: a late fee (the Penalties tab). */
 export type PenaltyKind = "copy" | "late";
@@ -169,6 +177,8 @@ export interface IssuePenaltyPayload {
   loan?: string;
   studentID?: number;
   copyID?: number;
+  /** What happened to the book, in the librarian's words. */
+  reason?: string;
 }
 
 /** A penalty over a lost or damaged copy (the student pays the book's price or replaces it), not a late fee. */
@@ -217,7 +227,7 @@ class CirculationServiceClass extends BaseService {
     return this.apiRequest<T>(path, options);
   }
 
-  fetchLoans(params: { search?: string; status?: "active" | "overdue" | "received" | "returned"; page?: number; perPage?: number } = {}) {
+  fetchLoans(params: { search?: string; status?: "active" | "later" | "dueSoon" | "overdue" | "received" | "returned"; area?: string; hideReceived?: boolean; page?: number; perPage?: number } = {}) {
     return this.request<Paginated<LoanRecord>>("/librarian/loans", { query: params });
   }
 
@@ -258,7 +268,7 @@ class CirculationServiceClass extends BaseService {
   }
 
   fetchReservations(status?: ReservationStatus) {
-    return this.request<{ reservations: ReservationRecord[] }>("/librarian/reservations", {
+    return this.request<{ reservations: ReservationRecord[]; maxBooks?: number }>("/librarian/reservations", {
       query: status ? { status } : undefined,
     });
   }
@@ -291,12 +301,22 @@ class CirculationServiceClass extends BaseService {
     return this.request<{ message: string }>(`/librarian/self-return-reports/${reportUuid}/reject`, { method: "POST", body: payload });
   }
 
-  fetchPenalties(params: { search?: string; status?: PenaltyFilter; kind?: PenaltyKind; page?: number; perPage?: number } = {}) {
+  fetchPenalties(params: { search?: string; status?: PenaltyFilter; kind?: PenaltyKind; area?: string; type?: "lost" | "damaged"; page?: number; perPage?: number } = {}) {
     return this.request<Paginated<PenaltyRecord>>("/librarian/penalties", { query: params });
   }
 
   fetchPenaltyStats(kind?: PenaltyKind) {
     return this.request<PenaltyStats>("/librarian/penalties/stats", { query: kind ? { kind } : {} });
+  }
+
+  /** A note and, once the fine is settled, its amount. */
+  updatePenalty(penaltyUuid: string, payload: { amount?: number; reason: string }) {
+    return this.request<{ message: string }>(`/librarian/penalties/${penaltyUuid}`, { method: "PATCH", body: payload });
+  }
+
+  /** Forgives a late fee, with a reason the student sees. */
+  waivePenalty(penaltyUuid: string, payload: { reason: string }) {
+    return this.request<{ message: string }>(`/librarian/penalties/${penaltyUuid}/waive`, { method: "POST", body: payload });
   }
 
   /** `receiptNumber`: the cashier's official receipt for the payment. */

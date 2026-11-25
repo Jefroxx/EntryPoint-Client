@@ -1,6 +1,11 @@
 import { BaseService } from "./BaseService";
 
+/** One slice of a donut: a program, how many students. */
+export interface ProgramSlice { label: string; count: number }
+
 export interface ReportOverview {
+  /** The days the report covers (Y-m-d). */
+  period: { from: string; to: string };
   kpis: {
     loansThisMonth: number;
     onTimeRate: number | null;
@@ -26,6 +31,15 @@ export interface ReportOverview {
     neverBorrowedTitles: number;
     bySubject: { name: string; loans: number; copies: number; perCopy: number }[];
   };
+  /** Students by program: all approved students, and those who visited in the period. */
+  students: Record<"members" | "visitors", { total: number; slices: ProgramSlice[] }>;
+  /** Every physical copy by where it is now. */
+  collection: { total: number; breakdown: { available: number; borrowed: number; maintenance: number; inactive: number } };
+  /** Computers, rooms and the like: sessions, and the minutes they ran, by type. */
+  resources: { sessions: number; minutes: number; byType: { type: string; sessions: number; minutes: number }[] };
+  fines: { collected: number; collectedCount: number; waived: number; waivedCount: number; outstanding: number; outstandingCount: number };
+  reservations: { total: number; byStatus: { status: string; count: number }[] };
+  rewards: { redemptions: number; pointsSpent: number; pending: number; cancelled: number };
 }
 
 /** One figure for the chosen period beside the period of the same length before it. `change` is a percentage. */
@@ -36,8 +50,9 @@ export interface ReportTrend {
 }
 
 class ReportServiceClass extends BaseService {
-  fetchOverview(months: 3 | 6 | 12) {
-    return this.apiRequest<ReportOverview>("/librarian/reports/overview", { query: { months } });
+  /** The last 3, 6 or 12 months, or a range of days (Y-m-d). */
+  fetchOverview(period: { months: 3 | 6 | 12 } | { from: string; to: string }) {
+    return this.apiRequest<ReportOverview>("/librarian/reports/overview", { query: period });
   }
 }
 

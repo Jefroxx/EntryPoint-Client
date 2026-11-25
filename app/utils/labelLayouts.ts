@@ -28,6 +28,13 @@ export interface LabelLayout {
   size: 'xs' | 'sm' | 'md'
   /** Sticker sheets are A4; plain paper can be A4 or short bond. */
   paperChoice: boolean
+  /**
+   * A label in two pieces, side by side: the call number on the left (`callW` mm wide, 1 inch: it goes on the spine) and,
+   * past a cut line, the barcode on the right (it goes on the back). Off: the four lines with the barcode under them.
+   */
+  split: boolean
+  /** The call number piece's width when `split`, mm. */
+  callW: number
 }
 
 export const PAPERS: Record<PaperKey, { name: string; w: number; h: number }> = {
@@ -37,16 +44,20 @@ export const PAPERS: Record<PaperKey, { name: string; w: number; h: number }> = 
 
 export const LABEL_LAYOUTS: Record<LabelLayoutKey, LabelLayout> = {
   plain: {
-    key: 'plain', name: 'Plain paper', hint: '4 across, cut lines, any printer paper',
-    cols: 4, rows: 10, w: 50, h: 27, left: 5, top: 8, gapX: 0, gapY: 0, cutLines: true, size: 'sm', paperChoice: true,
+    key: 'plain', name: 'Plain paper', hint: '2 across: 1 in call number, cut line, barcode',
+    cols: 2, rows: 10, w: 76.2, h: 27, left: 28.8, top: 8, gapX: 0, gapY: 0, cutLines: true, size: 'md', paperChoice: true,
+    split: true, callW: 25.4,
   },
   sticker24: {
-    key: 'sticker24', name: 'Sticker sheet, 24 labels', hint: '3 × 8, 63.5 × 33.9 mm',
+    key: 'sticker24', name: 'Sticker sheet, 24 labels', hint: '3 × 8, 63.5 × 33.9 mm · 1 in call number + barcode',
     cols: 3, rows: 8, w: 63.5, h: 33.9, left: 7.2, top: 12.9, gapX: 2.5, gapY: 0, cutLines: false, size: 'md', paperChoice: false,
+    split: true, callW: 25.4,
   },
+  // Too small for a 1 inch call number piece and a barcode a scanner can read, so it keeps the barcode under the four lines.
   sticker65: {
-    key: 'sticker65', name: 'Small stickers, 65 labels', hint: '5 × 13, 38.1 × 21.2 mm',
+    key: 'sticker65', name: 'Small stickers, 65 labels', hint: '5 × 13, 38.1 × 21.2 mm · barcode under the call number',
     cols: 5, rows: 13, w: 38.1, h: 21.2, left: 4.7, top: 10.7, gapX: 2.5, gapY: 0, cutLines: false, size: 'xs', paperChoice: false,
+    split: false, callW: 0,
   },
 }
 

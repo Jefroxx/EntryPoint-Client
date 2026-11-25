@@ -74,6 +74,8 @@ export interface RedemptionRecord {
   quantity: number;
   pointsSpent: number;
   fulfillmentStatus: FulfillmentStatus;
+  /** Why it was cancelled (the student is told). */
+  cancelReason?: string | null;
   redeemedAt: string;
   student: {
     studentID: number;
@@ -83,7 +85,15 @@ export interface RedemptionRecord {
     knowledgeScore?: number;
     user: { firstName: string; lastName: string; email?: string } | null;
   } | null;
-  item: { itemID: number; name: string; type?: string | null; pointCost?: number; stock?: number } | null;
+  item: { itemID: number; name: string; type?: string | null; pointCost?: number; stock?: number; photoURL?: string | null } | null;
+}
+
+/** A kind of reward (Merchandise, Voucher...). `items_count` is how many rewards have it. */
+export interface MarketItemTypeRecord {
+  typeID: number;
+  uuid: string;
+  name: string;
+  items_count: number;
 }
 
 class EngagementServiceClass extends BaseService {
@@ -108,7 +118,24 @@ class EngagementServiceClass extends BaseService {
   }
 
   fetchMarketItems() {
-    return this.apiRequest<{ items: MarketItemRecord[] }>("/librarian/market-items");
+    // `lowStockAt`: a reward with this many left, or fewer, is running low (set in Settings).
+    return this.apiRequest<{ items: MarketItemRecord[]; lowStockAt: number }>("/librarian/market-items");
+  }
+
+  fetchItemTypes() {
+    return this.apiRequest<{ types: MarketItemTypeRecord[] }>("/librarian/market-item-types");
+  }
+
+  createItemType(payload: { name: string }) {
+    return this.apiRequest<{ message: string; type: MarketItemTypeRecord }>("/librarian/market-item-types", { method: "POST", body: payload });
+  }
+
+  renameItemType(typeUuid: string, payload: { name: string }) {
+    return this.apiRequest<{ message: string; type: MarketItemTypeRecord }>(`/librarian/market-item-types/${typeUuid}`, { method: "PATCH", body: payload });
+  }
+
+  deleteItemType(typeUuid: string) {
+    return this.apiRequest<{ message: string }>(`/librarian/market-item-types/${typeUuid}`, { method: "DELETE" });
   }
 
   createMarketItem(payload: MarketItemPayload) {
@@ -142,8 +169,9 @@ class EngagementServiceClass extends BaseService {
     return this.apiRequest<{ message: string }>(`/librarian/point-redemptions/${redemptionUuid}/fulfill`, { method: "POST" });
   }
 
-  cancelRedemption(redemptionUuid: string) {
-    return this.apiRequest<{ message: string }>(`/librarian/point-redemptions/${redemptionUuid}/cancel`, { method: "POST" });
+  /** The student is told the reason, in the app. */
+  cancelRedemption(redemptionUuid: string, reason: string) {
+    return this.apiRequest<{ message: string }>(`/librarian/point-redemptions/${redemptionUuid}/cancel`, { method: "POST", body: { reason } });
   }
 }
 

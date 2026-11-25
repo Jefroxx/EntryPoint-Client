@@ -1,7 +1,8 @@
 <template>
 	<div class="grid gap-4 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] lg:items-start">
 		<!-- Camera -->
-		<section class="rounded-2xl border border-stone-200 bg-white p-4 md:p-5" aria-label="Camera">
+		<!-- Below a desktop the result comes first (above the camera), where it is seen as soon as something is scanned. -->
+		<section class="rounded-2xl border border-stone-200 bg-white p-4 max-lg:order-2 md:p-5" aria-label="Camera">
 			<!-- A Checkout window is open in another tab and is reading this same camera for the book. -->
 			<p v-if="checkoutActive" class="mb-3 flex items-center gap-2 rounded-xl bg-amber-50 px-3 py-2 text-[13.5px] font-medium text-amber-900" role="status">
 				<Icon name="i-tabler-book-upload" class="h-4 w-4 shrink-0" />
@@ -75,18 +76,20 @@
 				<div class="relative min-w-0 flex-1">
 					<Icon name="i-tabler-keyboard" class="pointer-events-none absolute left-3.5 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-stone-400" />
 					<input v-model="code" type="text" inputmode="text" enterkeyhint="go" autocomplete="off" autocapitalize="off" spellcheck="false"
-						placeholder="Barcode won't read? Type the account code or student number" aria-label="Type a code" :disabled="busy"
+						placeholder="Type an ID or code" aria-label="Type a code" :disabled="busy"
 						class="h-11 w-full rounded-xl border border-stone-200 bg-stone-50 pl-11 pr-3 text-[15px] text-stone-900 outline-none transition-[border-color,box-shadow,background-color] duration-150 placeholder:text-stone-400 focus:border-accent-500 focus:bg-white focus:ring-2 focus:ring-accent-200 disabled:opacity-70">
 				</div>
 				<ButtonsButton type="submit" variant="ghost" :disabled="busy || !code.trim()">Scan</ButtonsButton>
 			</form>
 
-			<p class="mx-0.5 mt-2.5 text-[13px] leading-relaxed text-stone-400">{{ hint }}</p>
+			<p class="mx-0.5 mt-2.5 text-[13px] leading-relaxed text-stone-500">
+				<span class="sm:hidden">{{ hintShort }}</span><span class="hidden sm:inline">{{ hint }}</span>
+			</p>
 		</section>
 
-		<div class="grid gap-4">
+		<div class="grid gap-4 max-lg:contents">
 			<!-- A facility was scanned: it waits here for the student's ID. -->
-			<div v-if="armed" class="flex items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3" role="status">
+			<div v-if="armed" class="flex items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 max-lg:order-1" role="status">
 				<Icon name="i-tabler-device-desktop" class="h-5 w-5 shrink-0 text-amber-700" />
 				<p class="min-w-0 flex-1 text-[14.5px] leading-snug text-amber-900">
 					<b>{{ armed.name }}</b> is ready. Scan the student's ID to start their session.
@@ -95,7 +98,7 @@
 			</div>
 
 			<!-- Result -->
-			<div class="relative grid min-h-[260px] place-items-center overflow-hidden rounded-[20px] border p-6 text-center lg:min-h-[320px]"
+			<div class="relative grid min-h-[210px] place-items-center overflow-hidden rounded-[20px] border p-4 text-center max-lg:order-1 lg:min-h-[320px] lg:p-6"
 				:class="result ? TONES[result.tone].box : 'border-dashed border-stone-300 bg-white'" aria-live="polite">
 				<div v-if="!result" class="text-stone-400">
 					<Icon name="i-tabler-scan" class="mx-auto mb-2 h-12 w-12" />
@@ -105,10 +108,10 @@
 
 				<div v-else :key="result.key" class="st-swap w-full">
 					<div v-if="result.name" class="flex flex-col items-center gap-3">
-						<span class="dashboard-heading flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-accent-500 to-accent-700 text-[30px] font-extrabold text-white">
+						<span class="dashboard-heading flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-accent-500 to-accent-700 text-[22px] font-extrabold text-white lg:h-20 lg:w-20 lg:text-[30px]">
 							{{ initialsOf(result.name) }}</span>
 						<div class="min-w-0">
-							<p class="dashboard-heading text-[30px] font-extrabold leading-tight text-stone-900">{{ result.name }}</p>
+							<p class="dashboard-heading text-[24px] font-extrabold leading-tight text-stone-900 lg:text-[30px]">{{ result.name }}</p>
 							<p class="mt-0.5 text-[15px] text-stone-500">{{ result.program }} <span v-if="result.program && result.sid">·</span> <span class="font-data">{{ result.sid }}</span></p>
 						</div>
 					</div>
@@ -126,11 +129,11 @@
 					</ButtonsButton>
 				</div>
 
-				<i v-if="result" :key="`bar-${result.key}`" class="scan-clear absolute bottom-0 left-0 block h-1 w-full origin-left opacity-40" :class="TONES[result.tone].bar" />
+				<i v-if="result && result.tone !== 'err'" :key="`bar-${result.key}`" class="scan-clear absolute bottom-0 left-0 block h-1 w-full origin-left opacity-40" :class="TONES[result.tone].bar" />
 			</div>
 
 			<!-- Recent scans -->
-			<section class="overflow-hidden rounded-2xl border border-stone-200 bg-white" aria-label="Recent scans">
+			<section class="overflow-hidden rounded-2xl border border-stone-200 bg-white max-lg:order-3" aria-label="Recent scans">
 				<p class="px-4 pb-1 pt-4 text-[12px] font-semibold uppercase tracking-[.08em] text-stone-400">Recent scans</p>
 				<p v-if="!feed.length" class="px-4 pb-5 pt-2 text-center text-[14px] text-stone-400">Nothing scanned yet this session.</p>
 				<TransitionGroup v-else tag="div" class="pb-1.5" enter-active-class="transition-[transform,translate,scale,opacity] duration-[250ms] ease-out" enter-from-class="-translate-y-2 opacity-0"
@@ -192,12 +195,15 @@ const relayOpen = computed({
 	// "Use the webcam" inside the panel.
 	set: (open: boolean) => { if (!open) mode.value = 'webcam' },
 })
+// Remembered on this computer: a desk that was turned quiet stays quiet.
+const SOUND_KEY = 'librarian-scan-sound'
 const sound = ref(true)
 const code = ref('')
 const busy = ref(false)
 const flash = ref(false)
 const result = ref<ResultView | null>(null)
 const feed = ref<FeedItem[]>([])
+const FEED_MAX = 12
 
 let seq = 0
 let lastRaw = ''
@@ -260,10 +266,16 @@ const status = computed(() => {
 	return camState.value === 'idle' ? { label: 'Camera off', class: 'text-stone-400', dot: 'bg-stone-400' } : { label: 'Camera unavailable', class: 'text-red-600', dot: 'bg-red-500' }
 })
 
+const hintShort = computed(() => useRelay.value
+	? 'The phone reads the barcodes and sends them here.'
+	: mode.value === 'webcam'
+	? 'Hold the barcode 15–25 cm from the camera. If it won\'t read, type the ID above.'
+	: 'The phone vibrates on a good read. The torch helps in dim rooms.')
+
 const hint = computed(() => useRelay.value
 	? 'The phone reads the barcodes and sends them here. Each one is handled like a webcam scan, and the phone stays connected for hours, so the next session needs no new QR.'
 	: mode.value === 'webcam'
-	? 'Hold the barcode about 15–25 cm from the webcam. It reads on its own and pauses for a moment after each scan, so one code is never counted twice.'
+	? 'Hold the barcode about 15–25 cm from the webcam. It reads on its own and pauses for a moment after each scan, so one code is never counted twice. If the barcode won\'t read, type the student number or account code above.'
 	: 'On a phone the camera fills the screen, the phone vibrates on a good read, and the screen stays awake. The torch helps in dim rooms.')
 
 /* ---------- scanning ---------- */
@@ -391,15 +403,16 @@ const formatMinutes = (m: number) => (m < 60 ? `${m}m` : `${Math.floor(m / 60)}h
 function show(view: ResultView, via: Via) {
 	result.value = view
 	clearTimeout(clearTimer)
-	// A result with a next step (check the book, open the checkout) stays up long enough to use it.
-	clearTimer = setTimeout(() => { result.value = null }, view.action ? 20_000 : 4000)
+	// A result with a next step (check the book, open the checkout) stays up long enough to use it, and a refusal stays until
+	// the next scan (or half a minute): a librarian looking at the camera must not miss that it didn't work.
+	clearTimer = setTimeout(() => { result.value = null }, view.tone === 'err' ? 30_000 : view.action ? 20_000 : 4000)
 
 	feed.value = [{
 		key: view.key, tone: view.tone, icon: view.icon,
 		title: view.name ?? view.verdict,
 		sub: view.sub ?? view.message ?? '',
 		at: clock(), via,
-	}, ...feed.value].slice(0, 8)
+	}, ...feed.value].slice(0, FEED_MAX)
 
 	feedback(view.tone)
 }
@@ -438,17 +451,33 @@ function feedback(tone_: Tone) {
 }
 
 /* ---------- mode + lifecycle ---------- */
-const STORAGE_KEY = 'librarian-scan-mode'
+watch(sound, (on) => {
+	try { localStorage.setItem(SOUND_KEY, on ? 'on' : 'off') } catch { /* private window */ }
+})
 
-watch(mode, async (next) => {
-	try { localStorage.setItem(STORAGE_KEY, next) } catch { /* private window */ }
+watch(mode, async () => {
 	if (useRelay.value) { stop(); return }
 	// The camera view is not on the page while the phone panel is, so wait for it to come back before starting.
 	await nextTick()
 	void start()
 })
 
+// The recent scans are kept for this tab (until the session is ended), so a reload doesn't empty the list.
+const FEED_KEY = 'station-feed'
+watch(feed, (items) => {
+	try { sessionStorage.setItem(FEED_KEY, JSON.stringify(items)) } catch { /* private window */ }
+}, { deep: true })
+
 onMounted(() => {
+	try {
+		if (localStorage.getItem(SOUND_KEY) === 'off') sound.value = false
+		const saved = JSON.parse(sessionStorage.getItem(FEED_KEY) ?? '[]') as FeedItem[]
+		if (Array.isArray(saved) && saved.length) {
+			feed.value = saved.slice(0, FEED_MAX)
+			seq = Math.max(seq, ...saved.map((item) => item.key))
+		}
+	} catch { /* nothing saved, or unreadable */ }
+
 	onPhoneDevice.value = window.matchMedia('(pointer: coarse)').matches
 
 	// A phone starts on the phone layout; a desk computer always starts on its own camera, whatever it used last

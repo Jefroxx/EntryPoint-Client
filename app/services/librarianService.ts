@@ -104,6 +104,8 @@ export interface StudentRecord {
   visitStreak: number;
   created_at?: string;
   reviewedAt?: string | null;
+  /** Why a librarian rejected the registration (the student is sent it). */
+  rejectionReason?: string | null;
   user: {
     firstName: string;
     middleInitial?: string | null;
@@ -129,6 +131,11 @@ export interface StudentStats {
   pending: number;
   approved: number;
   rejected: number;
+  /** Every program a student is in, for the program filter. */
+  programs: string[];
+  /** Only for the faculty and staff list (memberType "members"). */
+  faculty?: number;
+  staff?: number;
 }
 
 export interface BookSuggestion {
@@ -137,8 +144,10 @@ export interface BookSuggestion {
   title: string;
   author: string | null;
   reason: string | null;
-  status: "Pending" | "Approved" | "Rejected";
+  status: "Pending" | "Approved" | "Arrived" | "Rejected";
   progressStep: string | null;
+  /** Why it was turned down, as the librarian wrote it. */
+  rejectionReason?: string | null;
   submittedAt: string;
   student: {
     studentID: number;
@@ -170,6 +179,8 @@ export interface CatalogBook {
   /** "needs_review" until a catalogue or a librarian has confirmed the Dewey number. */
   deweyStatus?: DeweyStatus;
   coverImageURL: string | null;
+  /** Where in the library the book is shelved (the key of one of the Areas of the Library). */
+  areaOfLibrary?: string | null;
   subject: { subjectID: number; name: string } | null;
   authors: BookAuthor[];
   copies: BookCopySummary[];
@@ -284,7 +295,11 @@ export interface ScannedCopy {
   lendable: string | null;
   /** When it would fall due if lent today (null for a book that can't be lent). */
   dueDate?: string | null;
-  book: { bookID: number; uuid?: string; title: string; coverImageURL: string | null; authors: string[] };
+  book: {
+    bookID: number; uuid?: string; title: string; coverImageURL: string | null; authors: string[];
+    callNumber?: string | null; isbn?: string | null; publisher?: string | null; publicationYear?: number | null;
+    edition?: string | null; volume?: string | null; areaOfLibrary?: string | null; shelfLocation?: string | null;
+  };
 }
 
 export interface CopyCatalogRow {
@@ -371,6 +386,8 @@ export interface AttendanceLog {
     studentID: number;
     memberIDNumber: string;
     academicProgram: string | null;
+    /** Faculty and staff have a department instead of a program. */
+    department?: string | null;
     user: { firstName: string; lastName: string } | null;
   } | null;
 }
@@ -388,11 +405,11 @@ export interface AttendanceStats {
   totalVisitsToday: number;
   averageMinutesToday: number;
   /** Who is inside the library right now (students and walk-in visitors). */
-  inside: { students: number; visitors: number };
+  inside: { students: number; visitors: number; /** Part of those: visits left open from an earlier day. */ earlier: { students: number; visitors: number } };
   /** The date the `day` numbers are for (Y-m-d). */
   date: string;
   /** One day's attendance: visits that started that day, different students and walk-in visitors, and the average stay. */
-  day: { visits: number; students: number; visitors: number; averageMinutes: number };
+  day: { visits: number; students: number; visitors: number; /** null while nobody has left yet that day. */ averageMinutes: number | null };
 }
 
 /** POST /librarian/attendance-logs/scan: one scan either checks a student in or checks them out. */
@@ -461,26 +478,11 @@ export interface NewBookAuthor {
   role?: string | null;
 }
 
-/** Mirrors the `areaOfLibrary` enum on the `books` table. */
-export type LibraryArea =
-  | "circulation"
-  | "reserved"
-  | "filipiniana"
-  | "fiction"
-  | "thesis"
-  | "journal"
-  | "dissertation";
+/** An area's key (what books store). The areas are the librarian's own list: Library > Categories > Areas of the Library. */
+export type LibraryArea = string;
 
-/** Display names for each area of the library, in the order the filters list them. */
-export const LIBRARY_AREAS: Record<LibraryArea, string> = {
-  circulation: "Circulation",
-  reserved: "Reserved",
-  filipiniana: "Filipiniana",
-  fiction: "Fiction",
-  thesis: "Thesis",
-  journal: "Journal",
-  dissertation: "Dissertation",
-};
+/** Area key -> display name, kept up to date from that list (see utils/libraryAreas.ts). */
+export { LIBRARY_AREAS } from "~/utils/libraryAreas";
 
 /** Where a book's Dewey number came from. "guessed" is the keyword guess and always needs a librarian's check. */
 export type DeweySource = "library_of_congress" | "open_library" | "manual" | "guessed";
@@ -596,7 +598,6 @@ export interface SpineLabelData {
 export interface NewBookPayload {
   title: string;
   authors: NewBookAuthor[];
-  subjectName: string;
   isbn?: string | null;
   publicationYear?: number | null;
   callNumber?: string | null;
@@ -724,7 +725,7 @@ class LibrarianServiceClass extends BaseService {
     });
   }
 
-  fetchBooks(params: { search?: string; subjectID?: number; availability?: Exclude<BookAvailabilityFilter, "">; dewey?: Exclude<BookDeweyFilter, "">; page?: number; perPage?: number } = {}) {
+  fetchBooks(params: { search?: string; subjectID?: number; area?: string; availability?: Exclude<BookAvailabilityFilter, "">; dewey?: Exclude<BookDeweyFilter, "">; page?: number; perPage?: number } = {}) {
     const runtimeConfig = useRuntimeConfig();
 
     return $fetch<PaginatedBooks>("/books", {
@@ -752,7 +753,6 @@ class LibrarianServiceClass extends BaseService {
     /** Narrow it to these accession numbers: each a range, a single number being from = to. */
     accessions?: { from: number; to: number }[];
     /** Also print the call number and Cutter of books whose Dewey number is only a guess (left off by default). */
-    includeUnconfirmed?: boolean;
   }) {
     return this.apiRequest<CopyLabelsResponse>("/librarian/copies/labels", { method: "POST", body: selection });
   }
@@ -804,7 +804,7 @@ class LibrarianServiceClass extends BaseService {
     return this.apiRequest<PaginatedStockLogs>("/librarian/stock-logs", { query: params });
   }
 
-  fetchAttendanceLogs(params: { search?: string; date?: string; active?: boolean; page?: number; perPage?: number } = {}) {
+  fetchAttendanceLogs(params: { search?: string; date?: string; active?: boolean; status?: "in" | "out"; who?: "students" | "members" | "visitors"; sort?: "oldest"; page?: number; perPage?: number } = {}) {
     const runtimeConfig = useRuntimeConfig();
 
     return $fetch<PaginatedAttendanceLogs>("/librarian/attendance-logs", {
@@ -991,11 +991,12 @@ class LibrarianServiceClass extends BaseService {
     );
   }
 
-  rejectBookSuggestion(suggestionUuid: string) {
+  /** The approved book is in the library: the student who asked for it is told. */
+  markBookSuggestionArrived(suggestionUuid: string) {
     const runtimeConfig = useRuntimeConfig();
 
     return $fetch<{ message: string; suggestion: BookSuggestion }>(
-      `/librarian/book-suggestions/${suggestionUuid}/reject`,
+      `/librarian/book-suggestions/${suggestionUuid}/arrived`,
       {
         baseURL: runtimeConfig.public.apiBaseURL,
         method: "POST",
@@ -1007,7 +1008,25 @@ class LibrarianServiceClass extends BaseService {
     );
   }
 
-  fetchStudents(params: { search?: string; program?: string; status?: string; memberType?: "student" | "faculty" | "staff" | "members"; page?: number; perPage?: number } = {}) {
+  /** Turning a request down needs a reason; the student is told it. */
+  rejectBookSuggestion(suggestionUuid: string, reason: string) {
+    const runtimeConfig = useRuntimeConfig();
+
+    return $fetch<{ message: string; suggestion: BookSuggestion }>(
+      `/librarian/book-suggestions/${suggestionUuid}/reject`,
+      {
+        baseURL: runtimeConfig.public.apiBaseURL,
+        method: "POST",
+        body: { reason },
+        headers: {
+          Accept: "application/json",
+          ...this.authHeaders(),
+        },
+      },
+    );
+  }
+
+  fetchStudents(params: { search?: string; program?: string; status?: string; memberType?: "student" | "faculty" | "staff" | "members"; sort?: "oldest" | "newest"; /** Only students who are in the library right now. */ inLibrary?: boolean; page?: number; perPage?: number } = {}) {
     const runtimeConfig = useRuntimeConfig();
 
     return $fetch<PaginatedStudents>("/librarian/students", {
@@ -1021,7 +1040,7 @@ class LibrarianServiceClass extends BaseService {
     });
   }
 
-  fetchStudentStats(memberType?: "student" | "faculty" | "staff") {
+  fetchStudentStats(memberType?: "student" | "faculty" | "staff" | "members") {
     const runtimeConfig = useRuntimeConfig();
 
     return $fetch<StudentStats>("/librarian/students/stats", {
@@ -1048,12 +1067,14 @@ class LibrarianServiceClass extends BaseService {
     });
   }
 
-  rejectStudent(studentUuid: string) {
+  /** The student is told the reason, in the app and by email. */
+  rejectStudent(studentUuid: string, reason: string) {
     const runtimeConfig = useRuntimeConfig();
 
     return $fetch<{ message: string; student: StudentRecord }>(`/librarian/students/${studentUuid}/reject`, {
       baseURL: runtimeConfig.public.apiBaseURL,
       method: "POST",
+      body: { reason },
       headers: {
         Accept: "application/json",
         ...this.authHeaders(),

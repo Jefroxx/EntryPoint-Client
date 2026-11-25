@@ -35,6 +35,11 @@
 				</div>
 			</div>
 
+			<div v-if="suggestion.status === 'Rejected'" class="rounded-xl border border-red-200 bg-red-50 px-4 py-3.5">
+				<p class="mb-1 text-[12px] font-bold uppercase tracking-wide text-red-700">Why it was rejected</p>
+				<p class="text-[14.5px] leading-relaxed text-red-900">{{ suggestion.rejectionReason || 'No reason was recorded.' }}</p>
+			</div>
+
 			<div>
 				<p class="mb-1.5 text-[12px] font-bold uppercase tracking-wide text-stone-500">Student's reason</p>
 				<div class="rounded-xl border border-stone-100 bg-stone-50 px-4 py-3.5 text-[14.5px] leading-relaxed text-stone-600">
@@ -47,6 +52,13 @@
 			<template v-if="suggestion?.status === 'Pending'">
 				<ButtonsButton variant="danger" @click="emit('reject', suggestion)">Reject</ButtonsButton>
 				<ButtonsButton variant="primary" @click="emit('approve', suggestion)">Approve request</ButtonsButton>
+			</template>
+			<!-- Approved: the next step is the book reaching the library, and the student is told. -->
+			<template v-else-if="suggestion?.status === 'Approved'">
+				<ButtonsButton variant="ghost" @click="emit('close')">Close</ButtonsButton>
+				<ButtonsButton variant="primary" @click="emit('arrived', suggestion)">
+					<Icon name="i-tabler-books" class="h-4 w-4" />Mark as arrived
+				</ButtonsButton>
 			</template>
 			<ButtonsButton v-else variant="ghost" @click="emit('close')">Close</ButtonsButton>
 		</template>
@@ -65,6 +77,7 @@ const emit = defineEmits<{
 	(e: 'close'): void
 	(e: 'approve', suggestion: BookSuggestion): void
 	(e: 'reject', suggestion: BookSuggestion): void
+	(e: 'arrived', suggestion: BookSuggestion): void
 }>()
 
 const requesterName = computed(() => {

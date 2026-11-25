@@ -59,6 +59,8 @@ export interface StudentStats {
   overdueLoans: number;
   readyReservations: number;
   activeReservations: number;
+  /** The most books a student can have at a time, as the library set it. */
+  maxBooks: number;
   slotsLeft: number;
   unpaidFines: number;
   wishlistCount: number;
@@ -93,6 +95,11 @@ export interface LoanRow {
 
 export interface PenaltyRow {
   penaltyID: number;
+  uuid: string;
+  /** What the librarian wrote happened to a lost or damaged book. */
+  reason?: string | null;
+  /** How the student said they will settle it: pay the amount, or bring a replacement copy. */
+  studentChoice?: "pay" | "replace" | null;
   /** 'overdue' is a late fee; 'lost' / 'damaged' mean the book itself: pay its price or replace it. */
   kind: "overdue" | "lost" | "damaged";
   amount: number;
@@ -147,7 +154,7 @@ export interface WishlistRow {
   book: RawBook;
 }
 
-export type ReservationStatus = "Waiting" | "Accepted" | "Rejected" | "Fulfilled";
+export type ReservationStatus = "Waiting" | "Accepted" | "Rejected" | "Fulfilled" | "Expired";
 
 export interface ReservationRow {
   reservationID: number;
@@ -239,7 +246,9 @@ export interface SuggestionRow {
   title: string;
   author: string | null;
   reason: string | null;
-  status: "Pending" | "Approved" | "Rejected" | string;
+  status: "Pending" | "Approved" | "Arrived" | "Rejected" | string;
+  /** Why a rejected request was turned down. */
+  rejectionReason?: string | null;
   submittedAt: string;
 }
 
@@ -298,6 +307,11 @@ class StudentServiceClass extends BaseService {
 
   penalties() {
     return this.apiRequest<{ penalties: PenaltyRow[]; unpaidTotal: number }>("/student/penalties");
+  }
+
+  /** Lost or damaged book: say whether you will pay the amount or bring a replacement copy. */
+  choosePenalty(penaltyUuid: string, choice: "pay" | "replace") {
+    return this.apiRequest<{ message: string }>(`/student/penalties/${penaltyUuid}/choice`, { method: "POST", body: { choice } });
   }
 
   attendance() {

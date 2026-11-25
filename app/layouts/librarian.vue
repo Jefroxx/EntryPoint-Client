@@ -32,6 +32,9 @@
 // Expanded (labels) or folded to an icon rail, as on the student side. A per-device preference.
 const sidebarOpen = useCookie<boolean>('librarian-sidebar-open', { default: () => true, sameSite: 'lax', maxAge: 60 * 60 * 24 * 365 })
 const loader = usePageLoader()
+// The area names and fund sources every screen shows (Library > Categories), fetched once.
+useLibraryAreas()
+useFundSources()
 
 // An administrator can change a role while someone is signed in, so ask the server what this account may do now.
 const { refresh: refreshAccess } = useStaffAccess()

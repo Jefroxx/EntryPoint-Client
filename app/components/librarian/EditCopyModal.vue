@@ -34,7 +34,7 @@
 			<!-- Two columns on a wide window, so the whole form fits without scrolling. -->
 			<fieldset v-else class="grid gap-2 sm:grid-cols-2">
 				<legend class="mb-2 text-[13px] font-semibold text-stone-700 sm:col-span-2">Status<FieldRequired /></legend>
-				<label v-for="option in OPTIONS" :key="option.value"
+				<label v-for="option in options" :key="option.value"
 					class="flex cursor-pointer items-start gap-3 rounded-xl border px-4 py-3 transition-colors"
 					:class="status === option.value
 						? option.value === 'retired' ? 'border-red-300 bg-red-50' : 'border-accent-300 bg-accent-50'
@@ -47,16 +47,31 @@
 				</label>
 			</fieldset>
 
+			<!-- Lost or damaged is a student's doing, so it is recorded with a penalty: that window takes the student, the
+				 amount and what happened, and marks the copy itself. -->
+			<div v-if="!isRetiring" class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+				<div class="flex min-w-0 flex-1 items-start gap-3 text-amber-900">
+					<Icon name="i-tabler-gavel" class="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+					<div class="min-w-0 text-[14px] leading-snug">
+						<p class="font-semibold">Lost or damaged by a student?</p>
+						<p class="text-[13px] text-amber-800">Record it in Lost &amp; Damaged: pick the student, set the penalty and say what happened. The copy is marked for you.</p>
+					</div>
+				</div>
+				<ButtonsButton variant="ghost" size="sm" class="shrink-0 !border-amber-300 !bg-white" @click="copy && emit('report', copy)">
+					Go to Lost &amp; Damaged
+				</ButtonsButton>
+			</div>
+
 			<!-- This copy's own record. Changing it here touches this copy only, not the book or its other copies. -->
 			<div v-if="!isRetiring" class="space-y-4">
 				<p class="text-[13px] font-semibold text-stone-700">This copy's record</p>
 				<div class="grid items-start gap-4 sm:grid-cols-2">
-					<LibrarianTextField id="edit-copy-cost" v-model="cost" type="number" label="Cost (₱)" :min="0" step="0.01"
-						placeholder="0.00" :error="errors.cost" hint="Enter 0 for a donated copy."
-						@update:model-value="errors.cost = ''" />
-					<LibrarianTextField id="edit-copy-fund" v-model="sourceOfFund" label="Source of fund" :maxlength="255"
-						placeholder="e.g. Library budget, Donation" :error="errors.sourceOfFund"
-						@update:model-value="errors.sourceOfFund = ''" />
+					<LibrarianFundField id="edit-copy-fund" :model-value="sourceOfFund" :error="errors.sourceOfFund"
+						@update:model-value="onFundInput" />
+						<LibrarianTextField id="edit-copy-cost" v-model="cost" type="number" label="Cost (₱)" :min="0" step="0.01"
+							placeholder="0.00" :error="errors.cost" :disabled="donated"
+							:hint="donated ? 'Donated copies cost nothing, so this is set to 0.' : 'Enter 0 for a donated copy.'"
+							@update:model-value="errors.cost = ''" />
 				</div>
 				<LibrarianTextField id="edit-copy-remarks" v-model="remarks" label="Remarks" optional :maxlength="1000"
 					placeholder="Anything worth remembering about this copy" />
@@ -99,6 +114,8 @@ const props = defineProps<{
 const emit = defineEmits<{
 	(e: 'close'): void
 	(e: 'submit', payload: Payload): void
+	/** Take the librarian to Circulation > Lost & Damaged with this copy chosen. */
+	(e: 'report', copy: CopyCatalogRow): void
 }>()
 
 const OPTIONS: { value: EditableStatus; label: string; hint: string }[] = [
@@ -107,6 +124,9 @@ const OPTIONS: { value: EditableStatus; label: string; hint: string }[] = [
 	{ value: 'lost', label: 'Lost', hint: 'Missing. Set it back to On the shelf if it turns up.' },
 	{ value: 'retired', label: 'Remove from catalog', hint: 'Retires this copy for good. Its accession number is not reused.' },
 ]
+// Damaged and Lost are not picked here: they come with a penalty (the button above). A copy that already is one of them shows
+// it, so the librarian can set it back on the shelf once it is found or repaired.
+const options = computed(() => OPTIONS.filter((o) => o.value === 'available' || o.value === 'retired' || o.value === props.copy?.status))
 const STATUS_LABEL: Record<string, string> = { borrowed: 'Borrowed', ...Object.fromEntries(OPTIONS.map((o) => [o.value, o.label])) }
 
 const status = ref<EditableStatus>('available')
@@ -114,6 +134,23 @@ const cost = ref<string | number>('')
 const sourceOfFund = ref('')
 const remarks = ref('')
 const errors = reactive({ cost: '', sourceOfFund: '' })
+
+// A donated copy cost nothing: choosing Donated sets the cost to 0 (and greys it out); choosing something else gives back what was typed.
+const donated = computed(() => isDonatedFund(sourceOfFund.value))
+let costBeforeDonation: string | number = ''
+function onFundInput(value: string) {
+	const was = donated.value
+	sourceOfFund.value = value
+	errors.sourceOfFund = ''
+	const now = isDonatedFund(value)
+	if (now && !was) {
+		costBeforeDonation = cost.value
+		cost.value = '0'
+		errors.cost = ''
+	} else if (!now && was) {
+		cost.value = costBeforeDonation
+	}
+}
 const confirming = ref(false)
 
 // What the catalog table shows for this copy: its own record, else the book's.
@@ -136,6 +173,7 @@ watch(() => props.open, (isOpen) => {
 	status.value = props.copy.status === 'borrowed' ? 'available' : props.copy.status
 	cost.value = original.value.cost ?? ''
 	sourceOfFund.value = original.value.sourceOfFund
+	costBeforeDonation = ''
 	remarks.value = original.value.remarks
 	errors.cost = ''
 	errors.sourceOfFund = ''

@@ -27,9 +27,9 @@
         </div>
 
         <LibrarianDemographicsCard title="Students by program"
-            :subtitle="demoScope === 'members' ? 'All approved members' : `Different students who visited in ${monthLabel}`"
+            :subtitle="demoScope === 'members' ? 'All approved students' : `Different students who visited in ${monthLabel}`"
             :slices="demoSlices" :total="demo?.total ?? 0"
-            :empty-text="demoScope === 'members' ? 'No approved members yet.' : `No one visited in ${monthLabel}.`">
+            :empty-text="demoScope === 'members' ? 'No approved students yet.' : `No one visited in ${monthLabel}.`">
             <template #actions>
                 <LibrarianMiniToggle v-model="demoScope" label="Which students" :options="DEMO_SCOPES" />
             </template>
@@ -51,21 +51,7 @@
                 </p>
             </div>
 
-            <div class="flex h-3 w-full gap-[2px] overflow-hidden rounded-full bg-stone-100" role="img"
-                :aria-label="collection.map((c) => `${c.label} ${c.value}`).join(', ')">
-                <span v-for="c in collection.filter((c) => c.value > 0)" :key="c.label" class="h-full first:rounded-l-full last:rounded-r-full"
-                    :style="{ width: `${(c.value / Math.max(copiesTotal, 1)) * 100}%`, backgroundColor: c.color }" :title="`${c.label}: ${c.value}`" />
-            </div>
-
-            <ul class="mt-5 grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-4">
-                <li v-for="c in collection" :key="c.label">
-                    <span class="flex items-center gap-2 text-[13px] text-stone-500">
-                        <span class="h-2.5 w-2.5 rounded-full" :style="{ backgroundColor: c.color }" />{{ c.label }}
-                    </span>
-                    <span class="mt-1 block text-[26px] font-bold leading-none tracking-[-0.02em] tabular-nums text-stone-900">{{ c.value }}</span>
-                    <span class="mt-1 block text-[12px] tabular-nums text-stone-500">{{ copiesTotal ? Math.round((c.value / copiesTotal) * 100) : 0 }}% of copies</span>
-                </li>
-            </ul>
+            <LibrarianCollectionBar :items="collection" :total="copiesTotal" />
         </section>
     </div>
 </template>
@@ -98,7 +84,7 @@ function shiftMonth(delta: number) {
 const { data: overview, pending: overviewPending } = useLiveAsyncData(
     'borrowing-overview',
     () => librarianService.fetchBorrowingOverview(month.value),
-    { lazy: true, watch: [month] },
+    { lazy: true, watch: [month], pollMs: 60_000 },
 )
 
 // Same weeks, two stories. Both color pairs pass the dataviz palette validator on white.
@@ -124,7 +110,7 @@ const chart = computed(() => {
         title: 'Borrowing & returns',
         subtitle: 'Books checked out and brought back, week by week',
         series: [
-            { key: 'borrowed', label: 'Borrowed', color: '#532c2e', values: o?.borrowed ?? [] },
+            { key: 'borrowed', label: 'Checked out', color: '#532c2e', values: o?.borrowed ?? [] },
             { key: 'returned', label: 'Returned', color: '#1e423f', values: o?.returned ?? [] },
         ],
     }
@@ -142,43 +128,22 @@ const { data: demoMembers } =
 const { data: demoVisitors } = useLiveAsyncData(
     'demographics-visitors',
     () => librarianService.fetchDemographics('visitors', month.value),
-    { lazy: true, watch: [month] },
+    { lazy: true, watch: [month], pollMs: 60_000 },
 )
 const demo = computed(() => (demoScope.value === 'members' ? demoMembers.value : demoVisitors.value))
 
-// Validated categorical order (brand brown first). "Other" and "Not set" aren't programs, so they
-// stay neutral and never use up a program's color.
-const PROGRAM_COLORS = ['#532c2e', '#1e423f', '#a97954', '#c29b87', '#839795']
-const NEUTRAL: Record<string, string> = { 'Other': '#a8a29e', 'Not set': '#d6d3d1' }
-
-// Color follows the program, not its rank: slots come from the all-members ranking, so BSIT keeps
-// its color when you switch to visitors. A program only visitors have takes the next free slot.
-const programColors = computed(() => {
-    const map = new Map<string, string>()
-    for (const slice of demoMembers.value?.slices ?? []) {
-        if (!NEUTRAL[slice.label] && map.size < PROGRAM_COLORS.length) map.set(slice.label, PROGRAM_COLORS[map.size]!)
-    }
-    return map
-})
-
-const demoSlices = computed(() => {
-    const used = new Set(programColors.value.values())
-    const spare = PROGRAM_COLORS.filter((c) => !used.has(c))
-    return (demo.value?.slices ?? []).map((slice) => ({
-        ...slice,
-        color: NEUTRAL[slice.label] ?? programColors.value.get(slice.label) ?? spare.shift() ?? NEUTRAL.Other!,
-    }))
-})
+// Each program keeps its color across both views (see colorProgramSlices).
+const demoSlices = computed(() => colorProgramSlices(demo.value?.slices ?? [], demoMembers.value?.slices ?? []))
 
 /* ---------- collection ---------- */
 // Copy states: "borrowed" uses the chart's brown so it means one color everywhere.
 const collection = computed(() => {
     const b = bookStatus.value?.breakdown
     return [
-        { label: 'On the shelf', value: b?.available ?? 0, color: '#059669' },
-        { label: 'Borrowed', value: b?.borrowed ?? 0, color: '#532c2e' },
-        { label: 'Damaged', value: b?.maintenance ?? 0, color: '#d97706' },
-        { label: 'Lost or retired', value: b?.inactive ?? 0, color: '#a8a29e' },
+        { label: 'On the shelf', value: b?.available ?? 0, color: COPY_STATE_COLORS.available },
+        { label: 'Borrowed', value: b?.borrowed ?? 0, color: COPY_STATE_COLORS.borrowed },
+        { label: 'Damaged', value: b?.maintenance ?? 0, color: COPY_STATE_COLORS.damaged },
+        { label: 'Lost or retired', value: b?.inactive ?? 0, color: COPY_STATE_COLORS.lostOrRetired },
     ]
 })
 const copiesTotal = computed(() => bookStatus.value?.total ?? 0)

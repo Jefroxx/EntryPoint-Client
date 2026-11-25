@@ -11,8 +11,8 @@
 				 also takes e, + and - ("1e3"), and says nothing until the form is sent. -->
 			<input :id="id" :value="modelValue" :type="isNumber ? 'text' : type" :inputmode="isNumber ? (decimals ? 'decimal' : 'numeric') : undefined"
 				:placeholder="placeholder" :min="isNumber ? undefined : min" :max="isNumber ? undefined : max" :step="isNumber ? undefined : step"
-				:autocomplete="isNumber ? 'off' : autocomplete" :maxlength="maxlength" :aria-required="isRequired || undefined"
-				class="h-11 w-full rounded-[10px] border bg-white px-3 text-[15px] text-stone-900 outline-none transition-colors placeholder:text-stone-400 focus:border-accent-500 focus:ring-2 focus:ring-accent-200"
+				:autocomplete="isNumber ? 'off' : autocomplete" :maxlength="maxlength" :aria-required="isRequired || undefined" :disabled="disabled"
+				class="h-11 w-full rounded-[10px] border bg-white px-3 text-[15px] text-stone-900 outline-none transition-colors placeholder:text-stone-400 focus:border-accent-500 focus:ring-2 focus:ring-accent-200 disabled:cursor-not-allowed disabled:border-stone-200 disabled:bg-stone-100 disabled:text-stone-500"
 				:class="[shownError ? 'border-red-400 bg-red-50' : 'border-stone-200', mono ? 'font-data text-[13.5px]' : '', type === 'date' ? 'cursor-pointer !pl-9' : '']"
 				@input="onInput" @blur="checkRange" @click="openCalendar" />
 		</div>
@@ -42,6 +42,8 @@ const props = withDefaults(defineProps<{
 	step?: number | string
 	autocomplete?: string
 	maxlength?: number
+	/** Greyed out and not editable (its value is decided elsewhere, like the cost of a donated book). */
+	disabled?: boolean
 }>(), {
 	// Not passed means "follow optional", not false (Vue turns a missing boolean into false).
 	required: undefined,

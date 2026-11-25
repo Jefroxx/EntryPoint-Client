@@ -12,7 +12,7 @@
 				leave-active-class="transition-[transform,translate,scale,opacity] duration-150 ease-out max-sm:duration-[320ms] max-sm:ease-[cubic-bezier(.4,0,.2,1)]"
 				leave-from-class="scale-100 translate-y-0 opacity-100" leave-to-class="scale-95 translate-y-1 opacity-0 max-sm:translate-x-full max-sm:translate-y-0 max-sm:scale-100 max-sm:opacity-100 max-sm:motion-reduce:translate-x-0 max-sm:motion-reduce:opacity-0">
 				<div v-if="open" role="dialog" aria-modal="true" aria-labelledby="checkoutTitle" @keydown.esc="handleClose"
-					class="relative z-10 flex max-h-[min(780px,calc(100vh-32px))] w-full max-w-[940px] flex-col overflow-hidden rounded-[22px] bg-white shadow-overlay max-sm:h-dvh max-sm:max-h-none max-sm:max-w-none max-sm:rounded-none max-sm:shadow-none">
+					class="relative z-10 flex h-[min(680px,calc(100vh-32px))] w-full max-w-[960px] flex-col overflow-hidden rounded-[22px] bg-white shadow-overlay max-sm:h-dvh max-sm:max-h-none max-sm:max-w-none max-sm:rounded-none max-sm:shadow-none">
 					<!-- Header + step bar (same pattern as Add Book) -->
 					<div class="flex-shrink-0 border-b border-stone-100 px-6 pb-4 pt-5 max-sm:px-4 max-sm:pt-3 sm:px-7">
 						<div class="flex items-start justify-between gap-3 max-sm:items-center">
@@ -50,8 +50,8 @@
 					<div v-else class="min-h-0 flex-1 overflow-y-auto px-6 py-6 max-sm:px-4 sm:px-7">
 						<!-- Steps 1 and 2 share one camera on the left (shown, not re-created, so it stays on between them);
 							 the right side is the book (step 1) or the book and the student (step 2). -->
-						<div v-show="step <= 2" class="grid gap-6 md:grid-cols-2">
-							<!-- ===== Left: the camera, so scanning never means leaving this window ===== -->
+						<div v-show="step <= 2 && !showOutput && !showCopyPick" class="grid gap-6 md:grid-cols-2">
+							<!-- ===== Left: the camera, so scanning never means leaving this window. On a phone it sits under the input, so the box is the first thing there. ===== -->
 							<section aria-label="Camera" class="min-w-0 space-y-4">
 								<div v-if="!cameraEnabled" class="grid place-items-center rounded-2xl bg-stone-100 p-6 text-center text-[14px] leading-snug text-stone-600">
 									<div class="max-w-[300px]">
@@ -103,8 +103,70 @@
 								<!-- An alternative to the webcam: the librarian's phone reads the barcodes. -->
 								<LibrarianPhoneScanner v-model:open="phoneOpen" :active="open && step <= 2" @code="onCameraCode" />
 
-								<!-- Step 2: ways to find the student under the camera. -->
-								<template v-if="step === 2">
+							</section>
+
+							<!-- ===== Right, step 1: the book. Found by the camera, a scanner, or typed by hand. ===== -->
+							<section v-show="step === 1" aria-label="Book information" class="min-w-0 space-y-4 max-md:order-first">
+								<!-- Three ways to find the book, one at a time. -->
+								<LibrarianSegmentedTabs v-model="findMode" wrap :tabs="FIND_TABS" />
+
+								<div class="md:min-h-[176px]">
+									<form v-show="findMode === 'scan'" autocomplete="off" @submit.prevent="handleTyped">
+										<label for="checkout-scan" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">Book barcode or accession number<FieldRequired /></label>
+										<div class="flex gap-2">
+											<div class="relative min-w-0 flex-1">
+												<Icon name="i-tabler-barcode" class="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-stone-400" />
+												<input id="checkout-scan" ref="scanInput" v-model="scanCode" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false"
+													placeholder="Scan it, or type it and press Enter" :disabled="scanning" aria-label="Book barcode"
+													class="font-data h-11 w-full rounded-[10px] border bg-white pl-10 pr-3 text-[14px] text-stone-900 outline-none placeholder:font-sans focus:border-accent-500 focus:ring-2 focus:ring-accent-200 disabled:opacity-70"
+													:class="errors.scan ? 'border-red-400 bg-red-50' : 'border-stone-200'" @input="errors.scan = ''">
+											</div>
+											<ButtonsButton type="submit" variant="ghost" :disabled="scanning || !scanCode.trim()">
+												<Icon v-if="scanning" name="i-tabler-loader-2" class="h-3.5 w-3.5 animate-spin" />
+												Find
+											</ButtonsButton>
+										</div>
+										<p v-if="errors.scan" class="mt-1 text-[12.5px] text-red-500">{{ errors.scan }}</p>
+										<p v-else class="mt-1 text-[12.5px] text-stone-500">A USB scanner types into this box by itself. The accession number is printed on the book.</p>
+									</form>
+
+									<div v-show="findMode === 'title'" class="space-y-3">
+										<div>
+											<label for="checkout-book" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">Search by title</label>
+											<LibrarianSearchSelect v-model="pickedBook" input-id="checkout-book" placeholder="Search by title"
+												:fetcher="searchBooks" :get-label="bookLabel" :get-sublabel="bookSublabel" />
+										</div>
+										<p class="text-[12.5px] text-stone-500">No barcode to read? Find the book by its title. You pick the copy in your hand on the next screen.</p>
+									</div>
+
+									<form v-show="findMode === 'pickup'" autocomplete="off" @submit.prevent="handlePickupCode">
+										<label for="checkout-pickup" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">Reservation pickup code</label>
+										<div class="flex gap-2">
+											<input id="checkout-pickup" v-model="pickupCode" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false"
+												placeholder="Scan the student's slip, or type R-000123" :disabled="lookingUp"
+												class="font-data h-11 min-w-0 flex-1 rounded-[10px] border bg-white px-3 text-[13.5px] text-stone-900 outline-none focus:border-accent-500 focus:ring-2 focus:ring-accent-200 disabled:opacity-70"
+												:class="errors.pickup ? 'border-red-400' : 'border-stone-200'" @input="errors.pickup = ''">
+											<ButtonsButton type="submit" variant="ghost" :disabled="lookingUp || !pickupCode.trim()">Fill in</ButtonsButton>
+										</div>
+										<p v-if="errors.pickup" class="mt-1 text-[12.5px] text-red-500">{{ errors.pickup }}</p>
+										<p v-else class="mt-1 text-[12.5px] text-stone-500">A student collecting a reserved book can hand over the pickup slip. It fills in the book and the student.</p>
+									</form>
+								</div>
+							</section>
+
+							<!-- ===== Right, step 2: the book being lent, and who the student is. ===== -->
+							<section v-if="step === 2" aria-label="Find the student" class="min-w-0 space-y-4 max-md:order-first">
+								<div v-if="scanned" class="flex items-center gap-3 rounded-xl bg-stone-50 px-4 py-3">
+									<div class="h-14 w-10 shrink-0 overflow-hidden rounded bg-stone-200">
+										<img v-if="scanned.book.coverImageURL && !coverFailed" :src="scanned.book.coverImageURL" alt="" class="h-full w-full object-cover" @error="coverFailed = true">
+										<div v-else class="dashboard-heading flex h-full w-full items-center justify-center bg-gradient-to-br from-accent-500 to-accent-700 text-[13px] font-extrabold text-white">{{ initialsOf(scanned.book.title) }}</div>
+									</div>
+									<div class="min-w-0">
+										<p class="text-[12px] font-semibold uppercase tracking-wide text-stone-500">Lending</p>
+										<p class="truncate text-[15px] font-semibold leading-snug text-stone-900">{{ scanned.book.title }}</p>
+										<p class="font-data text-[12.5px] text-stone-600">Accession no. {{ scanned.accessionNumber }}</p>
+									</div>
+								</div>
 									<form autocomplete="off" @submit.prevent="handleStudentScan">
 										<label for="checkout-student-scan" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">Student ID</label>
 										<div class="flex gap-2">
@@ -129,101 +191,91 @@
 											:fetcher="searchStudents" :get-label="studentLabel" :get-sublabel="studentSublabel" :invalid="!!errors.student" />
 										<p v-if="errors.student" class="mt-1 text-[12.5px] text-red-500">{{ errors.student }}</p>
 									</div>
-								</template>
 							</section>
+						</div>
 
-							<!-- ===== Right, step 1: the book. Found by the camera, a scanner, or typed by hand. ===== -->
-							<section v-show="step === 1" aria-label="Book information" class="min-w-0 space-y-4">
-								<form autocomplete="off" @submit.prevent="handleTyped">
-									<label for="checkout-scan" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">Book barcode or accession number<FieldRequired /></label>
-									<div class="flex gap-2">
-										<div class="relative min-w-0 flex-1">
-											<Icon name="i-tabler-barcode" class="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-stone-400" />
-											<input id="checkout-scan" ref="scanInput" v-model="scanCode" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false"
-												placeholder="Scan it, or type it and press Enter" :disabled="scanning" aria-label="Book barcode"
-												class="font-data h-11 w-full rounded-[10px] border bg-white pl-10 pr-3 text-[14px] text-stone-900 outline-none placeholder:font-sans focus:border-accent-500 focus:ring-2 focus:ring-accent-200 disabled:opacity-70"
-												:class="errors.scan ? 'border-red-400 bg-red-50' : 'border-stone-200'" @input="errors.scan = ''">
-										</div>
-										<ButtonsButton type="submit" variant="ghost" :disabled="scanning || !scanCode.trim()">
-											<Icon v-if="scanning" name="i-tabler-loader-2" class="h-3.5 w-3.5 animate-spin" />
-											Find
-										</ButtonsButton>
-									</div>
-									<p v-if="errors.scan" class="mt-1 text-[12.5px] text-red-500">{{ errors.scan }}</p>
-									<p v-else class="mt-1 text-[12.5px] text-stone-500">A USB scanner types into this box by itself. The accession number is printed on the book.</p>
-								</form>
-
-								<!-- The book that was found. -->
-								<div v-if="scanned" class="rounded-xl border px-4 py-3" :class="scanned.lendable ? 'border-red-200 bg-red-50' : 'border-emerald-200 bg-emerald-50/60'">
-									<div class="flex items-start gap-3">
-										<Icon :name="scanned.lendable ? 'i-tabler-alert-circle' : 'i-tabler-circle-check'" class="mt-0.5 h-5 w-5 shrink-0"
-											:class="scanned.lendable ? 'text-red-500' : 'text-emerald-600'" />
-										<div class="min-w-0 flex-1">
-											<p class="text-[15px] font-semibold leading-snug text-stone-900">{{ scanned.book.title }}</p>
-											<p class="truncate text-[13px] text-stone-500">{{ scanned.book.authors.join(', ') || 'Unknown author' }}</p>
-											<p class="font-data mt-1 text-[12.5px] text-stone-600">Accession no. {{ scanned.accessionNumber }}<span v-if="scanned.barcodeValue"> · {{ scanned.barcodeValue }}</span></p>
-											<p v-if="!scanned.lendable && scanned.dueDate" class="mt-0.5 text-[12.5px] text-stone-600">Would be due {{ formatDate(scanned.dueDate) }}</p>
-										</div>
-										<ButtonsButton variant="ghost" size="sm" class="shrink-0" @click="clearScan">Clear</ButtonsButton>
-									</div>
-									<p v-if="scanned.lendable" class="mt-2 text-[13.5px] font-medium text-red-700">{{ scanned.lendable }}</p>
+						<!-- ===== Title search: the book is chosen, now which copy of it is being lent. ===== -->
+						<div v-if="step === 1 && showCopyPick && pickedBook" class="mx-auto max-w-[760px]">
+							<div class="flex items-center gap-4 rounded-2xl bg-stone-50 p-4">
+								<div class="h-[90px] w-[60px] shrink-0 overflow-hidden rounded-lg bg-stone-200 shadow-sm">
+									<img v-if="pickedBook.coverImageURL && !pickedCoverFailed" :src="pickedBook.coverImageURL" alt="" class="h-full w-full object-cover" @error="pickedCoverFailed = true">
+									<div v-else class="dashboard-heading flex h-full w-full items-center justify-center bg-gradient-to-br from-accent-500 to-accent-700 text-[18px] font-extrabold text-white">{{ initialsOf(pickedBook.title) }}</div>
 								</div>
-								<div v-else class="rounded-xl border border-dashed border-stone-300 px-4 py-6 text-center text-[13.5px] text-stone-500">
-									<Icon name="i-tabler-book-2" class="mx-auto mb-1 h-6 w-6 text-stone-400" />
-									The book's details appear here once it is scanned.
+								<div class="min-w-0 flex-1">
+									<p class="text-[12px] font-semibold uppercase tracking-wide text-stone-500">Book chosen</p>
+									<p class="dashboard-heading text-[19px] font-extrabold leading-tight text-stone-900">{{ pickedBook.title }}</p>
+									<p class="text-[13.5px] text-stone-600">{{ pickedBook.authors.map((x) => x.name).join(', ') || 'Unknown author' }}</p>
 								</div>
+								<ButtonsButton variant="ghost" class="shrink-0" @click="clearScan">Search a different title</ButtonsButton>
+							</div>
 
-								<!-- No barcode to read: find the book by its title instead. -->
-								<div class="border-t border-stone-100 pt-4">
-									<button v-if="!showTitleSearch" type="button" class="text-[13px] font-semibold text-accent-600 hover:underline" @click="showTitleSearch = true">
-										Can't scan it? Find the book by title
-									</button>
-									<div v-else class="space-y-3">
-										<div>
-											<label for="checkout-book" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">Search by title</label>
-											<LibrarianSearchSelect v-model="pickedBook" input-id="checkout-book" placeholder="Search by title"
-												:fetcher="searchBooks" :get-label="bookLabel" :get-sublabel="bookSublabel" />
-										</div>
-										<div v-if="pickedBook">
-											<label for="checkout-copy" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">Copy</label>
-											<select v-if="shelfCopies.length" id="checkout-copy" v-model="pickedCopyAccession"
-												class="font-data h-11 w-full rounded-[10px] border border-stone-200 bg-white px-3 text-[13.5px] text-stone-900 outline-none focus:border-accent-500 focus:ring-2 focus:ring-accent-200">
-												<option v-for="copy in shelfCopies" :key="copy.copyID" :value="copy.accessionNumber">Accession no. {{ copy.accessionNumber }}</option>
-											</select>
-											<p v-else class="rounded-lg bg-red-50 px-3 py-2 text-[13.5px] text-red-600">No copies of this book are on the shelf right now.</p>
-										</div>
+							<h3 class="mt-5 text-[15px] font-bold text-stone-900">Which copy are you lending?</h3>
+							<p class="text-[13px] text-stone-500">Pick the copy in your hand. Its accession number is printed on the book.</p>
+
+							<div v-if="shelfCopies.length" class="mt-3 grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+								<button v-for="copy in shelfCopies" :key="copy.copyID" type="button" :disabled="scanning"
+									class="flex items-center justify-between gap-3 rounded-xl border border-stone-200 bg-white px-4 py-3 text-left transition-colors hover:border-accent-500 hover:bg-accent-50 disabled:opacity-60"
+									@click="chooseCopy(copy.accessionNumber)">
+									<span>
+										<span class="block text-[11.5px] font-semibold uppercase tracking-wide text-stone-500">Accession no.</span>
+										<span class="font-data text-[18px] font-bold text-stone-900">{{ copy.accessionNumber }}</span>
+									</span>
+									<span class="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[12px] font-semibold text-emerald-700">On the shelf</span>
+								</button>
+							</div>
+							<p v-else class="mt-3 rounded-xl bg-red-50 px-4 py-3 text-[14px] text-red-600">No copies of this book are on the shelf right now.</p>
+							<p v-if="otherCopyCount" class="mt-3 text-[12.5px] text-stone-500">{{ otherCopyCount }} other {{ otherCopyCount === 1 ? 'copy is' : 'copies are' }} not on the shelf (on loan, damaged, or lost).</p>
+							<p v-if="errors.scan" class="mt-2 text-[12.5px] text-red-500">{{ errors.scan }}</p>
+						</div>
+
+						<!-- ===== Output: what was found, on its own, once the input is done. ===== -->
+						<div v-if="step <= 2 && showOutput" class="mx-auto max-w-[860px]">
+							<!-- Step 1: the book -->
+							<div v-if="step === 1 && scanned" class="rounded-2xl border p-5 sm:p-6" :class="scanned.lendable ? 'border-red-200 bg-red-50' : 'border-emerald-200 bg-emerald-50/60'">
+								<div class="flex gap-5 max-sm:flex-col">
+									<div class="h-[240px] w-[160px] shrink-0 overflow-hidden rounded-xl bg-stone-200 shadow-card max-sm:mx-auto">
+										<img v-if="scanned.book.coverImageURL && !coverFailed" :src="scanned.book.coverImageURL" :alt="`Cover of ${scanned.book.title}`" class="h-full w-full object-cover" @error="coverFailed = true">
+										<div v-else class="dashboard-heading flex h-full w-full items-center justify-center bg-gradient-to-br from-accent-500 to-accent-700 text-[40px] font-extrabold text-white">{{ initialsOf(scanned.book.title) }}</div>
+									</div>
+									<div class="min-w-0 flex-1">
+										<p class="text-[12px] font-semibold uppercase tracking-wide text-stone-500">Book found</p>
+										<p class="dashboard-heading text-[24px] font-extrabold leading-tight text-stone-900">{{ scanned.book.title }}</p>
+										<p class="text-[14.5px] text-stone-600">{{ scanned.book.authors.join(', ') || 'Unknown author' }}</p>
+										<dl class="mt-4 grid grid-cols-2 gap-x-6 gap-y-3 text-[13px]">
+											<div><dt class="font-semibold uppercase tracking-wide text-stone-500">Accession no.</dt><dd class="font-data text-[14.5px] text-stone-900">{{ scanned.accessionNumber }}</dd></div>
+											<div><dt class="font-semibold uppercase tracking-wide text-stone-500">Call number</dt><dd class="font-data text-[14.5px] text-stone-900">{{ scanned.book.callNumber || '—' }}</dd></div>
+											<div><dt class="font-semibold uppercase tracking-wide text-stone-500">Collection</dt><dd class="text-[14.5px] text-stone-900">{{ (scanned.book.areaOfLibrary && LIBRARY_AREAS[scanned.book.areaOfLibrary]) || '—' }}</dd></div>
+											<div><dt class="font-semibold uppercase tracking-wide text-stone-500">Shelf</dt><dd class="font-data text-[14.5px] text-stone-900">{{ scanned.book.shelfLocation || '—' }}</dd></div>
+											<div><dt class="font-semibold uppercase tracking-wide text-stone-500">ISBN</dt><dd class="font-data text-[14.5px] text-stone-900">{{ scanned.book.isbn || '—' }}</dd></div>
+											<div><dt class="font-semibold uppercase tracking-wide text-stone-500">Published</dt><dd class="text-[14.5px] text-stone-900">{{ [scanned.book.publisher, scanned.book.publicationYear].filter(Boolean).join(', ') || '—' }}</dd></div>
+										</dl>
 									</div>
 								</div>
-
-								<!-- A student collecting a reserved book can hand over the pickup slip; it fills in the book and the student. -->
-								<div class="border-t border-stone-100 pt-4">
-									<button v-if="!showPickup" type="button" class="text-[13px] font-semibold text-accent-600 hover:underline" @click="openPickup">
-										Collecting a reserved book? Use the pickup code
-									</button>
-									<form v-else autocomplete="off" @submit.prevent="handlePickupCode">
-										<label for="checkout-pickup" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">Reservation pickup code <span class="font-normal text-stone-500">(optional)</span></label>
-										<div class="flex gap-2">
-											<input id="checkout-pickup" v-model="pickupCode" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false"
-												placeholder="Scan the student's slip, or type R-000123" :disabled="lookingUp"
-												class="font-data h-11 min-w-0 flex-1 rounded-[10px] border bg-white px-3 text-[13.5px] text-stone-900 outline-none focus:border-accent-500 focus:ring-2 focus:ring-accent-200 disabled:opacity-70"
-												:class="errors.pickup ? 'border-red-400' : 'border-stone-200'" @input="errors.pickup = ''">
-											<ButtonsButton type="submit" variant="ghost" :disabled="lookingUp || !pickupCode.trim()">Fill in</ButtonsButton>
-										</div>
-										<p v-if="errors.pickup" class="mt-1 text-[12.5px] text-red-500">{{ errors.pickup }}</p>
-									</form>
+								<p v-if="scanned.lendable" class="mt-4 flex items-start gap-2 text-[14px] font-medium text-red-700">
+									<Icon name="i-tabler-alert-circle" class="mt-0.5 h-4 w-4 shrink-0" />{{ scanned.lendable }}
+								</p>
+								<p v-else class="mt-4 flex items-start gap-2 text-[14px] font-medium text-emerald-800">
+									<Icon name="i-tabler-circle-check" class="mt-0.5 h-4 w-4 shrink-0" />Ready to lend<template v-if="scanned.dueDate">. Would be due {{ formatDate(scanned.dueDate) }}</template>
+								</p>
+								<div class="mt-4 border-t border-black/5 pt-4">
+									<ButtonsButton variant="ghost" @click="clearScan">Find a different book</ButtonsButton>
 								</div>
-							</section>
+							</div>
 
-							<!-- ===== Right, step 2: the book being lent, and who the student is. ===== -->
-							<section v-if="step === 2" aria-label="Book and student information" class="min-w-0 space-y-4">
-								<div v-if="scanned" class="rounded-xl bg-stone-50 px-4 py-3">
-									<p class="text-[12px] font-semibold uppercase tracking-wide text-stone-500">Book</p>
-									<p class="text-[15px] font-semibold leading-snug text-stone-900">{{ scanned.book.title }}</p>
-									<p class="truncate text-[13px] text-stone-500">{{ scanned.book.authors.join(', ') || 'Unknown author' }}</p>
-									<p class="font-data mt-0.5 text-[12.5px] text-stone-600">Accession no. {{ scanned.accessionNumber }}</p>
+							<!-- Step 2: the student, with the book being lent beside them -->
+							<div v-if="step === 2 && student" class="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
+								<div v-if="scanned" class="rounded-2xl bg-stone-50 p-5">
+									<p class="text-[12px] font-semibold uppercase tracking-wide text-stone-500">Lending</p>
+									<div class="mt-3 h-[150px] w-[100px] overflow-hidden rounded-lg bg-stone-200 shadow-sm">
+										<img v-if="scanned.book.coverImageURL && !coverFailed" :src="scanned.book.coverImageURL" alt="" class="h-full w-full object-cover" @error="coverFailed = true">
+										<div v-else class="dashboard-heading flex h-full w-full items-center justify-center bg-gradient-to-br from-accent-500 to-accent-700 text-[26px] font-extrabold text-white">{{ initialsOf(scanned.book.title) }}</div>
+									</div>
+									<p class="mt-3 text-[16px] font-bold leading-snug text-stone-900">{{ scanned.book.title }}</p>
+									<p class="text-[13px] text-stone-500">{{ scanned.book.authors.join(', ') || 'Unknown author' }}</p>
+									<p class="font-data mt-1 text-[12.5px] text-stone-600">Accession no. {{ scanned.accessionNumber }}</p>
 								</div>
-
-								<div v-if="student" class="rounded-2xl border border-stone-200 p-5">
+								<div>
+									<div class="rounded-2xl border border-stone-200 p-5">
 									<div class="flex items-center gap-4">
 										<span class="dashboard-heading flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-accent-500 to-accent-700 text-[24px] font-extrabold text-white">{{ initialsOf(studentLabel(student)) }}</span>
 										<div class="min-w-0">
@@ -239,13 +291,9 @@
 										<div class="flex justify-between gap-4 py-2"><dt class="text-stone-500">Account</dt><dd class="text-right font-semibold capitalize text-emerald-700">{{ student.registrationStatus }}</dd></div>
 									</dl>
 								</div>
-								<div v-else class="grid min-h-[200px] place-items-center rounded-2xl border border-dashed border-stone-300 px-4 text-center text-[13.5px] text-stone-500">
-									<div>
-										<Icon name="i-tabler-user-search" class="mx-auto mb-1 h-6 w-6 text-stone-400" />
-										The student's information appears here once they are scanned or chosen.
-									</div>
+									<ButtonsButton variant="ghost" class="mt-3" @click="clearStudent">Choose a different student</ButtonsButton>
 								</div>
-							</section>
+							</div>
 						</div>
 
 						<!-- ================= Step 3: confirm ================= -->
@@ -353,14 +401,29 @@ const errors = reactive({ student: '', scan: '', studentScan: '', pickup: '' })
 const today = new Date().toISOString()
 
 // Finding the book by its title, for when there is no barcode to read.
-const showTitleSearch = ref(false)
+// Which way of finding the book is showing.
+const FIND_TABS = [
+	{ label: 'Scan or type', short: 'Scan', value: 'scan' },
+	{ label: 'Search by title', short: 'Title', value: 'title' },
+	{ label: 'Pickup code', short: 'Pickup', value: 'pickup' },
+]
+const findMode = ref<'scan' | 'title' | 'pickup'>('scan')
+// A cover link that doesn't load falls back to the initials tile.
+const coverFailed = ref(false)
+watch(() => scanned.value?.copyID, () => { coverFailed.value = false })
+watch(findMode, (mode) => focusSoon(() => document.getElementById(mode === 'scan' ? 'checkout-scan' : mode === 'title' ? 'checkout-book' : 'checkout-pickup')))
 const pickedBook = ref<CatalogBook | null>(null)
 const pickedCopyAccession = ref<number | null>(null)
 const shelfCopies = computed(() => (pickedBook.value?.copies ?? []).filter((c) => c.status === 'available'))
+const otherCopyCount = computed(() => (pickedBook.value?.copies ?? []).filter((c) => c.status !== 'available' && c.status !== 'retired').length)
+// A title was chosen but no copy yet: the copy list is the next screen.
+const showCopyPick = computed(() => step.value === 1 && !scanned.value && !!pickedBook.value)
+const pickedCoverFailed = ref(false)
+watch(pickedBook, () => { pickedCoverFailed.value = false })
+const chooseCopy = (accession: number) => lookupBook(String(accession))
 
 // A pickup slip scanned (or typed) at the desk: fills in the book and student, and the checkout then fulfils that reservation.
 const pickupCode = ref('')
-const showPickup = ref(false)
 const lookingUp = ref(false)
 const reservation = ref<{ reservationID: number; studentID: number; bookID: number; pickupCode: string } | null>(null)
 const fulfilsReservation = computed(() => !!reservation.value && reservation.value.studentID === student.value?.studentID && reservation.value.bookID === scanned.value?.book.bookID)
@@ -376,6 +439,16 @@ const subtitle = computed(() => {
 
 /* ---------- steps ---------- */
 // A step opens once the ones before it are done.
+// Input and output are separate: a step shows what was found once it has been found, and the input again when changing it.
+const showOutput = computed(() => (step.value === 1 && !!scanned.value) || (step.value === 2 && !!student.value) || showCopyPick.value)
+
+function clearStudent() {
+	student.value = null
+	studentCode.value = ''
+	reservation.value = null
+	focusSoon(() => studentScanInput.value)
+}
+
 const bookReady = computed(() => !!scanned.value && !scanned.value.lendable)
 const canOpen = (n: number) => n === 1 || (n === 2 && bookReady.value) || (n === 3 && bookReady.value && !!student.value)
 
@@ -388,6 +461,12 @@ function next() {
 	if (step.value === 2 && !student.value) errors.student = 'Choose a student.'
 	goTo(step.value + 1)
 }
+
+// The camera is only needed while there is something to scan: it rests while the result is showing.
+watch(showOutput, (showing) => {
+	if (step.value > 2) return
+	if (showing) { stop(); desk.end() } else void startCamera()
+})
 
 // The camera is on for the book and the student (steps 1 and 2) and off for the confirmation.
 watch(step, (now) => {
@@ -424,7 +503,7 @@ let paused = false
 // A read flashes the frame and pauses for a moment, so one barcode held up is never looked up twice.
 // What it means depends on the step: a book on step 1, a student's ID on step 2.
 function onCameraCode(value: string) {
-	if (paused || step.value > 2) return
+	if (paused || step.value > 2 || showOutput.value) return
 	paused = true
 	flash.value = true
 	if (step.value === 1) void lookupBook(value)
@@ -434,7 +513,7 @@ function onCameraCode(value: string) {
 
 async function startCamera() {
 	await nextTick()
-	if (cameraEnabled.value && props.open && step.value <= 2 && !phoneOpen.value) {
+	if (cameraEnabled.value && props.open && step.value <= 2 && !phoneOpen.value && !showOutput.value) {
 		desk.begin()
 		await start()
 	}
@@ -470,9 +549,8 @@ watch(() => props.open, (isOpen) => {
 	studentCode.value = ''
 	pickedBook.value = null
 	pickedCopyAccession.value = null
-	showTitleSearch.value = false
 	pickupCode.value = ''
-	showPickup.value = !!props.initialCode
+	findMode.value = props.initialCode ? 'pickup' : 'scan'
 	reservation.value = null
 	errors.student = ''
 	errors.scan = ''
@@ -483,9 +561,9 @@ watch(() => props.open, (isOpen) => {
 		pickupCode.value = props.initialCode
 		void handlePickupCode().then(() => {
 			if (!reservation.value || !student.value || !scanned.value || scanned.value.lendable) return
-			// The slip was scanned: nothing is left to fill in, so go straight through (or to the confirmation).
-			step.value = 3
-			if (props.autoCheckout) void handleSubmit()
+			// The slip was scanned and the details are filled in. Only the desk's own scan checks out straight away;
+			// otherwise the librarian steps through it, so nothing jumps ahead while they are looking.
+			if (props.autoCheckout) { step.value = 3; void handleSubmit() }
 		})
 	} else {
 		void startCamera()
@@ -539,14 +617,6 @@ const bookSublabel = (b: CatalogBook) => {
 }
 
 // Choosing a book by title picks its first shelf copy; the copy list lets the librarian pick another.
-watch(pickedBook, (book) => {
-	pickedCopyAccession.value = shelfCopies.value[0]?.accessionNumber ?? null
-	if (book && pickedCopyAccession.value) void lookupBook(String(pickedCopyAccession.value))
-})
-watch(pickedCopyAccession, (accession, before) => {
-	if (accession && before && accession !== before) void lookupBook(String(accession))
-})
-
 /* ---------- finding the student ---------- */
 async function searchStudents(query: string) {
 	const result = await librarianService.fetchStudents({ search: query || undefined, status: 'approved', perPage: 6 })
@@ -591,11 +661,6 @@ async function findStudent(raw: string) {
 }
 
 /* ---------- a reservation slip ---------- */
-function openPickup() {
-	showPickup.value = true
-	focusSoon(() => document.getElementById('checkout-pickup'))
-}
-
 async function handlePickupCode() {
 	const code = pickupCode.value.trim()
 	if (!code) return
@@ -632,7 +697,6 @@ async function handlePickupCode() {
 		reservation.value = { reservationID: found.reservationID, studentID: found.studentID, bookID: found.bookID, pickupCode: found.pickupCode ?? code }
 		// The code stays in the box, so the librarian can see which reservation was loaded.
 		pickupCode.value = found.pickupCode ?? code
-		if (!props.initialCode && !scanned.value.lendable) step.value = 3
 	} catch (error: any) {
 		reservation.value = null
 		errors.pickup = error?.data?.errors?.code?.[0] ?? error?.data?.message ?? 'Could not look up that code.'

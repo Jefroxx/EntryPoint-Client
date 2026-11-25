@@ -1,6 +1,7 @@
 <template>
 	<!-- Day by day: step back through a log, pick a date from a calendar, or go back to the default. -->
-	<div class="flex items-center gap-1" role="group" aria-label="Choose a day">
+	<!-- On a phone, given a row of its own, the date box takes the room between the arrows. -->
+	<div class="flex items-center gap-1 max-sm:[&>div]:flex-1 max-sm:[&_input]:w-full" role="group" aria-label="Choose a day">
 		<ButtonsButton v-if="modelValue" variant="icon" size="md" aria-label="Previous day" @click="shift(-1)">
 			<Icon name="i-tabler-chevron-left" class="h-4 w-4" />
 		</ButtonsButton>

@@ -10,7 +10,9 @@ function csvCell(value: string | number): string {
 /** Downloads rows as a CSV file (client-side, no server round trip). */
 export function downloadCsv(filename: string, rows: Array<Array<string | number>>) {
   const csv = rows.map((row) => row.map(csvCell).join(',')).join('\r\n')
-  const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }))
+  // The byte-order mark makes Excel read the file as UTF-8, so "₱" and accented names come out right.
+  const BOM = String.fromCharCode(0xfeff)
+  const url = URL.createObjectURL(new Blob([BOM + csv], { type: 'text/csv;charset=utf-8;' }))
 
   const link = document.createElement('a')
   link.href = url

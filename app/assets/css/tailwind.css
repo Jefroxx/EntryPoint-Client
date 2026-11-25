@@ -323,6 +323,11 @@ body {
 		display: none;
 	}
 
+	/* A Filter button (its wrapper is a div) given a full row stretches across it, instead of sitting at its own width. */
+	.phone-toolbar > div.toolbar-full > button {
+		flex: 1 1 auto;
+	}
+
 	/* A control that shares the first row with another (Reports: month and Export CSV). */
 	.phone-toolbar > .toolbar-half {
 		grid-column: auto;
@@ -331,6 +336,19 @@ body {
 	/* Stat tiles, two across; an odd last tile takes the whole row so nothing is left hanging. */
 	.phone-stats > :last-child:nth-child(odd) {
 		grid-column: 1 / -1;
+	}
+}
+
+/* Tablet and up: a toolbar marked .toolbar-nowrap stays on one row. The search box gives up width (down to its minimum)
+   and the buttons keep theirs, so a button is never pushed onto a second row. */
+@media (min-width: 640px) {
+	.toolbar-nowrap {
+		flex-wrap: nowrap;
+	}
+
+	.toolbar-nowrap > button,
+	.toolbar-nowrap > div.inline-flex {
+		flex-shrink: 0;
 	}
 }
 
@@ -381,3 +399,33 @@ body {
 :root.dark {
 	color-scheme: light;
 }
+
+/* A card that opens when pressed. Its cover is a real button spread over the whole card (so there is no button inside a
+   button); the words and pictures let the click through to it, and only what has its own job (buttons, checkboxes,
+   menus) is marked .card-action and keeps taking clicks. The card itself needs position: relative. */
+.card-cover {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	border-radius: inherit;
+	cursor: pointer;
+	background: transparent;
+}
+
+.card-cover:focus-visible {
+	outline: 2px solid var(--color-accent-300);
+	outline-offset: -2px;
+}
+
+.card-body {
+	position: relative;
+	pointer-events: none;
+}
+
+.card-action {
+	pointer-events: auto;
+}
+
+/* A fieldset defaults to the width of its content, so one long line (a book title) pushes a whole pop-up wider. */
+fieldset { min-width: 0; }

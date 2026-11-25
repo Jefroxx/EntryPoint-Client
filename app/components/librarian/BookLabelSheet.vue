@@ -2,8 +2,27 @@
 	<!-- Barcode labels laid out on sheets, in millimetres: the same markup is the preview and the printed copy. -->
 	<div class="bls-sheets">
 		<section v-for="(page, p) in pages" :key="p" class="bls-page" :style="pageStyle">
-			<div v-for="(label, i) in page" :key="i" class="bls-cell" :class="[`bls-${layout.size}`, { 'bls-cut': layout.cutLines, 'bls-empty': !label }]">
-				<template v-if="label">
+			<div v-for="(label, i) in page" :key="i" class="bls-cell" :class="[`bls-${layout.size}`, { 'bls-cut': layout.cutLines, 'bls-empty': !label, 'bls-isplit': layout.split }]">
+				<!-- Two pieces to cut apart: the call number (1 inch, for the spine) and the barcode (for the back). -->
+				<template v-if="label && layout.split">
+					<div class="bls-call" :style="{ width: `${layout.callW}mm` }">
+						<span class="bls-area">{{ label.area }}</span>
+						<span class="bls-dewey">{{ label.dewey ?? '' }}</span>
+						<span class="bls-cutter">{{ label.cutter ?? '' }}</span>
+						<span class="bls-year">{{ label.year ?? '' }}</span>
+					</div>
+					<div class="bls-back">
+						<svg v-if="label.barcodeValue" :viewBox="`0 0 ${barcodeOf(label.barcodeValue).width} 64`" preserveAspectRatio="none" role="img"
+							:aria-label="`Barcode ${label.barcodeValue}`" class="bls-bars">
+							<rect v-for="([x, w], b) in barcodeOf(label.barcodeValue).bars" :key="b" :x="x" y="0" :width="w" height="64" fill="#000" />
+						</svg>
+						<p class="bls-code">
+							<span>{{ label.barcodeValue ?? 'No barcode' }}</span>
+							<span class="bls-acc">No. {{ label.accessionNumber }}</span>
+						</p>
+					</div>
+				</template>
+				<template v-else-if="label">
 					<!-- The library's label, top to bottom: area of the library, call number (the Dewey number), author Cutter, year of publication. -->
 					<div class="bls-lines">
 						<span class="bls-area">{{ label.area }}</span>
@@ -199,6 +218,49 @@ const pageStyle = computed(() => {
 .bls-xs .bls-bars { height: 4.2mm; }
 .bls-xs .bls-code { font-size: 3.9pt; }
 .bls-xs .bls-acc { font-size: 4.6pt; }
+
+/* A split label: the call number piece (a fixed 1 inch, set inline) and the barcode piece, side by side, with a dashed cut
+   line between them. */
+.bls-isplit {
+	flex-direction: row;
+	padding: 0;
+}
+
+.bls-call {
+	box-sizing: border-box;
+	flex: none;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: 1.2mm 0.8mm;
+	text-align: center;
+	overflow: hidden;
+}
+
+.bls-call > span {
+	display: block;
+	width: 100%;
+	min-height: 1.15em;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.bls-back {
+	box-sizing: border-box;
+	flex: 1;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	padding: 1.5mm 3mm;
+	border-left: 0.25mm dashed #6b7280;
+}
+
+.bls-isplit .bls-bars { height: 11mm; margin-top: 0; }
+.bls-isplit .bls-code { margin-top: 1mm !important; font-size: 7pt; }
+.bls-isplit .bls-acc { font-size: 8pt; }
 
 @media print {
 	.bls-cell {
