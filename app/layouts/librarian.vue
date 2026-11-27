@@ -15,12 +15,10 @@
         <div class="flex min-w-0 flex-1 flex-col">
             <LibrarianHeader :is-sidebar-open="!!(isDesktop ? railOpen : drawerOpen)" :is-desktop="isDesktop" @toggle-sidebar="toggleSidebar" />
 
-            <!-- The page loader covers only this column below the header; the sidebar and header stay usable. -->
             <div class="relative flex min-w-0 flex-1 flex-col">
                 <main class="min-w-0 flex-1 p-4 sm:p-6">
                     <slot />
                 </main>
-                <AppLoader :show="loader.active && loader.full" contained />
             </div>
         </div>
     </div>
@@ -31,7 +29,6 @@
 // you navigate: no flicker, and the sidebar's highlight can slide between items.
 // Expanded (labels) or folded to an icon rail, as on the student side. A per-device preference.
 const sidebarOpen = useCookie<boolean>('librarian-sidebar-open', { default: () => true, sameSite: 'lax', maxAge: 60 * 60 * 24 * 365 })
-const loader = usePageLoader()
 // The area names and fund sources every screen shows (Library > Categories), fetched once.
 useLibraryAreas()
 useFundSources()

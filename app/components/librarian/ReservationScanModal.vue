@@ -110,6 +110,8 @@ const REGION: ScanRegion = { left: 0.2, top: 0.3, width: 0.6, height: 0.4 }
 const frameStyle = { left: `${REGION.left * 100}%`, top: `${REGION.top * 100}%`, width: `${REGION.width * 100}%`, height: `${REGION.height * 100}%` }
 
 const { video, state: camState, start, stop } = useCameraScanner(onCameraCode, () => REGION)
+// The Station tab reads the same webcam: while this window is open it ignores the camera, so a slip isn't also taken as an attendance scan.
+const desk = useCheckoutDeskAnnouncer()
 
 const camMessage = computed(() => {
 	if (camState.value === 'blocked') return { title: 'Camera is blocked', text: 'Allow camera access in the browser, or use a handheld scanner or type the code below.' }
@@ -170,6 +172,7 @@ function onCameraCode(value: string) {
 watch(() => props.open, async (isOpen) => {
 	if (!isOpen) {
 		stop()
+		desk.end()
 		return
 	}
 	code.value = ''
@@ -179,10 +182,11 @@ watch(() => props.open, async (isOpen) => {
 	pausedUntil = 0
 	await nextTick()
 	codeInput.value?.focus()
+	desk.begin()
 	void start()
 }, { immediate: true })
 
-onBeforeUnmount(() => stop())
+onBeforeUnmount(() => { stop(); desk.end() })
 </script>
 
 <style scoped>

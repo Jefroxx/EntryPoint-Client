@@ -136,7 +136,6 @@
 			</div>
 		</header>
 
-		<!-- The page loader covers only the page area: the sidebar, top bar and phone tab bar stay above it. -->
 		<div class="relative min-h-dvh md:min-h-[calc(100dvh-68px)]">
 			<main
 				class="mx-auto w-full max-w-[1400px] px-4 pb-[calc(6.5rem+env(safe-area-inset-bottom,0px))] pt-[calc(3.5rem+env(safe-area-inset-top,0px))] md:px-6 md:pb-20 md:pt-8 lg:px-8"
@@ -145,7 +144,6 @@
 					 read better narrow (forms, lists, the ID) stop at a narrower width, on the left. -->
 				<div :class="route.meta.wide ? '' : ['max-w-[1056px]', route.meta.centered ? 'mx-auto' : '']"><slot /></div>
 			</main>
-			<AppLoader :show="loader.active && loader.full" contained />
 		</div>
 		</div>
 
@@ -186,7 +184,6 @@
 
 <script setup lang="ts">
 const route = useRoute()
-const loader = usePageLoader()
 const router = useRouter()
 const drawer = useDrawer()
 const { cart, wishlist, attention, points, refreshShell, refreshProfile } = useStudent()

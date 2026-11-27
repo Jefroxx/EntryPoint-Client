@@ -433,6 +433,17 @@ body {
 	background: transparent;
 }
 
+/* Hovering a clickable card tints it light gray (the words sit above the cover, so they stay crisp). */
+.card-cover {
+	transition: background-color 150ms ease-out;
+}
+
+@media (hover: hover) {
+	.card-cover:hover {
+		background: rgb(120 113 108 / 0.07);
+	}
+}
+
 .card-cover:focus-visible {
 	outline: 2px solid var(--color-accent-300);
 	outline-offset: -2px;
@@ -445,6 +456,33 @@ body {
 
 .card-action {
 	pointer-events: auto;
+}
+
+/* Anything that can be clicked shows the hand cursor; Tailwind 4 resets buttons to the plain arrow, which made them
+   look like text. Disabled controls show "not allowed" instead. */
+@layer base {
+	button:not(:disabled),
+	[role='button']:not([aria-disabled='true']),
+	[role='tab'],
+	[role='menuitem'],
+	[role='option'],
+	a[href],
+	summary,
+	label[for],
+	select:not(:disabled),
+	input[type='checkbox']:not(:disabled),
+	input[type='radio']:not(:disabled),
+	input[type='file']:not(:disabled),
+	[onclick] {
+		cursor: pointer;
+	}
+
+	button:disabled,
+	[aria-disabled='true'],
+	select:disabled,
+	input:disabled {
+		cursor: not-allowed;
+	}
 }
 
 /* A fieldset defaults to the width of its content, so one long line (a book title) pushes a whole pop-up wider. */

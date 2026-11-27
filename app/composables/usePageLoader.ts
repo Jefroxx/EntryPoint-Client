@@ -4,6 +4,8 @@ const MIN_VISIBLE_MS = 700
 const MAX_VISIBLE_MS = 25_000
 /** Once the last request answers, wait this long before hiding: a request chained after it (or the table rendering) still counts. */
 const SETTLE_MS = 200
+/** How long the compass transition stays up before handing over to the page (one full turn and a rest). */
+const SPLASH_MS = 1200
 
 /**
  * The full-screen loader's state (see AppLoader.vue in app.vue). It is up from first paint and from the
@@ -14,6 +16,9 @@ const SETTLE_MS = 200
 export function usePageLoader() {
 	return useState('page-loader', () => ({
 		active: true, // true on first paint, so the server-rendered HTML already shows it
+		// The compass screen: a short transition when the app opens or you move to another part of it (signing in,
+		// student ↔ librarian). It runs for a set time and never waits on data; loading after it is the thin top bar.
+		splash: true,
 		// The full compass screen (first load, or moving to another part of the app: signing in, student ↔ librarian)
 		// or just the thin bar along the top (a page change inside the same part: Home → Discover, Library → Circulation).
 		full: true,
@@ -57,6 +62,14 @@ export function setupPageLoader() {
 	let booting = true
 	let hideTimer: ReturnType<typeof setTimeout> | undefined
 	let capTimer: ReturnType<typeof setTimeout> | undefined
+	let splashTimer: ReturnType<typeof setTimeout> | undefined
+
+	// The compass transition: up now, down after SPLASH_MS whatever the page is doing.
+	function playSplash(ms = SPLASH_MS) {
+		clearTimeout(splashTimer)
+		loader.value.splash = true
+		splashTimer = setTimeout(() => { loader.value.splash = false }, Math.max(0, ms))
+	}
 
 	function show() {
 		clearTimeout(hideTimer)
@@ -90,6 +103,10 @@ export function setupPageLoader() {
 	// "/" is the public landing page (or a redirect onward, which is its own navigation and gets the loader):
 	// it has nothing to wait for, and a loader would cover the morph back from the sign-in pages.
 	router.beforeEach((to, from) => {
+		// Arriving at the sign-in pages or the landing page from a different part (signing out, landing ↔ sign in) plays
+		// the compass transition. Moving between sign-in pages still swaps in place.
+		if (!booting && (to.meta.layout ?? 'default') !== (from.meta.layout ?? 'default')
+			&& (to.meta.layout === 'auth' || to.path === '/')) playSplash()
 		// Paths match regardless of capitals: the librarian pages live in a "Librarian" folder, and a query-only
 		// change can report /Librarian/… for what was /librarian/… (still the same page).
 		if (to.path.toLowerCase() === from.path.toLowerCase() || to.meta.layout === 'auth' || to.path === '/') return
@@ -104,7 +121,9 @@ export function setupPageLoader() {
 		// Another layout (signing in, going from the student side to the librarian side) gets the full screen.
 		// Once the full screen is up for a load, a quick second click doesn't swap it for the bar.
 		const sameLayout = !booting && (to.meta.layout ?? 'default') === (from.meta.layout ?? 'default')
-		loader.value.full = loader.value.active && loader.value.full ? true : !sameLayout
+		// Loading itself is always the thin bar; another part of the app also plays the compass transition first.
+		loader.value.full = false
+		if (!sameLayout && !booting) playSplash()
 		show()
 	})
 	// A blocked or redirected navigation never reaches page:finish.
@@ -123,9 +142,12 @@ export function setupPageLoader() {
 	onMounted(async () => {
 		show()
 		loader.value.since = 0 // first paint was the start; the page has been loading since then
+		loader.value.full = false
 		// Fonts normally settle well under a second; the cap stops a stalled font request from holding the page.
 		await Promise.race([document.fonts?.ready, new Promise(resolve => setTimeout(resolve, 2500))])
 		booting = false
+		// The opening transition counts from first paint, so a slow start doesn't add a second wait on top.
+		playSplash(SPLASH_MS - performance.now())
 		tryHide()
 	})
 

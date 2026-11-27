@@ -4,7 +4,7 @@
 		<!-- Phones: one card per row, with the row's buttons on it. -->
 		<template #cards>
 			<li v-for="item in items" :key="`card-${item.itemID}`">
-				<div role="button" tabindex="0" class="px-4 py-3.5 transition-colors active:bg-accent-50" @click="selected = item" @keydown.enter.self="selected = item">
+				<div role="button" tabindex="0" class="h-full px-4 py-3.5 transition-colors duration-150 hover:bg-stone-500/[0.07] active:bg-accent-50" @click="selected = item" @keydown.enter.self="selected = item">
 					<div class="flex items-start gap-3">
 						<img v-if="item.photoURL" :src="item.photoURL" alt="" loading="lazy" class="h-12 w-12 shrink-0 rounded-lg object-cover" />
 						<div v-else class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-stone-100 text-stone-400"><Icon name="i-tabler-gift" class="h-5 w-5" /></div>

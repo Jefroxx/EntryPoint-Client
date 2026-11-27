@@ -9,8 +9,8 @@
 					<div class="card-body flex gap-3">
 						<StudentCover :book="book" :width="48" />
 						<div class="min-w-0 flex-1">
-							<p class="line-clamp-2 break-words text-[15px] font-semibold leading-snug text-stone-900" :title="book.title">{{ book.title }}</p>
-							<p class="break-words text-[13px] text-stone-500">{{ authorNames(book) }}</p>
+							<p class="truncate text-[15px] font-semibold leading-snug text-stone-900" :title="book.title">{{ book.title }}</p>
+							<p class="truncate text-[13px] text-stone-500">{{ authorNames(book) }}</p>
 							<span v-if="book.areaOfLibrary"
 									class="mt-1.5 inline-flex items-center rounded-full bg-stone-100 px-2.5 py-0.5 text-[12px] font-semibold text-stone-700">{{ LIBRARY_AREAS[book.areaOfLibrary] ?? book.areaOfLibrary }}</span>
 								<!-- Books brought in from the old accession record may lack details Add Book asks for; editing fills them in. -->
@@ -72,21 +72,19 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-	(e: 'view' | 'edit' | 'remove' | 'print-labels' | 'scan-isbn', book: CatalogBook): void
+	(e: 'view' | 'edit' | 'remove' | 'print-labels', book: CatalogBook): void
 }>()
 
 
 const BOOK_MENU = [
 	{ key: 'view', label: 'View details', icon: 'i-tabler-eye' },
 	{ key: 'edit', label: 'Edit book', icon: 'i-tabler-pencil' },
-	// Hold this book's back cover to the camera: the catalogues fill what its record lacks, as Add Book's scan does.
-	{ key: 'scan-isbn', label: 'Scan ISBN', icon: 'i-tabler-barcode' },
 	{ key: 'print-labels', label: 'Print barcode labels', icon: 'i-tabler-printer' },
 	{ key: 'remove', label: 'Remove', icon: 'i-tabler-trash', tone: 'danger', separator: true },
 ] as const
 
 function onMenu(key: string, book: CatalogBook) {
-	if (key === 'view' || key === 'edit' || key === 'remove' || key === 'print-labels' || key === 'scan-isbn') emit(key, book)
+	if (key === 'view' || key === 'edit' || key === 'remove' || key === 'print-labels') emit(key, book)
 }
 
 function authorNames(book: CatalogBook): string {
