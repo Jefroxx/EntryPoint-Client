@@ -22,3 +22,7 @@ logs
 .env
 .env.*
 !.env.example
+
+# Test site build (npm run test-site:build)
+.nuxt-test
+.output-test

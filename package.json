@@ -8,7 +8,9 @@
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
-    "make:service": "node scripts/make-service.js"
+    "make:service": "node scripts/make-service.js",
+    "test-site:build": "node scripts/test-site.mjs build",
+    "test-site:start": "node scripts/test-site.mjs start"
   },
   "dependencies": {
     "@nuxt/fonts": "^0.14.0",
