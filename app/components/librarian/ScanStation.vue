@@ -129,7 +129,9 @@
 					</ButtonsButton>
 				</div>
 
-				<i v-if="result && result.tone !== 'err'" :key="`bar-${result.key}`" class="scan-clear absolute bottom-0 left-0 block h-1 w-full origin-left opacity-40" :class="TONES[result.tone].bar" />
+				<!-- Runs down for exactly as long as this result stays up (see holdMs). -->
+				<i v-if="result && result.tone !== 'err'" :key="`bar-${result.key}`" class="scan-clear absolute bottom-0 left-0 block h-1 w-full origin-left opacity-40" :class="TONES[result.tone].bar"
+					:style="{ animationDuration: `${holdMs(result)}ms` }" />
 			</div>
 
 			<!-- Recent scans -->
@@ -440,12 +442,17 @@ function fromAttendance(res: AttendanceScanResult): ResultView {
 
 const formatMinutes = (m: number) => (m < 60 ? `${m}m` : `${Math.floor(m / 60)}h ${m % 60}m`)
 
+// How long a result stays on screen. A result with a next step (check the book, open the checkout) stays up long enough
+// to use it, and a refusal stays until the next scan (or half a minute): a librarian looking at the camera must not miss
+// that it didn't work. The bar under the result runs down over this same time.
+function holdMs(view: ResultView): number {
+	return view.tone === 'err' ? 30_000 : view.action ? 20_000 : 4000
+}
+
 function show(view: ResultView, via: Via) {
 	result.value = view
 	clearTimeout(clearTimer)
-	// A result with a next step (check the book, open the checkout) stays up long enough to use it, and a refusal stays until
-	// the next scan (or half a minute): a librarian looking at the camera must not miss that it didn't work.
-	clearTimer = setTimeout(() => { result.value = null }, view.tone === 'err' ? 30_000 : view.action ? 20_000 : 4000)
+	clearTimer = setTimeout(() => { result.value = null }, holdMs(view))
 
 	feed.value = [{
 		key: view.key, tone: view.tone, icon: view.icon,

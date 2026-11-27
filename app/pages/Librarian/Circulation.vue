@@ -135,7 +135,7 @@
             @close="isPickupOpen = false" @created="handleCheckoutCreated" @manual="handleCheckoutManually" />
 
         <LibrarianCheckoutModal :open="isCheckoutOpen" @close="isCheckoutOpen = false" @created="handleCheckoutCreated"
-            @pickup="(code: string) => void openPickupFromCode(code)" />
+            @pickup="(code: string) => void openPickupFromCode(code)" @return="(loan: { uuid: string; handedIn: boolean }) => void openReturnFor(loan.uuid, loan.handedIn)" />
 
         <LibrarianReturnLoanModal :open="isReportOpen" :mode="reportMode" :preview="reportPreview" :loading="reportLoading" :error="reportError"
             :busy="reportBusy" @close="isReportOpen = false" @submit="confirmReport" />
@@ -936,21 +936,31 @@ async function openFromStation() {
     if (pickup) {
         activeTab.value = 'reservations'
         void openPickupFromCode(pickup)
-    } else if (ret) {
-        activeTab.value = 'loans'
+    } else if (ret || finish) {
+        await openReturnFor(ret || finish, !!finish)
+    }
+}
+
+/**
+ * The return of one loan, found by a scan (here at the Station, or a receipt / an on-loan book scanned in Checkout).
+ * Handed in already (Received): the check for damage that finishes it. Otherwise the usual Return window.
+ */
+async function openReturnFor(loanUuid: string, handedIn: boolean) {
+    isCheckoutOpen.value = false
+    activeTab.value = 'loans'
+    if (!handedIn) {
         // The window only needs the loan's id: it loads the rest (book, student, fee) itself.
-        void handleReturn({ uuid: ret } as LoanRecord)
-    } else if (finish) {
-        activeTab.value = 'loans'
-        finishingLoan.value = { uuid: finish } as LoanRecord
-        finishSummaryFromScan.value = null
-        try {
-            const { preview } = await circulationService.fetchReturnPreview(finish)
-            finishSummaryFromScan.value = { bookTitle: preview.book.title, accessionNumber: preview.book.accessionNumber, studentName: preview.student.name }
-            isFinishOpen.value = true
-        } catch (error) {
-            popupAlert.error('Could not open that return', apiErrorMessage(error))
-        }
+        void handleReturn({ uuid: loanUuid } as LoanRecord)
+        return
+    }
+    finishingLoan.value = { uuid: loanUuid } as LoanRecord
+    finishSummaryFromScan.value = null
+    try {
+        const { preview } = await circulationService.fetchReturnPreview(loanUuid)
+        finishSummaryFromScan.value = { bookTitle: preview.book.title, accessionNumber: preview.book.accessionNumber, studentName: preview.student.name }
+        isFinishOpen.value = true
+    } catch (error) {
+        popupAlert.error('Could not open that return', apiErrorMessage(error))
     }
 }
 onMounted(() => { void openFromStation() })
