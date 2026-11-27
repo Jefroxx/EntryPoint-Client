@@ -2,11 +2,10 @@
 	<NuxtLayout>
 		<NuxtPage />
 	</NuxtLayout>
-	<!-- Full screen only where there's no frame; the student and librarian layouts show their own,
-		 over the page area alone. -->
-	<AppLoader :show="loader.active && loader.full && !framed" />
-	<!-- A page change inside the same part of the app: just a thin bar along the top (components/NavProgress.vue). -->
-	<NavProgress :show="loader.active && !loader.full" />
+	<!-- The compass transition: a short full-screen moment when the app opens or you move to another part of it. -->
+	<AppLoader :show="loader.splash" />
+	<!-- Page loading, always: the thin bar along the top (components/NavProgress.vue), once the transition has gone. -->
+	<NavProgress :show="loader.active && !loader.splash" />
 	<!-- Every error message in the app shows here, as a dialog, on every page. -->
 	<ErrorDialog />
 </template>
@@ -34,6 +33,4 @@ useHead({ htmlAttrs: { class: computed(() => (cardLayout.value === 'rows' ? 'car
 // librarian), and a thin bar on top for a page change inside the same part. Either comes down once the
 // page and its first data have arrived. Rules live in composables/usePageLoader.ts.
 const loader = setupPageLoader()
-const route = useRoute()
-const framed = computed(() => route.meta.layout === 'student' || route.meta.layout === 'librarian')
 </script>

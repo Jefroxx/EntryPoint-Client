@@ -4,7 +4,7 @@
 		<!-- Phones: one card per row, with the row's buttons on it. -->
 		<template #cards>
 			<li v-for="redemption in redemptions" :key="`card-${redemption.redemptionID}`">
-				<div role="button" tabindex="0" class="px-4 py-3.5 transition-colors active:bg-accent-50" @click="selected = redemption" @keydown.enter.self="selected = redemption">
+				<div role="button" tabindex="0" class="h-full px-4 py-3.5 transition-colors duration-150 hover:bg-stone-500/[0.07] active:bg-accent-50" @click="selected = redemption" @keydown.enter.self="selected = redemption">
 					<div class="flex items-start justify-between gap-3">
 						<LibrarianPersonCell :name="personName(redemption.student?.user)" />
 						<LibrarianStatusPill :label="redemption.fulfillmentStatus" :tone="tones[redemption.fulfillmentStatus]" class="shrink-0" />

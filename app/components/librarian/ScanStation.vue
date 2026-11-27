@@ -6,7 +6,7 @@
 			<!-- A Checkout window is open in another tab and is reading this same camera for the book. -->
 			<p v-if="checkoutActive" class="mb-3 flex items-center gap-2 rounded-xl bg-amber-50 px-3 py-2 text-[13.5px] font-medium text-amber-900" role="status">
 				<Icon name="i-tabler-book-upload" class="h-4 w-4 shrink-0" />
-				Another window (Checkout, or Start Session) is open in another tab and is using the camera. Attendance scanning is paused until it closes.
+				Another scanning window (Checkout, Start Session, Add Book, or a reservation pickup) is open in another tab and is using the camera. Attendance scanning is paused until it closes.
 			</p>
 			<div class="mb-3 flex flex-wrap items-center justify-between gap-2">
 				<LibrarianSegmentedTabs v-model="mode" :tabs="MODES" />
