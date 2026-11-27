@@ -33,7 +33,7 @@
                         </span>
                     </span>
                     <span class="block text-[13px]" :class="stationOpen ? 'text-emerald-800/80' : 'text-white/80'">
-                        {{ stationOpen ? 'Go to the scan station tab' : 'IDs, receipts, slips and facilities, in its own tab' }}
+                        {{ stationOpen ? `Library open since ${stationSince} · go to the scan station` : 'IDs, receipts, slips and facilities, in its own tab' }}
                     </span>
                 </span>
                 <Icon :name="stationOpen ? 'i-tabler-external-link' : 'i-tabler-arrow-right'"
@@ -199,13 +199,11 @@ const hallOfFamePending = firstLoad
 const refetchToday = () => refreshDash()
 
 /* ---------- scan station ---------- */
-const stationOpen = ref(false)
-const { post } = useStationChannel((message) => {
-    if (message.type === 'open') stationOpen.value = true
-    else if (message.type === 'closed') stationOpen.value = false
-    else if (message.type === 'scanned') void refetchToday()
+// "Running" is the library session (server side): from opening the station until its End session, tab open or not.
+const { running: stationOpen, since: stationSince } = useStationSession()
+useStationChannel((message) => {
+    if (message.type === 'scanned') void refetchToday()
 })
-onMounted(() => post({ type: 'ping' }))
 
 /* ---------- quick actions ---------- */
 /* ---------- phone tabs ---------- */

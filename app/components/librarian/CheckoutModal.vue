@@ -574,9 +574,10 @@ async function lookupBook(raw: string) {
 
 	// Not a book: a reservation slip opens its pickup, and a borrowing receipt opens the return of that loan. The
 	// librarian scanned it here, so take them where it belongs instead of saying "no copy has that barcode".
-	if (/^R-\d{1,9}$/i.test(code)) {
+	const slip = slipCode(code)
+	if (slip) {
 		scanCode.value = ''
-		emit('pickup', code.toUpperCase())
+		emit('pickup', slip)
 		return
 	}
 	if (/^L-\d{1,9}$/i.test(code)) {
@@ -692,11 +693,12 @@ async function findStudent(raw: string) {
 // The slip is proof enough of who is collecting, so the pickup window opens at the step of scanning the book.
 function handlePickupCode() {
 	const code = pickupCode.value.replace(/[\r\n\t]/g, '').trim()
-	if (!/^R-\d{1,9}$/i.test(code)) {
-		errors.pickup = "That isn't a pickup code. They look like R-000123."
+	const slip = slipCode(code)
+	if (!slip) {
+		errors.pickup = `Read "${shownRead(code)}", which isn't a pickup code. They look like R-000123.`
 		return
 	}
-	emit('pickup', code.toUpperCase())
+	emit('pickup', slip)
 }
 
 /* ---------- checking out ---------- */

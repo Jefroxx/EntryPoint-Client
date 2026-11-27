@@ -397,24 +397,25 @@ function back() {
 
 /* ---------- step 1: the slip, or the student's ID ---------- */
 const clean = (raw: string) => raw.replace(/[\r\n\t]/g, '').trim()
-/** "r-12", "R-000012" and a scanner's trailing Enter all mean the same slip. */
-const slipNumber = (s: string) => /^R-0*(\d{1,9})$/i.exec(s)?.[1]
 const noBreak = (code: string) => code.replace(/-/g, '‑')
 
+// "r-12", "R-000012", and a slip code with a scanner's extra characters around it all mean the same slip (utils/pickupCode).
 function checkSlip(raw: string) {
 	const value = clean(raw)
 	const r = found.value
 	if (!value || !r) return
-	if (slipNumber(value) && slipNumber(value) === slipNumber(r.pickupCode ?? '')) {
+	const read = slipNumber(value)
+	if (read && read === slipNumber(r.pickupCode ?? '')) {
 		proof.value = 'slip'
 		goTo('book')
 	} else if (r.student?.memberIDNumber && value.toLowerCase() === r.student.memberIDNumber.toLowerCase()) {
 		proof.value = 'id'
 		goTo('book')
 	} else {
-		problem.value = slipNumber(value)
-			? `That slip is for a different reservation (${noBreak(value.toUpperCase())}). This one is ${noBreak(r.pickupCode ?? '')}.`
-			: `That isn't this reservation's slip or ${personName(r.student?.user)}'s ID. Ask for the slip that came with the reservation.`
+		// Say what was read, so a slip that won't match can be told apart from a different barcode being picked up.
+		problem.value = read
+			? `That slip is for a different reservation (${noBreak(slipCode(value)!)}). This one is ${noBreak(r.pickupCode ?? '')}.`
+			: `Read "${shownRead(value)}", which isn't this reservation's slip or ${personName(r.student?.user)}'s ID. The slip's code looks like ${noBreak(r.pickupCode ?? 'R-000123')}.`
 		typed.value = ''
 	}
 }
