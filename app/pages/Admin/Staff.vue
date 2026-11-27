@@ -1,7 +1,7 @@
 <template>
     <div>
         <div class="mb-6">
-            <h1 class="dashboard-heading text-3xl font-bold text-crimson">Staff accounts</h1>
+            <h1 class="dashboard-heading text-3xl font-bold text-crimson">Library team</h1>
             <p class="dashboard-heading mt-1 text-crimson">Librarians and student assistants who sign in to the librarian side.</p>
         </div>
 
@@ -13,17 +13,17 @@
         </div>
 
         <div class="phone-toolbar mb-4 flex flex-wrap items-center gap-2">
-            <LibrarianSearchInput id="staff-search" v-model="search" class="!max-w-[560px] !basis-[480px]" placeholder="Search name, email or username" />
+            <LibrarianSearchInput id="staff-search" v-model="search" placeholder="Search name, email or username" />
             <LibrarianFilterMenu v-model="filters" :groups="filterGroups" />
             <div class="flex-1"></div>
             <LibrarianResetFiltersButton @click="search = ''; filters = { role: 'all', status: 'all' }" />
             <ButtonsButton variant="primary" @click="openCreate">
-                <Icon name="i-tabler-plus" class="h-3.5 w-3.5" />Add staff account
+                <Icon name="i-tabler-plus" class="h-3.5 w-3.5" />Add team member
             </ButtonsButton>
         </div>
 
         <LibrarianTableShell :columns="['Name', 'Email / username', 'Role', 'Status', '']" :loading="pending && !data" :empty="shown.length === 0"
-            :empty-text="search || filtered ? 'No staff accounts match these filters.' : 'No staff accounts yet.'" min-width="760px">
+            :empty-text="search || filtered ? 'No one on the library team matches these filters.' : 'No one on the library team yet.'" min-width="760px">
             <!-- Phones: one card per account. -->
             <template #cards>
                 <li v-for="account in shown" :key="`card-${account.uuid}`" class="px-4 py-3.5" :class="account.isDisabled ? 'bg-stone-50/70' : ''">
@@ -68,7 +68,7 @@ import { useAlert } from '~/api/alert/useAlert'
 import type { Credentials } from '~/components/admin/CredentialsModal.vue'
 
 definePageMeta({ middleware: 'admin', layout: 'librarian' })
-useHead({ title: 'Staff accounts' })
+useHead({ title: 'Library team' })
 
 const route = useRoute()
 const { perform } = useAction()

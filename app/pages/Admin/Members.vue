@@ -6,7 +6,7 @@
         </div>
 
         <div class="phone-toolbar mb-4 flex flex-wrap items-center gap-2">
-            <LibrarianSearchInput id="member-search" v-model="search" class="!max-w-[560px] !basis-[480px]" placeholder="Search name, ID or department" />
+            <LibrarianSearchInput id="member-search" v-model="search" placeholder="Search name, ID or department" />
             <LibrarianFilterMenu v-model="filters" :groups="filterGroups" />
             <div class="flex-1"></div>
             <LibrarianResetFiltersButton @click="search = ''; filters = { type: 'all', status: 'all' }" />

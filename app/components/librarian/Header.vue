@@ -37,28 +37,7 @@
                 <div
                     class="absolute right-0 top-[calc(100%+10px)] z-50 w-[380px] max-w-[calc(100vw-2rem)] origin-top-right max-sm:fixed max-sm:inset-x-3 max-sm:right-3 max-sm:top-[76px] max-sm:w-auto max-sm:max-w-none overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-card transition-[opacity,transform,translate,scale] duration-150"
                     :class="isBellOpen ? 'scale-100 opacity-100' : 'pointer-events-none scale-95 opacity-0'">
-                    <div class="flex items-center justify-between border-b border-stone-100 px-4 py-3">
-                        <p class="text-[15px] font-bold text-stone-900">Notifications</p>
-                        <button type="button" :disabled="unreadCount === 0"
-                            class="text-[13px] font-semibold text-accent-500 hover:underline disabled:cursor-not-allowed disabled:opacity-40 disabled:no-underline"
-                            @click="markEverythingRead">
-                            Mark all as read
-                        </button>
-                    </div>
-
-                    <div class="max-h-[420px] overflow-y-auto [scrollbar-width:thin]">
-                        <LibrarianNotificationRow v-for="(notification, index) in recent" :key="notification.notificationID"
-                            :notification="notification" :index="index" @open="markOneRead" @go="openNotification" />
-                        <p v-if="recent.length === 0" class="px-4 py-10 text-center text-[14px] text-stone-500">
-                            {{ loaded ? 'No notifications yet.' : 'Loading notifications…' }}
-                        </p>
-                    </div>
-
-                    <NuxtLink to="/librarian/notifications"
-                        class="block border-t border-stone-100 px-4 py-2.5 text-center text-[13.5px] font-semibold text-accent-500 transition-colors hover:bg-stone-50"
-                        @click="isBellOpen = false">
-                        View all notifications
-                    </NuxtLink>
+                    <NotificationPanel side="staff" @close="isBellOpen = false" />
                 </div>
             </div>
 
@@ -72,7 +51,7 @@
                 </button>
 
                 <div
-                    class="absolute right-0 top-[calc(100%+10px)] z-50 w-56 origin-top-right rounded-2xl border border-stone-200 bg-white p-2 shadow-card transition-[opacity,transform,translate,scale] duration-150"
+                    class="absolute right-0 top-[calc(100%+10px)] z-50 w-64 origin-top-right rounded-2xl border border-stone-200 bg-white p-2 shadow-card transition-[opacity,transform,translate,scale] duration-150"
                     :class="isMenuOpen ? 'scale-100 opacity-100' : 'pointer-events-none scale-95 opacity-0'">
                     <div class="flex items-center gap-3 px-2 pb-2.5 pt-1">
                         <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-accent-500 to-accent-700 text-[13px] font-bold text-white">
@@ -82,6 +61,12 @@
                             <p class="truncate text-[15px] font-bold text-stone-900">{{ fullName }}</p>
                             <p class="text-[12.5px] text-stone-500">{{ roleLabel }}</p>
                         </div>
+                    </div>
+                    <hr class="mx-1 mb-1.5 border-stone-100" />
+                    <!-- How every list of cards is shown, on this device: a grid, or one card per row. -->
+                    <div class="px-2 pb-2.5 pt-1">
+                        <p class="mb-1.5 text-[12px] font-semibold uppercase tracking-wide text-stone-500">Cards</p>
+                        <CardLayoutSwitch />
                     </div>
                     <hr class="mx-1 mb-1.5 border-stone-100" />
                     <!-- Administrators have their own page; librarians and assistants use the Account tab of Settings. -->
@@ -105,7 +90,6 @@
 
 <script setup lang="ts">
 import { authService } from '~/services/authService'
-import type { NotificationRecord } from '~/services/notificationService'
 
 withDefaults(defineProps<{
     isSidebarOpen: boolean
@@ -134,9 +118,7 @@ const fullName = computed(() => {
 // student assistant) lives in the staffRole cookie.
 const roleLabel = computed(() => staffRoleLabel(staffRole.value ?? 'librarian'))
 
-const { items, loaded, unreadCount, refresh, markRead, markAllRead } = useNotifications()
-
-const recent = computed(() => items.value.slice(0, 6))
+const { unreadCount, refresh } = useNotifications()
 
 const isMenuOpen = ref(false)
 const isBellOpen = ref(false)
@@ -152,24 +134,6 @@ function toggleUserMenu() {
 function toggleBell() {
     isBellOpen.value = !isBellOpen.value
     isMenuOpen.value = false
-}
-
-// A failed request already rolls the row back to unread, and the next poll
-// restores the real state, so there's nothing more to do with the error here.
-function markOneRead(notification: NotificationRecord) {
-    markRead(notification).catch(() => {})
-}
-
-function markEverythingRead() {
-    markAllRead().catch(() => {})
-}
-
-async function openNotification(notification: NotificationRecord) {
-    isBellOpen.value = false
-    markOneRead(notification)
-
-    const target = notificationMeta(notification.type).to
-    if (target) await navigateTo(target)
 }
 
 function closeMenus(event: MouseEvent) {

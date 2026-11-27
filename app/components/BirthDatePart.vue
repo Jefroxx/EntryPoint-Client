@@ -3,10 +3,10 @@
 		<input :id="id" ref="input" :value="shown" type="text" role="combobox" :inputmode="kind === 'month' ? 'text' : 'numeric'" :autocomplete="autocomplete"
 			:placeholder="placeholder" :maxlength="kind === 'month' ? 9 : kind === 'day' ? 2 : 4" :aria-label="label" aria-autocomplete="list" :aria-expanded="open"
 			:aria-controls="`${id}-list`" :aria-activedescendant="open && filtered[active] ? `${id}-opt-${filtered[active]?.value}` : undefined"
-			class="h-11 w-full min-w-0 rounded-[10px] border bg-white pl-2.5 pr-7 text-[16px] text-stone-900 outline-none transition-colors placeholder:text-stone-400 focus:border-accent-500 focus:ring-2 focus:ring-accent-200 sm:text-[15px]"
+			class="h-11 w-full min-w-0 rounded-[10px] border bg-white pl-2.5 pr-6 text-[16px] text-stone-900 outline-none transition-colors placeholder:text-stone-400 focus:border-accent-500 focus:ring-2 focus:ring-accent-200 sm:text-[15px]"
 			:class="invalid ? 'border-red-400 bg-red-50' : 'border-stone-200'"
 			@focus="onFocus" @blur="onBlur" @input="onInput" @keydown="onKeydown" @click="open = true" />
-		<Icon name="i-tabler-chevron-down" class="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-500" aria-hidden="true" />
+		<Icon name="i-tabler-chevron-down" class="pointer-events-none absolute right-1.5 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-500" aria-hidden="true" />
 
 		<ul v-if="open && filtered.length" :id="`${id}-list`" role="listbox" :aria-label="label"
 			class="absolute left-0 z-30 mt-1 max-h-52 min-w-full overflow-auto rounded-xl border border-stone-200 bg-white py-1 shadow-overlay">

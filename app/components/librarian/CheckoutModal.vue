@@ -231,7 +231,7 @@
 						<!-- ===== Output: what was found, on its own, once the input is done. ===== -->
 						<div v-if="step <= 2 && showOutput" class="mx-auto max-w-[860px]">
 							<!-- Step 1: the book -->
-							<div v-if="step === 1 && scanned" class="rounded-2xl border p-5 sm:p-6" :class="scanned.lendable ? 'border-red-200 bg-red-50' : 'border-emerald-200 bg-emerald-50/60'">
+							<div v-if="step === 1 && scanned" class="rounded-2xl border p-5 sm:p-6" :class="blockedReason ? 'border-red-200 bg-red-50' : 'border-emerald-200 bg-emerald-50/60'">
 								<div class="flex gap-5 max-sm:flex-col">
 									<div class="h-[240px] w-[160px] shrink-0 overflow-hidden rounded-xl bg-stone-200 shadow-card max-sm:mx-auto">
 										<img v-if="scanned.book.coverImageURL && !coverFailed" :src="scanned.book.coverImageURL" :alt="`Cover of ${scanned.book.title}`" class="h-full w-full object-cover" @error="coverFailed = true">
@@ -251,8 +251,8 @@
 										</dl>
 									</div>
 								</div>
-								<p v-if="scanned.lendable" class="mt-4 flex items-start gap-2 text-[14px] font-medium text-red-700">
-									<Icon name="i-tabler-alert-circle" class="mt-0.5 h-4 w-4 shrink-0" />{{ scanned.lendable }}
+								<p v-if="blockedReason" class="mt-4 flex items-start gap-2 text-[14px] font-medium text-red-700">
+									<Icon name="i-tabler-alert-circle" class="mt-0.5 h-4 w-4 shrink-0" />{{ blockedReason }}
 								</p>
 								<p v-else class="mt-4 flex items-start gap-2 text-[14px] font-medium text-emerald-800">
 									<Icon name="i-tabler-circle-check" class="mt-0.5 h-4 w-4 shrink-0" />Ready to lend<template v-if="scanned.dueDate">. Would be due {{ formatDate(scanned.dueDate) }}</template>
@@ -427,6 +427,14 @@ const pickupCode = ref('')
 const lookingUp = ref(false)
 const reservation = ref<{ reservationID: number; studentID: number; bookID: number; pickupCode: string } | null>(null)
 const fulfilsReservation = computed(() => !!reservation.value && reservation.value.studentID === student.value?.studentID && reservation.value.bookID === scanned.value?.book.bookID)
+// Why this copy can't go out, or null. A copy only held for an accepted reservation can go to that reservation:
+// the slip (or the Pickup code) loaded it, and the checkout then fulfils it (the server allows exactly that).
+const blockedReason = computed(() => {
+	const copy = scanned.value
+	if (!copy?.lendable) return null
+	if (copy.heldForReservation && reservation.value?.bookID === copy.book.bookID) return null
+	return copy.lendable
+})
 
 // Set once the checkout goes through; the window then shows the receipt instead of the steps.
 const receipt = ref<LoanReceiptData | null>(null)
@@ -449,7 +457,7 @@ function clearStudent() {
 	focusSoon(() => studentScanInput.value)
 }
 
-const bookReady = computed(() => !!scanned.value && !scanned.value.lendable)
+const bookReady = computed(() => !!scanned.value && !blockedReason.value)
 const canOpen = (n: number) => n === 1 || (n === 2 && bookReady.value) || (n === 3 && bookReady.value && !!student.value)
 
 function goTo(target: number) {
@@ -560,7 +568,7 @@ watch(() => props.open, (isOpen) => {
 	if (props.initialCode) {
 		pickupCode.value = props.initialCode
 		void handlePickupCode().then(() => {
-			if (!reservation.value || !student.value || !scanned.value || scanned.value.lendable) return
+			if (!reservation.value || !student.value || !scanned.value || blockedReason.value) return
 			// The slip was scanned and the details are filled in. Only the desk's own scan checks out straight away;
 			// otherwise the librarian steps through it, so nothing jumps ahead while they are looking.
 			if (props.autoCheckout) { step.value = 3; void handleSubmit() }
@@ -713,9 +721,9 @@ function handleClose() {
 
 async function handleSubmit() {
 	if (!scanned.value || !student.value) return
-	if (scanned.value.lendable) {
+	if (blockedReason.value) {
 		step.value = 1
-		errors.scan = scanned.value.lendable
+		errors.scan = blockedReason.value
 		return
 	}
 

@@ -4,7 +4,7 @@
 			:class="open ? 'opacity-100' : 'pointer-events-none opacity-0'" @click="emit('close')" />
 
 		<aside class="fixed right-0 top-0 z-[61] flex h-full w-full max-sm:max-w-none max-w-[400px] flex-col bg-white shadow-overlay transition-transform ease-[cubic-bezier(.32,.72,0,1)]"
-			:class="open ? 'translate-x-0 duration-300' : 'translate-x-full duration-200'">
+			:class="open ? 'translate-x-0 duration-300' : 'translate-x-full duration-200'" role="dialog" :aria-label="isStudent ? 'Student details' : 'Member details'" :aria-hidden="!open" :inert="!open ? true : undefined">
 			<div class="flex items-center justify-between border-b border-stone-100 px-5 py-4">
 				<h3 class="text-[17px] font-bold text-accent-700">{{ isStudent ? 'Student details' : 'Member details' }}</h3>
 				<ButtonsButton variant="icon" aria-label="Close" @click="emit('close')">

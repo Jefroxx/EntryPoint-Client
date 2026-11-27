@@ -54,6 +54,7 @@ export async function exportCopiesToExcel(filters: Omit<NonNullable<CopyFilters>
 		{ header: 'Pages', key: 'pages', width: 8 },
 		{ header: 'Source of Fund', key: 'fund', width: 20 },
 		{ header: 'Cost (PHP)', key: 'cost', width: 12, style: { numFmt: '#,##0.00' } },
+		{ header: 'Date Received', key: 'dateReceived', width: 14, style: { numFmt: 'yyyy-mm-dd' } },
 		{ header: 'Remarks', key: 'remarks', width: 30 },
 	]
 
@@ -77,6 +78,8 @@ export async function exportCopiesToExcel(filters: Omit<NonNullable<CopyFilters>
 			fund: copy.sourceOfFund ?? book.sourceOfFund ?? '',
 			cost: toNumber(copy.cost) ?? toNumber(book.cost),
 			// Same fallback as fund and cost: remarks typed on the book itself reach every copy that has none of its own.
+			// A real date cell (sorts and filters in Excel); read back the same way by Import.
+			dateReceived: copy.dateReceived ? new Date(`${copy.dateReceived}T00:00:00Z`) : null,
 			remarks: copy.remarks || book.remarks || '',
 		})
 	}

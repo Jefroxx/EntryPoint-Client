@@ -1,5 +1,5 @@
 <template>
-	<LibrarianModalShell :open="open" size="xl" :title="reviewing ? 'Create This Account?' : account ? 'Edit Staff Account' : 'Add Staff Account'"
+	<LibrarianModalShell :open="open" size="xl" :title="reviewing ? 'Create This Account?' : account ? 'Edit Team Member' : 'Add Team Member'"
 		:subtitle="subtitle" :busy="busy" :dirty="dirty" fixed-height ref="shell"
 		:discard-title="account ? 'Discard Account Changes?' : 'Discard This New Account?'"
 		:discard-text="account ? `Your changes to ${account.firstName}'s staff account won't be saved.` : 'The staff account you started won\'t be created, and nothing will be sent.'"

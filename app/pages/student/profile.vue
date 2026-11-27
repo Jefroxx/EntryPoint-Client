@@ -62,7 +62,7 @@
 						<dl class="mt-3">
 							<div v-for="row in lockedRows" :key="row.label" class="flex items-center justify-between gap-4 border-b border-stone-100 py-2.5 text-[14px] last:border-0">
 								<dt class="flex items-center gap-2 text-stone-500"><Icon name="i-tabler-lock" class="h-3.5 w-3.5 text-stone-400" />{{ row.label }}</dt>
-								<dd class="min-w-0 truncate text-right text-stone-900" :class="row.mono ? 'font-data text-[13px]' : ''">{{ row.value || '—' }}</dd>
+								<dd class="min-w-0 truncate text-right text-stone-900">{{ row.value || '—' }}</dd>
 							</div>
 						</dl>
 					</section>
@@ -111,7 +111,7 @@
 						No achievements have been set up yet.
 					</p>
 
-					<div v-else class="grid gap-3 md:grid-cols-2">
+					<div v-else class="card-grid grid gap-3 md:grid-cols-2">
 						<article v-for="a in sortedAchievements" :key="a.achievementID"
 							class="flex items-center gap-3.5 rounded-2xl border bg-white px-4 py-4"
 							:class="a.status === 'Unlocked' ? 'border-accent-200 shadow-card' : 'border-stone-200'">

@@ -48,6 +48,8 @@ const fields = computed(() => {
 		{ label: 'Accession no.', value: copy.accessionNumber, mono: true },
 		{ label: 'Source of fund', value: copy.sourceOfFund || book.sourceOfFund },
 		{ label: 'Cost', value: cost != null ? formatPeso(cost) : null },
+		// From the accession record: the day this copy reached the library.
+		{ label: 'Date received', value: copy.dateReceived ? formatDate(`${copy.dateReceived}T00:00:00`) : null },
 		{ label: 'Copy remarks', value: copy.remarks, wide: true },
 		{ label: 'Author', value: book.authors.join(', '), wide: true },
 		{ label: 'Call no.', value: book.callNumber, mono: true },

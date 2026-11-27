@@ -1,5 +1,9 @@
 <template>
-	<main class="auth-page relative min-h-screen overflow-x-hidden">
+	<main class="auth-page relative min-h-screen overflow-x-clip">
+		<!-- overflow-x-clip, not -hidden: "hidden" makes <main> a scroll container, which pins the panel's
+			 `sticky` box to <main> (which never scrolls) instead of the window, so on a short screen the
+			 panel scrolled away with the page and left a white gap under it. (This comment lives inside
+			 <main> on purpose: above it, it would be a second root node and break the layout's route slide.) -->
 		<!-- Small screens: the brand star, oversized and faint, half out of frame, behind a stacked card. -->
 		<svg v-for="star in backdropStars" :key="star.class" class="pointer-events-none absolute text-accent-500 lg:hidden" :class="star.class"
 			viewBox="0 0 100 100" aria-hidden="true">

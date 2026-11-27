@@ -29,6 +29,12 @@
 					<p class="pt-1">Change your phone, address or password in Profile.</p>
 				</div>
 
+				<!-- How every list of cards is shown, on this device: a grid, or one card per row. -->
+				<div class="border-t border-stone-100 px-4 py-3">
+					<p class="mb-1.5 text-[12px] font-semibold uppercase tracking-wide text-stone-500">Cards</p>
+					<CardLayoutSwitch />
+				</div>
+
 				<button type="button" role="menuitem"
 					class="flex w-full items-center gap-3 border-t border-stone-100 px-4 py-3 text-left text-[14px] font-medium text-red-600 transition-colors duration-150 hover:bg-red-50 active:bg-red-100"
 					@click="askSignOut">

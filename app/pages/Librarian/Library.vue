@@ -30,19 +30,23 @@
 
             <div class="phone-toolbar toolbar-nowrap mb-4 flex flex-wrap items-center gap-2">
                 <div
-                    class="flex h-[42px] min-w-[120px] !max-w-[560px] !basis-[480px] flex-1 items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 transition-shadow focus-within:ring-2 focus-within:ring-accent-200">
+                    class="toolbar-search flex h-[42px] min-w-[120px] flex-1 items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 transition-shadow focus-within:ring-2 focus-within:ring-accent-200">
                     <Icon name="i-tabler-search" class="h-[15px] w-[15px] text-stone-400" />
-                    <input id="library-search" v-model="search" type="text" placeholder="Search book, author, or ISBN"
+                    <input id="library-search" v-model="search" type="text" placeholder="Search book, author, or ISBN" aria-label="Search book, author, or ISBN"
                         class="w-full border-none bg-transparent text-[15px] text-stone-800 outline-none placeholder:text-stone-400" />
                 </div>
 
                 <LibrarianFilterMenu class="toolbar-full" v-model="bookFilters" :groups="bookFilterGroups" />
                 <div class="flex-1"></div>
 
-                <!-- Only while some books still lack a confirmed number: one go at looking them all up. -->
-                <ButtonsButton v-if="deweyUnchecked > 0" variant="ghost" @click="isFindDeweyOpen = true">
-                    <Icon name="i-tabler-checks" class="h-3.5 w-3.5" />Accept Dewey
-                    <span class="rounded-full bg-amber-100 px-1.5 text-[11.5px] font-bold text-amber-800">{{ deweyUnchecked }}</span>
+                <!-- Only while some books haven't been checked against the online catalogues (books from the import). -->
+                <ButtonsButton v-if="detailsRemaining > 0" variant="ghost" title="Fill in missing details from the online catalogues" @click="isCheckDetailsOpen = true">
+                    <Icon name="i-tabler-world-search" class="h-3.5 w-3.5" />Check Details
+                    <span class="rounded-full bg-amber-100 px-1.5 text-[11.5px] font-bold text-amber-800">{{ detailsRemaining.toLocaleString('en-US') }}</span>
+                </ButtonsButton>
+                <!-- The library's accession record (Excel), brought in many books at a time. -->
+                <ButtonsButton variant="ghost" title="Import from Excel" @click="isImportOpen = true">
+                    <Icon name="i-tabler-file-import" class="h-3.5 w-3.5" /><span class="sm:max-xl:sr-only">Import</span>
                 </ButtonsButton>
                 <ButtonsButton variant="primary" @click="openAddBook">
                     <Icon name="i-tabler-plus" class="h-3.5 w-3.5" />Add New Book
@@ -67,9 +71,9 @@
             <template v-if="catalogView === 'copies'">
                 <div class="phone-toolbar toolbar-nowrap mb-4 flex flex-wrap items-center gap-2">
                     <div
-                        class="flex h-[42px] min-w-[120px] !max-w-[560px] !basis-[480px] flex-1 items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 transition-shadow focus-within:ring-2 focus-within:ring-accent-200">
+                        class="toolbar-search flex h-[42px] min-w-[120px] flex-1 items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 transition-shadow focus-within:ring-2 focus-within:ring-accent-200">
                         <Icon name="i-tabler-search" class="h-[15px] w-[15px] text-stone-400" />
-                        <input id="copy-search" v-model="copySearch" type="text"
+                        <input id="copy-search" v-model="copySearch" type="text" aria-label="Search title, author, ISBN or accession number"
                             placeholder="Title, author, ISBN or acc. no."
                             class="w-full border-none bg-transparent text-[15px] text-stone-800 outline-none placeholder:text-stone-400" />
                     </div>
@@ -104,7 +108,7 @@
 
             <template v-else>
                 <div class="phone-toolbar toolbar-nowrap mb-4 flex flex-wrap items-center gap-2">
-                    <LibrarianSearchInput id="stock-search" v-model="stockSearch" class="!min-w-[210px] !max-w-[560px] !basis-[480px]"
+                    <LibrarianSearchInput id="stock-search" v-model="stockSearch" class="!min-w-[210px]"
                         placeholder="Search title, accession no., reason or librarian" />
 
                     <LibrarianFilterMenu class="toolbar-full" v-model="stockFilters" :groups="stockFilterGroups" />
@@ -140,9 +144,9 @@
 
             <div class="phone-toolbar toolbar-nowrap mb-4 flex flex-wrap items-center gap-2">
                 <div
-                    class="flex h-[42px] min-w-[120px] !max-w-[560px] !basis-[480px] flex-1 items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 transition-shadow focus-within:ring-2 focus-within:ring-accent-200">
+                    class="toolbar-search flex h-[42px] min-w-[120px] flex-1 items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 transition-shadow focus-within:ring-2 focus-within:ring-accent-200">
                     <Icon name="i-tabler-search" class="h-[15px] w-[15px] text-stone-400" />
-                    <input id="request-search" v-model="requestSearch" type="text"
+                    <input id="request-search" v-model="requestSearch" type="text" aria-label="Search title, author, or requester"
                         placeholder="Search title, author, or requester"
                         class="w-full border-none bg-transparent text-[15px] text-stone-800 outline-none placeholder:text-stone-400" />
                 </div>
@@ -177,7 +181,11 @@
         <LibrarianRemoveCopyModal :open="isRemoveCopyOpen" :copy="removingCopy" :busy="stockBusy"
             @close="isRemoveCopyOpen = false" @submit="saveRemoveCopy" />
 
-        <LibrarianFindDeweyModal :open="isFindDeweyOpen" @close="isFindDeweyOpen = false"
+        <!-- After an import, "Check Details" swaps this window for the Check Details one (never one on top of the other). -->
+        <LibrarianImportBooksModal :open="isImportOpen" @close="isImportOpen = false" @imported="afterImport"
+            @check-details="isImportOpen = false; isCheckDetailsOpen = true" />
+
+        <LibrarianCheckDetailsModal :open="isCheckDetailsOpen" @close="isCheckDetailsOpen = false"
             @changed="refetchDeweyCount(); refetchBooks(); refetchCopies()" />
 
         <LibrarianEditCopyModal :open="isEditCopyOpen" :copy="editingCopy" :busy="copyBusy"
@@ -232,11 +240,12 @@ useHead({ title: 'Library' })
 const route = useRoute()
 const activeTab = ref(['accession', 'catalog', 'requests', 'setup'].includes(String(route.query.tab)) ? String(route.query.tab) : 'accession')
 
-// How many books still have no confirmed Dewey number (the button that looks them all up shows while any do).
-const isFindDeweyOpen = ref(false)
-const { data: deweyCount, execute: refetchDeweyCount } =
-    useLiveAsyncData('dewey-review-count', () => librarianService.fetchDeweyReview({ perPage: 1 }), { lazy: true })
-const deweyUnchecked = computed(() => deweyCount.value?.needsReview ?? 0)
+// How many books still haven't been checked against the online catalogues (the Check Details button shows while any).
+const isCheckDetailsOpen = ref(false)
+const { data: detailsQueue, execute: refetchDetailsCount } =
+    useLiveAsyncData('details-check-count', () => librarianService.fetchDetailsQueue({ perPage: 1 }), { lazy: true, pollMs: 60_000 })
+const detailsRemaining = computed(() => detailsQueue.value?.remaining ?? 0)
+const refetchDeweyCount = () => quietRefresherFor(refetchDetailsCount)?.()
 
 const search = ref('')
 const page = ref(1)
@@ -503,6 +512,14 @@ function goToStockPage(next: number) {
 
 const stockBusy = ref(false)
 const refreshStock = [refetchCopies, refetchBooks, refetchStats, refetchStockLogs]
+
+// Import from Excel: the window does the work; afterwards every list here shows the new books (and the count of
+// Dewey numbers still to check, since books without one wait for it).
+const isImportOpen = ref(false)
+function afterImport() {
+    for (const fn of refreshStock) void quietRefresherFor(fn)?.()
+    void refetchDeweyCount()
+}
 
 // "Add Book Copy": from a catalog row the book is known; from the header button the librarian searches for it.
 const isAddCopiesOpen = ref(false)
@@ -891,6 +908,10 @@ async function confirmRequestDecision() {
     if (ok) {
         isRequestDecisionOpen.value = false
         isDrawerOpen.value = false
+        // The row shows its new status at once; the quiet refresh perform() started fills in the rest.
+        const status = action === 'approve' ? 'Approved' : action === 'arrived' ? 'Arrived' : 'Rejected'
+        const current = suggestionsResponse.value
+        if (current) suggestionsResponse.value = { ...current, suggestions: current.suggestions.map((s) => (s.uuid === suggestion.uuid ? { ...s, status } : s)) }
     }
 }
 

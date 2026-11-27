@@ -137,7 +137,7 @@
 					</div>
 					<div class="mt-3 grid gap-3 sm:grid-cols-2" @focusout="touch">
 						<AuthPasswordField id="password" v-model="form.password" label="Password" autocomplete="new-password"
-							placeholder="At least 8 characters" :error="err('password')"
+							placeholder="8+ characters" :error="err('password')"
 							@update:model-value="clear('password'); clear('password_confirmation')" />
 						<AuthPasswordField id="password_confirmation" v-model="form.password_confirmation"
 							label="Confirm password" autocomplete="new-password" placeholder="Repeat it"

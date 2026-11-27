@@ -75,8 +75,8 @@
 			<form autocomplete="off" class="mt-3.5 flex gap-2" @submit.prevent="scan(code, 'typed')">
 				<div class="relative min-w-0 flex-1">
 					<Icon name="i-tabler-keyboard" class="pointer-events-none absolute left-3.5 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-stone-400" />
-					<input v-model="code" type="text" inputmode="text" enterkeyhint="go" autocomplete="off" autocapitalize="off" spellcheck="false"
-						placeholder="Type an ID or code" aria-label="Type a code" :disabled="busy"
+					<input ref="codeInput" v-model="code" type="text" inputmode="text" enterkeyhint="go" autocomplete="off" autocapitalize="off" spellcheck="false"
+						placeholder="Type an ID or code" aria-label="Type a code" :readonly="busy"
 						class="h-11 w-full rounded-xl border border-stone-200 bg-stone-50 pl-11 pr-3 text-[15px] text-stone-900 outline-none transition-[border-color,box-shadow,background-color] duration-150 placeholder:text-stone-400 focus:border-accent-500 focus:bg-white focus:ring-2 focus:ring-accent-200 disabled:opacity-70">
 				</div>
 				<ButtonsButton type="submit" variant="ghost" :disabled="busy || !code.trim()">Scan</ButtonsButton>
@@ -103,7 +103,7 @@
 				<div v-if="!result" class="text-stone-400">
 					<Icon name="i-tabler-scan" class="mx-auto mb-2 h-12 w-12" />
 					<p class="text-[18px] font-semibold text-stone-600">Ready to scan</p>
-					<p class="text-[14.5px]">Student IDs, borrowing receipts, reservation slips and facility labels all scan here.</p>
+					<p class="text-[14.5px]">Student IDs, book labels, borrowing receipts, reservation slips and facility labels all scan here.</p>
 				</div>
 
 				<div v-else :key="result.key" class="st-swap w-full">
@@ -158,11 +158,19 @@ import type { ScanRegion } from '~/composables/useCameraScanner'
 
 const emit = defineEmits<{
 	(e: 'scanned'): void
-	/** A borrowing receipt was scanned: the book is in the librarian's hands and needs checking. */
-	(e: 'check-loan', loan: { loanUuid: string; bookTitle: string; accessionNumber: number; studentName: string }): void
-	/** A reservation slip was scanned: open the checkout for it. */
-	(e: 'open-checkout', code: string): void
 }>()
+
+/**
+ * A return (receipt or book label) or a reservation slip opens its window in the librarian's main tab, on the
+ * Circulation page, not over the station. The result card says where it went and keeps a button to send it again
+ * (a click can always open the main tab, even when the browser wouldn't switch tabs for a webcam read).
+ */
+function sendToMainTab(path: string): string {
+	const outcome = openInMainTab(path)
+	if (outcome === 'switched') return 'Opened in your EntryPoint tab.'
+	if (outcome === 'sent') return 'Opened in your EntryPoint tab. Switch to it to finish.'
+	return 'Press the button to open it in your EntryPoint tab.'
+}
 
 type Mode = 'webcam' | 'phone'
 type Via = Mode | 'typed'
@@ -309,7 +317,35 @@ async function scan(raw: string, via: Via) {
 	} finally {
 		busy.value = false
 		code.value = ''
+		keepFocus()
 	}
+}
+
+/* ---------- a USB scanner (it types the code and presses Enter) ---------- */
+// The scanner types into whatever has the keyboard, so the code box keeps it: on opening, after every scan, and when
+// the librarian comes back to this tab. Read-only (not disabled) while a scan is checked: a disabled box drops the
+// focus, which sent every scan after the first one nowhere. Never taken from another field or an open window.
+const codeInput = ref<HTMLInputElement | null>(null)
+function keepFocus() {
+	// Not on a phone: it scans with its camera, and a focused box would pop the keyboard up over it after every scan.
+	if (onPhoneDevice.value) return
+	const active = document.activeElement
+	if (active && active !== document.body && active !== codeInput.value) return
+	if (document.querySelector('[role="dialog"]')) return
+	codeInput.value?.focus({ preventScroll: true })
+}
+const onTabBack = () => { if (document.visibilityState === 'visible') setTimeout(keepFocus, 50) }
+
+// And whatever took the focus (the page finishing loading, a click on the page), a key typed while nothing has it
+// goes into the code box: the scanner's first character lands there, and the rest follow it.
+function onStrayKey(event: KeyboardEvent) {
+	if (onPhoneDevice.value || event.ctrlKey || event.metaKey || event.altKey || event.key.length !== 1) return
+	const active = document.activeElement
+	if (active && active !== document.body) return
+	if (document.querySelector('[role="dialog"]') || !codeInput.value || busy.value) return
+	event.preventDefault()
+	code.value += event.key
+	codeInput.value.focus({ preventScroll: true })
 }
 
 /* ---------- a facility waiting for a student ---------- */
@@ -338,23 +374,27 @@ function fromResult(res: ScanResult): ResultView {
 			disarm()
 			return fromAttendance(res)
 
-		case 'loan_received': {
+		case 'loan_return': {
 			const l = res.loan
-			const notes: ResultView['notes'] = [{ icon: 'i-tabler-checklist', text: 'Check the book for damage' }]
-			if (l.wasLate) notes.push({ icon: 'i-tabler-alert-circle', text: l.fineAmount > 0 ? `Late · fine ${formatPeso(l.fineAmount)}` : 'Returned late' })
+			// Handed in already (Received): the check for damage finishes it. Otherwise the usual Return window.
+			const handedIn = l.status === 'Received'
+			const path = `/librarian/circulation?${handedIn ? 'finish' : 'return'}=${encodeURIComponent(l.uuid)}`
+			const notes: ResultView['notes'] = [{ icon: 'i-tabler-external-link', text: sendToMainTab(path) }]
+			if (l.isOverdue) notes.push({ icon: 'i-tabler-alert-circle', text: 'Overdue: the Return window shows the fee' })
 			return {
-				key, tone: 'warn', icon: 'i-tabler-book-download', verdict: 'Book received', name: l.studentName, sid: l.memberIDNumber,
-				message: l.bookTitle, notes, sub: `Received · ${l.bookTitle}`,
-				action: { label: 'Check the book now', icon: 'i-tabler-checklist', run: () => emit('check-loan', { loanUuid: l.uuid, bookTitle: l.bookTitle, accessionNumber: l.accessionNumber, studentName: l.studentName }) },
+				key, tone: 'warn', icon: 'i-tabler-book-download', verdict: handedIn ? 'Check the book' : 'Return this book', name: l.studentName, sid: l.memberIDNumber,
+				message: `${l.bookTitle} · Acc. no. ${l.accessionNumber}`, notes, sub: `Return · ${l.bookTitle}`,
+				action: { label: handedIn ? 'Open the check' : 'Open the return', icon: 'i-tabler-external-link', run: () => { sendToMainTab(path) } },
 			}
 		}
 
 		case 'reservation': {
 			const r = res.reservation
+			const path = `/librarian/circulation?pickup=${encodeURIComponent(r.pickupCode)}`
 			return {
 				key, tone: 'in', icon: 'i-tabler-bookmark', verdict: 'Reservation found', name: r.studentName, sid: r.memberIDNumber,
-				message: r.bookTitle, notes: [], sub: `Reservation · ${r.bookTitle}`,
-				action: { label: 'Open checkout', icon: 'i-tabler-arrow-right', run: () => emit('open-checkout', r.pickupCode) },
+				message: r.bookTitle, notes: [{ icon: 'i-tabler-external-link', text: sendToMainTab(path) }], sub: `Reservation · ${r.bookTitle}`,
+				action: { label: 'Open checkout', icon: 'i-tabler-external-link', run: () => { sendToMainTab(path) } },
 			}
 		}
 
@@ -487,10 +527,18 @@ onMounted(() => {
 	// Setting the mode starts the camera through the watcher; if it's unchanged, start it here.
 	if (initial !== mode.value) mode.value = initial
 	else void start()
+
+	keepFocus()
+	window.addEventListener('focus', onTabBack)
+	window.addEventListener('keydown', onStrayKey)
+	document.addEventListener('visibilitychange', onTabBack)
 })
 
 onBeforeUnmount(() => {
 	stop()
+	window.removeEventListener('focus', onTabBack)
+	window.removeEventListener('keydown', onStrayKey)
+	document.removeEventListener('visibilitychange', onTabBack)
 	clearTimeout(clearTimer)
 	clearTimeout(armedTimer)
 })

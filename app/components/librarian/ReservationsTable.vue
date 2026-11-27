@@ -4,7 +4,7 @@
 
 		<!-- One card per student. Each book they reserved gets a row with enough to recognise it (cover, author, where it
 			 stands); the button opens the pop-up where the desk accepts, rejects and checks out. -->
-		<ul v-else-if="groups.length" class="grid items-stretch gap-3 lg:grid-cols-2 2xl:grid-cols-3">
+		<ul v-else-if="groups.length" class="card-grid grid items-stretch gap-3 lg:grid-cols-2 2xl:grid-cols-3">
 			<!-- The whole card opens the student's reservations (every state, so a finished one can be looked at too); the button is the same thing, spelled out. -->
 			<li v-for="group in groups" :key="group.key"
 				class="relative flex flex-col overflow-hidden rounded-2xl border border-stone-200 bg-white transition-shadow duration-150 hover:shadow-card">

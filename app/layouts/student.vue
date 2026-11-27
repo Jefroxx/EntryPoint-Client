@@ -65,7 +65,7 @@
 			<label class="relative w-full max-w-[420px]">
 				<span class="sr-only">Search books</span>
 				<Icon name="i-tabler-search" class="pointer-events-none absolute left-3 top-[11px] h-4 w-4 text-stone-400" />
-				<input ref="searchInput" v-model="search" type="search" placeholder="Search by title, author or subject" autocomplete="off"
+				<input ref="searchInput" v-model="search" type="search" placeholder="Search by title or author" autocomplete="off"
 					class="h-[40px] w-full rounded-xl border border-stone-200 bg-white pl-9 pr-9 text-[15px] outline-none transition-[border-color,box-shadow] duration-150 placeholder:text-stone-400 focus:border-accent-500 focus:ring-[3px] focus:ring-accent-100"
 					@input="onSearch">
 				<kbd class="font-data pointer-events-none absolute right-2 top-[10px] rounded-md border border-stone-200 bg-stone-50 px-1.5 text-[11px] text-stone-500">/</kbd>
@@ -145,7 +145,7 @@
 					 read better narrow (forms, lists, the ID) stop at a narrower width, on the left. -->
 				<div :class="route.meta.wide ? '' : ['max-w-[1056px]', route.meta.centered ? 'mx-auto' : '']"><slot /></div>
 			</main>
-			<AppLoader :show="loader.active" contained />
+			<AppLoader :show="loader.active && loader.full" contained />
 		</div>
 		</div>
 

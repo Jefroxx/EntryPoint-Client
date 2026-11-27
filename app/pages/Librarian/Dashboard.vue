@@ -43,7 +43,7 @@
         </header>
 
         <!-- Notices from the administrator. -->
-        <AnnouncementBanner v-if="announcements?.announcements.length" class="mb-5" :items="announcements.announcements" />
+        <AnnouncementBanner v-if="announcements.length" class="mb-5" :items="announcements" />
 
         <!-- Quick actions: four even cards, so the row never ends up lopsided. -->
         <section aria-label="Quick actions" class="mb-5 grid gap-2 [grid-template-columns:repeat(var(--cols),minmax(0,1fr))] sm:grid-cols-2 sm:gap-3 xl:[grid-template-columns:repeat(var(--cols),minmax(0,1fr))]"
@@ -91,7 +91,7 @@
                     </span>
                     <span class="col-start-2 row-span-2 row-start-1 block text-2xl font-bold leading-none tracking-[-0.02em] tabular-nums sm:mt-1 sm:text-[28px]"
                         :class="cell.count ? cell.valueClass : 'text-stone-300'">{{ today ? cell.count : '—' }}</span>
-                    <span class="mt-0.5 block truncate text-[12.5px] text-stone-500 sm:mt-1.5 sm:text-[12px]">{{ cell.count ? cell.hint : 'nothing waiting' }}</span>
+                    <span class="mt-0.5 block truncate text-[12.5px] text-stone-500 sm:mt-1.5 sm:text-[12px]">{{ !today ? ' ' : cell.count ? cell.hint : 'nothing waiting' }}</span>
                 </NuxtLink>
             </div>
         </section>
@@ -146,7 +146,6 @@
 <script setup lang="ts">
 import { NuxtLink } from '#components'
 import { librarianService } from '~/services/librarianService'
-import { announcementService } from '~/services/announcementService'
 
 /** One cell of the Today strip. `anchor` makes it jump to a card on this page instead of opening `to`. */
 interface LedgerCell {
@@ -183,15 +182,21 @@ const greeting = computed(() => {
 const todayLabel = computed(() => formatLongDate(now.value))
 
 /* ---------- data ---------- */
-const { data: today, execute: refetchToday } =
-    useLiveAsyncData('dashboard-today', () => librarianService.fetchDashboardToday(), { lazy: true })
-const { data: recentLoans, pending: recentLoansPending } =
-    useLiveAsyncData('recent-loans', () => librarianService.fetchRecentLoans(), { lazy: true })
-const { data: overdueLoans, pending: overdueLoansPending } =
-    useLiveAsyncData('overdue-loans', () => librarianService.fetchOverdueLoans(), { lazy: true })
-// The server recalculates the boards every 5 minutes at most, so polling faster than that shows nothing new.
-const { data: hallOfFame, pending: hallOfFamePending } =
-    useLiveAsyncData('dashboard-hall-of-fame', () => librarianService.fetchHallOfFame(), { lazy: true, pollMs: 300_000 })
+// One request for the whole page (today's numbers, the two loan lists, the Hall of Fame and the notices), polled
+// while the page is open. The Hall of Fame is cached on the server, so it adds almost nothing to each tick.
+const { data: dash, pending: dashPending, refresh: refreshDash } =
+    useLiveAsyncData('librarian-dashboard', () => librarianService.fetchDashboard(), { lazy: true })
+const today = computed(() => dash.value?.today ?? null)
+const recentLoans = computed(() => dash.value?.recentLoans)
+const overdueLoans = computed(() => dash.value?.overdueLoans)
+const hallOfFame = computed(() => dash.value?.hallOfFame)
+const announcements = computed(() => dash.value?.announcements ?? [])
+// Only the first load dims the cards: a refresh after a scan swaps the numbers in place.
+const firstLoad = computed(() => dashPending.value && !dash.value)
+const recentLoansPending = firstLoad
+const overdueLoansPending = firstLoad
+const hallOfFamePending = firstLoad
+const refetchToday = () => refreshDash()
 
 /* ---------- scan station ---------- */
 const stationOpen = ref(false)
@@ -215,8 +220,6 @@ function jumpTo(cell: { anchor?: string }, event: Event) {
 
 const { can } = useStaffAccess()
 
-// Notices from the administrator. (A failed request just means no banner.)
-const { data: announcements } = useAsyncData('dashboard-announcements', () => announcementService.forStaff().catch(() => ({ announcements: [] })), { lazy: true })
 // A role sees only the shortcuts and queues for areas it can open (the server refuses the rest anyway).
 const opens = (to: string) => can(permissionForPath(to.split('?')[0]!))
 
@@ -225,7 +228,8 @@ const allActions = computed(() => [
     { label: 'Return a book', short: 'Return', hint: 'Check a copy back in', icon: 'i-tabler-book-download', to: '/librarian/circulation', badge: 0 },
     { label: 'Add a book', short: 'Add book', hint: 'Catalog a new title', icon: 'i-tabler-book-2', to: '/librarian/library?new=book', badge: 0 },
     {
-        label: 'Approve students', short: 'Approve', hint: today.value?.attention.registrations ? 'Registrations are waiting' : 'No one waiting',
+        label: 'Approve students', short: 'Approve', // While today's numbers load, a neutral line: "No one waiting" before the count arrives would be a guess.
+        hint: !today.value ? 'New registrations' : today.value.attention.registrations ? 'Registrations are waiting' : 'No one waiting',
         icon: 'i-tabler-user-check', to: '/librarian/students?tab=pending', badge: today.value?.attention.registrations ?? 0,
     },
 ])
@@ -243,11 +247,11 @@ const ledger = computed<LedgerCell[]>(() => {
         { label: 'Checked out', value: n(t?.checkedOut), note: 'loans started today', icon: 'i-tabler-book-upload', iconClass: 'text-stone-500', valueClass: 'text-stone-900', to: '/librarian/circulation' },
         { label: 'Returned', value: n(t?.returned), note: 'books back today', icon: 'i-tabler-book-download', iconClass: 'text-stone-500', valueClass: 'text-stone-900', to: '/librarian/circulation' },
         {
-            label: 'Due today', value: n(t?.dueToday), note: dueToday ? 'still out, due before closing' : 'nothing due later today',
+            label: 'Due today', value: n(t?.dueToday), note: !t ? 'due before closing' : dueToday ? 'still out, due before closing' : 'nothing due later today',
             icon: 'i-tabler-clock', iconClass: dueToday ? 'text-amber-600' : 'text-stone-500', valueClass: dueToday ? 'text-amber-700' : 'text-stone-900', to: '/librarian/circulation',
         },
         {
-            label: 'Overdue', value: n(t?.overdue), note: overdue ? 'past their due date' : 'all loans on time',
+            label: 'Overdue', value: n(t?.overdue), note: !t ? 'past their due date' : overdue ? 'past their due date' : 'all loans on time',
             icon: 'i-tabler-alert-triangle', iconClass: overdue ? 'text-red-600' : 'text-stone-500', valueClass: overdue ? 'text-red-600' : 'text-stone-900', to: '/librarian/circulation', anchor: overdue ? 'overdue-books' : undefined,
         },
     ]

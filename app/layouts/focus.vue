@@ -1,7 +1,7 @@
 <template>
-	<!-- A single task on its own: no side panel and no links to other pages, so nothing pulls the person away from it
-		 (used by "choose a new password", reached from an emailed link). -->
 	<main class="focus-page flex min-h-screen flex-col items-center justify-center px-4 py-10">
+		<!-- A single task on its own: no side panel and no links to other pages, so nothing pulls the person away from it
+			 (used by "choose a new password", reached from an emailed link). Comments stay inside the root element. -->
 		<div class="w-full max-w-[440px] overflow-hidden rounded-[28px] border border-stone-200 bg-white px-6 py-9 shadow-overlay sm:px-10 sm:py-11">
 			<slot />
 		</div>

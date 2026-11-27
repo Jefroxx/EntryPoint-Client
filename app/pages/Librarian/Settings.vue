@@ -1,27 +1,30 @@
 <template>
-    <div>
+    <div class="mx-auto max-w-[940px]">
+        <!-- One centered column: the heading and the sections line up with each other, whatever the screen width.
+             (This comment sits inside the root: one outside it would make a second root node, and Nuxt can't leave
+             a page like that, so the next page would never show.) -->
         <div class="mb-6">
             <h1 class="dashboard-heading text-3xl font-bold text-crimson">Settings</h1>
             <p class="dashboard-heading mt-1 text-crimson">Configure borrowing, fines, rewards and your account.</p>
         </div>
 
-        <div class="grid max-w-[940px] grid-cols-1 items-start gap-6 md:grid-cols-[200px_1fr]">
+        <div class="grid grid-cols-1 items-start gap-6 md:grid-cols-[200px_1fr]">
             <nav class="flex gap-1 md:sticky md:top-4 md:flex-col" aria-label="Settings sections">
                 <button v-for="section in sections" :key="section.value" type="button"
                     class="rounded-[10px] px-3 py-2.5 text-left text-[15px] font-medium transition-colors duration-150"
                     :class="active === section.value ? 'bg-accent-100 font-semibold text-accent-700' : 'text-stone-500 hover:bg-stone-100'"
-                    @click="active = section.value">
+                    @click="choose(section.value)">
                     {{ section.label }}
                 </button>
             </nav>
 
             <div class="relative min-h-[200px]">
                 <template v-if="settings">
-                    <LibrarianBorrowingSettings v-if="active === 'borrowing'" :hold-hours="settings.reservationHoldHours" :max-books-allowed="settings.maxBooks" @saved="refetch" />
+                    <LibrarianBorrowingSettings v-if="active === 'borrowing'" :hold-hours="settings.reservationHoldHours" :max-books-allowed="settings.maxBooks" @saved="refetch" @dirty="unsaved = $event" />
                     <LibrarianFineRulesSettings v-else-if="active === 'fines'" :rules="settings.fineRules"
                         @saved="refetch" />
-                    <LibrarianRewardsSettings v-else-if="active === 'rewards'" :low-stock-at-saved="settings.lowStockAt" @saved="refetch" />
-                    <LibrarianAccountSettings v-else :account="settings.account" @saved="refetch" />
+                    <LibrarianRewardsSettings v-else-if="active === 'rewards'" :low-stock-at-saved="settings.lowStockAt" @saved="refetch" @dirty="unsaved = $event" />
+                    <LibrarianAccountSettings v-else :account="settings.account" @saved="refetch" @dirty="unsaved = $event" />
                 </template>
                 <div v-else-if="error" role="alert" class="rounded-2xl border border-red-100 bg-red-50 p-5 text-[15px] text-red-600">
                     <p class="font-semibold">Couldn't load your settings.</p>
@@ -31,10 +34,13 @@
                 <LibrarianLoadingOverlay :loading="pending && !settings" />
             </div>
         </div>
-    
+
+        <!-- Moving to another section would throw away what was typed here: ask first, like the pop-ups do. -->
+        <LibrarianConfirmModal :open="!!pending_section" title="Discard Changes?"
+            message="You have changes in this section that haven't been saved. If you move to another section they will be lost."
+            confirm-label="Yes, Discard" @close="pending_section = null" @confirm="leave" />
 
         <AlertToast />
-    
     </div>
 </template>
 
@@ -58,6 +64,22 @@ const sections = computed(() => [
     { label: 'Account', value: 'account' },
 ].filter((s) => s.value === 'account' || can('settings')))
 const active = ref(can('settings') ? 'borrowing' : 'account')
+
+// The section being shown says (through @dirty) whether it holds typing that has not been saved.
+const unsaved = ref(false)
+const pending_section = ref<string | null>(null)
+
+function choose(section: string) {
+    if (section === active.value) return
+    if (unsaved.value) pending_section.value = section
+    else active.value = section
+}
+
+function leave() {
+    if (pending_section.value) active.value = pending_section.value
+    pending_section.value = null
+    unsaved.value = false
+}
 
 const { data: settings, pending, error, execute: refetch } =
     useAsyncData('librarian-settings', () => settingsService.fetchSettings(), { lazy: true })

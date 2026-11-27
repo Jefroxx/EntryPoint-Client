@@ -51,6 +51,11 @@
 		<p class="st-in mx-1 mt-2 text-[12.5px] text-stone-500" style="animation-delay: 70ms">Change your phone, address or password
 			in Profile.</p>
 
+		<!-- How every list of cards is shown on this phone: a grid (Rewards shows two across), or one per row. -->
+		<h2 class="st-in mb-2.5 mt-6 px-0.5 text-[11px] font-semibold uppercase tracking-[.08em] text-stone-500"
+			style="animation-delay: 90ms">Cards</h2>
+		<CardLayoutSwitch class="st-in" style="animation-delay: 90ms" />
+
 		<ButtonsButton variant="danger" class="st-in mt-6 !h-[46px] w-full !text-[15px]" style="animation-delay: 105ms"
 			@click="confirming = true">
 			<Icon name="i-tabler-logout" class="h-4 w-4" />Sign out

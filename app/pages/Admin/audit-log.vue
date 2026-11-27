@@ -6,7 +6,7 @@
         </div>
 
         <div class="phone-toolbar mb-4 flex flex-wrap items-center gap-2">
-            <LibrarianSearchInput id="audit-search" v-model="search" class="!max-w-[560px] !basis-[480px]" placeholder="Search a person or what they did" />
+            <LibrarianSearchInput id="audit-search" v-model="search" placeholder="Search a person or what they did" />
             <LibrarianFilterMenu :model-value="{ area }" :groups="areaGroups" @update:model-value="area = $event.area ?? ''" />
             <div class="flex-1"></div>
             <LibrarianResetFiltersButton @click="search = ''; area = ''" />

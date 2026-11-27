@@ -50,7 +50,7 @@
 
         <!-- With the day picker in it this toolbar is wider than the others, so it only stays on one row on a desktop. -->
         <div class="phone-toolbar mb-4 flex flex-wrap items-center gap-2 lg:flex-nowrap">
-            <LibrarianSearchInput id="attendance-search" v-model="search" class="!min-w-[210px] !max-w-[560px] !basis-[480px]" placeholder="Search name or ID" />
+            <LibrarianSearchInput id="attendance-search" v-model="search" class="!min-w-[210px]" placeholder="Search name or ID" />
 
             <!-- Day by day: step back through the log, pick a date from a calendar, or jump back to today. -->
             <LibrarianDayPicker class="toolbar-full" v-model="day" :max="todayYmd" :empty-value="todayYmd" reset-label="Today" />

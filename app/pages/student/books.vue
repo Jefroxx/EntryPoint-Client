@@ -284,10 +284,11 @@ const router = useRouter()
 const { perform } = useAction()
 const { stats, maxBooks, slotsLeft, refreshProfile, refreshReservations, bumpData } = useStudent()
 
-// In the order a borrow happens: reserve it, borrow it, settle any fine. Reservations opens by default.
+// In the order a borrow happens: reserve it, borrow it, settle any fine. Without a ?tab= in the link, the page opens on
+// the first tab that needs the student (a ready pickup, an overdue loan, an unpaid fine), and on Reservations otherwise.
 const TABS = ['reservations', 'loans', 'fines']
 const tab = computed<string>({
-	get: () => (TABS.includes(String(route.query.tab)) ? String(route.query.tab) : TABS[0]!),
+	get: () => (TABS.includes(String(route.query.tab)) ? String(route.query.tab) : (tabs.value.find((t) => t.badge)?.value ?? TABS[0]!)),
 	set: (value) => { void router.replace({ query: { ...route.query, tab: value } }) },
 })
 

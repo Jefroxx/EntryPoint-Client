@@ -35,15 +35,9 @@
 		</header>
 
 		<main class="mx-auto max-w-[1280px] p-4 md:p-6">
-			<LibrarianScanStation @scanned="onScanned" @check-loan="openFinish" @open-checkout="openCheckout" />
+			<!-- Returns and reservation slips open their window in the librarian's main tab (see ScanStation), not here. -->
+			<LibrarianScanStation @scanned="onScanned" />
 		</main>
-
-		<!-- A reservation slip was scanned: the checkout opens with the student and book filled in. -->
-		<LibrarianCheckoutModal :open="isCheckoutOpen" :initial-code="checkoutCode" :camera="false" @close="isCheckoutOpen = false" @created="onScanned" />
-
-		<!-- A borrowing receipt was scanned: check the book, then finish the return. -->
-		<LibrarianFinishReturnModal :open="isFinishOpen" :summary="finishSummary" :busy="finishBusy"
-			@close="isFinishOpen = false" @submit="saveFinish" />
 
 		<!-- Ending the station logs everyone still inside out, so it asks first (with the numbers). -->
 		<LibrarianConfirmModal :open="isEndOpen" title="End the Session?" :message="endMessage" confirm-label="Yes, log everyone out"
@@ -55,7 +49,6 @@
 
 <script setup lang="ts">
 import { librarianService } from '~/services/librarianService'
-import { circulationService } from '~/services/circulationService'
 import AlertToast from '~/api/alert/AlertToast.vue'
 
 definePageMeta({
@@ -78,37 +71,6 @@ function onScanned() {
 }
 
 const { perform } = useAction()
-
-/* ---------- reservation slip: open the checkout ---------- */
-const isCheckoutOpen = ref(false)
-const checkoutCode = ref('')
-
-function openCheckout(code: string) {
-	checkoutCode.value = code
-	isCheckoutOpen.value = true
-}
-
-/* ---------- borrowing receipt: check the book, then finish the return ---------- */
-const isFinishOpen = ref(false)
-const finishBusy = ref(false)
-const finishLoanUuid = ref<string | null>(null)
-const finishSummary = ref<{ bookTitle: string; accessionNumber: number; studentName: string } | null>(null)
-
-function openFinish(loan: { loanUuid: string; bookTitle: string; accessionNumber: number; studentName: string }) {
-	finishLoanUuid.value = loan.loanUuid
-	finishSummary.value = { bookTitle: loan.bookTitle, accessionNumber: loan.accessionNumber, studentName: loan.studentName }
-	isFinishOpen.value = true
-}
-
-async function saveFinish(payload: { condition: 'good' | 'damaged'; note: string | undefined }) {
-	if (finishLoanUuid.value == null) return
-	const loanUuid = finishLoanUuid.value
-	finishBusy.value = true
-	const ok = await perform(() => circulationService.finishReturn(loanUuid, payload),
-		payload.condition === 'damaged' ? 'Return finished, marked damaged' : 'Return finished', 'Could not finish the return')
-	finishBusy.value = false
-	if (ok) isFinishOpen.value = false
-}
 
 /* ---------- clock ---------- */
 // Empty until the page is in the browser: the server's time would never match the browser's, and Vue would warn.

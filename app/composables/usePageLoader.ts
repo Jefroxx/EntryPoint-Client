@@ -14,6 +14,9 @@ const SETTLE_MS = 200
 export function usePageLoader() {
 	return useState('page-loader', () => ({
 		active: true, // true on first paint, so the server-rendered HTML already shows it
+		// The full compass screen (first load, or moving to another part of the app: signing in, student ↔ librarian)
+		// or just the thin bar along the top (a page change inside the same part: Home → Discover, Library → Circulation).
+		full: true,
 		routing: false, // between a route change starting and its page finishing
 		pending: 0, // page data still loading
 		total: 0, // requests the page has made while loading, and how many of them have answered: the loading bar
@@ -71,7 +74,9 @@ export function setupPageLoader() {
 	function tryHide() {
 		if (booting || loader.value.routing || loader.value.pending > 0) return
 		clearTimeout(hideTimer)
-		const wait = Math.max(SETTLE_MS, MIN_VISIBLE_MS - (performance.now() - loader.value.since))
+		// Only the full screen waits out its quarter turn; the top bar goes as soon as the page is ready.
+		const minimum = loader.value.full ? MIN_VISIBLE_MS : 0
+		const wait = Math.max(SETTLE_MS, minimum - (performance.now() - loader.value.since))
 		hideTimer = setTimeout(() => {
 			if (loader.value.routing || loader.value.pending > 0) return
 			loader.value.active = false
@@ -95,6 +100,11 @@ export function setupPageLoader() {
 		loader.value.done = 0
 		loader.value.since = performance.now()
 		loader.value.routing = true
+		// A page in the same layout is a small step: the page shows at once and fills in, with the thin bar on top.
+		// Another layout (signing in, going from the student side to the librarian side) gets the full screen.
+		// Once the full screen is up for a load, a quick second click doesn't swap it for the bar.
+		const sameLayout = !booting && (to.meta.layout ?? 'default') === (from.meta.layout ?? 'default')
+		loader.value.full = loader.value.active && loader.value.full ? true : !sameLayout
 		show()
 	})
 	// A blocked or redirected navigation never reaches page:finish.

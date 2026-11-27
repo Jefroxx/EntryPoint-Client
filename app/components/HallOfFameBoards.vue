@@ -1,7 +1,7 @@
 <template>
 	<!-- The Hall of Fame boards: one card per category with its top three. Shared by the librarian Dashboard
 		 section (HallOfFame.vue) and the student "See all" drawer (student/HallOfFameStrip.vue). -->
-	<div v-if="loading && !board" class="grid grid-cols-1 gap-3" :class="gridClass" aria-busy="true">
+	<div v-if="loading && !board" class="card-grid grid grid-cols-1 gap-3" :class="gridClass" aria-busy="true">
 		<div v-for="n in 6" :key="n" class="h-[196px] animate-pulse rounded-2xl bg-stone-100" />
 	</div>
 
@@ -9,7 +9,7 @@
 		The Hall of Fame couldn't load. It'll try again in a moment.
 	</p>
 
-	<ul v-else class="grid grid-cols-1 gap-3" :class="gridClass">
+	<ul v-else class="card-grid grid grid-cols-1 gap-3" :class="gridClass">
 		<li v-for="category in board.categories" :key="category.key"
 			class="flex flex-col rounded-2xl border border-stone-300/70 bg-white p-4 shadow-[0_1px_2px_rgba(60,35,10,.06),0_8px_20px_-14px_rgba(60,35,10,.25)]">
 			<div class="flex items-start gap-2.5">

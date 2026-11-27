@@ -22,13 +22,14 @@
 			<li v-if="loans.length === 0" class="py-6 text-center text-[15px] text-stone-500">No overdue books.</li>
 		</ul>
 
-		<div class="hidden flex-1 overflow-x-auto sm:block">
-			<table class="w-full min-w-max text-left text-[15px]">
+		<!-- Fixed columns, like RecentLoansCard: long names and titles shorten instead of pushing the pill off the card. -->
+		<div class="hidden flex-1 sm:block">
+			<table class="w-full table-fixed text-left text-[15px]">
 				<thead>
 					<tr class="border-b border-stone-100 text-[13px] font-medium text-stone-500">
-						<th class="pb-2 pr-4 font-medium">Student</th>
+						<th class="w-[42%] pb-2 pr-4 font-medium">Student</th>
 						<th class="pb-2 pr-4 font-medium">Book</th>
-						<th class="pb-2 font-medium">Days Overdue</th>
+						<th class="w-[116px] pb-2 font-medium">Days Overdue</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -36,14 +37,14 @@
 						class="cursor-pointer border-b border-stone-50 transition-colors duration-150 last:border-0 hover:bg-accent-50 focus-visible:bg-accent-50 focus-visible:outline-none"
 						@click="selected = loan" @keydown.enter.self="selected = loan">
 						<td class="py-3 pr-4">
-							<div class="flex items-center gap-2">
-								<LibrarianStudentAvatar :name="loan.studentName" />
-								<span class="text-stone-700">{{ loan.studentName }}</span>
+							<div class="flex min-w-0 items-center gap-2">
+								<LibrarianStudentAvatar :name="loan.studentName" class="shrink-0" />
+								<span class="truncate text-stone-700" :title="loan.studentName">{{ loan.studentName }}</span>
 							</div>
 						</td>
-						<td class="py-3 pr-4 text-stone-700">{{ loan.bookTitle }}</td>
+						<td class="truncate py-3 pr-4 text-stone-700" :title="loan.bookTitle">{{ loan.bookTitle }}</td>
 						<td class="py-3">
-							<span class="inline-flex items-center gap-1 rounded-full border border-red-200 bg-red-50 px-2.5 py-1 text-[13px] font-bold text-red-700">
+							<span class="inline-flex items-center gap-1 whitespace-nowrap rounded-full border border-red-200 bg-red-50 px-2.5 py-1 text-[13px] font-bold text-red-700">
 								<Icon name="i-tabler-alert-circle" class="h-3 w-3" />{{ loan.daysOverdue }} {{ loan.daysOverdue === 1 ? 'day' : 'days' }}
 							</span>
 						</td>

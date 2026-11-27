@@ -42,7 +42,7 @@
         </div>
 
         <div class="phone-toolbar toolbar-nowrap mb-4 flex flex-wrap items-center gap-2">
-            <LibrarianSearchInput id="student-search" v-model="search" class="!min-w-[210px] !max-w-[560px] !basis-[480px]"
+            <LibrarianSearchInput id="student-search" v-model="search" class="!min-w-[210px]"
                 :placeholder="isMembers ? 'Search name, employee ID or email' : 'Search name, student ID or email'" />
             <LibrarianFilterMenu class="toolbar-full" v-model="filters" :groups="filterGroups" />
             <div class="flex-1"></div>
@@ -216,6 +216,12 @@ async function confirmReview(reason = '') {
     reviewBusy.value = false
     // Done or failed, the window has served its purpose (a failure is shown as a message, the list is as it was).
     isReviewOpen.value = false
-    if (ok) isDrawerOpen.value = false
+    if (ok) {
+        isDrawerOpen.value = false
+        // Approving, rejecting or reinstating always moves the student to another tab, so the card leaves this one now;
+        // the quiet refresh perform() started brings the counts and the next student up a moment later.
+        const current = students.value
+        if (current) students.value = { ...current, data: current.data.filter((s) => s.uuid !== student.uuid) }
+    }
 }
 </script>

@@ -32,7 +32,7 @@
 					</button>
 				</div>
 
-				<div v-if="pending && !data" class="grid gap-3 sm:grid-cols-2 md:grid-cols-[repeat(auto-fill,minmax(220px,1fr))]" aria-busy="true">
+				<div v-if="pending && !data" class="card-grid grid gap-3 sm:grid-cols-2 md:grid-cols-[repeat(auto-fill,minmax(220px,1fr))]" aria-busy="true">
 					<div v-for="n in 6" :key="n" class="h-[68px] animate-pulse rounded-2xl bg-stone-200/70" />
 				</div>
 
@@ -51,7 +51,7 @@
 							<button type="button" class="font-semibold text-accent-600 hover:underline" @click="setParam({ available: undefined })">Show all</button>
 						</p>
 
-						<div v-else :key="`${type}|${availableOnly}`" class="st-swap mt-4 grid gap-3 sm:grid-cols-2 md:grid-cols-[repeat(auto-fill,minmax(220px,1fr))]">
+						<div v-else :key="`${type}|${availableOnly}`" class="st-swap mt-4 card-grid grid gap-3 sm:grid-cols-2 md:grid-cols-[repeat(auto-fill,minmax(220px,1fr))]">
 							<div v-for="r in list" :key="r.resID" class="flex items-center gap-3 rounded-2xl border border-stone-200 bg-white p-3.5">
 								<span class="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[10px]" :class="toneOf(r.status)">
 									<Icon :name="iconOf(r.resourceType)" class="h-[17px] w-[17px]" />
@@ -112,7 +112,7 @@
 import { studentService } from '~/services/studentService'
 import { TONE_SOFT } from '~/utils/studentNotifications'
 
-definePageMeta({ layout: 'student', middleware: 'student', title: 'Facilities', nav: 'facilities', tab: 'home', wide: true, back: '/student/home' })
+definePageMeta({ layout: 'student', middleware: 'student', title: 'Facilities', nav: 'facilities', tab: 'me', wide: true, back: '/student/me' })
 useHead({ title: 'Facilities' })
 
 const route = useRoute()

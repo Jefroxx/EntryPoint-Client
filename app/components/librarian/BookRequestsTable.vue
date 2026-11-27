@@ -1,7 +1,7 @@
 <template>
 	<div class="relative rounded-2xl">
 		<LibrarianCardSkeleton v-if="loading" />
-		<ul v-else class="grid gap-3 sm:grid-cols-2 2xl:grid-cols-3">
+		<ul v-else class="card-grid grid gap-3 sm:grid-cols-2 2xl:grid-cols-3">
 			<!-- The whole card opens the request; only the buttons at the bottom do something else. -->
 			<li v-for="suggestion in suggestions" :key="`card-${suggestion.suggestionID}`"
 				class="relative flex flex-col overflow-hidden rounded-2xl border border-stone-200 bg-white transition-shadow duration-150 hover:shadow-card">
