@@ -143,13 +143,13 @@
 										<label for="checkout-pickup" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">Reservation pickup code</label>
 										<div class="flex gap-2">
 											<input id="checkout-pickup" v-model="pickupCode" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false"
-												placeholder="Scan the student's slip, or type R-000123" :disabled="lookingUp"
+												placeholder="Scan the student's slip, or type R-000123"
 												class="font-data h-11 min-w-0 flex-1 rounded-[10px] border bg-white px-3 text-[13.5px] text-stone-900 outline-none focus:border-accent-500 focus:ring-2 focus:ring-accent-200 disabled:opacity-70"
 												:class="errors.pickup ? 'border-red-400' : 'border-stone-200'" @input="errors.pickup = ''">
-											<ButtonsButton type="submit" variant="ghost" :disabled="lookingUp || !pickupCode.trim()">Fill in</ButtonsButton>
+											<ButtonsButton type="submit" variant="ghost" :disabled="!pickupCode.trim()">Continue</ButtonsButton>
 										</div>
 										<p v-if="errors.pickup" class="mt-1 text-[12.5px] text-red-500">{{ errors.pickup }}</p>
-										<p v-else class="mt-1 text-[12.5px] text-stone-500">A student collecting a reserved book can hand over the pickup slip. It fills in the book and the student.</p>
+										<p v-else class="mt-1 text-[12.5px] text-stone-500">A student collecting a reserved book hands over the pickup slip. It opens the reservation's pickup.</p>
 									</form>
 								</div>
 							</section>
@@ -254,6 +254,9 @@
 								<p v-if="blockedReason" class="mt-4 flex items-start gap-2 text-[14px] font-medium text-red-700">
 									<Icon name="i-tabler-alert-circle" class="mt-0.5 h-4 w-4 shrink-0" />{{ blockedReason }}
 								</p>
+								<p v-else-if="heldForReservation" class="mt-4 flex items-start gap-2 text-[14px] font-medium text-amber-800">
+									<Icon name="i-tabler-alert-triangle" class="mt-0.5 h-4 w-4 shrink-0" />Every copy on the shelf is held for a reservation. It can only go to a student who reserved it; anyone else is refused at checkout.
+								</p>
 								<p v-else class="mt-4 flex items-start gap-2 text-[14px] font-medium text-emerald-800">
 									<Icon name="i-tabler-circle-check" class="mt-0.5 h-4 w-4 shrink-0" />Ready to lend<template v-if="scanned.dueDate">. Would be due {{ formatDate(scanned.dueDate) }}</template>
 								</p>
@@ -314,8 +317,7 @@
 							<dl class="divide-y divide-stone-100 rounded-xl border border-stone-200 text-[14px]">
 								<div class="flex justify-between gap-4 px-4 py-2.5"><dt class="text-stone-500">Checkout date</dt><dd class="font-semibold text-stone-900">{{ formatDate(today) }}</dd></div>
 								<div class="flex justify-between gap-4 px-4 py-2.5"><dt class="text-stone-500">Due back</dt><dd class="font-semibold text-stone-900">{{ scanned.dueDate ? formatDate(scanned.dueDate) : '—' }}</dd></div>
-								<div v-if="fulfilsReservation" class="flex justify-between gap-4 px-4 py-2.5"><dt class="text-stone-500">Reservation</dt><dd class="font-semibold text-emerald-700">{{ reservation?.pickupCode }} will be marked collected</dd></div>
-							</dl>
+								</dl>
 							<p class="text-[13px] text-stone-500">A receipt is shown after checkout, ready to print for the student.</p>
 						</div>
 					</div>
@@ -360,10 +362,6 @@ import { useAlert } from '~/api/alert/useAlert'
 
 const props = withDefaults(defineProps<{
 	open: boolean
-	/** A pickup code the scanner already read: looked up as soon as the window opens. */
-	initialCode?: string
-	/** With a code that is found, check the book out straight away (the slip was scanned, so there is nothing left to fill in). */
-	autoCheckout?: boolean
 	/** False where a camera is already running on the page (the Station), so two never fight over the webcam. */
 	camera?: boolean
 }>(), {
@@ -375,6 +373,8 @@ const cameraEnabled = computed(() => props.camera)
 const emit = defineEmits<{
 	(e: 'close'): void
 	(e: 'created'): void
+	/** A reservation slip code: the pickup window takes it from here (it checks the slip, then the copy in hand). */
+	(e: 'pickup', code: string): void
 }>()
 
 const alert = useAlert()
@@ -422,19 +422,15 @@ const pickedCoverFailed = ref(false)
 watch(pickedBook, () => { pickedCoverFailed.value = false })
 const chooseCopy = (accession: number) => lookupBook(String(accession))
 
-// A pickup slip scanned (or typed) at the desk: fills in the book and student, and the checkout then fulfils that reservation.
+// A reservation slip typed or scanned here: handed to the pickup window (ReservationPickupModal), which collects it.
 const pickupCode = ref('')
-const lookingUp = ref(false)
-const reservation = ref<{ reservationID: number; studentID: number; bookID: number; pickupCode: string } | null>(null)
-const fulfilsReservation = computed(() => !!reservation.value && reservation.value.studentID === student.value?.studentID && reservation.value.bookID === scanned.value?.book.bookID)
-// Why this copy can't go out, or null. A copy only held for an accepted reservation can go to that reservation:
-// the slip (or the Pickup code) loaded it, and the checkout then fulfils it (the server allows exactly that).
+// Why this copy can't go out, or null. A copy only held for a reservation is let through here: it can still go to the
+// student who reserved it (the server checks that, and links their reservation), and to no one else.
 const blockedReason = computed(() => {
 	const copy = scanned.value
-	if (!copy?.lendable) return null
-	if (copy.heldForReservation && reservation.value?.bookID === copy.book.bookID) return null
-	return copy.lendable
+	return copy?.lendable && !copy.heldForReservation ? copy.lendable : null
 })
+const heldForReservation = computed(() => !!scanned.value?.heldForReservation)
 
 // Set once the checkout goes through; the window then shows the receipt instead of the steps.
 const receipt = ref<LoanReceiptData | null>(null)
@@ -453,7 +449,6 @@ const showOutput = computed(() => (step.value === 1 && !!scanned.value) || (step
 function clearStudent() {
 	student.value = null
 	studentCode.value = ''
-	reservation.value = null
 	focusSoon(() => studentScanInput.value)
 }
 
@@ -558,25 +553,14 @@ watch(() => props.open, (isOpen) => {
 	pickedBook.value = null
 	pickedCopyAccession.value = null
 	pickupCode.value = ''
-	findMode.value = props.initialCode ? 'pickup' : 'scan'
-	reservation.value = null
+	findMode.value = 'scan'
 	errors.student = ''
 	errors.scan = ''
 	errors.studentScan = ''
 	errors.pickup = ''
 
-	if (props.initialCode) {
-		pickupCode.value = props.initialCode
-		void handlePickupCode().then(() => {
-			if (!reservation.value || !student.value || !scanned.value || blockedReason.value) return
-			// The slip was scanned and the details are filled in. Only the desk's own scan checks out straight away;
-			// otherwise the librarian steps through it, so nothing jumps ahead while they are looking.
-			if (props.autoCheckout) { step.value = 3; void handleSubmit() }
-		})
-	} else {
-		void startCamera()
-		focusSoon(() => scanInput.value)
-	}
+	void startCamera()
+	focusSoon(() => scanInput.value)
 })
 
 onBeforeUnmount(() => stop())
@@ -590,8 +574,6 @@ async function lookupBook(raw: string) {
 	errors.scan = ''
 	try {
 		const { copy } = await librarianService.lookupCopy(code)
-		// A different book than the loaded reservation's: that reservation is no longer what is being collected.
-		if (reservation.value && reservation.value.bookID !== copy.book.bookID) reservation.value = null
 		scanned.value = copy
 		scanCode.value = ''
 	} catch (error: any) {
@@ -608,7 +590,6 @@ const handleTyped = () => lookupBook(scanCode.value)
 function clearScan() {
 	scanned.value = null
 	student.value = null
-	reservation.value = null
 	pickedBook.value = null
 	pickedCopyAccession.value = null
 	focusSoon(() => scanInput.value)
@@ -635,11 +616,7 @@ const studentLabel = (s: StudentRecord) => (s.user ? `${s.user.firstName} ${s.us
 const studentSublabel = (s: StudentRecord) => `${s.memberIDNumber} · ${s.academicProgram ?? s.department ?? '—'}`
 const initialsOf = (name: string) => name.split(' ').filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase()
 
-watch(student, (chosen) => {
-	errors.student = ''
-	// A loaded reservation belongs to its student: choosing someone else lets go of it.
-	if (reservation.value && reservation.value.studentID !== chosen?.studentID) reservation.value = null
-})
+watch(student, () => { errors.student = '' })
 
 // The ID card's barcode (or the typed student number) finds the one approved student it belongs to.
 const handleStudentScan = () => findStudent(studentCode.value)
@@ -669,48 +646,14 @@ async function findStudent(raw: string) {
 }
 
 /* ---------- a reservation slip ---------- */
-async function handlePickupCode() {
-	const code = pickupCode.value.trim()
-	if (!code) return
-
-	lookingUp.value = true
-	errors.pickup = ''
-	try {
-		const { reservation: found } = await circulationService.lookupReservation(code)
-
-		const studentNumber = found.student?.memberIDNumber
-		const [students, books] = await Promise.all([
-			librarianService.fetchStudents({ search: studentNumber, status: 'approved', perPage: 10 }),
-			librarianService.fetchBooks({ search: found.book?.title, perPage: 20 }),
-		])
-		const matchedStudent = students.data.find((s) => s.studentID === found.studentID)
-		const matchedBook = books.data.find((b) => b.bookID === found.bookID)
-		if (!matchedStudent || !matchedBook) {
-			errors.pickup = "Found the reservation, but couldn't load the student or book. Scan the book and choose the student instead."
-			return
-		}
-
-		// Keep a copy the librarian already scanned if it is of the reserved book; otherwise take the first one on the shelf.
-		if (scanned.value?.book.bookID !== matchedBook.bookID || scanned.value.lendable) {
-			const shelfCopy = matchedBook.copies.find((c) => c.status === 'available')
-			if (!shelfCopy) {
-				errors.pickup = 'No copy of the reserved book is on the shelf right now.'
-				return
-			}
-			const { copy } = await librarianService.lookupCopy(String(shelfCopy.accessionNumber))
-			scanned.value = copy
-		}
-
-		student.value = matchedStudent
-		reservation.value = { reservationID: found.reservationID, studentID: found.studentID, bookID: found.bookID, pickupCode: found.pickupCode ?? code }
-		// The code stays in the box, so the librarian can see which reservation was loaded.
-		pickupCode.value = found.pickupCode ?? code
-	} catch (error: any) {
-		reservation.value = null
-		errors.pickup = error?.data?.errors?.code?.[0] ?? error?.data?.message ?? 'Could not look up that code.'
-	} finally {
-		lookingUp.value = false
+// The slip is proof enough of who is collecting, so the pickup window opens at the step of scanning the book.
+function handlePickupCode() {
+	const code = pickupCode.value.replace(/[\r\n\t]/g, '').trim()
+	if (!/^R-\d{1,9}$/i.test(code)) {
+		errors.pickup = "That isn't a pickup code. They look like R-000123."
+		return
 	}
+	emit('pickup', code.toUpperCase())
 }
 
 /* ---------- checking out ---------- */
@@ -729,13 +672,8 @@ async function handleSubmit() {
 
 	submitting.value = true
 	try {
-		// Only fulfil the reservation if the choice still matches it. (When it doesn't, the server still links
-		// the student's own accepted reservation for this title.)
-		const response = await circulationService.checkoutBook({
-			studentID: student.value.studentID,
-			copyID: scanned.value.copyID,
-			...(fulfilsReservation.value ? { reservationID: reservation.value!.reservationID } : {}),
-		})
+		// The server still links the student's own accepted reservation for this title, if they have one.
+		const response = await circulationService.checkoutBook({ studentID: student.value.studentID, copyID: scanned.value.copyID })
 		alert.success('Book checked out', `"${scanned.value.book.title}" was lent to ${studentLabel(student.value)}.`)
 		emit('created')
 		receipt.value = response.receipt

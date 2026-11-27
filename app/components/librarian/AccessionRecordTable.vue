@@ -4,7 +4,7 @@
 		<LibrarianCardSkeleton v-if="loading" />
 		<ul v-else class="card-grid grid gap-3 sm:grid-cols-2 2xl:grid-cols-3 [&>li]:overflow-hidden [&>li]:rounded-2xl [&>li]:border [&>li]:border-stone-200 [&>li]:bg-white">
 			<li v-for="book in books" :key="`card-${book.bookID}`">
-				<div class="relative px-4 py-3.5 transition-colors active:bg-accent-50">
+				<div class="relative h-full px-4 py-3.5 transition-colors active:bg-accent-50">
 					<button type="button" class="card-cover" :aria-label="`Open ${book.title}`" @click="emit('view', book)" />
 					<div class="card-body flex gap-3">
 						<StudentCover :book="book" :width="48" />

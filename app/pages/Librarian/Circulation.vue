@@ -21,7 +21,7 @@
                 <LibrarianSearchInput id="loan-search" v-model="loanSearch" class="!min-w-[210px]" placeholder="Search student or book" />
                 <LibrarianFilterMenu class="toolbar-full" v-model="loanFilters" :groups="loanFilterGroups" />
                 <div class="flex-1"></div>
-                <ButtonsButton variant="primary" class="toolbar-full" @click="checkoutCode = undefined; checkoutAuto = false; isCheckoutOpen = true">
+                <ButtonsButton variant="primary" class="toolbar-full" @click="isCheckoutOpen = true">
                     <Icon name="i-tabler-plus" class="h-3.5 w-3.5" />Checkout Book
                 </ButtonsButton>
             </div>
@@ -131,11 +131,11 @@
         <LibrarianReservationReviewModal :open="isReviewOpen" :items="reviewItems" :queue-positions="queuePositions" :busy="reviewBusy"
             @close="isReviewOpen = false" @accept="acceptMany" @reject="rejectMany" @checkout="checkoutFromReview" />
 
-        <LibrarianReservationScanModal :open="isScanOpen" :reservation="scanReservation" @close="isScanOpen = false"
-            @matched="handleSlipScanned" @manual="handleCheckoutManually" />
+        <LibrarianReservationPickupModal :open="isPickupOpen" :reservation="pickupReservation" :code="pickupCode"
+            @close="isPickupOpen = false" @created="handleCheckoutCreated" @manual="handleCheckoutManually" />
 
-        <LibrarianCheckoutModal :open="isCheckoutOpen" :initial-code="checkoutCode" :auto-checkout="checkoutAuto"
-            @close="isCheckoutOpen = false" @created="handleCheckoutCreated" />
+        <LibrarianCheckoutModal :open="isCheckoutOpen" @close="isCheckoutOpen = false" @created="handleCheckoutCreated"
+            @pickup="(code: string) => void openPickupFromCode(code)" />
 
         <LibrarianReturnLoanModal :open="isReportOpen" :mode="reportMode" :preview="reportPreview" :loading="reportLoading" :error="reportError"
             :busy="reportBusy" @close="isReportOpen = false" @submit="confirmReport" />
@@ -216,12 +216,12 @@ const areaOptions = computed(() => [
     ...Object.entries(LIBRARY_AREAS).map(([value, label]) => ({ value, label: String(label) })),
 ])
 const isCheckoutOpen = ref(false)
-// Checking out a reservation starts with a scan of its pickup slip; the form is the manual way.
-const isScanOpen = ref(false)
-const scanReservation = ref<ReservationRecord | null>(null)
-const checkoutAuto = ref(false)
-// The pickup code of the accepted reservation being checked out; empty for a plain checkout.
-const checkoutCode = ref<string | undefined>(undefined)
+// A reserved book being collected: one window (slip, the book in hand, confirm), whichever way it was started.
+const isPickupOpen = ref(false)
+// Picked from the Reservations tab: the slip still has to be shown.
+const pickupReservation = ref<ReservationRecord | null>(null)
+// A slip already scanned (the Station, or the Pickup code in Checkout): the window starts at the book.
+const pickupCode = ref<string | null>(null)
 
 // Dashboard quick action: /librarian/circulation?new=checkout opens the checkout form straight away.
 onMounted(() => {
@@ -881,31 +881,31 @@ async function decideMany(list: ReservationRecord[], action: 'accept' | 'reject'
 const acceptMany = (list: ReservationRecord[]) => decideMany(list, 'accept')
 const rejectMany = (list: ReservationRecord[]) => decideMany(list, 'reject')
 
-// Checking out opens the slip scanner, so the pop-up steps aside first.
+// Checking out a reservation opens the pickup window, so the review pop-up steps aside first.
 function checkoutFromReview(reservation: ReservationRecord) {
     isReviewOpen.value = false
-    handleCheckoutReservation(reservation)
+    pickupReservation.value = reservation
+    pickupCode.value = null
+    isPickupOpen.value = true
 }
 
-// Same path as scanning the student's slip: the checkout opens with the student and book filled in.
-function handleCheckoutReservation(reservation: ReservationRecord) {
-    scanReservation.value = reservation
-    isScanOpen.value = true
+// A slip already read (the Station, or the Pickup code typed in Checkout): the pickup window starts at the book.
+async function openPickupFromCode(code: string) {
+    isCheckoutOpen.value = false
+    // Already open (another slip scanned at the Station): close it first, so it starts over with the new slip.
+    if (isPickupOpen.value) {
+        isPickupOpen.value = false
+        await nextTick()
+    }
+    pickupReservation.value = null
+    pickupCode.value = code
+    isPickupOpen.value = true
 }
 
-// The right slip was scanned: the checkout window takes over and finishes the checkout by itself.
-function handleSlipScanned(pickupCode: string) {
-    isScanOpen.value = false
-    checkoutCode.value = pickupCode
-    checkoutAuto.value = true
-    isCheckoutOpen.value = true
-}
-
-// The alternative to scanning: the same form as a plain checkout, with the reservation filled in.
+// No slip or ID to show, or the reservation can't be collected: a normal checkout. When it lends this title to the
+// student, the server still links their accepted reservation and marks it collected.
 function handleCheckoutManually() {
-    isScanOpen.value = false
-    checkoutCode.value = scanReservation.value?.pickupCode
-    checkoutAuto.value = false
+    isPickupOpen.value = false
     isCheckoutOpen.value = true
 }
 
@@ -913,7 +913,7 @@ function handleCheckoutManually() {
  * The scan station (its own tab) sends this tab here with what it read, and the window opens on this page:
  *   ?return=<loan uuid>  a borrowing receipt or a book's label: the usual Return window, with the late fee
  *   ?finish=<loan uuid>  a book already handed in: the check for damage that finishes the return
- *   ?pickup=<code>       a reservation slip: the checkout, with the student and the book filled in
+ *   ?pickup=<code>       a reservation slip: the pickup window, at the step of scanning the book
  * The station may send another one while this page is open, so it reacts to each change of the address.
  */
 async function openFromStation() {
@@ -935,9 +935,7 @@ async function openFromStation() {
 
     if (pickup) {
         activeTab.value = 'reservations'
-        checkoutCode.value = pickup
-        checkoutAuto.value = false
-        isCheckoutOpen.value = true
+        void openPickupFromCode(pickup)
     } else if (ret) {
         activeTab.value = 'loans'
         // The window only needs the loan's id: it loads the rest (book, student, fee) itself.
