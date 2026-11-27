@@ -35,7 +35,10 @@
                     </span>
                 </p>
                 <p class="text-[13.5px] leading-snug text-stone-500">
-                    <template v-if="stationOpen">Scans from the station tab show up here straight away.</template>
+                    <template v-if="stationOpen">
+                        The library is open since {{ stationSince }}<template v-if="stationSession?.startedBy"> ({{ stationSession.startedBy }})</template>.
+                        It stays running until someone presses End session in the scan station, even with its tab closed.
+                    </template>
                     <template v-else>
                         <span class="sm:hidden">Opens the scanner in its own tab, with the webcam or a phone camera.</span>
                         <span class="hidden sm:inline">Opens the scanner in its own tab using the webcam or a phone camera. It reads student IDs for attendance, and also borrowing receipts, reservation slips and facility labels.</span>
@@ -170,21 +173,17 @@ watch(search, () => {
 })
 
 /* ---------- scan station (its own tab) ---------- */
-const stationOpen = ref(false)
+// "Running" is the library session (server side): from opening the station until its End session, tab open or not.
+const { running: stationOpen, since: stationSince, session: stationSession } = useStationSession()
 const openStation = openAttendanceStation
 
-// The station tab tells us when it opens, closes, or scans someone.
-const { post } = useStationChannel((message) => {
-    if (message.type === 'open') stationOpen.value = true
-    else if (message.type === 'closed') stationOpen.value = false
-    else if (message.type === 'scanned') {
-        // A scan changes both the log and the "currently in library" numbers straight away.
+// A scan in the station tab changes both the log and the "currently in library" numbers straight away.
+useStationChannel((message) => {
+    if (message.type === 'scanned') {
         void refetchLogs()
         void refetchStats()
     }
 })
-
-onMounted(() => post({ type: 'ping' }))
 
 /* ---------- walk-in visitors (no account) ---------- */
 const { perform } = useAction()

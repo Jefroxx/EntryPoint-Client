@@ -103,6 +103,7 @@ const isEndOpen = ref(false)
 const endBusy = ref(false)
 
 const endMessage = computed(() => {
+    if (endChecking.value) return 'Checking who is still in the library… Ending the session logs everyone still inside out.'
     const inside = stats.value?.inside
     const earlier = inside?.earlier ?? { students: 0, visitors: 0 }
     // Who is in now, apart from visits left open from an earlier day (those are closed too, and said separately).
@@ -124,9 +125,17 @@ const endMessage = computed(() => {
     return `${who} ${count === 1 ? 'is' : 'are'} still in the library. Ending the session logs ${count === 1 ? 'them' : 'all of them'} out and ends any computer or room session they have running.${oldNote ? ' ' + oldNote : ''}`
 })
 
+// The confirmation opens straight away and the count fills in when the server answers. (It used to wait for the
+// fresh count first, so on a slow or waking-up server the button looked like it did nothing.)
+const endChecking = ref(false)
 async function askEndSession() {
-	await refetchStats()
 	isEndOpen.value = true
+	endChecking.value = true
+	try {
+		await refetchStats()
+	} finally {
+		endChecking.value = false
+	}
 }
 
 async function confirmEndSession() {
@@ -150,7 +159,8 @@ function endSession() {
 
 onMounted(() => {
 	now.value = new Date()
-	post({ type: 'open' })
+	// Opening the station opens the library session (kept on the server until End session), then tells the other tabs.
+	void librarianService.startStationSession().catch(() => { /* the button just stays as it was until the next check */ }).finally(() => post({ type: 'open' }))
 	tick = setInterval(() => { now.value = new Date() }, 15_000)
 	canFullscreen.value = !!document.documentElement.requestFullscreen
 	document.addEventListener('fullscreenchange', syncFullscreen)

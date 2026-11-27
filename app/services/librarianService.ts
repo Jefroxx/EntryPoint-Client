@@ -530,6 +530,12 @@ export interface AttendanceScanResult {
   endedSession?: { name: string; minutes: number } | null;
 }
 
+/** The library session: since when the scan station has been running, and who opened it. */
+export interface StationSession {
+  startedAt: string;
+  startedBy: string | null;
+}
+
 /**
  * POST /librarian/scan: one endpoint for every barcode. The code says what it is, and `type` says what happened:
  * a student ID (attendance), a borrowing receipt (book handed in), a reservation slip, or a facility's label.
@@ -952,7 +958,17 @@ class LibrarianServiceClass extends BaseService {
     });
   }
 
-  /** Ending the scan station: logs everyone still in the library out, and ends their computer and room sessions. */
+  /** The library session: open from opening the scan station until its End session, whether its tab is open or not. */
+  fetchStationSession() {
+    return this.apiRequest<{ session: StationSession | null }>("/librarian/station");
+  }
+
+  /** Opening the scan station opens the library session (or keeps the one already open). */
+  startStationSession() {
+    return this.apiRequest<{ session: StationSession }>("/librarian/station/start", { method: "POST" });
+  }
+
+  /** Ending the scan station: logs everyone still in the library out, ends their computer and room sessions, and closes the library session. */
   closeAllVisits() {
     return this.apiRequest<{ message: string; students: number; visitors: number; sessionsEnded: number }>(
       "/librarian/attendance-logs/close-all", { method: "POST" });
