@@ -127,7 +127,7 @@
 											</ButtonsButton>
 										</div>
 										<p v-if="errors.scan" class="mt-1 text-[12.5px] text-red-500">{{ errors.scan }}</p>
-										<p v-else class="mt-1 text-[12.5px] text-stone-500">A USB scanner types into this box by itself. The accession number is printed on the book.</p>
+										<p v-else class="mt-1 text-[12.5px] text-stone-500">A USB scanner types into this box by itself. A borrowing receipt, or a book that is out on loan, opens its return; a pickup slip opens the reservation.</p>
 									</form>
 
 									<div v-show="findMode === 'title'" class="space-y-3">
@@ -260,7 +260,7 @@
 								<p v-else class="mt-4 flex items-start gap-2 text-[14px] font-medium text-emerald-800">
 									<Icon name="i-tabler-circle-check" class="mt-0.5 h-4 w-4 shrink-0" />Ready to lend<template v-if="scanned.dueDate">. Would be due {{ formatDate(scanned.dueDate) }}</template>
 								</p>
-								<div class="mt-4 border-t border-black/5 pt-4">
+								<div class="mt-4 flex flex-wrap gap-2 border-t border-black/5 pt-4">
 									<ButtonsButton variant="ghost" @click="clearScan">Find a different book</ButtonsButton>
 								</div>
 							</div>
@@ -375,6 +375,8 @@ const emit = defineEmits<{
 	(e: 'created'): void
 	/** A reservation slip code: the pickup window takes it from here (it checks the slip, then the copy in hand). */
 	(e: 'pickup', code: string): void
+	/** A borrowing receipt, or a book that is out on loan: the page opens that loan's return instead. */
+	(e: 'return', loan: { uuid: string; handedIn: boolean }): void
 }>()
 
 const alert = useAlert()
@@ -570,12 +572,32 @@ async function lookupBook(raw: string) {
 	const code = raw.replace(/[\r\n\t]/g, '').trim()
 	if (!code || scanning.value) return
 
+	// Not a book: a reservation slip opens its pickup, and a borrowing receipt opens the return of that loan. The
+	// librarian scanned it here, so take them where it belongs instead of saying "no copy has that barcode".
+	if (/^R-\d{1,9}$/i.test(code)) {
+		scanCode.value = ''
+		emit('pickup', code.toUpperCase())
+		return
+	}
+	if (/^L-\d{1,9}$/i.test(code)) {
+		scanCode.value = ''
+		await openReturn(code)
+		return
+	}
+
 	scanning.value = true
 	errors.scan = ''
 	try {
 		const { copy } = await librarianService.lookupCopy(code)
-		scanned.value = copy
 		scanCode.value = ''
+		// Out on loan: it can't be lent again, so the book in hand is coming back. Open its return straight away, as a
+		// receipt does. (The Return window still asks before anything changes.)
+		if (copy.status === 'borrowed' && copy.barcodeValue) {
+			scanning.value = false
+			await openReturn(copy.barcodeValue)
+			return
+		}
+		scanned.value = copy
 	} catch (error: any) {
 		errors.scan = error?.data?.errors?.code?.[0] ?? error?.data?.message ?? 'Could not look up that barcode.'
 		scanCode.value = ''
@@ -586,6 +608,27 @@ async function lookupBook(raw: string) {
 }
 
 const handleTyped = () => lookupBook(scanCode.value)
+
+/**
+ * A receipt (L-…) or the label of a book that is out on loan (BK-…): the station's scan finds the loan without
+ * changing anything, and the page opens its Return window (or the check, for a book already handed in).
+ */
+const openingReturn = ref(false)
+async function openReturn(code: string) {
+	if (openingReturn.value) return
+	openingReturn.value = true
+	errors.scan = ''
+	try {
+		const res = await librarianService.scan(code)
+		if (res.type !== 'loan_return') throw new Error("That isn't a borrowed book or a borrowing receipt.")
+		emit('return', { uuid: res.loan.uuid, handedIn: res.loan.status === 'Received' })
+	} catch (error: any) {
+		errors.scan = apiFieldErrors(error).barcodeValue || apiErrorMessage(error) || error?.message || 'Could not find that loan.'
+		focusSoon(() => scanInput.value)
+	} finally {
+		openingReturn.value = false
+	}
+}
 
 function clearScan() {
 	scanned.value = null

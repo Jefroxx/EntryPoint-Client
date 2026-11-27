@@ -1,5 +1,10 @@
+// The test site (npm run test-site:build): a built copy of this PC's code served at test.entrypoint.digital through a
+// Cloudflare tunnel. It builds into its own folders so it never disturbs a running `npm run dev`.
+const testSite = process.env.ENTRYPOINT_TEST_SITE === '1'
+
 export default defineNuxtConfig({
 	compatibilityDate: '2025-07-15',
+	...(testSite ? { buildDir: '.nuxt-test', nitro: { preset: 'node-server', output: { dir: '.output-test' } } } : {}),
 	devtools: { enabled: true },
 	app: {
 		// viewport-fit=cover lets the student app paint under the notch / home indicator and
@@ -48,7 +53,8 @@ export default defineNuxtConfig({
 		'/storage/**': { proxy: `${process.env.LARAVEL_ORIGIN || 'http://127.0.0.1:8000'}/storage/**` },
 	},
 	// The dev server rejects unknown Host headers, and a quick tunnel's hostname is random.
-	vite: { server: { allowedHosts: ['.trycloudflare.com'] } },
+	// test.entrypoint.digital is the named tunnel to this PC (the dev site, for testing on a phone over https).
+	vite: { server: { allowedHosts: ['.trycloudflare.com', 'test.entrypoint.digital'] } },
 	css: ['~/assets/css/tailwind.css'],
 	modules: ['@nuxt/ui', '@nuxt/icon', '@nuxt/fonts'],
 	// The design is light only. Following a dark system theme left the browser's own controls (radio buttons,
