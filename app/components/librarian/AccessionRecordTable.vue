@@ -72,19 +72,21 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-	(e: 'view' | 'edit' | 'remove' | 'print-labels', book: CatalogBook): void
+	(e: 'view' | 'edit' | 'remove' | 'print-labels' | 'scan-isbn', book: CatalogBook): void
 }>()
 
 
 const BOOK_MENU = [
 	{ key: 'view', label: 'View details', icon: 'i-tabler-eye' },
 	{ key: 'edit', label: 'Edit book', icon: 'i-tabler-pencil' },
+	// Hold this book's back cover to the camera: the catalogues fill what its record lacks, as Add Book's scan does.
+	{ key: 'scan-isbn', label: 'Scan ISBN', icon: 'i-tabler-barcode' },
 	{ key: 'print-labels', label: 'Print barcode labels', icon: 'i-tabler-printer' },
 	{ key: 'remove', label: 'Remove', icon: 'i-tabler-trash', tone: 'danger', separator: true },
 ] as const
 
 function onMenu(key: string, book: CatalogBook) {
-	if (key === 'view' || key === 'edit' || key === 'remove' || key === 'print-labels') emit(key, book)
+	if (key === 'view' || key === 'edit' || key === 'remove' || key === 'print-labels' || key === 'scan-isbn') emit(key, book)
 }
 
 function authorNames(book: CatalogBook): string {

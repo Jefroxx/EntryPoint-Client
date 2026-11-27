@@ -55,7 +55,7 @@
 
             <LibrarianAccessionRecordTable :books="books?.data ?? []" :loading="booksPending" :filtered="hasBookFilters"
                 @view="openBookDetail" @edit="openEditBook" @remove="askRemoveBook"
-                @print-labels="(book) => openLabels({ book: book.uuid })" />
+                @print-labels="(book) => openLabels({ book: book.uuid })" @scan-isbn="(book) => scanningBook = book" />
 
             <LibrarianPagination v-if="books" :shown="books.data.length" :total="books.total" noun="books"
                 :page="books.current_page" :last-page="books.last_page" @change="goToPage" />
@@ -185,6 +185,9 @@
         <LibrarianImportBooksModal :open="isImportOpen" @close="isImportOpen = false" @imported="afterImport"
             @check-details="isImportOpen = false; isCheckDetailsOpen = true" />
 
+        <LibrarianScanBookIsbnModal :open="!!scanningBook" :book="scanningBook" @close="scanningBook = null"
+            @saved="refetchDeweyCount(); refetchDetailsCount(); refetchBooks(); refetchCopies()" />
+
         <LibrarianCheckDetailsModal :open="isCheckDetailsOpen" @close="isCheckDetailsOpen = false"
             @changed="refetchDeweyCount(); refetchBooks(); refetchCopies()" />
 
@@ -242,6 +245,8 @@ const activeTab = ref(['accession', 'catalog', 'requests', 'setup'].includes(Str
 
 // How many books still haven't been checked against the online catalogues (the Check Details button shows while any).
 const isCheckDetailsOpen = ref(false)
+// The book whose ISBN is being scanned from its card's ⋮ menu (Scan ISBN); null when that window is closed.
+const scanningBook = ref<CatalogBook | null>(null)
 const { data: detailsQueue, execute: refetchDetailsCount } =
     useLiveAsyncData('details-check-count', () => librarianService.fetchDetailsQueue({ perPage: 1 }), { lazy: true, pollMs: 60_000 })
 const detailsRemaining = computed(() => detailsQueue.value?.remaining ?? 0)
