@@ -235,11 +235,15 @@ class CirculationServiceClass extends BaseService {
     return this.request<LoanStats>("/librarian/loans/stats");
   }
 
-  /** Resolves the code on a student's reservation pickup slip (R-000123) to its accepted reservation. */
+  /**
+   * Resolves the code on a student's reservation pickup slip (R-000123) to its accepted reservation, with the student,
+   * the book, and that book's copies on the shelf: everything the pickup window needs, in one request.
+   */
   lookupReservation(code: string) {
-    return this.request<{ reservation: ReservationRecord & { studentID: number; bookID: number } }>(
-      `/librarian/reservations/lookup/${encodeURIComponent(code.trim())}`,
-    );
+    return this.request<{
+      reservation: ReservationRecord & { studentID: number; bookID: number; student: (PersonRef & { department?: string | null }) | null };
+      shelfCopies: { copyID: number; accessionNumber: number }[];
+    }>(`/librarian/reservations/lookup/${encodeURIComponent(code.trim())}`);
   }
 
   checkoutBook(payload: CheckoutPayload) {
