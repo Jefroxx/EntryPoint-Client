@@ -67,7 +67,7 @@ export interface DetailsCheckResult {
   found: boolean;
   reason?: string;
   /** "isbn": looked up by the book's own ISBN. "title": found by title and author (worth a second look). */
-  matchedBy?: "isbn" | "title";
+  matchedBy?: "isbn" | "title" | "scan";
   matched?: { isbn: string; title: string | null; authors: string[]; publisher: string | null; year: number | null };
   /** For a title match: does the edition's year agree with the record's? null when either has none. */
   yearAgrees?: boolean | null;
@@ -75,6 +75,10 @@ export interface DetailsCheckResult {
   titleAgrees?: boolean | null;
   /** The ISBN found is already another book's, so it can't be given to this one. */
   isbnTakenBy?: string | null;
+  /** A scan of a book that already has a different ISBN on record: the record's, which is kept. */
+  recordIsbn?: string | null;
+  /** For a scan: false when no catalogue knows the scanned ISBN (only the ISBN itself can be saved). */
+  catalogueFound?: boolean;
   fills?: DetailsFills;
 }
 
@@ -729,9 +733,9 @@ class LibrarianServiceClass extends BaseService {
     return this.apiRequest<{ remaining: number; books: { data: DetailsQueueBook[]; last_page: number; total: number } }>("/librarian/books/details-check", { query: params });
   }
 
-  /** What the catalogues know that one book's record lacks. Saves nothing. */
-  checkBookDetails(bookUuid: string) {
-    return this.apiRequest<DetailsCheckResult>(`/librarian/books/${bookUuid}/details/check`, { method: "POST" });
+  /** What the catalogues know that one book's record lacks. Saves nothing. With an ISBN scanned from the book, that one is looked up. */
+  checkBookDetails(bookUuid: string, scannedIsbn?: string) {
+    return this.apiRequest<DetailsCheckResult>(`/librarian/books/${bookUuid}/details/check`, { method: "POST", body: scannedIsbn ? { isbn: scannedIsbn } : undefined });
   }
 
   /** Saves what was accepted (empty fields only) and marks every book in `checked` as checked. */
