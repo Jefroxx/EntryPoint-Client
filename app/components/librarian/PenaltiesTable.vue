@@ -4,7 +4,7 @@
 		<!-- Phones: one card per row, with the row's buttons on it. -->
 		<template #cards>
 			<li v-for="penalty in penalties" :key="`card-${penalty.penaltyID}`">
-				<div class="relative px-4 py-3.5 transition-colors active:bg-accent-50" :class="{ 'bg-red-50/60': isLongUnpaid(penalty) }">
+				<div class="relative h-full px-4 py-3.5 transition-colors active:bg-accent-50" :class="{ 'bg-red-50/60': isLongUnpaid(penalty) }">
 					<button type="button" class="card-cover" :aria-label="`Open the penalty for ${bookTitle(penalty)}`" @click="selected = penalty" />
 					<div class="card-body">
 						<div class="flex items-start justify-between gap-3">

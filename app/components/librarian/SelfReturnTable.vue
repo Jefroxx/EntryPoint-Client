@@ -4,7 +4,7 @@
 		<!-- Phones: one card per row, with the row's buttons on it. -->
 		<template #cards>
 			<li v-for="report in reports" :key="`card-${report.reportID}`">
-				<div class="relative px-4 py-3.5 transition-colors active:bg-accent-50">
+				<div class="relative h-full px-4 py-3.5 transition-colors active:bg-accent-50">
 					<button type="button" class="card-cover" :aria-label="`Open the report for ${report.loan?.copy?.book?.title ?? 'a removed book'}`" @click="selected = report" />
 					<div class="card-body">
 						<div class="flex items-start justify-between gap-3">

@@ -4,7 +4,7 @@
 		<!-- Phones: one card per loan, with the main action on it. -->
 		<template #cards>
 			<li v-for="loan in loans" :key="`card-${loan.loanID}`">
-				<div class="relative px-4 py-3.5 transition-colors active:bg-accent-50">
+				<div class="relative h-full px-4 py-3.5 transition-colors active:bg-accent-50">
 					<button type="button" class="card-cover" :aria-label="`Open the loan of ${loan.copy?.book?.title ?? 'a removed book'}`" @click="selected = loan" />
 					<div class="card-body flex flex-col gap-2.5">
 						<div class="flex items-start justify-between gap-3">
