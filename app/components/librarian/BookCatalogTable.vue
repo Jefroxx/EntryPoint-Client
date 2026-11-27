@@ -12,7 +12,7 @@
 			<span v-if="selected.length" class="font-normal text-stone-500">· {{ selected.length }} selected</span>
 		</label>
 
-		<ul v-if="!loading" class="grid gap-3 sm:grid-cols-2 2xl:grid-cols-3 [&>li]:overflow-hidden [&>li]:rounded-2xl [&>li]:border [&>li]:border-stone-200 [&>li]:bg-white">
+		<ul v-if="!loading" class="card-grid grid gap-3 sm:grid-cols-2 2xl:grid-cols-3 [&>li]:overflow-hidden [&>li]:rounded-2xl [&>li]:border [&>li]:border-stone-200 [&>li]:bg-white">
 			<li v-for="copy in copies" :key="`card-${copy.copyID}`" :class="selected.includes(copy.uuid) ? '!border-accent-300 !bg-accent-50/50' : ''">
 				<div class="relative px-4 py-3.5 transition-colors active:bg-accent-50">
 					<button type="button" class="card-cover" :aria-label="`Open accession no. ${copy.accessionNumber}`" @click="detailUuid = copy.uuid" />
@@ -35,7 +35,7 @@
 
 						<!-- The title has the whole width of the card: beside the checkbox, the number, the status and the menu it was squeezed to a word a line. -->
 						<div class="mt-2.5 min-w-0">
-							<p class="break-words text-[15px] font-semibold leading-snug text-stone-900">{{ copy.book.title }}</p>
+							<p class="line-clamp-2 break-words text-[15px] font-semibold leading-snug text-stone-900" :title="copy.book.title">{{ copy.book.title }}</p>
 							<p class="break-words text-[13px] text-stone-500">{{ copy.book.authors.join(', ') || '—' }}</p>
 						</div>
 

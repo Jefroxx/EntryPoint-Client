@@ -73,6 +73,9 @@ export function useCameraScanner(onCode: (code: string) => void, region?: () => 
   let wakeLock: any = null
   let session = 0 // bumped by stop(), so slow async work from an old session can't act
   let last = { code: '', at: 0 }
+  // The camera track and what it can do, kept so the station's autofocus can start over after each read.
+  let focusTrack: MediaStreamTrack | undefined
+  let focusCaps: any = null
 
   // A code held steadily in front of the camera is reported once. The quiet period counts from the last time the code
   // was SEEN (not the last time it was reported), so it re-arms only after it has been out of view for 2.5 seconds.
@@ -87,20 +90,28 @@ export function useCameraScanner(onCode: (code: string) => void, region?: () => 
     last = { code, at: now }
     if (repeat) return
     stopFocus()
+    // The station reads one ID after another: its autofocus starts over for the next one (a book's stops at its read).
+    if (formats !== 'isbn' && focusTrack) {
+      const track = focusTrack
+      try { void track.applyConstraints({ advanced: [{ focusMode: 'continuous' } as any] }).catch(() => {}) } catch { /* fixed focus */ }
+      armAutofocus(track, focusCaps, session, true)
+    }
     onCode(code)
   }
 
   /**
-   * Software autofocus, for books. A laptop webcam's own autofocus often settles on the room behind a barcode held
+   * Software autofocus (books, and the scan station: see the station part below). A laptop webcam's own autofocus often settles on the room behind a barcode held
    * close, and a barcode only a little out of focus reads as grey bars that cannot be decoded. So when nothing has been
    * read after a moment, the scanner does the camera's job itself: it measures how sharp the picture inside the scan
    * frame is at each focus position across the camera's range, goes back to the sharpest, holds it while the book is
    * held still, and searches again as soon as the picture goes soft or after a while with no read.
    * Only where the camera allows manual focus; one that refuses is handed back to its own autofocus.
    */
-  function armAutofocus(track: MediaStreamTrack | undefined, caps: any, mine: number) {
+  function armAutofocus(track: MediaStreamTrack | undefined, caps: any, mine: number, afterRead = false) {
     stopFocus()
-    if (formats !== 'isbn' || !track) return
+    focusTrack = track
+    focusCaps = caps
+    if (!track) return
     const range = caps?.focusDistance
     if (!caps?.focusMode?.includes?.('manual') || typeof range?.min !== 'number' || typeof range?.max !== 'number' || range.max <= range.min) return
 
@@ -123,33 +134,91 @@ export function useCameraScanner(onCode: (code: string) => void, region?: () => 
       return sum / 2
     }
 
+    // Steps the lens across its range and settles on the sharpest position inside the scan frame.
+    const search = async () => {
+      focusPhase.value = 'seeking'
+      const step = (range.max - range.min) / (FOCUS_COARSE_STEPS - 1)
+      let best = { at: range.min, score: -1 }
+
+      for (let i = 0; i < FOCUS_COARSE_STEPS && alive(); i++) {
+        const at = clamp(range.min + step * i)
+        await setFocus(at)
+        const score = await measure()
+        if (score > best.score) best = { at, score }
+      }
+
+      // Finer: just either side of the best coarse position.
+      for (const at of [clamp(best.at - step / 2), clamp(best.at + step / 2)]) {
+        if (!alive()) break
+        await setFocus(at)
+        const score = await measure()
+        if (score > best.score) best = { at, score }
+      }
+
+      if (alive()) {
+        await setFocus(best.at)
+        focusPhase.value = 'locked'
+      }
+      return best
+    }
+    const handBack = async () => {
+      focusPhase.value = 'off'
+      try { await track.applyConstraints({ advanced: [{ focusMode: 'continuous' } as any] }) } catch { /* fixed focus */ }
+    }
+
+    /*
+     * The scan station (IDs, receipts, slips, book labels): scanning all day, and idle most of it. A laptop webcam's own
+     * autofocus settles on the room behind an ID held up close, and slightly soft bars look fine to a person but don't
+     * decode. So once something has been held in the frame for a moment without a read, the scanner focuses on it itself,
+     * holds that while it stays, and hands focus back when it goes. It searches only when something is there (an empty
+     * desk never makes the lens hunt), only once for the same thing (a busy background that never reads can't keep it
+     * hunting either), and again for the next person after every read.
+     */
+    if (formats !== 'isbn') {
+      void (async () => {
+        try {
+          // After a read, the code that was just read is still in view: it doesn't need a search.
+          let searchedAt: number | null = afterRead ? seen.strength : null
+          let emptySince = 0
+          while (alive()) {
+            await sleep(200)
+            const now = Date.now()
+            const there = !!seen.since && now - seen.at < 600
+            // An empty frame for a second: whatever comes next is new, even if it looks much the same.
+            if (!there) {
+              emptySince ||= now
+              if (now - emptySince > 1000) searchedAt = null
+              continue
+            }
+            emptySince = 0
+            const changed = searchedAt === null || Math.abs(seen.strength - searchedAt) > 0.3 * Math.max(seen.strength, searchedAt)
+            if (now - seen.since < FOCUS_AFTER_MS || !changed) continue
+
+            const best = await search()
+            searchedAt = seen.strength
+            // Hold while it stays in the frame and stays sharp, then give the camera its own focus back.
+            const heldFrom = Date.now()
+            let soft = 0
+            while (alive() && seen.since && Date.now() - heldFrom < FOCUS_HOLD_MS && soft < 2) {
+              await sleep(450)
+              soft = (await measure()) < best.score * 0.65 ? soft + 1 : 0
+            }
+            if (alive()) await handBack()
+          }
+        } catch {
+          if (run === focusRun) { stopFocus(); void handBack() }
+        }
+      })()
+      return
+    }
+
     void (async () => {
       try {
         await sleep(FOCUS_AFTER_MS)
 
         while (alive()) {
-          focusPhase.value = 'seeking'
-          const step = (range.max - range.min) / (FOCUS_COARSE_STEPS - 1)
-          let best = { at: range.min, score: -1 }
-
-          for (let i = 0; i < FOCUS_COARSE_STEPS && alive(); i++) {
-            const at = clamp(range.min + step * i)
-            await setFocus(at)
-            const score = await measure()
-            if (score > best.score) best = { at, score }
-          }
-
-          // Finer: just either side of the best coarse position.
-          for (const at of [clamp(best.at - step / 2), clamp(best.at + step / 2)]) {
-            if (!alive()) break
-            await setFocus(at)
-            const score = await measure()
-            if (score > best.score) best = { at, score }
-          }
-
+          const best = await search()
           if (!alive()) return
-          await setFocus(best.at)
-          focusPhase.value = 'locked'
 
           // Hold the sharpest position while the book is held still. Search again when the picture goes soft twice
           // running (the book moved), or when the hold runs out without a read.
@@ -247,7 +316,7 @@ export function useCameraScanner(onCode: (code: string) => void, region?: () => 
   }
 
   /** Copies the part of the camera image under the on-screen frame onto the canvas, ready to decode. */
-  function grab(el: HTMLVideoElement, whole: boolean): HTMLCanvasElement | null {
+  function grab(el: HTMLVideoElement, whole: boolean, scaleUp = true): HTMLCanvasElement | null {
     const vw = el.videoWidth
     const vh = el.videoHeight
     if (!canvas || !context || !vw || !vh) return null
@@ -256,7 +325,8 @@ export function useCameraScanner(onCode: (code: string) => void, region?: () => 
 
     // The crop is widened up to 2× (smoothed): thin bars then span several pixels, which the sharpening
     // pass needs. Only across the bars; stretching their height adds nothing. The whole picture isn't scaled.
-    const upscale = whole ? 1 : Math.max(1, Math.min(2, MAX_CROP_WIDTH / sw))
+    // (Not when the crop is levelled first: stretching one way would bend the angle it measures; see level().)
+    const upscale = whole || !scaleUp ? 1 : Math.max(1, Math.min(2, MAX_CROP_WIDTH / sw))
     canvas.width = Math.round(sw * upscale)
     canvas.height = Math.round(sh)
     context.imageSmoothingEnabled = true
@@ -280,11 +350,7 @@ export function useCameraScanner(onCode: (code: string) => void, region?: () => 
    * row's contrast to full black-to-white. On test frames this took reads of a slightly blurred barcode
    * from 0 of 6 to 6 of 6.
    */
-  function enhance({ data, w, h }: { data: Uint8ClampedArray; w: number; h: number }) {
-    const ROWS = 7
-    const RADIUS = 3
-    const AMOUNT = 1.5
-
+  function enhance({ data, w, h }: { data: Uint8ClampedArray; w: number; h: number }, ROWS = 7, RADIUS = 3, AMOUNT = 1.5) {
     const smooth = new Float32Array(w * h)
     for (let x = 0; x < w; x++) {
       // Running sum down the column: O(h) per column instead of O(h × window).
@@ -325,6 +391,91 @@ export function useCameraScanner(onCode: (code: string) => void, region?: () => 
     return { data: out, w, h }
   }
 
+  type Gray = { data: Uint8ClampedArray; w: number; h: number }
+
+  /**
+   * What is in the scan frame, from its edges: `strength` is the share of the picture that is a real edge (an empty desk
+   * is ~0, any barcode held up 0.09 or more), `angle` the direction the bars lean (0 when level). One pass over every
+   * other pixel; it feeds both the levelling below and the station's autofocus (it only searches when something is there).
+   */
+  function measureShape({ data, w, h }: Gray) {
+    let sxx = 0
+    let syy = 0
+    let sxy = 0
+    let edges = 0
+    let n = 0
+    for (let y = 1; y < h - 1; y += 2) {
+      for (let x = 1; x < w - 1; x += 2) {
+        n++
+        const gx = data[y * w + x + 1]! - data[y * w + x - 1]!
+        const gy = data[(y + 1) * w + x]! - data[(y - 1) * w + x]!
+        if (gx * gx + gy * gy < 400) continue
+        edges++
+        sxx += gx * gx
+        syy += gy * gy
+        sxy += gx * gy
+      }
+    }
+    return { strength: n ? edges / n : 0, angle: 0.5 * Math.atan2(2 * sxy, sxx - syy) }
+  }
+
+  /**
+   * A barcode held at a slant is turned level before decoding. The decoder reads straight across the picture, so a code
+   * tilted ~15° (a phone held casually) crossed no single line of it and was never read. On the test bench (Code 128 IDs
+   * on a filmed phone screen, blurred, tilted, small) levelling took reads from 15% to 27%, and tilted ones from 0% to 27%.
+   */
+  function level(image: Gray, angle: number): Gray {
+    const deg = Math.abs(angle) * (180 / Math.PI)
+    if (deg < 2 || deg > 40) return image // level enough already; a code on its side is the whole-picture pass's
+    const { data, w, h } = image
+    const out = new Uint8ClampedArray(w * h)
+    const c = Math.cos(angle)
+    const s = Math.sin(angle)
+    const cx = w / 2
+    const cy = h / 2
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const dx = x - cx
+        const dy = y - cy
+        const sx = Math.min(w - 1.001, Math.max(0, dx * c - dy * s + cx))
+        const sy = Math.min(h - 1.001, Math.max(0, dx * s + dy * c + cy))
+        const x0 = Math.floor(sx)
+        const y0 = Math.floor(sy)
+        const tx = sx - x0
+        const ty = sy - y0
+        const i = y0 * w + x0
+        out[y * w + x] = (data[i]! * (1 - tx) + data[i + 1]! * tx) * (1 - ty) + (data[i + w]! * (1 - tx) + data[i + w + 1]! * tx) * ty
+      }
+    }
+    return { data: out, w, h }
+  }
+
+  /** Widens a greyscale picture across the bars only (as grab() does with the canvas): thin bars get more pixels. */
+  function widen(image: Gray, factor: number): Gray {
+    if (factor <= 1) return image
+    const w = Math.round(image.w * factor)
+    const out = new Uint8ClampedArray(w * image.h)
+    for (let y = 0; y < image.h; y++) {
+      for (let x = 0; x < w; x++) {
+        const sx = Math.min(image.w - 1, Math.max(0, (x + 0.5) / factor - 0.5))
+        const x0 = Math.floor(sx)
+        const x1 = Math.min(image.w - 1, x0 + 1)
+        const t = sx - x0
+        out[y * w + x] = image.data[y * image.w + x0]! * (1 - t) + image.data[y * image.w + x1]! * t
+      }
+    }
+    return { data: out, w, h: image.h }
+  }
+
+  /* What the station's autofocus watches (see armAutofocus): how much is in the frame, and since when. */
+  const PRESENT = 0.06
+  let seen = { strength: 0, at: 0, since: 0 }
+  function noteShape(strength: number) {
+    const now = Date.now()
+    const present = strength >= PRESENT
+    seen = { strength, at: now, since: present ? (seen.since || now) : 0 }
+  }
+
   async function beginDecoding(mine: number) {
     let pass = 0
 
@@ -337,15 +488,21 @@ export function useCameraScanner(onCode: (code: string) => void, region?: () => 
           const whole = ++pass % FULL_FRAME_EVERY === 0
           const frame = grab(video.value, whole)
           let found = frame ? await detector.detect(frame) : []
-          // Nothing in the plain crop: try it again sharpened (see enhance()).
+          // Nothing in the plain crop: try it again sharpened (see enhance()), then smoothed harder down the bars, which
+          // washes out the fine pattern a camera sees on a phone screen. (This detector turns tilted codes itself.)
           if (frame && !whole && !found[0]?.rawValue) {
-            const sharp = enhance(luminance(frame))
-            const rgba = new Uint8ClampedArray(sharp.w * sharp.h * 4)
-            for (let i = 0, p = 0; i < sharp.data.length; i++, p += 4) {
-              rgba[p] = rgba[p + 1] = rgba[p + 2] = sharp.data[i]!
-              rgba[p + 3] = 255
+            const gray = luminance(frame)
+            noteShape(measureShape(gray).strength)
+            const asImage = (sharp: Gray) => {
+              const rgba = new Uint8ClampedArray(sharp.w * sharp.h * 4)
+              for (let i = 0, p = 0; i < sharp.data.length; i++, p += 4) {
+                rgba[p] = rgba[p + 1] = rgba[p + 2] = sharp.data[i]!
+                rgba[p + 3] = 255
+              }
+              return new ImageData(rgba, sharp.w, sharp.h)
             }
-            found = await detector.detect(new ImageData(rgba, sharp.w, sharp.h))
+            found = await detector.detect(asImage(enhance(gray)))
+            if (!found[0]?.rawValue) found = await detector.detect(asImage(enhance(gray, 15, 3, 1.5)))
           }
           if (found[0]?.rawValue) emit(found[0].rawValue)
         } catch {
@@ -396,13 +553,21 @@ export function useCameraScanner(onCode: (code: string) => void, region?: () => 
     const tick = () => {
       if (mine !== session || !video.value) return
       const whole = ++pass % FULL_FRAME_EVERY === 0
-      const frame = grab(video.value, whole)
+      // The frame's crop at the camera's own size: it is levelled first, and only then widened (see level()).
+      const frame = grab(video.value, whole, false)
       if (frame) {
         try {
           const image = luminance(frame)
-          const text = whole
-            ? attempt(quick, image)
-            : attempt(careful, image) ?? attempt(careful, enhance(image))
+          let text: string | null
+          if (whole) text = attempt(quick, image)
+          else {
+            const shape = measureShape(image)
+            noteShape(shape.strength)
+            const ready = widen(level(image, shape.angle), Math.max(1, Math.min(2, MAX_CROP_WIDTH / image.w)))
+            // Plain, then sharpened, then smoothed harder down the bars (a filmed phone screen's fine pattern). On the
+            // bench the last pass took phone-screen reads from 17% to 22%, at most ~50 ms more on a frame nothing reads.
+            text = attempt(careful, ready) ?? attempt(careful, enhance(ready)) ?? attempt(careful, enhance(ready, 15, 3, 1.5))
+          }
           if (text) emit(text)
         } catch {
           // An empty or odd-sized frame while the camera settles; the next tick tries again.

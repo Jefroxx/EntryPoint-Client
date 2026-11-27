@@ -2,6 +2,100 @@ import { BaseService } from "./BaseService";
 import type { HallOfFame } from "./studentService";
 import type { BookPagePhoto, BookPageSection } from "~/utils/bookPages";
 import type { StaffRef } from "~/utils/staffRole";
+import type { Announcement } from "./announcementService";
+
+/** GET /librarian/dashboard: everything the Dashboard shows, in one request. */
+export interface DashboardOverview {
+  today: DashboardToday;
+  recentLoans: RecentLoan[];
+  overdueLoans: OverdueLoan[];
+  hallOfFame: HallOfFame;
+  announcements: Announcement[];
+}
+
+/** One row of an accession record as read from the Excel file (all text, as typed). Only `title` is needed. */
+export interface ImportBookRow {
+  /** The row number in the sheet, so a skipped row can be found in the file. */
+  row: number;
+  accessionNumber?: string;
+  dateReceived?: string;
+  /** Excel counted this date up when a cell was dragged down; it isn't a real date. */
+  dateAutofilled?: boolean;
+  /** The Class column: area + Dewey number + Cutter ("Fil 515.3 AS843 2023"). */
+  callNumber?: string;
+  area?: string;
+  authors?: string;
+  title?: string;
+  edition?: string;
+  volume?: string;
+  pages?: string;
+  sourceOfFund?: string;
+  cost?: string;
+  publisher?: string;
+  year?: string;
+  remarks?: string;
+  isbn?: string;
+}
+
+/** What an import added (or, checked first with dryRun, would add) and what it left out and why. */
+export interface ImportBooksResult {
+  books: number;
+  existingBooks: number;
+  copies: number;
+  emptyRows: number;
+  skipped: { row: number | null; accessionNumber: number | null; title: string; reason: string }[];
+  notes: { incomplete: number; noArea: number; unreadDate: number; unreadCallNumber: number; newNumbers: number };
+}
+
+/** What Check Details may fill in: only fields the book's record has empty. */
+export interface DetailsFills {
+  isbn?: string;
+  publisher?: string;
+  publicationYear?: number;
+  pageCount?: number;
+  edition?: string;
+  volume?: string;
+  coverImageURL?: string;
+  authors?: string[];
+  deweyNumber?: string;
+  deweySource?: string;
+}
+
+/** One book's check: what the catalogues found and what of it would fill the record's blanks. Saves nothing. */
+export interface DetailsCheckResult {
+  bookUuid: string;
+  found: boolean;
+  reason?: string;
+  /** "isbn": looked up by the book's own ISBN. "title": found by title and author (worth a second look). */
+  matchedBy?: "isbn" | "title";
+  matched?: { isbn: string; title: string | null; authors: string[]; publisher: string | null; year: number | null };
+  /** For a title match: does the edition's year agree with the record's? null when either has none. */
+  yearAgrees?: boolean | null;
+  /** Does the catalogue's title agree with the record's? false for a mistyped ISBN that is another book's. */
+  titleAgrees?: boolean | null;
+  /** The ISBN found is already another book's, so it can't be given to this one. */
+  isbnTakenBy?: string | null;
+  fills?: DetailsFills;
+}
+
+export interface DetailsQueueBook {
+  uuid: string;
+  title: string;
+  authors: string[];
+  isbn: string | null;
+  publicationYear: number | null;
+  areaOfLibrary: string | null;
+  callNumber: string | null;
+  deweyStatus: DeweyStatus;
+}
+
+/** GET /librarian/dashboard/trends: the Trends section (totals, collection, the month's chart and programs). */
+export interface DashboardTrends {
+  summary: DashboardSummary;
+  bookStatus: BookStatusOverview;
+  borrowingOverview: BorrowingOverview;
+  demographics: { members: Demographics; visitors: Demographics };
+}
 
 /** GET /librarian/dashboard/today — today's desk traffic and the queues waiting on a librarian. */
 export interface DashboardToday {
@@ -178,6 +272,8 @@ export interface CatalogBook {
   callNumber: string;
   /** "needs_review" until a catalogue or a librarian has confirmed the Dewey number. */
   deweyStatus?: DeweyStatus;
+  /** What Add Book asks for that this record lacks ("ISBN", "Publisher"...); books from the old accession record. */
+  missingDetails?: string[];
   coverImageURL: string | null;
   /** Where in the library the book is shelved (the key of one of the Areas of the Library). */
   areaOfLibrary?: string | null;
@@ -293,6 +389,8 @@ export interface ScannedCopy {
   status: string;
   /** null = can be lent; otherwise why it can't ("This copy is already out on loan."). */
   lendable: string | null;
+  /** The only reason it can't go out is a hold for an accepted reservation (that reservation's checkout may lend it). */
+  heldForReservation?: boolean;
   /** When it would fall due if lent today (null for a book that can't be lent). */
   dueDate?: string | null;
   book: {
@@ -312,6 +410,8 @@ export interface CopyCatalogRow {
   sourceOfFund?: string | null;
   cost?: string | number | null;
   remarks?: string | null;
+  /** The day it reached the library (Y-m-d), from the accession record; null when not known. */
+  dateReceived?: string | null;
   book: {
     bookID: number;
     uuid: string;
@@ -433,20 +533,21 @@ export interface AttendanceScanResult {
 export type ScanResult =
   | (AttendanceScanResult & { type: "attendance" })
   | {
-      type: "loan_received";
+      /** A borrowing receipt (L-…) or a book's own label (BK-…): the loan to return. Nothing has changed yet. */
+      type: "loan_return";
       message: string;
       loan: {
         loanID: number;
         uuid: string;
+        /** Active: the usual Return window. Received: already handed in, so the check that finishes it. */
+        status: "Active" | "Received";
         receiptNumber: string;
         bookTitle: string;
         accessionNumber: number;
         studentName: string;
         memberIDNumber: string;
         dueDate: string | null;
-        returnDate: string | null;
-        wasLate: boolean;
-        fineAmount: number;
+        isOverdue: boolean;
       };
     }
   | {
@@ -619,6 +720,35 @@ export interface NewBookPayload {
 }
 
 class LibrarianServiceClass extends BaseService {
+  fetchDashboard() {
+    return this.apiRequest<DashboardOverview>("/librarian/dashboard");
+  }
+
+  /** Check Details: how many books are still to check, and a page of them. */
+  fetchDetailsQueue(params: { area?: string; perPage?: number; page?: number } = {}) {
+    return this.apiRequest<{ remaining: number; books: { data: DetailsQueueBook[]; last_page: number; total: number } }>("/librarian/books/details-check", { query: params });
+  }
+
+  /** What the catalogues know that one book's record lacks. Saves nothing. */
+  checkBookDetails(bookUuid: string) {
+    return this.apiRequest<DetailsCheckResult>(`/librarian/books/${bookUuid}/details/check`, { method: "POST" });
+  }
+
+  /** Saves what was accepted (empty fields only) and marks every book in `checked` as checked. */
+  applyBookDetails(items: { book: string; fills: DetailsFills }[], checked: string[]) {
+    return this.apiRequest<{ message: string; updated: number; checked: number; refusedIsbns: string[] }>("/librarian/books/details/apply", { method: "POST", body: { items, checked } });
+  }
+
+  /** Brings books in from an accession record. With dryRun nothing is saved: the answer says what would happen. */
+  importBooks(rows: ImportBookRow[], dryRun: boolean, fileName: string) {
+    return this.apiRequest<ImportBooksResult>("/librarian/books/import", { method: "POST", body: { rows, dryRun, fileName } });
+  }
+
+  /** The Dashboard's Trends section in one request; `month` (Y-m) picks the chart's and the visitors' month. */
+  fetchDashboardTrends(month?: string) {
+    return this.apiRequest<DashboardTrends>("/librarian/dashboard/trends", { query: month ? { month } : undefined });
+  }
+
   fetchDashboardToday() {
     const runtimeConfig = useRuntimeConfig();
 

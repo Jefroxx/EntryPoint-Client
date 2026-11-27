@@ -1,7 +1,7 @@
 <template>
     <div>
         <div class="mb-6">
-            <h1 class="dashboard-heading text-3xl font-bold text-crimson">Staff accounts</h1>
+            <h1 class="dashboard-heading text-3xl font-bold text-crimson">Library team</h1>
             <p class="dashboard-heading mt-1 text-crimson">Librarians and student assistants who sign in to the librarian side.</p>
         </div>
 
@@ -13,17 +13,17 @@
         </div>
 
         <div class="phone-toolbar mb-4 flex flex-wrap items-center gap-2">
-            <LibrarianSearchInput id="staff-search" v-model="search" class="!max-w-[560px] !basis-[480px]" placeholder="Search name, email or username" />
+            <LibrarianSearchInput id="staff-search" v-model="search" placeholder="Search name, email or username" />
             <LibrarianFilterMenu v-model="filters" :groups="filterGroups" />
             <div class="flex-1"></div>
             <LibrarianResetFiltersButton @click="search = ''; filters = { role: 'all', status: 'all' }" />
             <ButtonsButton variant="primary" @click="openCreate">
-                <Icon name="i-tabler-plus" class="h-3.5 w-3.5" />Add staff account
+                <Icon name="i-tabler-plus" class="h-3.5 w-3.5" />Add team member
             </ButtonsButton>
         </div>
 
         <LibrarianTableShell :columns="['Name', 'Email / username', 'Role', 'Status', '']" :loading="pending && !data" :empty="shown.length === 0"
-            :empty-text="search || filtered ? 'No staff accounts match these filters.' : 'No staff accounts yet.'" min-width="760px">
+            :empty-text="search || filtered ? 'No one on the library team matches these filters.' : 'No one on the library team yet.'" min-width="760px">
             <!-- Phones: one card per account. -->
             <template #cards>
                 <li v-for="account in shown" :key="`card-${account.uuid}`" class="px-4 py-3.5" :class="account.isDisabled ? 'bg-stone-50/70' : ''">
@@ -42,21 +42,6 @@
                 </li>
             </template>
 
-            <tr v-for="(account, index) in shown" :key="account.uuid" class="row-fade-in border-b border-stone-100 last:border-0"
-                :class="account.isDisabled ? 'bg-stone-50/70' : ''" :style="{ animationDelay: `${index * 30}ms` }">
-                <td class="px-4 py-3">
-                    <LibrarianPersonCell :name="account.name" :sub="account.isYou ? 'This is you' : undefined" />
-                </td>
-                <td class="font-data px-4 py-3 text-[13.5px] text-stone-600">{{ signInName(account) }}</td>
-                <td class="px-4 py-3"><LibrarianStatusPill :label="account.roleLabel" :tone="roleTone[account.role]" /></td>
-                <td class="px-4 py-3"><LibrarianStatusPill :label="statusOf(account).label" :tone="statusOf(account).tone" /></td>
-                <td class="px-4 py-3">
-                    <div class="flex items-center justify-end gap-1.5">
-                        <ButtonsButton variant="ghost" size="sm" @click="openEdit(account)">Edit</ButtonsButton>
-                        <LibrarianRowMenu :items="menuFor(account)" :label="`More actions for ${account.name}`" @select="(key: string) => onMenu(key, account)" />
-                    </div>
-                </td>
-            </tr>
         </LibrarianTableShell>
 
         <AdminStaffFormModal :open="isFormOpen" :account="editing" :busy="busy" :server-errors="serverErrors"
@@ -83,7 +68,7 @@ import { useAlert } from '~/api/alert/useAlert'
 import type { Credentials } from '~/components/admin/CredentialsModal.vue'
 
 definePageMeta({ middleware: 'admin', layout: 'librarian' })
-useHead({ title: 'Staff accounts' })
+useHead({ title: 'Library team' })
 
 const route = useRoute()
 const { perform } = useAction()

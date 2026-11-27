@@ -120,10 +120,11 @@ const details = computed(() => {
 	const b = book.value
 	if (!b) return []
 	return [
-		{ label: 'Subject', value: b.subject?.name ?? '—' },
+		// Where it is: the area of the library (students browse by it), and the exact shelf when the library has set one.
+		{ label: 'Area', value: b.area?.name ?? b.circulationType.charAt(0).toUpperCase() + b.circulationType.slice(1) },
 		{ label: 'Call number', value: b.callNumber ?? 'Pending', mono: !!b.callNumber },
 		{ label: 'Published', value: b.publicationYear ? String(b.publicationYear) : '—' },
-		{ label: 'Where', value: b.shelfLocation ?? b.circulationType.charAt(0).toUpperCase() + b.circulationType.slice(1) },
+		...(b.shelfLocation ? [{ label: 'Shelf', value: b.shelfLocation }] : []),
 	]
 })
 </script>

@@ -16,7 +16,7 @@
             </div>
 
             <div class="phone-toolbar toolbar-nowrap mb-4 flex flex-wrap items-center gap-2">
-                <LibrarianSearchInput id="achievement-search" v-model="achievementSearch" class="!min-w-[210px] !max-w-[560px] !basis-[480px]" placeholder="Search achievements" />
+                <LibrarianSearchInput id="achievement-search" v-model="achievementSearch" class="!min-w-[210px]" placeholder="Search achievements" />
                 <LibrarianFilterMenu class="toolbar-full" v-model="achievementFilters" :groups="achievementFilterGroups" />
                 <div class="flex-1"></div>
                 <ButtonsButton variant="primary" class="toolbar-full" @click="openAchievementForm(null)">
@@ -39,7 +39,7 @@
             </div>
 
             <div class="phone-toolbar toolbar-nowrap mb-4 flex flex-wrap items-center gap-2">
-                <LibrarianSearchInput id="item-search" v-model="itemSearch" class="!min-w-[210px] !max-w-[560px] !basis-[480px]" placeholder="Search rewards" />
+                <LibrarianSearchInput id="item-search" v-model="itemSearch" class="!min-w-[210px]" placeholder="Search rewards" />
                 <LibrarianFilterMenu class="toolbar-full" v-model="itemFilters" :groups="itemFilterGroups" />
                 <div class="flex-1"></div>
                 <ButtonsButton variant="primary" class="toolbar-full" @click="openItemForm(null)">
@@ -67,7 +67,7 @@
             </div>
 
             <div class="phone-toolbar toolbar-nowrap mb-4 flex flex-wrap items-center gap-2">
-                <LibrarianSearchInput id="redemption-search" v-model="redemptionSearch" class="!min-w-[210px] !max-w-[560px] !basis-[480px]" placeholder="Search student or reward" />
+                <LibrarianSearchInput id="redemption-search" v-model="redemptionSearch" class="!min-w-[210px]" placeholder="Search student or reward" />
                 <LibrarianFilterMenu class="toolbar-full" v-model="redemptionFilters" :groups="redemptionFilterGroups" />
                 <div class="flex-1"></div>
             </div>
@@ -428,7 +428,18 @@ async function confirmRedemption(reason = '') {
         ? await perform(() => engagementService.fulfillRedemption(redemption.uuid), 'Redemption fulfilled', 'Could not fulfill redemption', [refetchRedemptions])
         : await perform(() => engagementService.cancelRedemption(redemption.uuid, reason), 'Redemption cancelled', 'Could not cancel redemption', [refetchRedemptions, refetchItems])
     redemptionBusy.value = false
-    if (ok) isRedemptionOpen.value = false
+    if (ok) {
+        isRedemptionOpen.value = false
+        // Show the new state at once; the quiet refresh that perform() started confirms it a moment later.
+        const current = redemptionsResponse.value
+        const status: FulfillmentStatus = redemptionMode.value === 'fulfill' ? 'Fulfilled' : 'Cancelled'
+        if (current) {
+            redemptionsResponse.value = {
+                ...current,
+                redemptions: current.redemptions.map((r) => (r.uuid === redemption.uuid ? { ...r, fulfillmentStatus: status, cancelReason: status === 'Cancelled' ? reason : r.cancelReason } : r)),
+            }
+        }
+    }
 }
 
 // ---- Deleting (each shows what is tied to it first) ----

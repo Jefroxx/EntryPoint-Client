@@ -25,14 +25,18 @@
         <nav class="relative mt-3 grid gap-1" aria-label="Main">
             <!-- Rows are a fixed 44px whether or not the labels show, so the highlight's position holds
                  across folding; it's still re-measured on every fold in case that ever changes. -->
-            <div class="absolute left-0 top-0 z-0 h-11 w-full rounded-xl bg-accent-500 shadow-sm"
+            <div class="absolute left-0 top-0 z-0 h-11 w-full rounded-xl bg-accent-500 shadow-sm will-change-transform"
                 :class="highlightReady ? 'transition-[transform,translate,scale,opacity] duration-[250ms] ease-[cubic-bezier(.22,1,.36,1)]' : ''"
                 :style="{ transform: `translateY(${highlightOffset}px)`, opacity: displayIndex === -1 ? 0 : 1 }" />
 
             <NuxtLink v-for="(link, index) in navLinks" :key="link.to" :ref="(el) => setLinkRef(el, index)" :to="link.to"
                 :title="open ? undefined : link.label" :aria-current="index === activeIndex ? 'page' : undefined"
-                class="relative z-10 flex h-11 items-center gap-3 rounded-xl text-[14.5px] font-medium transition-[transform,color,background-color] duration-150 ease-out active:scale-[0.96]"
-                :class="[open ? 'px-3.5' : 'justify-center px-0', index === displayIndex ? 'text-white' : 'text-stone-500 hover:bg-stone-50 hover:text-stone-900']"
+                class="relative z-10 flex h-11 items-center gap-3 rounded-xl text-[14.5px] font-medium duration-150 ease-out active:scale-[0.96]"
+                :class="[open ? 'px-3.5' : 'justify-center px-0', index === displayIndex
+                    // The row being left or entered must lose its grey hover background AT ONCE: it sits above the sliding
+                    // block, so letting it fade out (as hovering does) covered the block for a moment and looked like a stutter.
+                    ? 'text-white transition-[transform,color]'
+                    : 'text-stone-500 transition-[transform,color,background-color] hover:bg-stone-50 hover:text-stone-900']"
                 @click="pendingIndex = index">
                 <Icon :name="link.icon" class="h-[19px] w-[19px] shrink-0" />
                 <span class="whitespace-nowrap" :class="open ? '' : 'sr-only'">{{ link.label }}</span>
@@ -68,7 +72,7 @@ const ALL_LINKS = [
     { label: 'Dashboard', to: '/librarian/dashboard', icon: 'i-tabler-home' },
     { label: 'Library', to: '/librarian/library', icon: 'i-tabler-book-2' },
     { label: 'Circulation', to: '/librarian/circulation', icon: 'i-tabler-book' },
-    { label: 'Students', to: '/librarian/students', icon: 'i-tabler-users' },
+    { label: 'Members', to: '/librarian/students', icon: 'i-tabler-users' },
     { label: 'Attendance', to: '/librarian/attendance', icon: 'i-tabler-user-check' },
     { label: 'Resources', to: '/librarian/resources', icon: 'i-tabler-device-desktop' },
     { label: 'Engagement', to: '/librarian/engagement', icon: 'i-tabler-trophy' },
@@ -80,8 +84,8 @@ const ALL_LINKS = [
 // The admin side has its own sidebar. Administrators only ever see this one; the librarian side is closed to them.
 const ADMIN_LINKS = [
     { label: 'Overview', to: '/admin/dashboard', icon: 'i-tabler-layout-dashboard' },
-    { label: 'Staff', to: '/admin/staff', icon: 'i-tabler-id-badge-2' },
-    { label: 'Members', to: '/admin/members', icon: 'i-tabler-users' },
+    { label: 'Library team', to: '/admin/staff', icon: 'i-tabler-id-badge-2' },
+    { label: 'Faculty & staff', to: '/admin/members', icon: 'i-tabler-users' },
     { label: 'Roles', to: '/admin/roles', icon: 'i-tabler-shield-lock' },
     { label: 'Announcements', to: '/admin/announcements', icon: 'i-tabler-speakerphone' },
     { label: 'Privacy', to: '/admin/privacy', icon: 'i-tabler-user-shield' },
@@ -135,8 +139,11 @@ onUnmounted(() => window.removeEventListener('resize', measureHighlight))
 // Folding shows or hides the labels, so re-measure then too, not only when the page changes.
 watch([displayIndex, () => props.open], () => nextTick(measureHighlight))
 
-// A finished (or cancelled) navigation ends the "pressed" state.
-const removeAfterEach = useRouter().afterEach(() => { pendingIndex.value = null })
+// The "pressed" state ends once the page has really arrived (the active row is now the pressed one, or any other one),
+// or when the navigation is cancelled or refused. Clearing it earlier would drop the block back onto the old row
+// for a moment, then forward again.
+watch(activeIndex, () => { pendingIndex.value = null })
+const removeAfterEach = useRouter().afterEach((_to, _from, failure) => { if (failure) pendingIndex.value = null })
 onUnmounted(removeAfterEach)
 
 async function handleLogout() {

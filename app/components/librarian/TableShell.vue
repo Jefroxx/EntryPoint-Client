@@ -4,7 +4,7 @@
 			 a grid on wider screens. The table below is then kept hidden (its slot still holds the row drawers). -->
 		<template v-if="$slots.cards">
 			<LibrarianCardSkeleton v-if="loading" />
-			<ul v-else class="grid gap-3 sm:grid-cols-2 2xl:grid-cols-3 [&>li]:overflow-hidden [&>li]:rounded-2xl [&>li]:border [&>li]:border-stone-200 [&>li]:bg-white">
+			<ul v-else class="card-grid grid gap-3 [&>li]:overflow-hidden [&>li]:rounded-2xl [&>li]:border [&>li]:border-stone-200 [&>li]:bg-white" :class="singleColumn ? '' : 'sm:grid-cols-2 2xl:grid-cols-3'">
 				<slot name="cards" />
 			</ul>
 			<p v-if="empty && !loading" class="rounded-2xl border border-stone-200 bg-white px-4 py-10 text-center text-[15px] text-stone-500">{{ emptyText }}</p>
@@ -46,6 +46,8 @@ withDefaults(defineProps<{
 	empty: boolean
 	emptyText: string
 	minWidth?: string
+	/** One card per row at every width, for lists that read left to right (like the audit log). */
+	singleColumn?: boolean
 }>(), {
 	minWidth: '760px',
 })

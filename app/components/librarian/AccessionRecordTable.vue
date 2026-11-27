@@ -2,17 +2,23 @@
 	<div class="relative rounded-2xl">
 		<!-- Too narrow for the table: one card per book; edit and the rest of the actions are on the card. -->
 		<LibrarianCardSkeleton v-if="loading" />
-		<ul v-else class="grid gap-3 sm:grid-cols-2 2xl:grid-cols-3 [&>li]:overflow-hidden [&>li]:rounded-2xl [&>li]:border [&>li]:border-stone-200 [&>li]:bg-white">
+		<ul v-else class="card-grid grid gap-3 sm:grid-cols-2 2xl:grid-cols-3 [&>li]:overflow-hidden [&>li]:rounded-2xl [&>li]:border [&>li]:border-stone-200 [&>li]:bg-white">
 			<li v-for="book in books" :key="`card-${book.bookID}`">
 				<div class="relative px-4 py-3.5 transition-colors active:bg-accent-50">
 					<button type="button" class="card-cover" :aria-label="`Open ${book.title}`" @click="emit('view', book)" />
 					<div class="card-body flex gap-3">
 						<StudentCover :book="book" :width="48" />
 						<div class="min-w-0 flex-1">
-							<p class="text-[15px] font-semibold leading-snug text-stone-900">{{ book.title }}</p>
+							<p class="line-clamp-2 break-words text-[15px] font-semibold leading-snug text-stone-900" :title="book.title">{{ book.title }}</p>
 							<p class="break-words text-[13px] text-stone-500">{{ authorNames(book) }}</p>
 							<span v-if="book.areaOfLibrary"
 									class="mt-1.5 inline-flex items-center rounded-full bg-stone-100 px-2.5 py-0.5 text-[12px] font-semibold text-stone-700">{{ LIBRARY_AREAS[book.areaOfLibrary] ?? book.areaOfLibrary }}</span>
+								<!-- Books brought in from the old accession record may lack details Add Book asks for; editing fills them in. -->
+								<span v-if="book.missingDetails?.length"
+									class="ml-1.5 mt-1.5 inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-0.5 text-[12px] font-semibold text-amber-800 ring-1 ring-amber-200"
+									:title="`Missing: ${book.missingDetails.join(', ')}. Edit the book to fill them in.`">
+									<Icon name="i-tabler-alert-circle" class="h-3 w-3" />Incomplete
+								</span>
 
 								<!-- Every number says what it is: the Dewey (call) number, the copies' accession numbers, how many are in. -->
 								<dl class="mt-2 space-y-1 text-[13px]">

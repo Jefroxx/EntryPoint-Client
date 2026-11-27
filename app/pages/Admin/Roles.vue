@@ -10,12 +10,12 @@
             Administrators always have everything. Tick or untick what you need, then save everything at once with the Save changes button below. A change applies to everyone with that role straight away, and it's recorded in the audit log.
         </p>
 
-        <div v-if="pending && !data" class="grid gap-4 lg:grid-cols-3" aria-busy="true">
+        <div v-if="pending && !data" class="card-grid grid gap-4 lg:grid-cols-3" aria-busy="true">
             <div v-for="n in 3" :key="n" class="h-[420px] animate-pulse rounded-2xl bg-stone-200/70" />
         </div>
 
         <template v-else-if="data">
-            <div class="grid items-start gap-4 lg:grid-cols-3">
+            <div class="card-grid grid items-start gap-4 lg:grid-cols-3">
                 <section v-for="role in data.roles" :key="role.role" class="rounded-2xl border bg-white p-5 shadow-sm transition-colors"
                     :class="isDirty(role) ? 'border-amber-300' : 'border-stone-200'">
                     <header class="mb-1 flex items-start justify-between gap-3">

@@ -18,7 +18,7 @@
             </div>
 
             <div class="phone-toolbar toolbar-nowrap mb-4 flex flex-wrap items-center gap-2">
-                <LibrarianSearchInput id="loan-search" v-model="loanSearch" class="!min-w-[210px] !max-w-[560px] !basis-[480px]" placeholder="Search student or book" />
+                <LibrarianSearchInput id="loan-search" v-model="loanSearch" class="!min-w-[210px]" placeholder="Search student or book" />
                 <LibrarianFilterMenu class="toolbar-full" v-model="loanFilters" :groups="loanFilterGroups" />
                 <div class="flex-1"></div>
                 <ButtonsButton variant="primary" class="toolbar-full" @click="checkoutCode = undefined; checkoutAuto = false; isCheckoutOpen = true">
@@ -46,7 +46,7 @@
             </div>
 
             <div class="phone-toolbar toolbar-nowrap mb-4 flex flex-wrap items-center gap-2">
-                <LibrarianSearchInput id="reservation-search" v-model="reservationSearch" class="!min-w-[210px] !max-w-[560px] !basis-[480px]" placeholder="Search student or book" />
+                <LibrarianSearchInput id="reservation-search" v-model="reservationSearch" class="!min-w-[210px]" placeholder="Search student or book" />
                 <LibrarianFilterMenu class="toolbar-full" v-model="reservationFilters" :groups="reservationFilterGroups" />
                 <div class="flex-1"></div>
             </div>
@@ -66,7 +66,7 @@
             </div>
 
             <div class="phone-toolbar toolbar-nowrap mb-4 flex flex-wrap items-center gap-2">
-                <LibrarianSearchInput id="self-return-search" v-model="selfReturnSearch" class="!min-w-[210px] !max-w-[560px] !basis-[480px]" placeholder="Search student or book" />
+                <LibrarianSearchInput id="self-return-search" v-model="selfReturnSearch" class="!min-w-[210px]" placeholder="Search student or book" />
                 <LibrarianFilterMenu class="toolbar-full" v-model="selfReturnFilters" :groups="selfReturnFilterGroups" />
                 <div class="flex-1"></div>
             </div>
@@ -87,7 +87,7 @@
                 </div>
 
                 <div class="phone-toolbar toolbar-nowrap mb-4 flex flex-wrap items-center gap-2">
-                    <LibrarianSearchInput id="penalty-search" v-model="penaltySearch" class="!min-w-[210px] !max-w-[560px] !basis-[480px]" placeholder="Search student or book" />
+                    <LibrarianSearchInput id="penalty-search" v-model="penaltySearch" class="!min-w-[210px]" placeholder="Search student or book" />
                     <LibrarianFilterMenu class="toolbar-full" v-model="penaltyFilters" :groups="penaltyFilterGroups" />
                     <div class="flex-1"></div>
                 </div>
@@ -108,7 +108,7 @@
                 </div>
 
                 <div class="phone-toolbar toolbar-nowrap mb-4 flex flex-wrap items-center gap-2">
-                    <LibrarianSearchInput id="copy-penalty-search" v-model="copyPenaltySearch" class="!min-w-[210px] !max-w-[560px] !basis-[480px]" placeholder="Search student or book" />
+                    <LibrarianSearchInput id="copy-penalty-search" v-model="copyPenaltySearch" class="!min-w-[210px]" placeholder="Search student or book" />
                     <LibrarianFilterMenu class="toolbar-full" v-model="copyPenaltyFilters" :groups="copyPenaltyFilterGroups" />
                     <div class="flex-1"></div>
                     <ButtonsButton variant="primary" class="toolbar-full" @click="openIssuePenalty">
@@ -298,10 +298,17 @@ const loanTiles = computed(() => [
 ])
 
 // ---- Reservations (fetched once, filtered + paged in the browser) ----
-const { data: reservationsResponse, pending: reservationsPending, execute: refetchReservations } =
+const { data: reservationsResponse, pending: reservationsPending, execute: refetchReservations, quietRefresh: quietRefreshReservations } =
     useLiveAsyncData('circ-reservations', () => circulationService.fetchReservations(), { lazy: true })
 
 const reservations = computed(() => reservationsResponse.value?.reservations ?? [])
+
+/** Change one row on screen right away (the data is a shallow ref, so the list is replaced, not edited). */
+function setReservationStatus(uuid: string, status: ReservationStatus) {
+    const current = reservationsResponse.value
+    if (!current) return
+    reservationsResponse.value = { ...current, reservations: current.reservations.map((r) => (r.uuid === uuid ? { ...r, status } : r)) }
+}
 const reservationSearch = ref('')
 // 'open' = still to be dealt with: waiting for a decision, or accepted and waiting for pickup.
 const reservationStatus = ref<'' | 'open' | ReservationStatus>('open')
@@ -798,7 +805,10 @@ async function confirmReturn(payload: { finePaid: boolean | undefined; receiptNu
 const isFinishOpen = ref(false)
 const finishingLoan = ref<LoanRecord | null>(null)
 const finishBusy = ref(false)
+// Opened from the scan station by the loan's id alone: the summary comes from the loan's return preview instead.
+const finishSummaryFromScan = ref<{ bookTitle: string; accessionNumber: number; studentName: string } | null>(null)
 const finishSummary = computed(() => {
+    if (finishSummaryFromScan.value) return finishSummaryFromScan.value
     const loan = finishingLoan.value
     if (!loan) return null
     return {
@@ -809,6 +819,7 @@ const finishSummary = computed(() => {
 })
 
 function openFinishReturn(loan: LoanRecord) {
+    finishSummaryFromScan.value = null
     finishingLoan.value = loan
     isFinishOpen.value = true
 }
@@ -850,11 +861,13 @@ async function decideMany(list: ReservationRecord[], action: 'accept' | 'reject'
             if (action === 'accept') await circulationService.acceptReservation(r.uuid)
             else await circulationService.rejectReservation(r.uuid)
             done++
+            // Show the decision at once; the quiet refresh below brings the held copy and pickup code a moment later.
+            setReservationStatus(r.uuid, action === 'accept' ? 'Accepted' : 'Rejected')
         } catch (error: any) {
             failed.push(`${r.book?.title ?? 'A book'}: ${apiErrorMessage(error)}`)
         }
     }
-    await refetchReservations()
+    void quietRefreshReservations()
     reviewBusy.value = false
 
     const verb = action === 'accept' ? 'accepted' : 'rejected'
@@ -896,6 +909,55 @@ function handleCheckoutManually() {
     isCheckoutOpen.value = true
 }
 
+/*
+ * The scan station (its own tab) sends this tab here with what it read, and the window opens on this page:
+ *   ?return=<loan uuid>  a borrowing receipt or a book's label: the usual Return window, with the late fee
+ *   ?finish=<loan uuid>  a book already handed in: the check for damage that finishes the return
+ *   ?pickup=<code>       a reservation slip: the checkout, with the student and the book filled in
+ * The station may send another one while this page is open, so it reacts to each change of the address.
+ */
+async function openFromStation() {
+    const one = (v: unknown) => (typeof v === 'string' ? v : '')
+    const ret = one(route.query.return)
+    const finish = one(route.query.finish)
+    const pickup = one(route.query.pickup)
+    if (!ret && !finish && !pickup) return
+
+    // Out of the address, so a refresh doesn't open it again (on the address bar alone, as ?new=checkout does above).
+    const url = new URL(window.location.href)
+    for (const key of ['return', 'finish', 'pickup']) url.searchParams.delete(key)
+    window.history.replaceState(window.history.state, '', url)
+
+    // Whatever was open gives way to what was just scanned.
+    isCheckoutOpen.value = false
+    isFinishOpen.value = false
+    isReturnOpen.value = false
+
+    if (pickup) {
+        activeTab.value = 'reservations'
+        checkoutCode.value = pickup
+        checkoutAuto.value = false
+        isCheckoutOpen.value = true
+    } else if (ret) {
+        activeTab.value = 'loans'
+        // The window only needs the loan's id: it loads the rest (book, student, fee) itself.
+        void handleReturn({ uuid: ret } as LoanRecord)
+    } else if (finish) {
+        activeTab.value = 'loans'
+        finishingLoan.value = { uuid: finish } as LoanRecord
+        finishSummaryFromScan.value = null
+        try {
+            const { preview } = await circulationService.fetchReturnPreview(finish)
+            finishSummaryFromScan.value = { bookTitle: preview.book.title, accessionNumber: preview.book.accessionNumber, studentName: preview.student.name }
+            isFinishOpen.value = true
+        } catch (error) {
+            popupAlert.error('Could not open that return', apiErrorMessage(error))
+        }
+    }
+}
+onMounted(() => { void openFromStation() })
+watch(() => route.fullPath, () => { void openFromStation() })
+
 // Verifying or rejecting a student's self-return report asks first, in the same window as returning a book:
 // the loan, the book and the student, and (when it is overdue) whether the late fee has been paid.
 const isReportOpen = ref(false)
@@ -936,7 +998,12 @@ async function confirmReport(payload: { finePaid: boolean | undefined; receiptNu
             'Return verified', 'Could not verify return', [refetchSelfReturns, ...refreshLoanData()])
         : await perform(() => circulationService.rejectSelfReturn(report.uuid, { reason: payload.reason ?? '' }), 'Report rejected', 'Could not reject report', [refetchSelfReturns])
     reportBusy.value = false
-    if (ok) isReportOpen.value = false
+    if (ok) {
+        isReportOpen.value = false
+        // Verified or rejected, the report leaves the queue: take it off the screen now rather than after the refresh.
+        const current = selfReturnResponse.value
+        if (current) selfReturnResponse.value = { ...current, reports: current.reports.filter((r) => r.uuid !== report.uuid) }
+    }
 }
 
 // Marking a fine paid also asks first: it shows the fine, the loan, the book and the student, then a last confirmation.
@@ -958,7 +1025,8 @@ async function confirmSettle(payload: { receiptNumber: string }) {
     if (ok) isSettleOpen.value = false
 }
 
-async function handleCheckoutCreated() {
-    await Promise.all([refetchLoans(), refetchLoanStats(), refetchReservations()])
+// The checkout window shows its receipt by itself, so the lists behind it update quietly, without the loading overlay.
+function handleCheckoutCreated() {
+    for (const fn of [refetchLoans, refetchLoanStats, refetchReservations]) void quietRefresherFor(fn)?.()
 }
 </script>

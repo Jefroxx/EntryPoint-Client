@@ -1,7 +1,8 @@
 <template>
-	<!-- The page a librarian's phone opens from the desk's QR code: a full-screen camera that sends every barcode it reads
-		 to the desk. No sign-in; the QR's one-time code was the proof, and the phone only gets a scan-only token. -->
 	<main class="fixed inset-0 flex flex-col bg-stone-950 text-white">
+		<!-- The page a librarian's phone opens from the desk's QR code: a full-screen camera that sends every barcode it reads
+			 to the desk. No sign-in; the QR's one-time code was the proof, and the phone only gets a scan-only token.
+			 (Comments go inside the root element: one outside it is a second root node, and Nuxt can't leave such a page.) -->
 		<header class="flex shrink-0 items-center justify-between gap-3 px-4 pb-2 pt-[max(0.75rem,env(safe-area-inset-top))]">
 			<div class="min-w-0">
 				<p class="truncate text-[15px] font-semibold">EntryPoint scanner</p>

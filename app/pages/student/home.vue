@@ -113,7 +113,7 @@
 					</NuxtLink>
 				</div>
 
-				<div v-if="newArrivalsPending && !newArrivalsData" class="grid grid-cols-2 gap-4 md:grid-cols-4" aria-busy="true">
+				<div v-if="newArrivalsPending && !home" class="grid grid-cols-2 gap-4 md:grid-cols-4" aria-busy="true">
 					<div v-for="n in 4" :key="n" class="h-[250px] animate-pulse rounded-2xl bg-stone-100" />
 				</div>
 
@@ -148,19 +148,19 @@
 				<StudentBookShelfRow v-else :books="recommended" :is-selected="isSelected" :tint="tileTint" @pick="pick" />
 			</section>
 
-			<!-- Categories -->
+			<!-- Areas of the library -->
 			<section class="st-in mt-5 rounded-[22px] border border-stone-200 bg-white p-5 md:p-6" style="animation-delay: 175ms">
 				<div class="flex items-center justify-between gap-4">
-					<h2 class="text-[18px] font-bold text-stone-900">Categories</h2>
-					<!-- Opens Discover already filtered to the category picked here (Discover reads ?subject=). -->
-					<NuxtLink :to="{ path: '/student/discover', query: category ? { subject: String(category) } : {} }"
+					<h2 class="text-[18px] font-bold text-stone-900">Areas of the library</h2>
+					<!-- Opens Discover already filtered to the area picked here (Discover reads ?area=). -->
+					<NuxtLink :to="{ path: '/student/discover', query: category ? { area: category } : {} }"
 						:aria-label="activeCategoryName ? `See all ${activeCategoryName} books` : 'See all books'"
 						class="inline-flex h-8 shrink-0 items-center gap-1 rounded-lg bg-accent-50 px-3 text-[13px] font-semibold text-accent-600 transition-colors duration-150 hover:bg-accent-100">
 						See all<Icon name="i-tabler-chevron-right" class="h-4 w-4" />
 					</NuxtLink>
 				</div>
 
-				<div class="no-scrollbar -mx-5 mb-4 mt-3 flex gap-2 overflow-x-auto px-5 md:mx-0 md:flex-wrap md:px-0" role="tablist" aria-label="Filter by category">
+				<div class="no-scrollbar -mx-5 mb-4 mt-3 flex gap-2 overflow-x-auto px-5 md:mx-0 md:flex-wrap md:px-0" role="tablist" aria-label="Filter by area of the library">
 					<button v-for="chip in chips" :key="chip.id ?? 'all'" type="button" role="tab" :aria-selected="category === chip.id"
 						class="h-8 shrink-0 rounded-lg px-3.5 text-[13px] font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-200"
 						:class="category === chip.id ? 'bg-accent-500 text-white' : 'bg-accent-50 text-accent-700 hover:bg-accent-100'"
@@ -169,12 +169,15 @@
 					</button>
 				</div>
 
-				<div v-if="shelfPending && !shelf" class="grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-4" aria-busy="true">
-					<div v-for="n in 6" :key="n" class="h-[210px] animate-pulse rounded-2xl bg-stone-100" />
+				<!-- Measured for the number of books that fill whole rows (see shelfCount). -->
+				<div ref="shelfEl" aria-hidden="true" />
+
+				<div v-if="!shelf" class="grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-x-3 gap-y-4" aria-busy="true">
+					<div v-for="n in shelfCount || 6" :key="n" class="h-[210px] animate-pulse rounded-2xl bg-stone-100" />
 				</div>
 
 				<p v-else-if="!shelf?.length" class="rounded-2xl bg-stone-50 px-4 py-8 text-center text-[13.5px] text-stone-500">
-					No books in this category yet.
+					No books in this area yet.
 				</p>
 
 				<div v-else class="grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-x-3 gap-y-4 transition-opacity duration-200"
@@ -204,8 +207,8 @@
 
 					<h2 class="mt-5 text-balance text-center text-[21px] font-extrabold leading-tight tracking-[-.01em]">{{ selected.title }}</h2>
 					<p class="mt-1 text-center text-[13.5px] text-accent-100/80">{{ authorLine(selected) }}</p>
-					<p v-if="selected.subject" class="mt-2.5 text-center">
-						<span class="inline-flex h-6 items-center rounded-full bg-white/10 px-2.5 text-[11.5px] font-semibold text-accent-100">{{ selected.subject.name }}</span>
+					<p v-if="selected.area" class="mt-2.5 text-center">
+						<span class="inline-flex h-6 items-center rounded-full bg-white/10 px-2.5 text-[11.5px] font-semibold text-accent-100">{{ selected.area.name }}</span>
 					</p>
 
 					<dl class="mt-5 grid grid-cols-3 divide-x divide-white/15 rounded-2xl bg-white/[.06] py-3 text-center">
@@ -280,8 +283,7 @@
 
 <script setup lang="ts">
 import { NuxtLink } from '#components'
-import { studentService, type AchievementRow, type CatalogBook, type LoanRow } from '~/services/studentService'
-import { announcementService } from '~/services/announcementService'
+import { studentService, type CatalogBook, type LoanRow } from '~/services/studentService'
 import { TONE_SOFT, type StudentTone } from '~/utils/studentNotifications'
 import type { BookPagePhoto } from '~/utils/bookPages'
 
@@ -299,65 +301,74 @@ const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: '
 // The most books either card (New arrivals, Recommended) shows; "See all" has the rest.
 const MAX_ON_CARD = 10
 
-const { data, pending } = useStudentData('student-home', async () => {
-	const [loans, reservations, attendance, achievements, subjects, picks] = await Promise.all([
-		studentService.loans(),
-		studentService.reservations(),
-		studentService.attendance(),
-		// Points and achievements are for students; a faculty or staff member's request would be refused.
-		isStudent.value ? studentService.achievements() : Promise.resolve({ achievements: [] as AchievementRow[] }),
-		studentService.subjects(),
-		// The server ranks these (the student's favourite subjects, then what everyone borrows); a failure just
-		// means an empty card, not a broken Home.
-		studentService.recommendations().catch(() => ({ books: [] as CatalogBook[], subjects: [] as string[], loanCount: 0 })),
-	])
+// Everything on Home comes from one request (GET /student/home). It used to be nine, and the hosted API has only a
+// small share of one processor, so nine at once queued for it. The server leaves out achievements and the Hall of
+// Fame for faculty and staff, and sends an empty "Recommended" if the ranking fails, as the separate requests did.
+const { data: home, pending } = useStudentData('student-home', () => studentService.home())
 
-	return {
-		loans: loans.loans,
-		reservations: reservations.reservations,
-		visitedDates: attendance.recentDates,
-		achievements: achievements.achievements,
-		subjects: subjects.subjects,
-		recommended: picks.books.slice(0, MAX_ON_CARD),
-		favouriteSubjects: picks.subjects,
-	}
+const data = computed(() => home.value && {
+	loans: home.value.loans,
+	reservations: home.value.reservations,
+	visitedDates: home.value.attendance.recentDates,
+	achievements: home.value.achievements,
+	areas: home.value.areas,
+	recommended: home.value.recommendations.books.slice(0, MAX_ON_CARD),
+	favouriteSubjects: home.value.recommendations.subjects,
+	favouriteClasses: home.value.recommendations.classes ?? [],
 })
-
-// Notices from the administrator, in their own request too. (A failed one just means no banner.)
-const { data: announcements } = useStudentData('student-announcements', () => announcementService.forStudents().catch(() => ({ announcements: [] })))
-
-// Its own request, so the rest of Home doesn't wait on the rankings.
-const { data: hallOfFame, pending: hallOfFamePending } = useStudentData('student-hall-of-fame', () => (isStudent.value ? studentService.hallOfFame() : Promise.resolve(null)))
-
-// New arrivals: the books marked new when they were catalogued, newest first. Its own request, like the Hall of Fame,
-// so the rest of Home doesn't wait on it.
-const { data: newArrivalsData, pending: newArrivalsPending } = useStudentData('student-new-arrivals', async () => (await studentService.catalog({ newArrivalsOnly: true, perPage: MAX_ON_CARD })).data)
-const newArrivals = computed(() => newArrivalsData.value ?? [])
+const announcements = computed(() => (home.value ? { announcements: home.value.announcements } : null))
+const hallOfFame = computed(() => home.value?.hallOfFame ?? null)
+const hallOfFamePending = pending
+const newArrivalsPending = pending
+const newArrivals = computed(() => home.value?.newArrivals.data ?? [])
 
 const recommended = computed(() => data.value?.recommended ?? [])
 const recommendedReason = computed(() => {
-	const subjects = data.value?.favouriteSubjects ?? []
-	if (!subjects.length) return 'Popular right now, and ready to borrow.'
-	return `Based on what you borrow most: ${subjects.join(' and ')}.`
+	// The picks mix the Dewey classes the student borrows from most with what everyone borrows.
+	const areas = data.value?.favouriteClasses.length ? data.value.favouriteClasses : (data.value?.favouriteSubjects ?? [])
+	if (!areas.length) return 'Popular right now, and ready to borrow.'
+	return `From ${areas.join(' and ')}, which you borrow most, plus popular picks.`
 })
 
-/* ---- categories ---- */
-const category = ref<number | null>(null)
+/* ---- areas of the library (they replaced genres: new books have no genre) ---- */
+const category = ref<string | null>(null)
 const chips = computed(() => [
-	{ id: null, name: 'All' },
-	...[...(data.value?.subjects ?? [])]
-		.filter((s) => s.books > 0)
-		.sort((a, b) => b.books - a.books)
-		.slice(0, 9)
-		.map((s) => ({ id: s.subjectID as number | null, name: s.name })),
+	{ id: null as string | null, name: 'All' },
+	// In the library's own order (Circulation first), the way the shelves are laid out.
+	...(data.value?.areas ?? []).map((a) => ({ id: a.key as string | null, name: a.name })),
 ])
 
 const activeCategoryName = computed(() => chips.value.find((c) => c.id === category.value && c.id !== null)?.name ?? null)
 
+// How many books the shelf shows: whole rows only, as many columns as the card's width fits (the grid below is
+// repeat(auto-fill, minmax(120px, 1fr)) with a 12px gap: keep these in step). Two rows, or three on a two-column phone
+// so it doesn't look bare. Measured in the browser, and again whenever the card changes width.
+const SHELF_MIN = 120
+const SHELF_GAP = 12
+const shelfEl = ref<HTMLElement | null>(null)
+const shelfColumns = ref(0)
+const shelfCount = computed(() => {
+	const cols = shelfColumns.value
+	return cols ? Math.min(60, cols * (cols <= 2 ? 3 : 2)) : 0
+})
+let shelfObserver: ResizeObserver | undefined
+function measureShelf() {
+	const width = shelfEl.value?.clientWidth ?? 0
+	if (width) shelfColumns.value = Math.max(1, Math.floor((width + SHELF_GAP) / (SHELF_MIN + SHELF_GAP)))
+}
+onMounted(() => {
+	measureShelf()
+	shelfObserver = new ResizeObserver(measureShelf)
+	if (shelfEl.value) shelfObserver.observe(shelfEl.value)
+})
+onBeforeUnmount(() => shelfObserver?.disconnect())
+
 const { data: shelf, pending: shelfPending } = useAsyncData(
 	'student-home-shelf',
-	async () => (await studentService.catalog({ subjectID: category.value ?? undefined, perPage: 12 })).data,
-	{ lazy: true, server: false, watch: [category] },
+	async () => (await studentService.catalog({ area: category.value ?? undefined, perPage: shelfCount.value })).data,
+	// Not until the card has been measured (shelfCount going from 0 to a number starts the first request), so it
+	// already asks for the right number; a later width change or another area asks again.
+	{ lazy: true, server: false, immediate: false, watch: [category, shelfCount] },
 )
 
 /* ---- the book panel ---- */

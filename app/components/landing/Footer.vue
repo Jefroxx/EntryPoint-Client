@@ -11,9 +11,10 @@
 
 				<nav aria-label="Footer">
 					<h2 class="text-[15px] font-bold text-white">Go to</h2>
-					<ul class="mt-4 space-y-2.5 text-[15px] text-white/75">
+					<!-- The spacing lives in each link's padding, not the list gap, so every link is a ~34px tap target on phones. -->
+					<ul class="mt-2 text-[15px] text-white/75">
 						<li v-for="link in links" :key="link.label">
-							<NuxtLink :to="link.to" class="transition-colors duration-200 hover:text-white">{{ link.label }}</NuxtLink>
+							<NuxtLink :to="link.to" class="inline-block py-2 transition-colors duration-200 hover:text-white">{{ link.label }}</NuxtLink>
 						</li>
 					</ul>
 				</nav>

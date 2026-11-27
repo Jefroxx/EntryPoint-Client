@@ -2,6 +2,7 @@ import { BaseService } from "./BaseService";
 import type { LoanReceipt } from "./circulationService";
 import type { BookPagePhoto } from "~/utils/bookPages";
 import type { Area } from "~/utils/session";
+import type { Announcement } from "./announcementService";
 
 /* ---------- shapes the app works with ---------- */
 
@@ -22,6 +23,8 @@ export interface CatalogBook extends BookBrief {
   publicationYear: number | null;
   shelfLocation: string | null;
   circulationType: string;
+  /** Where it is in the library (Circulation, Filipiniana, ...): what students browse by. */
+  area?: { key: string; name: string };
   totalCopies: number;
   availableCopies: number;
   queueLength: number;
@@ -252,9 +255,18 @@ export interface SuggestionRow {
   submittedAt: string;
 }
 
+/** An area of the library with books in it (Discover's and Home's "browse by area"). */
+export interface LibraryAreaCount {
+  key: string;
+  name: string;
+  books: number;
+}
+
 export interface CatalogQuery {
   search?: string;
   subjectID?: number;
+  /** An area of the library (its key, e.g. "filipiniana"). */
+  area?: string;
   availableOnly?: boolean;
   /** Only the books the library marked as new arrivals, the most recently added first. */
   newArrivalsOnly?: boolean;
@@ -287,8 +299,23 @@ class StudentServiceClass extends BaseService {
     return this.apiRequest<ProfileResponse>("/student/profile");
   }
 
+  /** Everything Home shows, in one request (nine before). Same shapes as the separate endpoints below. */
+  home() {
+    return this.apiRequest<{
+      loans: LoanRow[];
+      reservations: ReservationRow[];
+      attendance: { visits: VisitRow[]; recentDates: string[] };
+      achievements: AchievementRow[];
+      areas: LibraryAreaCount[];
+      recommendations: { books: CatalogBook[]; subjects: string[]; classes?: string[]; loanCount: number };
+      announcements: Announcement[];
+      hallOfFame: HallOfFame | null;
+      newArrivals: Paginated<CatalogBook>;
+    }>("/student/home");
+  }
+
   /** The contact details a student may change themselves. Returns the refreshed profile. */
-  updateContact(body: { phoneNumber: string | null; address: string | null; birthDate: string | null }) {
+  updateContact(body: { memberIDNumber?: string; phoneNumber: string | null; address: string | null; birthDate: string | null }) {
     return this.apiRequest<ProfileResponse & { message: string }>("/student/profile", { method: "PATCH", body });
   }
 
@@ -332,6 +359,7 @@ class StudentServiceClass extends BaseService {
       query: {
         search: query.search || undefined,
         subjectID: query.subjectID || undefined,
+        area: query.area || undefined,
         availableOnly: query.availableOnly ? 1 : undefined,
         newArrivalsOnly: query.newArrivalsOnly ? 1 : undefined,
         page: query.page,
@@ -349,9 +377,14 @@ class StudentServiceClass extends BaseService {
     return this.apiRequest<{ subjects: { subjectID: number; name: string; books: number }[] }>("/student/catalog/subjects");
   }
 
+  /** The areas of the library that hold books, in the library's order, with how many each holds. */
+  areas() {
+    return this.apiRequest<{ areas: LibraryAreaCount[] }>("/student/catalog/areas");
+  }
+
   /** "Recommended for you": ranked by the subjects the student borrows most, then by what everyone borrows. */
   recommendations() {
-    return this.apiRequest<{ books: CatalogBook[]; subjects: string[]; loanCount: number }>("/student/recommendations");
+    return this.apiRequest<{ books: CatalogBook[]; subjects: string[]; classes?: string[]; loanCount: number }>("/student/recommendations");
   }
 
   wishlist() {
@@ -378,10 +411,11 @@ class StudentServiceClass extends BaseService {
     return this.apiRequest<{ reservations: ReservationRow[] }>("/student/reservations");
   }
 
-  reserveCart() {
+  /** Reserves the given cart rows, or the whole cart when none are named. */
+  reserveCart(wishlistIDs?: number[]) {
     return this.apiRequest<{ message: string; reservations: { reservationID: number; bookID: number }[] }>(
       "/student/reservations",
-      { method: "POST" },
+      { method: "POST", ...(wishlistIDs ? { body: { wishlistIDs } } : {}) },
     );
   }
 

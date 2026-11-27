@@ -59,11 +59,6 @@
 <script setup lang="ts">
 import { librarianService, type DemographicsScope } from '~/services/librarianService'
 
-const { data: summary } =
-    useLiveAsyncData('dashboard-summary', () => librarianService.fetchDashboardSummary(), { lazy: true, pollMs: 60_000 })
-const { data: bookStatus } =
-    useLiveAsyncData('book-status-overview', () => librarianService.fetchBookStatusOverview(), { lazy: true, pollMs: 60_000 })
-
 /* ---------- chart month (the one place a date control changes what you see) ---------- */
 const now = ref(new Date())
 const monthKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
@@ -81,11 +76,15 @@ function shiftMonth(delta: number) {
     month.value = monthKey(next)
 }
 
-const { data: overview, pending: overviewPending } = useLiveAsyncData(
-    'borrowing-overview',
-    () => librarianService.fetchBorrowingOverview(month.value),
+// The whole section in one request (it was five, each polled), refreshed every minute and when the month changes.
+const { data: trends, pending: overviewPending } = useLiveAsyncData(
+    'dashboard-trends',
+    () => librarianService.fetchDashboardTrends(month.value),
     { lazy: true, watch: [month], pollMs: 60_000 },
 )
+const summary = computed(() => trends.value?.summary)
+const bookStatus = computed(() => trends.value?.bookStatus)
+const overview = computed(() => trends.value?.borrowingOverview)
 
 // Same weeks, two stories. Both color pairs pass the dataviz palette validator on white.
 const CHART_VIEWS = [
@@ -123,13 +122,8 @@ const DEMO_SCOPES = [
 ]
 const demoScope = ref<DemographicsScope>('members')
 
-const { data: demoMembers } =
-    useLiveAsyncData('demographics-members', () => librarianService.fetchDemographics('members'), { lazy: true, pollMs: 60_000 })
-const { data: demoVisitors } = useLiveAsyncData(
-    'demographics-visitors',
-    () => librarianService.fetchDemographics('visitors', month.value),
-    { lazy: true, watch: [month], pollMs: 60_000 },
-)
+const demoMembers = computed(() => trends.value?.demographics.members)
+const demoVisitors = computed(() => trends.value?.demographics.visitors)
 const demo = computed(() => (demoScope.value === 'members' ? demoMembers.value : demoVisitors.value))
 
 // Each program keeps its color across both views (see colorProgramSlices).

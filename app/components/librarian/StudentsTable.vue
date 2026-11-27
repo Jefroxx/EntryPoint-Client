@@ -2,7 +2,7 @@
 	<div class="relative rounded-2xl">
 		<!-- Too narrow for the table: one card per student, with the approve / reject / reinstate buttons on it. -->
 		<LibrarianCardSkeleton v-if="loading" />
-		<ul v-else class="grid gap-3 sm:grid-cols-2 2xl:grid-cols-3 [&>li]:overflow-hidden [&>li]:rounded-2xl [&>li]:border [&>li]:border-stone-200 [&>li]:bg-white">
+		<ul v-else class="card-grid grid gap-3 sm:grid-cols-2 2xl:grid-cols-3 [&>li]:overflow-hidden [&>li]:rounded-2xl [&>li]:border [&>li]:border-stone-200 [&>li]:bg-white">
 			<li v-for="student in students" :key="`card-${student.studentID}`">
 				<div role="button" tabindex="0" class="px-4 py-3.5 transition-colors active:bg-accent-50"
 					@click="emit('view', student)" @keydown.enter.self="emit('view', student)">

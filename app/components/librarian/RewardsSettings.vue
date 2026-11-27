@@ -24,7 +24,7 @@
 import { settingsService } from '~/services/settingsService'
 
 const props = defineProps<{ lowStockAtSaved: number }>()
-const emit = defineEmits<{ (e: 'saved'): void }>()
+const emit = defineEmits<{ (e: 'saved'): void; (e: 'dirty', value: boolean): void }>()
 
 const { perform } = useAction()
 
@@ -38,6 +38,10 @@ function reset() {
 watch(() => props.lowStockAtSaved, reset)
 
 const dirty = computed(() => Number(lowStockAt.value) !== props.lowStockAtSaved)
+
+// Tells the page there is something unsaved here, so switching to another section can ask first.
+watch(dirty, (value) => emit('dirty', value), { immediate: true })
+onBeforeUnmount(() => emit('dirty', false))
 
 async function save() {
 	const value = Number(lowStockAt.value)

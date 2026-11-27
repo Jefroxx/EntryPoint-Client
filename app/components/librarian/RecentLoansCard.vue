@@ -25,13 +25,15 @@
 			<li v-if="loans.length === 0" class="py-6 text-center text-[15px] text-stone-500">No recent loans.</li>
 		</ul>
 
-		<div class="hidden flex-1 overflow-x-auto sm:block">
-			<table class="w-full min-w-max text-left text-[15px]">
+		<!-- Fixed columns that shorten long names and titles (full text on hover, everything in the drawer), so the
+			 pill never slides out of a half-width card on a 1366px laptop. It used to be `min-w-max` + a sideways scrollbar. -->
+		<div class="hidden flex-1 sm:block">
+			<table class="w-full table-fixed text-left text-[15px]">
 				<thead>
 					<tr class="border-b border-stone-100 text-[13px] font-medium text-stone-500">
-						<th class="pb-2 pr-4 font-medium">Student</th>
+						<th class="w-[42%] pb-2 pr-4 font-medium">Student</th>
 						<th class="pb-2 pr-4 font-medium">Book</th>
-						<th class="pb-2 font-medium">Due</th>
+						<th class="w-[116px] pb-2 font-medium">Due</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -39,14 +41,14 @@
 						class="cursor-pointer border-b border-stone-50 transition-colors duration-150 last:border-0 hover:bg-accent-50 focus-visible:bg-accent-50 focus-visible:outline-none"
 						@click="selected = loan" @keydown.enter.self="selected = loan">
 						<td class="py-3 pr-4">
-							<div class="flex items-center gap-2">
-								<LibrarianStudentAvatar :name="loan.studentName" />
-								<span class="text-stone-700">{{ loan.studentName }}</span>
+							<div class="flex min-w-0 items-center gap-2">
+								<LibrarianStudentAvatar :name="loan.studentName" class="shrink-0" />
+								<span class="truncate text-stone-700" :title="loan.studentName">{{ loan.studentName }}</span>
 							</div>
 						</td>
-						<td class="py-3 pr-4 text-stone-700">{{ loan.bookTitle }}</td>
+						<td class="truncate py-3 pr-4 text-stone-700" :title="loan.bookTitle">{{ loan.bookTitle }}</td>
 						<td class="py-3">
-							<span class="inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[13px] font-bold"
+							<span class="inline-flex items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-1 text-[13px] font-bold"
 								:class="statusClass(loan.status)" :title="`${loan.status}, borrowed ${shortDate(loan.checkoutDate)}`">
 								<Icon :name="statusIcon(loan.status)" class="h-3 w-3" />
 								{{ loan.status === 'Returned' ? 'Returned' : shortDate(loan.dueDate) }}

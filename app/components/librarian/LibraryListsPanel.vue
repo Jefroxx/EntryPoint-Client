@@ -8,7 +8,7 @@
 		<!-- ============ Areas of the library ============ -->
 		<template v-if="view === 'areas'">
 			<div class="phone-toolbar toolbar-nowrap mb-4 flex flex-wrap items-center gap-2">
-				<LibrarianSearchInput id="area-search" v-model="search" class="!min-w-[210px] !max-w-[560px] !basis-[480px]" placeholder="Search areas" />
+				<LibrarianSearchInput id="area-search" v-model="search" class="!min-w-[210px]" placeholder="Search areas" />
 				<div class="flex-1"></div>
 				<ButtonsButton variant="primary" class="toolbar-full" @click="openArea(null)">
 					<Icon name="i-tabler-plus" class="h-3.5 w-3.5" />Add Area
@@ -18,7 +18,7 @@
 			<p v-if="areasError" role="alert" class="rounded-2xl border border-red-100 bg-red-50 p-4 text-[15px] text-red-600">Couldn't load the areas. <button type="button" class="font-semibold underline underline-offset-2" @click="refetchAreas()">Try again</button></p>
 			<LibrarianCardSkeleton v-else-if="areasPending && !areas.length" />
 			<p v-else-if="!shownAreas.length" class="rounded-2xl border border-stone-200 bg-white px-4 py-10 text-center text-[15px] text-stone-500">No areas match your search.</p>
-			<ul v-else class="grid gap-3 sm:grid-cols-2 2xl:grid-cols-3">
+			<ul v-else class="card-grid grid gap-3 sm:grid-cols-2 2xl:grid-cols-3">
 				<li v-for="a in shownAreas" :key="a.uuid"
 					class="relative rounded-2xl border border-stone-200 bg-white p-4 transition-shadow duration-150 hover:shadow-card">
 					<button type="button" class="card-cover" :aria-label="`Show the books in ${a.name}`" @click="showConnected('area', a)" />
@@ -53,7 +53,7 @@
 		<!-- ============ Sources of funds ============ -->
 		<template v-else>
 			<div class="phone-toolbar toolbar-nowrap mb-4 flex flex-wrap items-center gap-2">
-				<LibrarianSearchInput id="fund-search" v-model="search" class="!min-w-[210px] !max-w-[560px] !basis-[480px]" placeholder="Search sources of funds" />
+				<LibrarianSearchInput id="fund-search" v-model="search" class="!min-w-[210px]" placeholder="Search sources of funds" />
 				<div class="flex-1"></div>
 				<ButtonsButton variant="primary" class="toolbar-full" @click="openFund(null)">
 					<Icon name="i-tabler-plus" class="h-3.5 w-3.5" />Add Source of Fund
@@ -63,7 +63,7 @@
 			<p v-if="fundsError" role="alert" class="rounded-2xl border border-red-100 bg-red-50 p-4 text-[15px] text-red-600">Couldn't load the sources of funds. <button type="button" class="font-semibold underline underline-offset-2" @click="refetchFunds()">Try again</button></p>
 			<LibrarianCardSkeleton v-else-if="fundsPending && !funds.length" />
 			<p v-else-if="!shownFunds.length" class="rounded-2xl border border-stone-200 bg-white px-4 py-10 text-center text-[15px] text-stone-500">No sources of funds match your search.</p>
-			<ul v-else class="grid gap-3 sm:grid-cols-2 2xl:grid-cols-3">
+			<ul v-else class="card-grid grid gap-3 sm:grid-cols-2 2xl:grid-cols-3">
 				<li v-for="f in shownFunds" :key="f.uuid"
 					class="relative rounded-2xl border border-stone-200 bg-white p-4 transition-shadow duration-150 hover:shadow-card">
 					<button type="button" class="card-cover" :aria-label="`Show the copies from ${f.name}`" @click="showConnected('fund', f)" />

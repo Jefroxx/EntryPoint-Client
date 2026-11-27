@@ -14,13 +14,13 @@
 		<!-- Phones: the search box lives on the page (wide screens use the one in the top bar) -->
 		<div class="st-in relative mb-3 md:hidden" style="animation-delay: 35ms">
 			<Icon name="i-tabler-search" class="pointer-events-none absolute left-3.5 top-[13px] h-[18px] w-[18px] text-stone-400" />
-			<input v-model="search" type="search" placeholder="Search by title, author or subject" autocomplete="off" enterkeyhint="search" aria-label="Search books"
+			<input v-model="search" type="search" placeholder="Search by title or author" autocomplete="off" enterkeyhint="search" aria-label="Search books"
 				class="h-11 w-full rounded-[13px] border border-transparent bg-stone-100 pl-10 pr-3 text-[16px] outline-none transition-[border-color,box-shadow,background-color] duration-150 placeholder:text-stone-400 focus:border-accent-500 focus:bg-white focus:ring-[3px] focus:ring-accent-100">
 		</div>
 
 
 		<!-- From xl up the filters are a panel on the right (nav on the left, books in the middle, filters beside them).
-			 Narrower screens have no room for it, so they get a toolbar (Genre button and two switches) instead. -->
+			 Narrower screens have no room for it, so they get a toolbar (Area button and two switches) instead. -->
 		<div class="xl:grid xl:grid-cols-[minmax(0,1fr)_240px] xl:items-start xl:gap-6">
 		<div class="min-w-0">
 		<div ref="sentinel" aria-hidden="true" />
@@ -28,9 +28,9 @@
 			:class="stuck ? 'border-b border-stone-200 bg-parchment/90 backdrop-blur-sm' : 'border-b border-transparent'"
 			style="animation-delay: 70ms">
 			<div class="flex flex-wrap items-center gap-x-2 gap-y-2 sm:gap-x-3">
-				<!-- The Genre button and window: the same as the Filter button on the librarian and admin screens, at every width. The old
+				<!-- The Area button and window: the same as the Filter button on the librarian and admin screens, at every width. The old
 					 phone-only button and bottom sheet, and the scrolling row of chips on tablets (whose far end could not be reached), are gone. -->
-				<LibrarianFilterMenu v-model="filterValue" :groups="filterGroups" label="Genre" icon="i-tabler-category" title="Genre" subtitle="Pick a genre, then press Show results."
+				<LibrarianFilterMenu v-model="filterValue" :groups="filterGroups" label="Area" icon="i-tabler-map-pin" title="Area of the library" subtitle="Pick an area, then press Show results."
 						prominent class="min-w-[5.5rem] flex-1 md:min-w-[15rem] md:max-w-[26rem]" />
 
 
@@ -62,10 +62,10 @@
 
 		<section ref="resultsEl" class="st-in" style="animation-delay: 105ms">
 			<div v-if="!data" aria-busy="true">
-				<div class="space-y-3 md:hidden">
+				<div class="cards-rows-only space-y-3 md:hidden">
 					<div v-for="n in 5" :key="n" class="h-[92px] animate-pulse rounded-2xl bg-stone-200/70" />
 				</div>
-				<div class="hidden gap-4 md:grid md:grid-cols-[repeat(auto-fill,minmax(200px,1fr))]">
+				<div class="cards-grid-only hidden gap-4 md:grid md:grid-cols-[repeat(auto-fill,minmax(200px,1fr))]">
 					<div v-for="n in 10" :key="n" class="h-[344px] animate-pulse rounded-[20px] bg-stone-200/60" />
 				</div>
 			</div>
@@ -74,7 +74,7 @@
 				<div class="mb-3 flex min-h-7 flex-wrap items-center gap-x-3 gap-y-1 px-0.5">
 					<p class="text-[13px] text-stone-500">
 						<span class="font-semibold text-stone-800 tabular-nums">{{ data.total }}</span>
-						book{{ data.total === 1 ? '' : 's' }}<template v-if="q"> for <span class="font-semibold text-stone-800">“{{ q }}”</span></template><template v-if="activeSubject"> in {{ activeSubject }}</template><template v-if="availableOnly">, on the shelf now</template><template v-if="newOnly">, new arrivals</template>
+						book{{ data.total === 1 ? '' : 's' }}<template v-if="q"> for <span class="font-semibold text-stone-800">“{{ q }}”</span></template><template v-if="activeArea"> in {{ activeArea }}</template><template v-if="availableOnly">, on the shelf now</template><template v-if="newOnly">, new arrivals</template>
 					</p>
 					<button v-if="hasFilters" type="button" class="inline-flex items-center gap-1 text-[12.5px] font-semibold text-accent-600 hover:underline" @click="reset">
 						<Icon name="i-tabler-x" class="h-3.5 w-3.5" />Clear filters
@@ -91,12 +91,12 @@
 					</StudentEmptyState>
 
 					<template v-else>
-						<div class="overflow-hidden rounded-2xl border border-stone-200 bg-white md:hidden">
+						<div class="cards-rows-only overflow-hidden rounded-2xl border border-stone-200 bg-white md:hidden">
 							<div v-for="book in data.data" :key="book.bookID" class="border-b border-stone-100 last:border-0">
 								<StudentBookRow :book="book" />
 							</div>
 						</div>
-						<div class="hidden gap-4 md:grid md:grid-cols-[repeat(auto-fill,minmax(200px,1fr))]">
+						<div class="cards-grid-only hidden gap-4 md:grid md:grid-cols-[repeat(auto-fill,minmax(200px,1fr))]">
 							<StudentBookCard v-for="book in data.data" :key="book.bookID" :book="book" />
 						</div>
 					</template>
@@ -148,14 +148,14 @@
 				</button>
 			</div>
 
-			<h2 class="px-6 pb-1.5 pt-4 text-[15px] font-bold text-stone-900">Genres</h2>
-			<div class="no-scrollbar min-h-0 flex-1 overflow-y-auto px-3 pb-3" role="group" aria-label="Filter by genre">
-				<button v-for="s in subjectOptions" :key="s.id" type="button" :aria-pressed="subjectID === s.id"
+			<h2 class="px-6 pb-1.5 pt-4 text-[15px] font-bold text-stone-900">Areas of the library</h2>
+			<div class="no-scrollbar min-h-0 flex-1 overflow-y-auto px-3 pb-3" role="group" aria-label="Filter by area of the library">
+				<button v-for="s in areaOptions" :key="s.key" type="button" :aria-pressed="areaKey === s.key"
 					class="flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-left text-[13.5px] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-200"
-					:class="subjectID === s.id ? 'bg-accent-100 font-semibold text-accent-700' : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900'"
-					@click="setParam({ subject: s.id ? String(s.id) : undefined })">
+					:class="areaKey === s.key ? 'bg-accent-100 font-semibold text-accent-700' : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900'"
+					@click="setParam({ area: s.key || undefined, subject: undefined })">
 					<span class="min-w-0 truncate">{{ s.name }}</span>
-					<span class="font-data shrink-0 text-[12px]" :class="subjectID === s.id ? 'text-accent-700/70' : 'text-stone-500'">{{ s.books }}</span>
+					<span class="font-data shrink-0 text-[12px]" :class="areaKey === s.key ? 'text-accent-700/70' : 'text-stone-500'">{{ s.books }}</span>
 				</button>
 			</div>
 		</aside>
@@ -191,15 +191,18 @@ function measureGrid() {
 	if (width) columns.value = Math.max(1, Math.floor((width + GRID_GAP) / (GRID_MIN + GRID_GAP)))
 }
 
-/* The URL is the single source of truth: ?q=&subject=&available=1&page= (so filters survive a refresh and the back button). */
+/* The URL is the single source of truth: ?q=&area=&available=1&page= (so filters survive a refresh and the back button). */
 const str = (v: unknown) => (typeof v === 'string' ? v : '')
 const q = computed(() => str(route.query.q))
+// An area of the library (its key, e.g. "filipiniana"). Students browse by area now, not by genre: new books have no
+// genre. An old ?subject= link still narrows the list, so a bookmark doesn't break.
+const areaKey = computed(() => str(route.query.area))
 const subjectID = computed(() => Number(str(route.query.subject)) || 0)
 const availableOnly = computed(() => str(route.query.available) === '1')
 // "New arrivals" on Home links here with ?new=1: only the books the library just added, newest first.
 const newOnly = computed(() => str(route.query.new) === '1')
 const page = computed(() => Number(str(route.query.page)) || 1)
-const hasFilters = computed(() => !!(q.value || subjectID.value || availableOnly.value || newOnly.value))
+const hasFilters = computed(() => !!(q.value || areaKey.value || subjectID.value || availableOnly.value || newOnly.value))
 
 function setParam(patch: Record<string, string | undefined>, keepPage = false) {
 	void router.replace({ query: { ...route.query, ...(keepPage ? {} : { page: undefined }), ...patch } })
@@ -219,29 +222,29 @@ watch(search, (value) => {
 watch(q, (value) => { if (value !== search.value.trim()) search.value = value })
 onBeforeUnmount(() => clearTimeout(timer))
 
-const { data: subjectData } = useLiveAsyncData('student-subjects', () => studentService.subjects(), { lazy: true })
-const subjectOptions = computed(() => {
-	const list = subjectData.value?.subjects ?? []
-	return [{ id: 0, name: 'All', books: list.reduce((sum, s) => sum + s.books, 0) }, ...list.map((s) => ({ id: s.subjectID, name: s.name, books: s.books }))]
+const { data: areaData } = useLiveAsyncData('student-areas', () => studentService.areas(), { lazy: true })
+const areaOptions = computed(() => {
+	const list = areaData.value?.areas ?? []
+	return [{ key: '', name: 'All', books: list.reduce((sum, a) => sum + a.books, 0) }, ...list]
 })
-// The Genre window (every width below where the side panel takes over): the genre list is too long for chips.
-// Availability and New arrivals stay as the two switches beside it.
+// The Area window (every width below where the side panel takes over). Availability and New arrivals stay as the two
+// switches beside it.
 const filterGroups = computed(() => [
-	{ key: 'genre', title: 'Genre', options: subjectOptions.value.map((s) => ({ value: s.id ? String(s.id) : 'all', label: s.id ? `${s.name} (${s.books})` : 'All genres', badge: s.name })) },
+	{ key: 'area', title: 'Area of the library', options: areaOptions.value.map((a) => ({ value: a.key || 'all', label: a.key ? `${a.name} (${a.books})` : 'All areas', badge: a.name })) },
 ])
 // The URL stays the source of truth: reading builds the window's value from it, and choosing writes it back.
 const filterValue = computed({
-	get: () => ({ genre: subjectID.value ? String(subjectID.value) : 'all' }),
-	set: (value: Record<string, string>) => setParam({ subject: value.genre && value.genre !== 'all' ? value.genre : undefined }),
+	get: () => ({ area: areaKey.value || 'all' }),
+	set: (value: Record<string, string>) => setParam({ area: value.area && value.area !== 'all' ? value.area : undefined, subject: undefined }),
 })
-const activeSubject = computed(() => (subjectID.value ? subjectOptions.value.find((s) => s.id === subjectID.value)?.name : null))
+const activeArea = computed(() => (areaKey.value ? areaOptions.value.find((a) => a.key === areaKey.value)?.name : null))
 
 const { dataVersion } = useStudent()
 const { data, pending, refresh } = useLiveAsyncData(
 	'student-catalog',
-	() => studentService.catalog({ search: q.value, subjectID: subjectID.value || undefined, availableOnly: availableOnly.value, newArrivalsOnly: newOnly.value, page: page.value, perPage: perPage.value }),
+	() => studentService.catalog({ search: q.value, area: areaKey.value || undefined, subjectID: subjectID.value || undefined, availableOnly: availableOnly.value, newArrivalsOnly: newOnly.value, page: page.value, perPage: perPage.value }),
 	// Browser only, and not until the grid has been measured, so the first request already asks for the right number.
-	{ lazy: true, server: false, immediate: false, watch: [q, subjectID, availableOnly, newOnly, page, perPage] },
+	{ lazy: true, server: false, immediate: false, watch: [q, areaKey, subjectID, availableOnly, newOnly, page, perPage] },
 )
 watch(dataVersion, () => { void refresh() })
 // A different page size (the window was resized past a column) starts from the first page: page 3 of 15 is not page 3 of 18.
@@ -269,7 +272,7 @@ watch(page, () => {
 })
 
 // A new key restarts the short cross-fade whenever the result set changes.
-const resultsKey = computed(() => `${q.value}|${subjectID.value}|${availableOnly.value}|${newOnly.value}|${page.value}`)
+const resultsKey = computed(() => `${q.value}|${areaKey.value}|${subjectID.value}|${availableOnly.value}|${newOnly.value}|${page.value}`)
 
 /* The toolbar gets a backing only once it's actually stuck under the top bar. */
 const sentinel = ref<HTMLElement | null>(null)

@@ -31,7 +31,7 @@
 
 		<template v-else>
 			<!-- Phones: the compact rows, as on Discover -->
-			<TransitionGroup tag="div" class="st-in relative overflow-hidden rounded-2xl border border-stone-200 bg-white md:hidden"
+			<TransitionGroup tag="div" class="cards-rows-only st-in relative overflow-hidden rounded-2xl border border-stone-200 bg-white md:hidden"
 				leave-active-class="absolute inset-x-0 transition-[opacity,transform,translate,scale] duration-200 ease-out" leave-to-class="-translate-x-3 opacity-0"
 				move-class="transition-transform duration-200 ease-out">
 				<div v-for="book in books" :key="book.bookID" class="border-b border-stone-100 bg-white last:border-0">
@@ -40,7 +40,7 @@
 			</TransitionGroup>
 
 			<!-- Wide screens: the same cards as Discover. Un-hearting a card lets it drop out of the grid. -->
-			<TransitionGroup tag="div" class="st-in relative hidden gap-4 md:grid md:grid-cols-[repeat(auto-fill,minmax(200px,1fr))]"
+			<TransitionGroup tag="div" class="cards-grid-only st-in relative hidden gap-4 md:grid md:grid-cols-[repeat(auto-fill,minmax(200px,1fr))]"
 				leave-active-class="absolute transition-[opacity,transform,translate,scale] duration-200 ease-out" leave-to-class="scale-95 opacity-0"
 				move-class="transition-transform duration-300 ease-out">
 				<StudentBookCard v-for="book in books" :key="book.bookID" :book="book" />

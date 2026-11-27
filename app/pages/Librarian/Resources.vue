@@ -21,7 +21,7 @@
             </div>
 
             <div class="phone-toolbar toolbar-nowrap mb-4 flex flex-wrap items-center gap-2">
-                <LibrarianSearchInput id="resource-search" v-model="resourceSearch" class="!min-w-[210px] !max-w-[560px] !basis-[480px]" placeholder="Search resources" />
+                <LibrarianSearchInput id="resource-search" v-model="resourceSearch" class="!min-w-[210px]" placeholder="Search resources" />
                 <LibrarianFilterMenu class="toolbar-full" v-model="resourceFilters" :groups="resourceFilterGroups" />
                 <div class="flex-1"></div>
                 <ButtonsButton variant="primary" class="toolbar-full" @click="openForm(null)">
@@ -30,7 +30,7 @@
             </div>
 
             <LibrarianCardSkeleton v-if="resourcesPending && !resourcesResponse" />
-            <div v-else-if="filteredResources.length" class="relative grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+            <div v-else-if="filteredResources.length" class="card-grid relative grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
                 <LibrarianResourceCard v-for="(resource, index) in filteredResources" :key="resource.resID"
                     :resource="resource" :index="index" :now-ms="nowMs" @start="openStart" @end="askEnd"
                     @edit="openForm" @label="openLabel" @toggle="askToggle" @delete="askDelete" />
@@ -47,7 +47,7 @@
         <!-- ============ Usage log ============ -->
         <template v-else>
             <div class="phone-toolbar mb-4 flex flex-wrap items-center gap-2 lg:flex-nowrap">
-                <LibrarianSearchInput id="usage-search" v-model="logSearch" class="!min-w-[210px] !max-w-[560px] !basis-[480px]" placeholder="Search student or resource" />
+                <LibrarianSearchInput id="usage-search" v-model="logSearch" class="!min-w-[210px]" placeholder="Search student or resource" />
 
                 <LibrarianFilterMenu class="toolbar-full" v-model="logFilters" :groups="logFilterGroups" />
 

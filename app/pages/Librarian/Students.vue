@@ -1,15 +1,15 @@
 <template>
     <div>
         <div class="mb-6">
-            <h1 class="dashboard-heading text-3xl font-bold text-crimson">Students</h1>
-            <p class="dashboard-heading mt-1 text-crimson">Review registrations and manage member accounts.</p>
+            <h1 class="dashboard-heading text-3xl font-bold text-crimson">Members</h1>
+            <p class="dashboard-heading mt-1 text-crimson">Review registrations and look up student, faculty and staff members.</p>
         </div>
 
         <LibrarianSegmentedTabs v-model="activeTab" wrap class="mb-5" :tabs="[
             { label: 'Approved Students', short: 'Approved', value: 'approved' },
             { label: 'Pending Approval', short: 'Pending', value: 'pending', badge: stats?.pending || undefined },
             { label: 'Rejected', value: 'rejected' },
-            { label: 'Faculty and staff', short: 'Members', value: 'members' },
+            { label: 'Faculty and staff', short: 'Faculty & staff', value: 'members' },
         ]" />
 
         <p v-if="isMembers" class="mb-4 flex items-start gap-2.5 rounded-xl bg-stone-100 px-4 py-3 text-[13.5px] text-stone-700">
@@ -42,7 +42,7 @@
         </div>
 
         <div class="phone-toolbar toolbar-nowrap mb-4 flex flex-wrap items-center gap-2">
-            <LibrarianSearchInput id="student-search" v-model="search" class="!min-w-[210px] !max-w-[560px] !basis-[480px]"
+            <LibrarianSearchInput id="student-search" v-model="search" class="!min-w-[210px]"
                 :placeholder="isMembers ? 'Search name, employee ID or email' : 'Search name, student ID or email'" />
             <LibrarianFilterMenu class="toolbar-full" v-model="filters" :groups="filterGroups" />
             <div class="flex-1"></div>
@@ -75,7 +75,7 @@ definePageMeta({
     layout: 'librarian',
 })
 
-useHead({ title: 'Students' })
+useHead({ title: 'Members' })
 
 const { perform } = useAction()
 
@@ -216,6 +216,12 @@ async function confirmReview(reason = '') {
     reviewBusy.value = false
     // Done or failed, the window has served its purpose (a failure is shown as a message, the list is as it was).
     isReviewOpen.value = false
-    if (ok) isDrawerOpen.value = false
+    if (ok) {
+        isDrawerOpen.value = false
+        // Approving, rejecting or reinstating always moves the student to another tab, so the card leaves this one now;
+        // the quiet refresh perform() started brings the counts and the next student up a moment later.
+        const current = students.value
+        if (current) students.value = { ...current, data: current.data.filter((s) => s.uuid !== student.uuid) }
+    }
 }
 </script>

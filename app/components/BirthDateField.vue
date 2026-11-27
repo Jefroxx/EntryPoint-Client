@@ -5,7 +5,8 @@
 		</span>
 
 		<!-- Three boxes you can type into (or open for a list): "nov" or "11", then the day, then the year. -->
-		<div class="grid grid-cols-[1.9fr_.8fr_1.1fr] gap-2" @focusout="onFocusOut">
+		<!-- 1.5 / 1 / 1.2: on a 360px phone the old .8 share left the Day box ~20px of text room, so it read "D". -->
+		<div class="grid grid-cols-[1.5fr_1fr_1.2fr] gap-2" @focusout="onFocusOut">
 			<BirthDatePart :id="id" ref="monthBox" v-model="month" kind="month" label="Month" placeholder="Month" autocomplete="bday-month"
 				:options="monthOptions" :invalid="!!shownError" @advance="dayBox?.focus()" />
 			<BirthDatePart :id="`${id}-day`" ref="dayBox" v-model="day" kind="day" label="Day" placeholder="Day" autocomplete="bday-day"

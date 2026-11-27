@@ -479,8 +479,9 @@
 						</div>
 					</div>
 
-					<div class="flex flex-shrink-0 items-center justify-between gap-2 border-t border-stone-100 px-6 py-4 sm:px-7">
-						<span class="text-[12.5px] tabular-nums text-stone-500">{{ rescanning ? 'Confirm' : createdBook ? 'Done' : confirming ? 'Review' : entry !== 'form' ? 'Start' : `Step ${step} of ${lastStep}` }}</span>
+					<div class="flex flex-shrink-0 items-center justify-between gap-2 border-t border-stone-100 px-6 py-4 max-sm:justify-end sm:px-7">
+						<!-- Hidden on phones: the stepper at the top already says where you are, and the footer needs the room for its buttons. -->
+						<span class="text-[12.5px] tabular-nums text-stone-500 max-sm:hidden">{{ rescanning ? 'Confirm' : createdBook ? 'Done' : confirming ? 'Review' : entry !== 'form' ? 'Start' : `Step ${step} of ${lastStep}` }}</span>
 						<div v-if="rescanning" class="flex gap-2">
 							<ButtonsButton ref="confirmRescanButton" variant="ghost" @click="keepForm">Keep Details</ButtonsButton>
 							<ButtonsButton variant="danger" @click="clearAndScan">Yes, Clear and Scan</ButtonsButton>
@@ -524,7 +525,8 @@
 							<ButtonsButton v-else variant="ghost" @click="handleClose">Cancel</ButtonsButton>
 							<!-- A new book: scan the back cover from the first page too. With details already on the form it asks first, then clears them. -->
 							<ButtonsButton v-if="!isEdit && step === 1" variant="ghost" @click="startScan">
-								<Icon name="i-tabler-barcode" class="h-4 w-4" />Scan the book
+								<!-- Icon only on phones (Cancel + Scan + Continue didn't fit in 390px); screen readers still hear the words. -->
+								<Icon name="i-tabler-barcode" class="h-4 w-4" aria-hidden="true" /><span class="max-sm:sr-only">Scan the book</span>
 							</ButtonsButton>
 
 							<!-- Editing can save from any step; adding walks through to the end. -->

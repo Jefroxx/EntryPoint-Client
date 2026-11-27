@@ -9,44 +9,23 @@
 			<CountBadge v-if="unreadCount" size="md" ring="parchment" class="absolute -right-1.5 -top-1.5">{{ unreadCount > 9 ? '9+' : unreadCount }}</CountBadge>
 		</button>
 
-		<!-- Scales out from the bell (its top-right corner), not from the middle of the panel. -->
+		<!-- Scales out from the bell (its top-right corner), not from the middle of the panel. The panel itself is the
+			 staff bell's too (NotificationPanel), so both sides show the same list. -->
 		<Transition enter-active-class="transition-[transform,translate,scale,opacity] duration-[160ms] ease-out" enter-from-class="scale-[.96] opacity-0"
 			leave-active-class="transition-[transform,translate,scale,opacity] duration-[120ms] ease-out" leave-to-class="scale-[.96] opacity-0">
 			<div v-if="open" role="dialog" aria-label="Notifications"
 				class="absolute right-0 top-[calc(100%+10px)] z-50 w-[380px] origin-top-right overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-[0_18px_44px_-18px_rgba(40,25,8,.45)]">
-				<div class="flex items-center justify-between border-b border-stone-100 px-4 py-3">
-					<b class="text-[15px] text-stone-900">Notifications</b>
-					<button v-if="unreadCount" type="button" class="text-[13px] font-medium text-accent-500 hover:underline" @click="readAll">Mark all read</button>
-				</div>
-				<div class="max-h-[480px] overflow-y-auto overscroll-contain [scrollbar-color:var(--color-stone-300)_transparent] [scrollbar-width:thin]">
-					<StudentNotificationList :items="items" :grouped="false" @chosen="open = false" />
-				</div>
-				<NuxtLink to="/student/notifications"
-					class="block border-t border-stone-100 px-4 py-2.5 text-center text-[13.5px] font-semibold text-accent-500 transition-colors hover:bg-stone-50"
-					@click="open = false">
-					See all notifications
-				</NuxtLink>
+				<NotificationPanel side="student" @close="open = false" />
 			</div>
 		</Transition>
 	</div>
 </template>
 
 <script setup lang="ts">
-import { useAlert } from '~/api/alert/useAlert'
-
-const { items, unreadCount, markAllRead } = useNotifications()
-const alert = useAlert()
+const { unreadCount } = useNotifications()
 
 const open = ref(false)
 const root = ref<HTMLElement | null>(null)
-
-async function readAll() {
-	try {
-		await markAllRead()
-	} catch {
-		alert.error('Could not mark them as read')
-	}
-}
 
 function onPointerDown(event: PointerEvent) {
 	if (open.value && root.value && !root.value.contains(event.target as Node)) open.value = false

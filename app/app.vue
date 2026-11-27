@@ -4,7 +4,9 @@
 	</NuxtLayout>
 	<!-- Full screen only where there's no frame; the student and librarian layouts show their own,
 		 over the page area alone. -->
-	<AppLoader :show="loader.active && !framed" />
+	<AppLoader :show="loader.active && loader.full && !framed" />
+	<!-- A page change inside the same part of the app: just a thin bar along the top (components/NavProgress.vue). -->
+	<NavProgress :show="loader.active && !loader.full" />
 	<!-- Every error message in the app shows here, as a dialog, on every page. -->
 	<ErrorDialog />
 </template>
@@ -24,7 +26,12 @@ useHead({
 	],
 })
 
-// Loading screen: up on first paint and on every page change (student and librarian), down once the
+// Grid or one card per row (the person's choice, in the account menu): one class on <html> lays out every card list.
+const { layout: cardLayout } = useCardLayout()
+useHead({ htmlAttrs: { class: computed(() => (cardLayout.value === 'rows' ? 'cards-rows' : '')) } })
+
+// Loading screen: the full compass on first paint and when moving to another part of the app (signing in, student ↔
+// librarian), and a thin bar on top for a page change inside the same part. Either comes down once the
 // page and its first data have arrived. Rules live in composables/usePageLoader.ts.
 const loader = setupPageLoader()
 const route = useRoute()

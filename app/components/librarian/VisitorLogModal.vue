@@ -17,6 +17,11 @@
 					</button>
 				</div>
 				<p v-if="errors.purpose" class="mt-1 text-[12.5px] text-red-500">{{ errors.purpose }}</p>
+				<!-- "Other" has no fixed wording, so the librarian says what it was. -->
+				<div v-if="form.purpose === 'Other'" class="mt-3">
+					<LibrarianTextField id="visitor-other" v-model="form.otherPurpose" label="Please specify" placeholder="e.g. Meeting a teacher"
+						:maxlength="200" :error="errors.otherPurpose" @update:model-value="errors.otherPurpose = ''" />
+				</div>
 			</fieldset>
 		</div>
 
@@ -44,8 +49,8 @@ const emit = defineEmits<{
 // The reasons a walk-in gives for coming; nothing to type.
 const PURPOSES = ['Study or reading', 'Research', 'Borrow or return books', 'Use a computer', 'Inquiry or tour', 'Other']
 
-const form = reactive({ name: '', purpose: '' })
-const errors = reactive({ name: '', purpose: '' })
+const form = reactive({ name: '', purpose: '', otherPurpose: '' })
+const errors = reactive({ name: '', purpose: '', otherPurpose: '' })
 
 // Every time the modal opens it starts blank.
 // What is typed in this window: closing it with changes asks "Discard Changes?" first (see ModalShell, useUnsavedChanges).
@@ -56,6 +61,8 @@ watch(() => props.open, (isOpen) => {
 	if (!isOpen) return
 	form.name = ''
 	form.purpose = ''
+	form.otherPurpose = ''
+	errors.otherPurpose = ''
 	errors.name = ''
 	errors.purpose = ''
 })
@@ -63,7 +70,8 @@ watch(() => props.open, (isOpen) => {
 function submit() {
 	errors.name = form.name.trim() ? '' : 'Enter the visitor\'s name.'
 	errors.purpose = form.purpose ? '' : 'Choose the purpose of the visit.'
-	if (errors.name || errors.purpose) return
-	emit('submit', { name: form.name.trim(), purpose: form.purpose.trim() })
+	errors.otherPurpose = form.purpose === 'Other' && !form.otherPurpose.trim() ? 'Say what the visit was for.' : ''
+	if (errors.name || errors.purpose || errors.otherPurpose) return
+	emit('submit', { name: form.name.trim(), purpose: form.purpose === 'Other' ? `Other: ${form.otherPurpose.trim()}` : form.purpose.trim() })
 }
 </script>

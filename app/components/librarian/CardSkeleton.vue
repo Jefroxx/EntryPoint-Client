@@ -1,7 +1,7 @@
 <template>
 	<!-- Grey stand-ins in the shape of a list card, shown while a list loads or a filter / page changes. The grid
 		 matches the real one, so nothing jumps when the cards arrive. -->
-	<ul class="grid gap-3 sm:grid-cols-2 2xl:grid-cols-3" role="status" aria-label="Loading">
+	<ul class="card-grid grid gap-3 sm:grid-cols-2 2xl:grid-cols-3" role="status" aria-label="Loading">
 		<li v-for="n in count" :key="n" class="skeleton-card overflow-hidden rounded-2xl border border-stone-200 bg-white px-4 py-3.5"
 			:style="{ animationDelay: `${(n - 1) * 60}ms` }" aria-hidden="true">
 			<div class="flex items-start gap-3">

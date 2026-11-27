@@ -1,183 +1,112 @@
 <template>
 	<div class="space-y-3">
-		<div v-if="!anyConfigured"
+		<div v-if="!configured.length"
 			class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-[14px] leading-relaxed text-amber-800">
 			<strong>No fine rules are set up yet.</strong> Late returns are currently not being charged, because a fine
-			only accrues when a collection has a rule.
+			only accrues in an area that has a rule.
 		</div>
 
-		<section class="rounded-2xl border border-stone-200 bg-white p-5">
-			<h2 class="text-[15px] font-bold text-stone-900">Fine rules</h2>
-			<p class="mb-3 text-[13.5px] text-stone-500">Charged per unit of lateness, after the grace period.</p>
-
-			<div class="overflow-x-auto">
-				<table class="w-full min-w-[560px] border-collapse text-left">
-					<thead>
-						<tr class="text-[11.5px] font-semibold uppercase tracking-wide text-stone-500">
-							<th class="pb-2 pr-3">Collection</th>
-							<th class="pb-2 pr-3">Rate (₱)<FieldRequired /></th>
-							<th class="pb-2 pr-3">Per<FieldRequired /></th>
-							<th class="pb-2 pr-3">Grace (days)<FieldRequired /></th>
-							<th class="pb-2"></th>
-						</tr>
-					</thead>
-					<tbody>
-						<tr v-for="collection in COLLECTIONS" :key="collection.area" class="border-t border-stone-100">
-							<td class="py-3 pr-3 text-[15px] font-semibold text-stone-800">{{ collection.label }}</td>
-							<td class="py-3 pr-3">
-								<input v-model="drafts[collection.area].rate" type="number" min="0" step="0.5" placeholder="0.00"
-									:aria-label="`${collection.label} rate`" class="rule-input w-24" />
-							</td>
-							<td class="py-3 pr-3">
-								<select v-model="drafts[collection.area].rateUnit" :aria-label="`${collection.label} rate unit`"
-									class="rule-input w-24">
-									<option value="day">Day</option>
-									<option value="hour">Hour</option>
-								</select>
-							</td>
-							<td class="py-3 pr-3">
-								<input v-model="drafts[collection.area].grace" type="number" min="0" max="60"
-									:aria-label="`${collection.label} grace days`" class="rule-input w-20" />
-							</td>
-							<td class="py-3">
-								<div class="flex items-center justify-end gap-1.5">
-									<ButtonsButton variant="primary" size="sm" :disabled="!isDirty(collection.area) || busyArea === collection.area"
-										@click="save(collection.area)">
-										{{ ruleFor(collection.area)?.configured ? 'Save' : 'Add rule' }}
-									</ButtonsButton>
-									<ButtonsButton v-if="ruleFor(collection.area)?.configured" variant="danger" size="sm"
-										:disabled="busyArea === collection.area" @click="askRemove(collection.area)">
-										Remove
-									</ButtonsButton>
-								</div>
-							</td>
-						</tr>
-					</tbody>
-				</table>
+		<section class="rounded-2xl border border-stone-200 bg-white p-5 md:p-6">
+			<div class="flex flex-wrap items-start justify-between gap-3">
+				<div class="min-w-0 flex-1">
+					<h2 class="text-[16px] font-bold text-stone-900">Fine rules</h2>
+					<p class="mt-0.5 text-[14px] text-stone-500">What a late return costs in each area of the library, charged per unit of lateness after the grace period.</p>
+				</div>
+				<ButtonsButton variant="primary" class="max-sm:w-full" :disabled="!available.length" @click="openForm(null)">
+					<Icon name="i-tabler-plus" class="h-3.5 w-3.5" />Add Fine Rule
+				</ButtonsButton>
 			</div>
+			<p v-if="configured.length && !available.length" class="mt-2 text-[12.5px] text-stone-500">Every area that can be borrowed already has a rule.</p>
+
+			<ul v-if="configured.length" class="mt-4 divide-y divide-stone-100 rounded-2xl border border-stone-200">
+				<li v-for="rule in configured" :key="rule.area" class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2.5 px-4 py-3.5">
+					<div class="min-w-0 flex-1">
+						<p class="break-words text-[15px] font-semibold leading-snug text-stone-900">{{ rule.areaName }}</p>
+						<p class="mt-0.5 text-[13.5px] text-stone-600">
+							<span class="font-semibold tabular-nums text-stone-800">₱{{ money(rule.rate) }}</span> per {{ rule.rateUnit }} late
+							<span class="text-stone-300"> · </span>{{ graceText(rule.gracePeriodDays) }}
+						</p>
+						<p v-if="!rule.loanable" class="mt-0.5 text-[12.5px] text-stone-500">This area is library use only, so this rule is not used right now.</p>
+					</div>
+					<div class="flex shrink-0 items-center gap-1.5 max-sm:w-full max-sm:[&>*]:flex-1">
+						<ButtonsButton variant="ghost" size="sm" :disabled="busy" @click="openForm(rule)">Edit</ButtonsButton>
+						<ButtonsButton variant="danger" size="sm" :disabled="busy" @click="askRemove(rule)">Remove</ButtonsButton>
+					</div>
+				</li>
+			</ul>
 		</section>
 
-		<LibrarianConfirmModal :open="removeOpen" title="Remove Fine Rule?"
-			:message="`Late returns in ${collectionLabel(removeArea)} will stop being charged. Fines already recorded stay as they are.`"
-			confirm-label="Remove" :loading="busyArea === removeArea" @close="removeOpen = false" @confirm="remove" />
+		<LibrarianFineRuleFormModal :open="formOpen" :rule="editing" :areas="available" :busy="busy" :server-errors="serverErrors"
+			@close="formOpen = false" @submit="save" />
+
+		<LibrarianConfirmModal :open="!!removing" title="Remove Fine Rule?"
+			:message="`Late returns in ${removing?.areaName ?? 'this area'} will stop being charged. Fines already recorded stay as they are.`"
+			confirm-label="Remove" :loading="busy" @close="removing = null" @confirm="remove" />
 	</div>
 </template>
 
 <script setup lang="ts">
-import { COLLECTIONS, settingsService, type CollectionArea, type FineRule } from '~/services/settingsService'
+import { settingsService, type FineRule } from '~/services/settingsService'
 import { useAlert } from '~/api/alert/useAlert'
 
 const props = defineProps<{ rules: FineRule[] }>()
 const emit = defineEmits<{ (e: 'saved'): void }>()
 
-const { perform } = useAction()
 const alert = useAlert()
 
-const ruleFor = (area: CollectionArea, rules = props.rules) => rules.find((r) => r.area === area)
-const anyConfigured = computed(() => props.rules.some((r) => r.configured))
+/** The rules that exist, and the areas that can still be given one (only areas that can be borrowed). */
+const configured = computed(() => props.rules.filter((r) => r.configured))
+const available = computed(() => props.rules.filter((r) => !r.configured && r.loanable))
 
-interface Draft { rate: string; rateUnit: 'day' | 'hour'; grace: string }
+const money = (value: number | null) => Number(value ?? 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+const graceText = (days: number) => (days === 0 ? 'no grace period' : `${days} ${days === 1 ? 'day' : 'days'} grace`)
 
-function draftFrom(area: CollectionArea, rules = props.rules): Draft {
-	const rule = ruleFor(area, rules)
-	return {
-		rate: rule?.rate != null ? String(rule.rate) : '',
-		rateUnit: rule?.rateUnit ?? 'day',
-		grace: String(rule?.gracePeriodDays ?? 0),
-	}
+const busy = ref(false)
+const formOpen = ref(false)
+const editing = ref<FineRule | null>(null)
+const serverErrors = ref<Record<string, string> | null>(null)
+
+function openForm(rule: FineRule | null) {
+	editing.value = rule
+	serverErrors.value = null
+	formOpen.value = true
 }
 
-const drafts = reactive<Record<CollectionArea, Draft>>({
-	circulation: draftFrom('circulation'),
-	reserved: draftFrom('reserved'),
-	filipiniana: draftFrom('filipiniana'),
-})
-
-/** Whether a row has edits that differ from `rules` (the saved values). */
-function isDirty(area: CollectionArea, rules = props.rules): boolean {
-	const saved = draftFrom(area, rules)
-	const draft = drafts[area]
-	// An unconfigured collection can only be saved once a rate is entered.
-	if (!ruleFor(area, rules)?.configured) return draft.rate !== ''
-	return draft.rate !== saved.rate || draft.rateUnit !== saved.rateUnit || draft.grace !== saved.grace
-}
-
-// Saving one collection reloads all the rules. Refresh the row that was saved and any row without edits,
-// but leave a row the librarian has changed and not saved yet exactly as they typed it.
-const justSaved = ref<CollectionArea | null>(null)
-watch(() => props.rules, (_rules, previous) => {
-	for (const { area } of COLLECTIONS) {
-		if (area === justSaved.value || !isDirty(area, previous ?? [])) drafts[area] = draftFrom(area)
-	}
-	justSaved.value = null
-})
-
-const busyArea = ref<CollectionArea | null>(null)
-
-async function save(area: CollectionArea) {
-	const draft = drafts[area]
-	const rate = Number(draft.rate)
-	const grace = Number(draft.grace)
-
-	if (draft.rate === '' || Number.isNaN(rate) || rate < 0) {
-		alert.error('Check the rate', 'Enter a rate of 0 or more.')
-		return
-	}
-	if (!Number.isInteger(grace) || grace < 0) {
-		alert.error('Check the grace period', 'Enter a whole number of days, 0 or more.')
-		return
-	}
-
-	busyArea.value = area
-	const ok = await perform(
-		() => settingsService.saveFineRule(area, { rate, rateUnit: draft.rateUnit, gracePeriodDays: grace }),
-		'Fine rule saved',
-		'Could not save fine rule',
-	)
-	busyArea.value = null
-	if (ok) {
-		justSaved.value = area
+async function save(payload: { area: string; rate: number; rateUnit: 'day' | 'hour'; gracePeriodDays: number }) {
+	busy.value = true
+	serverErrors.value = null
+	try {
+		await settingsService.saveFineRule(payload.area, { rate: payload.rate, rateUnit: payload.rateUnit, gracePeriodDays: payload.gracePeriodDays })
+		alert.success(editing.value ? 'Fine rule saved' : 'Fine rule added')
+		formOpen.value = false
 		emit('saved')
+	} catch (error) {
+		serverErrors.value = apiFieldErrors(error)
+		alert.error('Could not save the fine rule', apiErrorMessage(error))
+	} finally {
+		busy.value = false
 	}
 }
 
-const removeOpen = ref(false)
-const removeArea = ref<CollectionArea>('circulation')
-const collectionLabel = (area: CollectionArea) => COLLECTIONS.find((c) => c.area === area)?.label ?? area
+const removing = ref<FineRule | null>(null)
 
-function askRemove(area: CollectionArea) {
-	removeArea.value = area
-	removeOpen.value = true
+function askRemove(rule: FineRule) {
+	removing.value = rule
 }
 
 async function remove() {
-	const area = removeArea.value
-	busyArea.value = area
-	const ok = await perform(() => settingsService.deleteFineRule(area), 'Fine rule removed', 'Could not remove fine rule')
-	busyArea.value = null
-	if (ok) {
-		removeOpen.value = false
-		justSaved.value = area
+	const rule = removing.value
+	if (!rule) return
+	busy.value = true
+	try {
+		await settingsService.deleteFineRule(rule.area)
+		alert.success('Fine rule removed')
+		removing.value = null
 		emit('saved')
+	} catch (error) {
+		alert.error('Could not remove the fine rule', apiErrorMessage(error))
+	} finally {
+		busy.value = false
 	}
 }
 </script>
-
-<style scoped>
-.rule-input {
-	height: 36px;
-	border-radius: 10px;
-	border: 1px solid #e7e5e4;
-	background: #fff;
-	padding: 0 0.625rem;
-	font-size: 13px;
-	color: #1c1917;
-	outline: none;
-	transition: border-color 150ms, box-shadow 150ms;
-}
-
-.rule-input:focus {
-	border-color: var(--color-accent-500);
-	box-shadow: 0 0 0 3px var(--color-accent-100);
-}
-</style>

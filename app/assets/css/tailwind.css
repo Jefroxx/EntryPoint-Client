@@ -342,6 +342,26 @@ body {
 /* Tablet and up: a toolbar marked .toolbar-nowrap stays on one row. The search box gives up width (down to its minimum)
    and the buttons keep theirs, so a button is never pushed onto a second row. */
 @media (min-width: 640px) {
+	/* A toolbar's search box (.toolbar-search: LibrarianSearchInput has it) stretches across all the room the buttons
+	   leave, so the buttons sit at the far end. It never gets narrower than its basis in a toolbar that may wrap: the
+	   buttons go to a second row first. The empty spacer some toolbars still have is dropped, or it would take half. */
+	.phone-toolbar > .toolbar-search {
+		flex: 1 1 260px;
+		max-width: none;
+	}
+
+	/* Only beside a search box: a toolbar without one (Notifications, Reports) still needs its spacer to push the
+	   buttons to the right. */
+	.phone-toolbar:has(> .toolbar-search) > div:empty {
+		display: none;
+	}
+
+	/* When a narrow window sends buttons to a second row, they line up on the right, under the others. (The first row
+	   is already full: the search box takes the slack.) */
+	.phone-toolbar:has(> .toolbar-search) {
+		justify-content: flex-end;
+	}
+
 	.toolbar-nowrap {
 		flex-wrap: nowrap;
 	}
@@ -429,3 +449,22 @@ body {
 
 /* A fieldset defaults to the width of its content, so one long line (a book title) pushes a whole pop-up wider. */
 fieldset { min-width: 0; }
+
+/* One card per row (account menu: Cards → One per row; see useCardLayout). Every list of cards is marked .card-grid and
+   becomes a single column at every width. The student book lists, which have a cover grid for wide screens and a row
+   list for phones, show the row list everywhere instead (.cards-grid-only / .cards-rows-only). */
+html.cards-rows .card-grid { grid-template-columns: minmax(0, 1fr) !important; }
+html.cards-rows .cards-grid-only { display: none !important; }
+html.cards-rows .cards-rows-only { display: block !important; }
+
+/* One per row on a wide screen: a full-width card would leave its details in a thin column on the left, so its details
+   list (Dewey no., Accession no., On the shelf...) spreads into side-by-side columns instead. */
+@media (min-width: 1024px) {
+	html.cards-rows .card-grid > li dl {
+		display: grid !important;
+		grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)) !important;
+		gap: 0.25rem 2rem !important;
+		max-width: 960px;
+	}
+	html.cards-rows .card-grid > li dl > * { margin-block: 0 !important; }
+}

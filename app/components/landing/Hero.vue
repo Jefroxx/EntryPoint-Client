@@ -7,7 +7,9 @@
 			<img :src="compass" alt="" aria-hidden="true"
 				class="landing-compass pointer-events-none absolute -right-[14%] top-[2%] -z-10 w-[min(88vw,780px)] max-w-none opacity-[.16] sm:-right-[8%] sm:opacity-[.18]" />
 
-			<div class="px-6 pb-2 pt-28 sm:px-10 sm:pt-36 lg:px-16 lg:pt-[clamp(92px,12.5vh,128px)]">
+			<!-- Capped like every other section (1180px of content + the 64px gutters), so on wide screens the
+				 headline lines up with the sections below instead of drifting to the left edge. -->
+			<div class="mx-auto w-full max-w-[1308px] px-6 pb-2 pt-28 sm:px-10 sm:pt-36 lg:px-16 lg:pt-[clamp(92px,12.5vh,128px)]">
 				<h1 id="hero-heading"
 					class="max-w-[12ch] text-balance text-[clamp(46px,min(5.6vw,9.6vh),82px)] font-extrabold leading-[.98] tracking-[-.035em] text-white">
 					Your library,

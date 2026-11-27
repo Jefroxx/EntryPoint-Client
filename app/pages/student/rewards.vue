@@ -41,7 +41,7 @@
 				<h2 class="mb-2.5 mt-6 px-0.5 text-[11px] font-semibold uppercase tracking-[.08em] text-stone-500">Marketplace</h2>
 
 				<p v-if="!data.items.length" class="rounded-2xl bg-stone-100 px-4 py-6 text-center text-[13.5px] text-stone-500">Nothing is on the marketplace yet.</p>
-				<div v-else class="grid grid-cols-2 gap-2.5 md:grid-cols-[repeat(auto-fill,minmax(170px,1fr))] md:gap-3">
+				<div v-else class="card-grid grid grid-cols-2 gap-2.5 md:grid-cols-[repeat(auto-fill,minmax(170px,1fr))] md:gap-3">
 					<article v-for="item in data.items" :key="item.itemID" class="flex flex-col rounded-2xl border border-stone-200 bg-white p-3" :class="!item.inStock ? 'opacity-60' : ''">
 						<img v-if="item.photoURL" :src="item.photoURL" alt="" loading="lazy" class="mb-2.5 h-28 w-full rounded-xl bg-stone-100 object-cover" />
 						<div v-else class="mb-2.5 flex h-28 items-center justify-center rounded-xl" :class="!item.inStock ? TONE_SOFT.neutral : TONE_SOFT[artTone(item.itemID)]">

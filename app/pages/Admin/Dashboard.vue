@@ -6,7 +6,7 @@
         </div>
 
         <div class="phone-stats mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <LibrarianCatalogStatTile label="Staff accounts" :value="staffTotal" icon="i-tabler-id-badge-2" tone="accent" />
+            <LibrarianCatalogStatTile label="Library team" :value="staffTotal" icon="i-tabler-id-badge-2" tone="accent" />
             <LibrarianCatalogStatTile label="Faculty and staff" :value="memberTotal" icon="i-tabler-users" tone="success" />
             <LibrarianCatalogStatTile label="Students" :value="overview?.members.student ?? '—'" icon="i-tabler-school" tone="warning" />
             <LibrarianCatalogStatTile label="Disabled accounts" :value="disabledTotal" icon="i-tabler-user-off" tone="danger" />
@@ -93,7 +93,7 @@ const breakdown = computed(() => [
 ])
 
 const shortcuts = [
-    { label: 'Add a staff account', hint: 'A librarian or student assistant', icon: 'i-tabler-user-plus', to: '/admin/staff?new=1' },
+    { label: 'Add a team member', hint: 'A librarian or student assistant', icon: 'i-tabler-user-plus', to: '/admin/staff?new=1' },
     { label: 'Add faculty or staff', hint: 'A member who borrows', icon: 'i-tabler-users-plus', to: '/admin/members?new=1' },
     { label: 'Roles and permissions', hint: 'What each role can use', icon: 'i-tabler-shield-lock', to: '/admin/roles' },
     { label: 'Audit log', hint: 'Who changed what', icon: 'i-tabler-history', to: '/admin/audit-log' },
