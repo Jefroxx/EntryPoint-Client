@@ -1,6 +1,8 @@
 <template>
 	<LibrarianModalShell :open="open" :title="confirming ? 'Confirm Changes' : item ? 'Edit Reward' : 'Add Reward'"
-		:subtitle="confirming ? 'Check the changes before they are saved.' : 'Students spend knowledge points on these rewards.'" :busy="busy" :dirty="dirty" ref="shell" @close="emit('close')">
+		:subtitle="confirming ? 'Check the changes before they are saved.' : 'Students spend knowledge points on these rewards.'" :busy="busy" :dirty="dirty"
+		:discard-title="item ? 'Discard Reward Changes?' : 'Discard This Reward?'"
+		:discard-text="item ? 'This reward stays as it was in the Rewards Market.' : 'The reward you started won\'t be added to the Rewards Market.'" ref="shell" @close="emit('close')">
 		<!-- Step 2 (editing only): what will change. It replaces the form in this same window (no second pop-up). -->
 		<div v-if="confirming" class="space-y-4">
 			<div class="rounded-xl bg-stone-50 px-4 py-3">

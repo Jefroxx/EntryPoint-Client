@@ -1,6 +1,8 @@
 <template>
 	<LibrarianModalShell :open="open" size="xl" :title="confirming ? 'Confirm Changes' : achievement ? 'Edit Achievement' : 'Add Achievement'"
-		:subtitle="confirming ? 'Check the changes before they are saved.' : 'Students unlock it automatically once they reach the goal.'" :busy="busy" :dirty="dirty" ref="shell" @close="emit('close')">
+		:subtitle="confirming ? 'Check the changes before they are saved.' : 'Students unlock it automatically once they reach the goal.'" :busy="busy" :dirty="dirty"
+		:discard-title="achievement ? 'Discard Achievement Changes?' : 'Discard This Achievement?'"
+		:discard-text="achievement ? `Your changes to “${achievement.name}” won't be saved.` : 'The achievement you started won\'t be added, so students can\'t unlock it.'" ref="shell" @close="emit('close')">
 		<!-- Step 2 (editing only): what will change. It replaces the form in this same window (no second pop-up). -->
 		<div v-if="confirming" class="space-y-4">
 			<div class="rounded-xl bg-stone-50 px-4 py-3">

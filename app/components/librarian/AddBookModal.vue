@@ -15,13 +15,14 @@
 				leave-to-class="scale-95 translate-y-1 opacity-0 max-sm:translate-x-full max-sm:translate-y-0 max-sm:scale-100 max-sm:opacity-100 max-sm:motion-reduce:translate-x-0 max-sm:motion-reduce:opacity-0">
 				<form v-if="open" role="dialog" aria-modal="true" aria-labelledby="addBookTitle" novalidate
 					@submit.prevent="entry !== 'form' || rescanning ? undefined : confirming ? doSave() : step < lastStep ? next() : handleSubmit()"
-					class="relative z-10 flex max-h-[min(780px,calc(100vh-32px))] w-full max-w-[940px] flex-col overflow-hidden rounded-[22px] bg-white shadow-overlay max-sm:h-dvh max-sm:max-h-none max-sm:rounded-none max-sm:shadow-none">
+					class="relative z-10 flex max-h-[min(780px,calc(100vh-32px))] w-full flex-col overflow-hidden rounded-[22px] bg-white shadow-overlay max-sm:h-dvh max-sm:max-h-none max-sm:rounded-none max-sm:shadow-none"
+					:class="discarding || rescanning ? 'max-w-[520px]' : 'max-w-[940px]'">
 					<!-- Header + step bar (same pattern as student registration) -->
 					<div class="flex-shrink-0 border-b border-stone-100 px-6 pb-4 pt-5 sm:px-7">
 						<div class="flex items-start justify-between gap-3 max-sm:items-center">
 							<div class="min-w-0 max-sm:flex-1">
 								<h2 id="addBookTitle" class="dashboard-heading text-2xl font-bold text-crimson">
-									{{ rescanning ? 'Scan Another Book?' : discarding ? 'Discard Changes?' : createdBook ? 'Book Added' : confirming ? (isEdit ? 'Confirm Changes' : 'Confirm New Book') : isEdit ? 'Edit Book' : 'Add New Book' }}</h2>
+									{{ rescanning ? 'Scan Another Book?' : discarding ? (isEdit ? 'Discard Book Changes?' : 'Discard This New Book?') : createdBook ? 'Book Added' : confirming ? (isEdit ? 'Confirm Changes' : 'Confirm New Book') : isEdit ? 'Edit Book' : 'Add New Book' }}</h2>
 								<p v-if="!discarding && !rescanning" class="dashboard-heading text-[13.5px] text-crimson">
 									{{ createdBook ? createdBook.title : confirming ? 'Check the details before they are saved.' : isEdit ? 'Jump to any section, change what you need, then save.' : prefill ? 'Requested by a student. Add it to the catalog and the request is marked as arrived.' : entry === 'choose' ? 'How would you like to start?' : entry === 'scan' ? 'Scan the barcode on the back cover, or type the ISBN.' : 'Catalog a new title and its physical copies.' }}</p>
 							</div>
@@ -57,7 +58,7 @@
 						 pop-up). The form is only hidden meanwhile, so everything typed is still there if they keep editing. -->
 				<!-- "Scan Another Book?": scanning from a form that already has details means starting a new book, so the
 						 details are cleared. Asked inside this same window; the form is only hidden until the answer. -->
-				<div v-if="rescanning" class="min-h-0 flex-1 overflow-y-auto px-6 py-6 sm:px-7">
+				<div v-if="rescanning" class="min-h-0 flex-1 overflow-y-auto px-6 py-6 max-sm:px-4 sm:px-7">
 					<div class="mx-auto flex max-w-[620px] items-start gap-3">
 						<span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-50 text-amber-600">
 							<Icon name="i-tabler-alert-triangle" class="h-5 w-5" />
@@ -68,7 +69,7 @@
 					</div>
 				</div>
 
-				<div v-else-if="discarding" class="min-h-0 flex-1 overflow-y-auto px-6 py-6 sm:px-7">
+				<div v-else-if="discarding" class="min-h-0 flex-1 overflow-y-auto px-6 py-6 max-sm:px-4 sm:px-7">
 					<div class="mx-auto flex max-w-[620px] items-start gap-3">
 						<span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-50 text-amber-600">
 							<Icon name="i-tabler-alert-triangle" class="h-5 w-5" />
@@ -479,15 +480,17 @@
 						</div>
 					</div>
 
-					<div class="flex flex-shrink-0 items-center justify-between gap-2 border-t border-stone-100 px-6 py-4 max-sm:justify-end sm:px-7">
-						<!-- Hidden on phones: the stepper at the top already says where you are, and the footer needs the room for its buttons. -->
-						<span class="text-[12.5px] tabular-nums text-stone-500 max-sm:hidden">{{ rescanning ? 'Confirm' : createdBook ? 'Done' : confirming ? 'Review' : entry !== 'form' ? 'Start' : `Step ${step} of ${lastStep}` }}</span>
+					<div class="flex flex-shrink-0 items-center gap-2 border-t border-stone-100 px-6 py-4 max-sm:justify-end sm:px-7"
+						:class="discarding || rescanning ? 'justify-end' : 'justify-between'">
+						<!-- Hidden on phones: the stepper at the top already says where you are, and the footer needs the room for its buttons.
+							 Hidden for the two short questions too, which are small windows with just their two buttons. -->
+						<span v-if="!discarding && !rescanning" class="text-[12.5px] tabular-nums text-stone-500 max-sm:hidden">{{ rescanning ? 'Confirm' : createdBook ? 'Done' : confirming ? 'Review' : entry !== 'form' ? 'Start' : `Step ${step} of ${lastStep}` }}</span>
 						<div v-if="rescanning" class="flex gap-2">
 							<ButtonsButton ref="confirmRescanButton" variant="ghost" @click="keepForm">Keep Details</ButtonsButton>
 							<ButtonsButton variant="danger" @click="clearAndScan">Yes, Clear and Scan</ButtonsButton>
 						</div>
 						<div v-else-if="discarding" class="flex gap-2">
-							<ButtonsButton ref="keepEditingButton" variant="ghost" @click="keepEditing">Keep Editing</ButtonsButton>
+							<ButtonsButton ref="keepEditingButton" variant="ghost" @click="keepEditing">{{ isEdit ? 'Keep Editing' : 'Keep Adding' }}</ButtonsButton>
 							<ButtonsButton variant="danger" @click="discardAndClose">Yes, Discard</ButtonsButton>
 						</div>
 						<div v-else-if="createdBook" class="flex gap-2">

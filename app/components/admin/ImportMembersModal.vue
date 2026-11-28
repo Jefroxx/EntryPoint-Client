@@ -1,7 +1,8 @@
 <template>
 	<LibrarianModalShell :open="open" size="xl" :title="step === 'done' ? 'Import Finished' : 'Import From a CSV File'"
 		:subtitle="subtitle" :busy="busy" :dirty="step === 'review'"
-		discard-title="Discard This Import?" discard-text="The file you chose won't be imported, and no accounts will be created." @close="close">
+		discard-title="Discard This Import?" discard-text="The file you chose won't be imported, and no accounts will be created."
+		keep-label="Back to the Import" discard-label="Yes, Cancel Import" @close="close">
 		<!-- Step 1: choose the file -->
 		<div v-if="step === 'file'" class="space-y-4">
 			<div class="rounded-2xl border border-dashed border-stone-300 bg-stone-50 p-6 text-center">

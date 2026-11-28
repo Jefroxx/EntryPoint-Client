@@ -13,7 +13,7 @@
 				leave-from-class="scale-100 translate-y-0 opacity-100" leave-to-class="scale-95 translate-y-1 opacity-0 max-sm:translate-x-full max-sm:translate-y-0 max-sm:scale-100 max-sm:opacity-100 max-sm:motion-reduce:translate-x-0 max-sm:motion-reduce:opacity-0">
 				<div v-if="open" role="dialog" aria-modal="true" :aria-labelledby="titleId"
 					class="relative z-10 flex w-full flex-col rounded-[22px] bg-white shadow-overlay max-sm:h-dvh max-sm:max-h-none max-sm:max-w-none max-sm:rounded-none max-sm:shadow-none"
-						:class="[widthClass, fixedHeight && !discarding ? heightClass : '']">
+						:class="discarding ? DISCARD_SIZE : [widthClass, fixedHeight ? heightClass : '']">
 					<div class="flex-shrink-0 border-b border-stone-100 px-6 py-5 max-sm:px-4 max-sm:py-3">
 						<div class="flex items-start justify-between gap-3 max-sm:items-center">
 							<div class="min-w-0 max-sm:flex-1">
@@ -45,8 +45,8 @@
 					</div>
 
 					<div v-if="discarding" class="flex flex-shrink-0 justify-end gap-2 border-t border-stone-100 px-6 py-4 max-sm:px-4 max-sm:pb-[max(1rem,env(safe-area-inset-bottom))] max-sm:[&>*]:flex-1">
-						<ButtonsButton ref="keepButton" variant="ghost" @click="keepEditing">Keep Editing</ButtonsButton>
-						<ButtonsButton variant="danger" @click="discard">Yes, Discard</ButtonsButton>
+						<ButtonsButton ref="keepButton" variant="ghost" @click="keepEditing">{{ keepLabel }}</ButtonsButton>
+						<ButtonsButton variant="danger" @click="discard">{{ discardLabel }}</ButtonsButton>
 					</div>
 				</div>
 			</Transition>
@@ -69,8 +69,12 @@ const props = withDefaults(defineProps<{
 	dirty?: boolean
 	/** The heading of the discard step: name what is being thrown away ("Discard This New Account?"). */
 	discardTitle?: string
-	/** What the discard step says. */
+	/** What the discard step says: what is lost, in the words of what they were doing. */
 	discardText?: string
+	/** The discard step's "stay" button, named for the task ("Back to the Visitor"); "Keep Editing" suits forms. */
+	keepLabel?: string
+	/** The discard step's "leave" button ("Yes, Don't Log"); "Yes, Discard" suits forms. */
+	discardLabel?: string
 	/**
 	 * Always as tall as the window allows, instead of growing and shrinking with its content. For forms whose content
 	 * changes while they are used (a choice that swaps fields, validation messages appearing), so the window and its
@@ -83,6 +87,8 @@ const props = withDefaults(defineProps<{
 	dirty: false,
 	discardTitle: 'Discard Changes?',
 	discardText: "What you've entered here won't be saved.",
+	keepLabel: 'Keep Editing',
+	discardLabel: 'Yes, Discard',
 	fixedHeight: false,
 })
 
@@ -100,6 +106,10 @@ const widthClass = computed(() => ({
 	// A wide, tall window for screens that show a lot at once (the return confirmation): up to the screen's own height.
 	xl: 'max-w-[940px] max-h-[calc(100vh-48px)]',
 }[props.size]))
+
+// The "close with changes?" question is one small size whatever the window, so every window asks it the same way
+// (Checkout Book and Reservation Pickup use this size too).
+const DISCARD_SIZE = 'max-w-[520px] max-h-[min(680px,calc(100vh-48px))]'
 
 // Same ceiling as widthClass, but as the height itself. On a phone the window is already the full screen.
 const heightClass = computed(() => (props.size === 'xl' ? 'h-[min(720px,calc(100vh-48px))]' : 'h-[min(680px,calc(100vh-48px))]'))

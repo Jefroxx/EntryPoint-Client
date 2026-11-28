@@ -1,7 +1,9 @@
 <template>
 	<LibrarianModalShell :open="open" size="md" :title="rule ? 'Edit Fine Rule' : 'Add Fine Rule'"
 		:subtitle="rule ? `Late returns in ${rule.areaName}.` : 'Pick an area of the library and what a late return costs there.'"
-		:busy="busy" :dirty="dirty" ref="shell" @close="emit('close')">
+		:busy="busy" :dirty="dirty"
+		:discard-title="rule ? 'Discard Fine Rule Changes?' : 'Discard This Fine Rule?'"
+		:discard-text="rule ? `Late returns in ${rule.areaName} keep being charged as before.` : 'No fine rule is added, so late returns there stay free.'" ref="shell" @close="emit('close')">
 		<div class="space-y-4" @keydown.enter.prevent="submit">
 			<!-- The area is chosen once; to move a rule to another area, remove it and add a new one. -->
 			<div v-if="rule">

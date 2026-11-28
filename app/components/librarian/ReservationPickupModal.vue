@@ -16,21 +16,22 @@
 				enter-from-class="scale-95 translate-y-2 opacity-0 max-sm:translate-x-full max-sm:translate-y-0 max-sm:scale-100 max-sm:opacity-100 max-sm:motion-reduce:translate-x-0 max-sm:motion-reduce:opacity-0" enter-to-class="scale-100 translate-y-0 opacity-100"
 				leave-active-class="transition-[transform,translate,scale,opacity] duration-150 ease-out max-sm:duration-[320ms] max-sm:ease-[cubic-bezier(.4,0,.2,1)]"
 				leave-from-class="scale-100 translate-y-0 opacity-100" leave-to-class="scale-95 translate-y-1 opacity-0 max-sm:translate-x-full max-sm:translate-y-0 max-sm:scale-100 max-sm:opacity-100 max-sm:motion-reduce:translate-x-0 max-sm:motion-reduce:opacity-0">
-				<div v-if="open" role="dialog" aria-modal="true" aria-labelledby="pickupTitle" @keydown.esc="handleClose"
-					class="relative z-10 flex h-[min(680px,calc(100vh-32px))] w-full max-w-[960px] flex-col overflow-hidden rounded-[22px] bg-white shadow-overlay max-sm:h-dvh max-sm:max-h-none max-sm:max-w-none max-sm:rounded-none max-sm:shadow-none">
+				<div v-if="open" role="dialog" aria-modal="true" aria-labelledby="pickupTitle"
+					class="relative z-10 flex w-full flex-col overflow-hidden rounded-[22px] bg-white shadow-overlay max-sm:h-dvh max-sm:max-h-none max-sm:max-w-none max-sm:rounded-none max-sm:shadow-none"
+					:class="discarding ? 'max-w-[520px]' : 'h-[min(680px,calc(100vh-32px))] max-w-[960px]'">
 					<!-- Header + step bar (as in Checkout Book) -->
 					<div class="flex-shrink-0 border-b border-stone-100 px-6 pb-4 pt-5 max-sm:px-4 max-sm:pt-3 sm:px-7">
 						<div class="flex items-start justify-between gap-3 max-sm:items-center">
 							<div class="min-w-0 max-sm:flex-1">
-								<h2 id="pickupTitle" class="dashboard-heading text-2xl font-bold text-crimson max-sm:text-xl">{{ receipt ? 'Checked out' : 'Reservation Pickup' }}</h2>
-								<p class="dashboard-heading text-[13.5px] text-crimson">{{ subtitle }}</p>
+								<h2 id="pickupTitle" class="dashboard-heading text-2xl font-bold text-crimson max-sm:text-xl">{{ discarding ? 'Stop This Pickup?' : receipt ? 'Checked out' : 'Reservation Pickup' }}</h2>
+								<p v-if="!discarding" class="dashboard-heading text-[13.5px] text-crimson">{{ subtitle }}</p>
 							</div>
 							<ButtonsButton variant="icon" size="md" aria-label="Close" class="shrink-0" @click="handleClose">
 								<Icon name="i-tabler-x" class="h-[18px] w-[18px]" />
 							</ButtonsButton>
 						</div>
 
-						<ol v-if="!receipt && (stage === 'slip' || stage === 'book' || stage === 'confirm')" class="mt-4 grid grid-cols-3 gap-2.5" aria-label="Pickup steps">
+						<ol v-if="!receipt && !discarding && (stage === 'slip' || stage === 'book' || stage === 'confirm')" class="mt-4 grid grid-cols-3 gap-2.5" aria-label="Pickup steps">
 							<li v-for="(label, i) in STEP_LABELS" :key="label" :aria-current="stepIndex === i ? 'step' : undefined">
 								<span class="block h-1 rounded-full transition-colors duration-300" :class="i <= stepIndex ? 'bg-accent-500' : 'bg-stone-200'" />
 								<span class="mt-2 flex items-center gap-1.5 text-[12.5px] font-semibold transition-colors duration-300"
@@ -42,8 +43,21 @@
 						</ol>
 					</div>
 
+					<!-- Closing part-way (a slip already checked, a book already scanned) asks first, here in the same window. -->
+					<div v-if="discarding" class="px-6 py-6 max-sm:flex-1 max-sm:px-4 sm:px-7">
+						<div class="flex items-start gap-3">
+							<span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-50 text-amber-600">
+								<Icon name="i-tabler-alert-triangle" class="h-5 w-5" />
+							</span>
+							<p class="pt-1 text-[15px] leading-relaxed text-stone-600">
+								The book hasn't been checked out yet. If you close now, {{ personName(found?.student?.user) }}'s reservation
+								stays ready for pickup and you'll start again from the slip next time.
+							</p>
+						</div>
+					</div>
+
 					<!-- After checkout: the receipt, ready to print. -->
-					<div v-if="receipt" class="min-h-0 flex-1 overflow-y-auto px-6 py-5 max-sm:px-4">
+					<div v-else-if="receipt" class="min-h-0 flex-1 overflow-y-auto px-6 py-5 max-sm:px-4">
 						<div class="mx-auto max-w-[480px]"><LoanReceipt ref="receiptView" :receipt="receipt" /></div>
 					</div>
 
@@ -189,7 +203,12 @@
 					</div>
 
 					<!-- Footer (as in Checkout Book) -->
-					<div v-if="receipt" class="flex flex-shrink-0 justify-end gap-2 border-t border-stone-100 px-6 py-4 max-sm:px-4 max-sm:pb-[max(1rem,env(safe-area-inset-bottom))] max-sm:[&>*]:flex-1 sm:px-7">
+					<div v-if="discarding" class="flex flex-shrink-0 justify-end gap-2 border-t border-stone-100 px-6 py-4 max-sm:px-4 max-sm:pb-[max(1rem,env(safe-area-inset-bottom))] max-sm:[&>*]:flex-1 sm:px-7">
+						<ButtonsButton ref="keepButton" variant="ghost" @click="keepGoing">Keep Going</ButtonsButton>
+						<ButtonsButton variant="danger" @click="emit('close')">Yes, Stop</ButtonsButton>
+					</div>
+
+					<div v-else-if="receipt"class="flex flex-shrink-0 justify-end gap-2 border-t border-stone-100 px-6 py-4 max-sm:px-4 max-sm:pb-[max(1rem,env(safe-area-inset-bottom))] max-sm:[&>*]:flex-1 sm:px-7">
 						<ButtonsButton variant="ghost" @click="emit('close')">Done</ButtonsButton>
 						<ButtonsButton variant="primary" @click="receiptView?.print()">
 							<Icon name="i-tabler-printer" class="h-4 w-4" />Print receipt
@@ -281,9 +300,32 @@ const subtitle = computed(() => {
 	}[stage.value]
 })
 
+// Part-way through (the slip checked here, a book scanned, or a code typed in the box): closing asks first, in this
+// same window. Before anything is done, or once the receipt shows, it just closes.
+const discarding = ref(false)
+const keepButton = ref<{ $el?: HTMLElement } | null>(null)
+const inProgress = computed(() => !receipt.value && (
+	stage.value === 'confirm'
+	|| (stage.value === 'book' && !slipDone.value)
+	|| ((stage.value === 'slip' || stage.value === 'book') && typed.value.trim() !== '')
+))
+
 function handleClose() {
 	if (submitting.value) return
+	if (discarding.value) { keepGoing(); return }   // Escape or the X on the question: back to the pickup
+	if (inProgress.value) {
+		discarding.value = true
+		stopCamera()
+		nextTick(() => keepButton.value?.$el?.focus())
+		return
+	}
 	emit('close')
+}
+
+// Back to where they were; the camera comes back for the slip and book steps.
+function keepGoing() {
+	discarding.value = false
+	if (stage.value === 'slip' || stage.value === 'book') void startCamera()
 }
 
 /* ---------- camera (the webcam, or the librarian's phone instead) ---------- */
@@ -316,6 +358,14 @@ function stopCamera() {
 	desk.end()
 }
 onBeforeUnmount(stopCamera)
+
+// Escape is heard on the whole page, not only inside the window: after a lookup or a click the keyboard focus is often
+// outside it, and Escape did nothing. It goes through handleClose, so part-way through it asks first.
+function onEscape(e: KeyboardEvent) {
+	if (e.key === 'Escape' && props.open && !e.defaultPrevented) handleClose()
+}
+onMounted(() => window.addEventListener('keydown', onEscape))
+onBeforeUnmount(() => window.removeEventListener('keydown', onEscape))
 
 const flash = ref(false)
 let paused = false
@@ -350,6 +400,7 @@ const camStatus = computed(() => {
 /* ---------- opening ---------- */
 // Not immediate: the page mounts this window closed.
 watch(() => props.open, async (isOpen) => {
+	discarding.value = false
 	if (!isOpen) { stopCamera(); phoneOpen.value = false; return }
 
 	stage.value = 'loading'

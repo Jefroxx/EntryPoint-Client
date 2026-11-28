@@ -6,11 +6,11 @@
 		</div>
 
 		<!-- Leaving with a suggestion half-written asks first. -->
-		<StudentSheet :open="leaving" title="Discard Changes?" @close="stay">
+		<StudentSheet :open="leaving" title="Discard This Suggestion?" @close="stay">
 			What you've written here won't be sent.
 			<template #actions>
 				<ButtonsButton variant="danger" class="!h-[46px] !text-[15px]" @click="leave">Yes, Discard</ButtonsButton>
-				<ButtonsButton variant="ghost" class="!h-[46px] !text-[15px]" @click="stay">Keep Editing</ButtonsButton>
+				<ButtonsButton variant="ghost" class="!h-[46px] !text-[15px]" @click="stay">Keep Writing</ButtonsButton>
 			</template>
 		</StudentSheet>
 

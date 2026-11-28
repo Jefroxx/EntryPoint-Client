@@ -1,5 +1,8 @@
 <template>
-	<LibrarianModalShell :open="open" size="xl" :title="shellTitle" :subtitle="shellSubtitle" :busy="busy" :dirty="dirty && !added" ref="shell" @close="emit('close')">
+	<LibrarianModalShell :open="open" size="xl" :title="shellTitle" :subtitle="shellSubtitle" :busy="busy" :dirty="dirty && !added"
+		discard-title="Stop Adding Copies?"
+		discard-text="The copies you started won't be added to the catalog, and no accession numbers are used."
+		keep-label="Keep Adding" discard-label="Yes, Stop" ref="shell" @close="emit('close')">
 		<!-- Done: the copies are in the catalog, and their barcode labels are one tap away. -->
 		<div v-if="added" class="mx-auto max-w-[620px] space-y-4 py-2">
 			<div class="flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50/60 px-4 py-3">
