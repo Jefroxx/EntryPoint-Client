@@ -262,11 +262,14 @@
 							@click="drawer.open('cart')">
 							<Icon name="i-tabler-check" class="h-4 w-4" />In cart · View cart
 						</button>
-						<button v-else type="button"
+						<button v-else-if="selected.borrowable !== false" type="button"
 							class="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-white text-[14.5px] font-semibold text-accent-800 transition-[transform,background-color] duration-150 ease-out hover:bg-accent-50 active:scale-[0.96]"
 							@click="addToCart(selected.bookID)">
 							<StudentCartIcon class="h-5 w-5" />{{ selected.availableCopies ? 'Add to cart' : 'Join the queue' }}
 						</button>
+						<p v-else class="flex h-12 flex-1 items-center justify-center rounded-xl border border-white/30 text-[14px] font-semibold text-white/80">
+							Library use only · can't be borrowed
+						</p>
 					</div>
 				</div>
 
