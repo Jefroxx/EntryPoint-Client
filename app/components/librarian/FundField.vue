@@ -4,13 +4,13 @@
 			{{ label }}<FieldRequired />
 		</label>
 
-		<!-- A box you can type in, with the usual answers one tap away. -->
+		<!-- Pick-only: the box can't be typed in, the value comes from the list. -->
 		<div class="relative">
-			<input :id="id" :value="modelValue" type="text" role="combobox" autocomplete="off" :maxlength="maxlength" :placeholder="placeholder"
-				:aria-expanded="open && shownOptions.length > 0" :aria-controls="`${id}-list`" aria-autocomplete="list" aria-required="true"
-				class="h-11 w-full rounded-[10px] border bg-white pl-3 pr-10 text-[15px] text-stone-900 outline-none transition-colors placeholder:text-stone-400 focus:border-accent-500 focus:ring-2 focus:ring-accent-200"
+			<input :id="id" :value="modelValue" type="text" role="combobox" readonly autocomplete="off" :placeholder="placeholder"
+				:aria-expanded="open && shownOptions.length > 0" :aria-controls="`${id}-list`" aria-required="true"
+				class="h-11 w-full cursor-pointer rounded-[10px] border bg-white pl-3 pr-10 text-[15px] text-stone-900 caret-transparent outline-none transition-colors placeholder:text-stone-400 focus:border-accent-500 focus:ring-2 focus:ring-accent-200"
 				:class="error ? 'border-red-400 bg-red-50' : 'border-stone-200'"
-				@input="onInput" @focus="openList" @click="openList" @keydown="onKeydown" @blur="tidy" />
+				@click="toggleList" @keydown="onKeydown" />
 			<button type="button" tabindex="-1" aria-label="Show the usual sources"
 				class="absolute right-1 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-800"
 				@mousedown.prevent @click="toggleList">
@@ -45,7 +45,7 @@ const props = withDefaults(defineProps<{
 	error?: string
 	hint?: string
 	maxlength?: number
-}>(), { label: 'Source of fund', placeholder: 'Pick one, or type another reason', maxlength: 255 })
+}>(), { label: 'Source of fund', placeholder: 'Select a source of fund', maxlength: 255 })
 
 const emit = defineEmits<{ (e: 'update:modelValue', value: string): void }>()
 
@@ -56,12 +56,8 @@ const rootRef = ref<HTMLElement | null>(null)
 const open = ref(false)
 const active = ref(-1)
 
-// All of them, until what is typed narrows it down (once it IS one of them, the others come back so it can be changed).
-const shownOptions = computed(() => {
-	const typed = props.modelValue.trim().toLowerCase()
-	if (!typed || FUND_SOURCES.some((o) => o.toLowerCase() === typed)) return [...FUND_SOURCES]
-	return FUND_SOURCES.filter((o) => o.toLowerCase().includes(typed))
-})
+// Nothing can be typed, so the whole list is always shown.
+const shownOptions = computed(() => [...FUND_SOURCES])
 
 function openList() {
 	open.value = true
@@ -74,22 +70,6 @@ function toggleList() {
 		openList()
 		;(rootRef.value?.querySelector('input') as HTMLInputElement | null)?.focus()
 	}
-}
-
-function onInput(event: Event) {
-	open.value = true
-	active.value = -1
-	emit('update:modelValue', (event.target as HTMLInputElement).value)
-}
-
-// Leaving the box: "donated" typed by hand is saved as the usual "Donated" (same words, same spelling everywhere).
-function tidy() {
-	const typed = props.modelValue.trim()
-	// "Donation" and "donated" are the same thing: they become the listed "Donated". Other names match the list loosely.
-	const loose = (v: string) => v.toLowerCase().replace(/[^a-z0-9]/g, '').replace(/s$/, '')
-	const usual = isDonatedFund(typed) ? FUND_SOURCES.find((o) => isDonatedFund(o)) : FUND_SOURCES.find((o) => loose(o) === loose(typed))
-	if (usual && usual !== props.modelValue) emit('update:modelValue', usual)
-	else if (typed !== props.modelValue) emit('update:modelValue', typed)
 }
 
 function pick(option: string) {
@@ -106,7 +86,10 @@ function onKeydown(event: KeyboardEvent) {
 	} else if (event.key === 'ArrowUp') {
 		event.preventDefault()
 		if (open.value && count) active.value = (active.value - 1 + count) % count
-	} else if (event.key === 'Enter' && open.value && active.value >= 0) {
+	} else if ((event.key === 'Enter' || event.key === ' ') && !open.value) {
+		event.preventDefault()
+		openList()
+	} else if ((event.key === 'Enter' || event.key === ' ') && open.value && active.value >= 0) {
 		// Only when an option is highlighted: otherwise Enter does what it does in the rest of the form.
 		event.preventDefault()
 		const option = shownOptions.value[active.value]
