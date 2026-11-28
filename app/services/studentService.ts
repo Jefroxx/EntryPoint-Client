@@ -25,6 +25,8 @@ export interface CatalogBook extends BookBrief {
   circulationType: string;
   /** Where it is in the library (Circulation, Filipiniana, ...): what students browse by. */
   area?: { key: string; name: string };
+  /** False when the area is library use only: it can't be carted or reserved. */
+  borrowable?: boolean;
   totalCopies: number;
   availableCopies: number;
   queueLength: number;
