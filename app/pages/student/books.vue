@@ -121,7 +121,7 @@
 							<p class="mt-3 text-[12.5px] md:text-[14.5px] text-stone-500 md:mt-0 md:w-[210px]">
 								{{ r.status === 'Waiting'
 									? ((r.queuePosition ?? 1) > 1 ? `${(r.queuePosition ?? 1) - 1} ahead of you` : 'A librarian will review it soon.')
-									: 'Bring your ID to the desk to collect it.' }}
+									: 'Bring your ID to the desk to collect it. To cancel, ask a librarian.' }}
 							</p>
 							<ButtonsButton v-if="r.status === 'Waiting'" variant="danger" size="sm" class="mt-3 !h-10 w-full !text-[14px] md:mt-0 md:!h-10 md:w-auto md:!px-5 md:!text-[14.5px]"
 								@click="cancelling = r">Cancel</ButtonsButton>

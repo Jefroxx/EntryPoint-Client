@@ -285,6 +285,11 @@ class CirculationServiceClass extends BaseService {
     return this.request<{ message: string }>(`/librarian/reservations/${reservationUuid}/reject`, { method: "POST" });
   }
 
+  /** Cancels a reservation that was already accepted: the held copy is released and the student is told. */
+  cancelReservation(reservationUuid: string) {
+    return this.request<{ message: string }>(`/librarian/reservations/${reservationUuid}/cancel`, { method: "POST" });
+  }
+
   fetchSelfReturnReports() {
     return this.request<{ reports: SelfReturnReportRecord[] }>("/librarian/self-return-reports");
   }

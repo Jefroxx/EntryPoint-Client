@@ -66,9 +66,22 @@
 								<span v-if="r.pickupCode" class="font-data text-stone-500">{{ r.pickupCode }}</span>
 							</span>
 						</span>
-						<ButtonsButton variant="primary" class="col-span-2 !h-11 w-full sm:col-span-1 sm:w-auto" :disabled="busy" @click="emit('checkout', r)">
-							<Icon name="i-tabler-scan" class="h-4 w-4" />Check out
-						</ButtonsButton>
+						<!-- Students can't cancel once a copy is held, so the librarian does it here (asked once, inline). -->
+						<div v-if="cancelling === r.reservationID" class="col-span-2 flex flex-wrap items-center gap-2 sm:col-span-1 sm:justify-end">
+							<span class="text-[13px] font-medium text-red-700">Release the held copy and tell {{ studentName }}?</span>
+							<ButtonsButton variant="ghost" :disabled="busy" @click="cancelling = null">Back</ButtonsButton>
+							<ButtonsButton variant="danger" :disabled="busy" @click="emit('cancel', r)">
+								<Icon v-if="busy" name="i-tabler-loader-2" class="h-3.5 w-3.5 animate-spin" />Yes, cancel
+							</ButtonsButton>
+						</div>
+						<div v-else class="col-span-2 flex gap-2 sm:col-span-1">
+							<ButtonsButton variant="ghost" class="!h-11 flex-1 !text-red-600 sm:flex-none" :disabled="busy" @click="cancelling = r.reservationID">
+								Cancel
+							</ButtonsButton>
+							<ButtonsButton variant="primary" class="!h-11 flex-1 sm:flex-none" :disabled="busy" @click="emit('checkout', r)">
+								<Icon name="i-tabler-scan" class="h-4 w-4" />Check out
+							</ButtonsButton>
+						</div>
 					</li>
 				</ul>
 			</section>
@@ -131,8 +144,16 @@ const props = defineProps<{
 const emit = defineEmits<{
 	(e: 'close'): void
 	(e: 'accept' | 'reject', reservations: ReservationRecord[]): void
-	(e: 'checkout', reservation: ReservationRecord): void
+	(e: 'checkout' | 'cancel', reservation: ReservationRecord): void
 }>()
+
+// The accepted reservation whose "Cancel" was pressed and is waiting for "Yes, cancel".
+const cancelling = ref<number | null>(null)
+watch(() => props.open, () => { cancelling.value = null })
+// Once it leaves "Ready for pickup" (cancelled or checked out), clear the question.
+watch(() => props.items.map((r) => `${r.reservationID}:${r.status}`).join(), () => {
+	if (cancelling.value !== null && !props.items.some((r) => r.reservationID === cancelling.value && r.status === 'Accepted')) cancelling.value = null
+})
 
 const waiting = computed(() => props.items.filter((r) => r.status === 'Waiting'))
 const ready = computed(() => props.items.filter((r) => r.status === 'Accepted'))

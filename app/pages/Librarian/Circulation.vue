@@ -129,7 +129,7 @@
 
 
         <LibrarianReservationReviewModal :open="isReviewOpen" :items="reviewItems" :queue-positions="queuePositions" :busy="reviewBusy"
-            @close="isReviewOpen = false" @accept="acceptMany" @reject="rejectMany" @checkout="checkoutFromReview" />
+            @close="isReviewOpen = false" @accept="acceptMany" @reject="rejectMany" @cancel="cancelAccepted" @checkout="checkoutFromReview" />
 
         <LibrarianReservationPickupModal :open="isPickupOpen" :reservation="pickupReservation" :code="pickupCode"
             @close="isPickupOpen = false" @created="handleCheckoutCreated" @manual="handleCheckoutManually" />
@@ -880,6 +880,22 @@ async function decideMany(list: ReservationRecord[], action: 'accept' | 'reject'
 // The pop-up asks for the confirmation itself (as a second step inside the same window), so these just do the work.
 const acceptMany = (list: ReservationRecord[]) => decideMany(list, 'accept')
 const rejectMany = (list: ReservationRecord[]) => decideMany(list, 'reject')
+
+// An accepted reservation can only be cancelled by the librarian: the held copy goes back and the student is told.
+async function cancelAccepted(r: ReservationRecord) {
+    reviewBusy.value = true
+    try {
+        await circulationService.cancelReservation(r.uuid)
+        setReservationStatus(r.uuid, 'Rejected')
+        popupAlert.success('Reservation cancelled', 'The copy is back on the shelf and the student has been told.')
+    } catch (error: any) {
+        popupAlert.error('Could not cancel the reservation', apiErrorMessage(error))
+    } finally {
+        reviewBusy.value = false
+        void quietRefreshReservations()
+    }
+    if (!reviewItems.value.some((s) => s.status === 'Waiting' || s.status === 'Accepted')) isReviewOpen.value = false
+}
 
 // Checking out a reservation opens the pickup window, so the review pop-up steps aside first.
 function checkoutFromReview(reservation: ReservationRecord) {
