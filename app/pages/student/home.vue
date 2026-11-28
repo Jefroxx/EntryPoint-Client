@@ -267,9 +267,6 @@
 							@click="addToCart(selected.bookID)">
 							<StudentCartIcon class="h-5 w-5" />{{ selected.availableCopies ? 'Add to cart' : 'Join the queue' }}
 						</button>
-						<p v-else class="flex h-12 flex-1 items-center justify-center rounded-xl border border-white/30 text-[14px] font-semibold text-white/80">
-							Library use only · can't be borrowed
-						</p>
 					</div>
 				</div>
 

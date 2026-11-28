@@ -65,9 +65,6 @@
 			<ButtonsButton v-else-if="book.borrowable !== false" class="!h-[46px] flex-1 !text-[15px]" @click="addToCart(book.bookID)">
 				<StudentCartIcon class="h-5 w-5" />{{ book.availableCopies ? 'Add to cart' : 'Add to cart & join queue' }}
 			</ButtonsButton>
-			<p v-else class="flex h-[46px] flex-1 items-center justify-center rounded-xl bg-stone-100 text-[14px] font-semibold text-stone-500">
-				Library use only · can't be borrowed
-			</p>
 		</template>
 	</StudentDrawer>
 </template>

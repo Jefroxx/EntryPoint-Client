@@ -24,7 +24,6 @@
 			class="shrink-0 !text-accent-600" @click="addToCart(book.bookID)">
 			<StudentCartIcon class="h-[18px] w-[18px]" />
 		</ButtonsButton>
-		<span v-else class="shrink-0 rounded-lg bg-stone-100 px-2 py-1 text-[11.5px] font-semibold text-stone-500">Library use only</span>
 		<StudentHeartButton :active="isWished(book.bookID)" @toggle="toggleWish(book.bookID)" />
 	</div>
 </template>
