@@ -32,8 +32,6 @@
 				@click="addToCart(book.bookID)">
 				<Icon name="i-tabler-plus" class="h-3.5 w-3.5" />Add to cart
 			</ButtonsButton>
-			<!-- Library use only: nothing to add, so say why instead of leaving a gap. -->
-			<span v-else class="min-w-0 flex-1 truncate rounded-lg bg-stone-100 px-2.5 py-1.5 text-center text-[12.5px] font-semibold text-stone-500">Library use only</span>
 			<StudentHeartButton :active="isWished(book.bookID)" @toggle="toggleWish(book.bookID)" />
 		</div>
 	</article>
