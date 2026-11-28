@@ -1,6 +1,9 @@
 <template>
 	<LibrarianModalShell :open="open" title="Log a Visitor"
-		subtitle="For someone without an account. Type their name and pick why they came." :busy="busy" :dirty="dirty" ref="shell" @close="emit('close')">
+		subtitle="For someone without an account. Type their name and pick why they came." :busy="busy" :dirty="dirty"
+		discard-title="Don't Log This Visitor?"
+		discard-text="The visitor won't be checked in, so their visit won't be in today's attendance."
+		keep-label="Back to the Visitor" discard-label="Yes, Don't Log" ref="shell" @close="emit('close')">
 		<div class="space-y-4">
 			<LibrarianTextField id="visitor-name" v-model="form.name" label="Name" placeholder="e.g. Maria Santos"
 				:maxlength="120" :error="errors.name" @update:model-value="errors.name = ''" />

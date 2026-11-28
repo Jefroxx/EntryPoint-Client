@@ -1,7 +1,8 @@
 <template>
 	<LibrarianModalShell :open="open" size="xl" :title="step === 'confirm' ? words.confirmTitle : words.title"
 		:subtitle="step === 'confirm' ? words.confirmSubtitle : words.subtitle"
-		:busy="busy" @close="emit('close')">
+		:busy="busy" :dirty="dirty" :discard-title="words.stopTitle" :discard-text="stopText"
+		:keep-label="words.keepLabel" discard-label="Yes, Stop" ref="shell" @close="emit('close')">
 		<template #steps>
 			<ol class="grid grid-cols-2 gap-2.5" aria-label="Steps">
 				<li v-for="(label, i) in ['Check the details', 'Confirm']" :key="label" :aria-current="(step === 'details' ? 0 : 1) === i ? 'step' : undefined">
@@ -209,7 +210,7 @@
 				</ButtonsButton>
 			</template>
 			<template v-else>
-				<ButtonsButton variant="ghost" :disabled="busy" @click="emit('close')">Cancel</ButtonsButton>
+				<ButtonsButton variant="ghost" :disabled="busy" @click="shell?.requestClose()">Cancel</ButtonsButton>
 				<ButtonsButton variant="primary" :disabled="loading || !preview || needsAnswer || needsReason" @click="step = 'confirm'">
 					Continue<Icon name="i-tabler-arrow-right" class="h-3.5 w-3.5" />
 				</ButtonsButton>
@@ -245,18 +246,21 @@ const WORDS = {
 		confirmTitle: 'Confirm the Return', confirmSubtitle: 'This is the last step. Check it, then return the book.',
 		about: 'You are about to return', outcome: 'It goes back on the shelf and the next person in line is told.',
 		confirm: 'Yes, return the book', icon: 'i-tabler-arrow-back-up',
+		stopTitle: 'Stop This Return?', keepLabel: 'Back to the Return',
 	},
 	verify: {
 		title: 'Verify This Self-Return?', subtitle: 'The student says they brought the book back. Check the details, then continue.',
 		confirmTitle: 'Confirm the Verification', confirmSubtitle: 'This is the last step. Check it, then verify the return.',
 		about: 'You are about to verify the return of', outcome: 'The book is returned and goes back on the shelf, and the student is told it was verified.',
 		confirm: 'Yes, verify the return', icon: 'i-tabler-circle-check',
+		stopTitle: 'Stop Verifying?', keepLabel: 'Back to the Verification',
 	},
 	reject: {
 		title: 'Reject This Report?', subtitle: "Check the details, then continue. The book stays on the student's loan.",
 		confirmTitle: 'Confirm the Rejection', confirmSubtitle: 'This is the last step. Check it, then reject the report.',
 		about: 'You are about to reject the report for', outcome: 'The book stays on loan. The student is told why it could not be verified and can report again after 6 hours.',
 		confirm: 'Yes, reject the report', icon: 'i-tabler-circle-x',
+		stopTitle: 'Stop the Rejection?', keepLabel: 'Back to the Rejection',
 	},
 } as const
 
@@ -285,6 +289,19 @@ watch(() => [props.open, props.preview?.loan.loanID], () => {
 	receiptNumber.value = ''
 	reason.value = ''
 	reasonChoice.value = ''
+})
+
+// Part-way through (the fee question answered, a receipt number or reason typed, or on the last step): closing asks
+// "Stop This Return?" first, inside this window (ModalShell). The X, a click outside, Escape and Cancel all go through it.
+const shell = ref<{ requestClose: () => void } | null>(null)
+const dirty = computed(() => step.value === 'confirm' || paid.value !== null
+	|| receiptNumber.value.trim() !== '' || reason.value.trim() !== '' || reasonChoice.value !== '')
+const stopText = computed(() => {
+	const book = props.preview?.book.title ? `"${props.preview.book.title}"` : 'The book'
+	const who = props.preview?.student.name
+	if (kind.value === 'reject') return `The report isn't rejected: it stays waiting for you to check, and ${who ?? 'the student'} isn't told anything yet.`
+	if (kind.value === 'verify') return `${book} isn't returned yet: it stays on ${who ? `${who}'s` : 'the'} loan, and the report keeps waiting.`
+	return `${book} isn't returned yet: it stays on ${who ? `${who}'s` : 'the'} loan${owesFee.value ? ', and nothing about the fine is recorded' : ''}.`
 })
 
 function chooseReason(r: string) {

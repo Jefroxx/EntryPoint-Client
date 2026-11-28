@@ -1,5 +1,7 @@
 <template>
-	<LibrarianModalShell :open="open" size="sm" title="Edit Penalty" :subtitle="subtitle" :busy="busy" :dirty="dirty" ref="shell" @close="emit('close')">
+	<LibrarianModalShell :open="open" size="sm" title="Edit Penalty" :subtitle="subtitle" :busy="busy" :dirty="dirty"
+		discard-title="Discard Penalty Changes?"
+		discard-text="The penalty stays as it was. The student is still charged the amount on record." ref="shell" @close="emit('close')">
 		<div class="space-y-5">
 			<div>
 				<label for="edit-penalty-amount" class="mb-1.5 block text-[13.5px] font-semibold text-stone-800">Amount (₱)</label>

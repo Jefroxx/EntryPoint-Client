@@ -1,7 +1,10 @@
 <template>
 	<LibrarianModalShell :open="open" size="xl" :title="step === 'confirm' ? 'Confirm the Payment' : 'Mark This Fine as Paid?'"
 		:subtitle="step === 'confirm' ? 'This is the last step. Check it, then record the payment.' : 'Check the details, then continue.'"
-		:busy="busy" :dirty="dirty" ref="shell" @close="emit('close')">
+		:busy="busy" :dirty="dirty"
+		discard-title="Stop Recording the Payment?"
+		discard-text="The fine stays unpaid. The receipt number you typed won't be saved."
+		keep-label="Back to the Payment" discard-label="Yes, Stop" ref="shell" @close="emit('close')">
 		<!-- Step 2: the final confirmation. Nothing has changed yet. -->
 		<div v-if="penalty && step === 'confirm'" class="space-y-4">
 			<section class="rounded-2xl border border-emerald-300 bg-emerald-50 p-4">

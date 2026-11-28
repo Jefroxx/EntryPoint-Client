@@ -1,6 +1,9 @@
 <template>
 	<LibrarianModalShell :open="open" size="xl" title="Issue a Penalty"
-		subtitle="Charge a student for a book that is lost or damaged." :busy="busy" :dirty="dirty" fixed-height ref="shell" @close="emit('close')">
+		subtitle="Charge a student for a book that is lost or damaged." :busy="busy" :dirty="dirty" fixed-height
+		discard-title="Don't Issue This Penalty?"
+		discard-text="The penalty won't be issued, and the student won't be charged."
+		keep-label="Back to the Penalty" discard-label="Yes, Don't Issue" ref="shell" @close="emit('close')">
 		<div class="grid gap-x-8 gap-y-5 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
 		<div class="min-w-0 space-y-5">
 			<!-- What happened to the book. -->

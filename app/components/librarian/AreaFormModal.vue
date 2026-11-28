@@ -1,7 +1,9 @@
 <template>
 	<LibrarianModalShell :open="open" size="md" :title="area ? 'Edit Area' : 'Add Area'"
 		:subtitle="area ? 'Rename it, change its acronym or how it is lent out.' : 'A part of the library with its own shelf label and lending rule.'"
-		:busy="busy" :dirty="dirty" ref="shell" @close="emit('close')">
+		:busy="busy" :dirty="dirty"
+		:discard-title="area ? 'Discard Area Changes?' : 'Discard This Area?'"
+		:discard-text="area ? `${area.name} stays as it was.` : 'The area you started won\'t be added.'" ref="shell" @close="emit('close')">
 		<div class="space-y-4">
 			<LibrarianTextField id="area-name" v-model="form.name" label="Name of the area" placeholder="e.g. Fiction" :maxlength="80"
 				:error="errors.name" @update:model-value="errors.name = ''" />

@@ -1,6 +1,8 @@
 <template>
 	<LibrarianModalShell :open="open" size="xl" :title="title" :subtitle="confirming ? 'Check the changes before they are saved.' : copy?.book.title"
-		:busy="busy" :dirty="dirty" ref="shell" @close="emit('close')">
+		:busy="busy" :dirty="dirty"
+		discard-title="Discard Copy Changes?"
+		discard-text="This copy stays as it was: none of the changes you made are saved." ref="shell" @close="emit('close')">
 		<!-- Step 2: what is about to change. It replaces the form in this same window (no second pop-up). -->
 		<div v-if="confirming" class="space-y-4">
 			<div class="rounded-xl bg-stone-50 px-4 py-3">

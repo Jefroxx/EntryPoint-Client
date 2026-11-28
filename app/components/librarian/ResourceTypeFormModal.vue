@@ -1,7 +1,9 @@
 <template>
 	<LibrarianModalShell :open="open" size="md" :title="type ? 'Rename Type' : 'Add Type'"
 		:subtitle="type ? `Every ${noun} of this type is renamed with it.` : `A kind of ${noun}, like ${example}.`"
-		:busy="busy" :dirty="dirty" ref="shell" @close="emit('close')">
+		:busy="busy" :dirty="dirty"
+		:discard-title="type ? 'Discard the New Name?' : 'Discard This Type?'"
+		:discard-text="type ? `The type keeps its name, ${type.name}.` : 'The type you started won\'t be added.'" ref="shell" @close="emit('close')">
 		<LibrarianTextField id="resource-type-name" v-model="form.name" label="Name of the type" :placeholder="`e.g. ${example}`" :maxlength="100"
 			:error="error" @update:model-value="error = ''" />
 

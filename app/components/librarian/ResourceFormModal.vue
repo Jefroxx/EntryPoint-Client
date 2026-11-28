@@ -1,7 +1,9 @@
 <template>
 	<LibrarianModalShell :open="open" :title="resource ? 'Edit Resource' : 'Add Resource'"
 		:subtitle="resource ? 'Rename it or change its type.' : 'Add a computer, room or study space.'" :busy="busy"
-		:dirty="dirty" ref="shell" @close="emit('close')">
+		:dirty="dirty"
+		:discard-title="resource ? 'Discard Resource Changes?' : 'Discard This Resource?'"
+		:discard-text="resource ? 'This computer, room or space stays as it was.' : 'The computer, room or space you started won\'t be added.'" ref="shell" @close="emit('close')">
 		<div class="space-y-4">
 			<LibrarianTextField id="resource-name" v-model="form.name" label="Name" placeholder="e.g. PC-08"
 				:error="errors.name" @update:model-value="errors.name = ''" />

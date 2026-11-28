@@ -1,7 +1,9 @@
 <template>
 	<LibrarianModalShell :open="open" size="md" :title="source ? 'Edit Source of Fund' : 'Add Source of Fund'"
 		:subtitle="source ? 'Copies that came from it follow the new name.' : 'Where the library\'s money for books comes from.'"
-		:busy="busy" :dirty="dirty" ref="shell" @close="emit('close')">
+		:busy="busy" :dirty="dirty"
+		:discard-title="source ? 'Discard Fund Changes?' : 'Discard This Source of Fund?'"
+		:discard-text="source ? `${source.name} stays as it was.` : 'The source of fund you started won\'t be added.'" ref="shell" @close="emit('close')">
 		<LibrarianTextField id="fund-name" v-model="form.name" label="Name" placeholder="e.g. Alumni gift" :maxlength="80" :disabled="source?.locked"
 			:hint="source?.locked ? 'Copies from this source cost nothing, so its name stays as it is.' : undefined"
 			:error="errors.name" @update:model-value="errors.name = ''" />
