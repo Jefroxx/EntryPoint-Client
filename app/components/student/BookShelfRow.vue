@@ -12,7 +12,7 @@
 				<span class="relative flex h-[200px] items-center justify-center rounded-2xl transition-shadow duration-200 group-focus-visible:ring-2 group-focus-visible:ring-accent-500"
 					:class="isSelected(book.bookID) ? 'ring-2 ring-accent-500 ring-offset-2 ring-offset-white' : ''"
 					:style="{ background: tint(book) }">
-					<span v-if="showNew" class="absolute left-2.5 top-2.5 rounded-full bg-accent-500 px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-wide text-white">New</span>
+					<span v-if="showNew" class="absolute left-2.5 top-2.5 z-10 rounded-full bg-accent-500 px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-wide text-white">New</span>
 					<StudentCover :book="book" :width="112" class="transition-transform duration-300 ease-out group-hover:-translate-y-1.5" />
 				</span>
 				<span class="mt-2.5 line-clamp-2 min-h-[2.6em] px-0.5 text-[14px] font-semibold leading-snug text-stone-900">{{ book.title }}</span>
