@@ -64,12 +64,6 @@
 					<Icon name="i-tabler-id" class="mt-px h-4 w-4 shrink-0" />
 					<span>Reserving doesn't check the book out. A librarian accepts your request, then you collect it at the desk with your ID.</span>
 				</div>
-
-				<!-- Phones: the pinned footer button can sit under the browser's own toolbar, so it is repeated here. -->
-				<ButtonsButton class="mt-4 !h-[46px] w-full !text-[15px] md:!hidden" :disabled="!selected.length || over || reserving" @click="onReserveClick">
-					<span v-if="reserving" class="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-					{{ reserving ? 'Reserving…' : `Reserve ${selected.length} book${selected.length === 1 ? '' : 's'}` }}
-				</ButtonsButton>
 			</template>
 
 			<StudentEmptyState v-else :title="slotsLeft ? 'Your cart is empty' : 'No reservation slots free'"

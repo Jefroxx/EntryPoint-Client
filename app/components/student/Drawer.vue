@@ -10,7 +10,7 @@
 			leave-active-class="transition-transform duration-[220ms] ease-out" leave-to-class="translate-x-full"
 			@after-enter="focusPanel">
 			<aside v-if="open" ref="panel" role="dialog" aria-modal="true" :aria-label="title" tabindex="-1"
-				class="student-app fixed inset-y-0 right-0 z-[100] flex w-full touch-pan-y flex-col bg-parchment shadow-[-20px_0_50px_-30px_rgba(0,0,0,.5)] outline-none md:w-[460px] md:border-l md:border-stone-200"
+				class="student-app fixed top-0 right-0 h-dvh z-[100] flex w-full touch-pan-y flex-col bg-parchment shadow-[-20px_0_50px_-30px_rgba(0,0,0,.5)] outline-none md:w-[460px] md:border-l md:border-stone-200"
 				@pointerdown="onPointerDown" @pointermove="onPointerMove" @pointerup="onPointerUp" @pointercancel="onPointerUp">
 				<header
 					class="flex shrink-0 items-center justify-between gap-2 border-b border-stone-200/80 bg-parchment/85 px-3 pb-2 pt-[calc(0.5rem+env(safe-area-inset-top,0px))] backdrop-blur-xl md:px-5 md:py-3.5">
